@@ -7,8 +7,8 @@ import { config } from '@/entrypoints/utils/config'
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
 const BATCH_SIZE = 5          // 每批翻译的句子组数
-const MERGE_GAP_MS  = 1500   // 相邻 cue 间隔 < 此值（毫秒）则合并为同一句
-const MAX_WORDS     = 19      // 单组超过此词数强制断开
+const MERGE_GAP_MS  = 600    // 相邻 cue 间隔 < 此值（毫秒）则合并为同一句
+const MAX_WORDS     = 20     // 单组超过此词数强制断开
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
 
 // ── 类型 ──────────────────────────────────────────────────────────────────────
@@ -114,20 +114,33 @@ function mergeByTimeGap(cues: SubtitleCue[]): SentenceGroup[] {
     const groups: SentenceGroup[] = []
     let current: SubtitleCue[] = []
 
+    const flush = (arr: SubtitleCue[]) => groups.push({
+        cues: [...arr],
+        text: arr.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+    })
+
     for (let i = 0; i < cues.length; i++) {
         current.push(cues[i])
         const next = cues[i + 1]
         const wordCount = current.reduce((n, c) => n + c.text.split(/\s+/).length, 0)
         const gapMs = next ? (next.start - cues[i].end) * 1000 : Infinity
+        const bigGap = !next || gapMs >= MERGE_GAP_MS
+        const tooLong = wordCount >= MAX_WORDS
 
-        if (!next || gapMs >= MERGE_GAP_MS || wordCount >= MAX_WORDS) {
-            groups.push({
-                cues: [...current],
-                text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
-            })
-            current = []
+        if (bigGap || tooLong) {
+            if (tooLong && !bigGap && current.length > 1) {
+                // 词数超限但下一条紧跟（小间隔）→ 末尾 cue 进位到下一组，
+                // 避免碎片句（如 "but the seeds"）因超限被孤立
+                const carryOver = current.pop()!
+                flush(current)
+                current = [carryOver]
+            } else {
+                flush(current)
+                current = []
+            }
         }
     }
+    if (current.length) flush(current)
     return groups
 }
 
