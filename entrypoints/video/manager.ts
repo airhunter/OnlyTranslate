@@ -6,8 +6,15 @@ import { config } from '@/entrypoints/utils/config'
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
-const BATCH_SIZE = 15   // 每批翻译的字幕条数（合并成一次 API 请求）
+const BATCH_SIZE = 15   // 每批翻译的句子组数
+const MAX_GROUP_SIZE = 6 // 单个句子组最多合并的 cue 数，防止过长
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
+
+// ── 类型 ──────────────────────────────────────────────────────────────────────
+interface SentenceGroup {
+    cues: SubtitleCue[]  // 原始 cue（可能是多个碎片）
+    text: string         // 合并后的完整句子文本
+}
 
 // ── 模块状态 ──────────────────────────────────────────────────────────────────
 const overlay = new SubtitleOverlay()
@@ -97,28 +104,69 @@ async function handleSubtitleData(url: string, rawData: string) {
 }
 
 /**
- * 将字幕分批（每批 BATCH_SIZE 条），合并成一个字符串发给翻译服务，
- * 再按分隔符拆分回逐条结果，大幅减少 API 调用次数。
+ * 将连续的碎片 cue 合并为完整句子组：
+ * - 不以句末标点结尾，且下一条以小写开头 → 视为碎片，继续合并
+ * - 超过 MAX_GROUP_SIZE 强制断开，避免过长
+ * 组内所有 cue 共享同一译文，显示时呈现完整句子
+ */
+function mergeSentenceGroups(cues: SubtitleCue[]): SentenceGroup[] {
+    const groups: SentenceGroup[] = []
+    let current: SubtitleCue[] = []
+
+    const isFragment = (cue: SubtitleCue, next: SubtitleCue | undefined): boolean => {
+        if (!next || current.length >= MAX_GROUP_SIZE) return false
+        const text = cue.text.trimEnd()
+        if (/[.!?。！？…]$/.test(text)) return false        // 句末标点 → 完整句
+        if (/^[A-Z\u4e00-\u9fff]/.test(next.text.trimStart())) return false  // 下一条首字母大写 → 新句
+        return true
+    }
+
+    for (let i = 0; i < cues.length; i++) {
+        current.push(cues[i])
+        if (!isFragment(cues[i], cues[i + 1])) {
+            groups.push({
+                cues: current,
+                text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+            })
+            current = []
+        }
+    }
+    if (current.length) {
+        groups.push({
+            cues: current,
+            text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+        })
+    }
+    return groups
+}
+
+/**
+ * 先将碎片 cue 合并为句子组，再分批翻译。
+ * 每组只发一次翻译请求，译文回填到组内所有 cue，
+ * 这样碎片 cue 显示的是完整句子的译文，而非孤立片段的译文。
  */
 async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void) {
-    for (let i = 0; i < cues.length; i += BATCH_SIZE) {
-        const batch = cues.slice(i, i + BATCH_SIZE)
-        // 用 [N] 编号标记每条字幕，翻译 API 通常会原样保留数字标记
-        const joined = batch.map((c, j) => `[${j + 1}] ${c.text}`).join('\n')
+    const groups = mergeSentenceGroups(cues)
+
+    for (let i = 0; i < groups.length; i += BATCH_SIZE) {
+        const batch = groups.slice(i, i + BATCH_SIZE)
+        const joined = batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
 
         try {
             const translated = await translateText(joined, document.title)
-            // 按 [N] 标记拆分，兼容 API 在标记前后增减空白的情况
             const map = new Map<number, string>()
             for (const line of translated.split('\n')) {
                 const m = line.match(/^\[(\d+)\]\s*(.*)/)
                 if (m) map.set(parseInt(m[1]), m[2].trim())
             }
-            batch.forEach((cue, j) => {
-                cue.translatedText = map.get(j + 1) || cue.text
+            batch.forEach((group, j) => {
+                const translation = map.get(j + 1) || group.text
+                group.cues.forEach(cue => { cue.translatedText = translation })
             })
         } catch {
-            batch.forEach(cue => { cue.translatedText = cue.text })
+            batch.forEach(group => {
+                group.cues.forEach(cue => { cue.translatedText = cue.text })
+            })
         }
 
         onProgress()
