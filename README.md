@@ -1,48 +1,75 @@
-# 流畅阅读 (FluentRead)
+# OnlyTranslate · 只译
 
-> [English](https://github.com/Bistutu/FluentRead/blob/main/misc/README_EN.md) | 中文
+> 能力很强，但只做一件事——翻译。
 
-Open Immersive Translate 开源的沉浸式翻译。
+一款专注于翻译的浏览器插件，支持网页文本翻译、视频字幕翻译，界面简洁、配置直观。
 
-一款革命性的浏览器开源翻译插件，让所有人都能够拥有母语般的阅读体验。
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-1. [官方文档（必看）](https://fluent.thinkstu.com/)
-2. [B站视频介绍](https://www.bilibili.com/video/BV1ux4y1e73x/)
-3. [deepwiki 架构介绍](https://deepwiki.com/Bistutu/FluentRead)
+---
 
-## 🌟 特性
+## 特性
 
-- **智能翻译**：支持 20+ 种翻译引擎，包括传统翻译和 AI 大模型。如：微软翻译、谷歌翻译、DeepL翻译、OpenAI、DeepSeek、Kimi、Ollama、自定义引擎等。
-- **双语对照**：支持原文与译文并列显示，让阅读更轻松。
-- **划词翻译**：选中任意文本，即可获得即时翻译结果，一键复制译文，提高阅读效率。
-- **全文翻译**：通过悬浮球一键翻译整个网页，无需刷新页面即可切换。
-- **隐私保护**：所有数据本地存储，代码开源透明。
-- **高度定制**：丰富的自定义选项，满足不同场景需求。
-- **完全免费**：开源免费，非商业化项目。
+- **视频字幕翻译**：自动捕获 YouTube 等平台的字幕并实时翻译，支持双语对照显示。
+- **网页翻译**：悬停或划词即可获得译文，支持全文翻译模式。
+- **双语对照**：原文与译文并列显示，阅读更轻松。
+- **多引擎支持**：支持 OpenAI、DeepSeek、Google 翻译、微软翻译、DeepL 等 20+ 种翻译引擎。
+- **隐私优先**：所有配置本地存储，不收集任何用户数据。
+- **完全免费**：开源，非商业化项目。
 
-<kbd><img src="./misc/sample-git-1.gif" alt="sample-git-1.gif" style="width: 80%; max-width: 100%;border: 1px solid black;"></kbd>
+---
 
-<kbd><img src="./misc/sample-git-4.gif" alt="sample-git-4.gif" style="width: 80%; max-width: 100%;border: 1px solid black;"></kbd>
+## 支持平台
 
-<kbd><img src="./misc/highlight_trans.png" alt="sample-git-4.gif" style="width: 80%; max-width: 100%;border: 1px solid black;"></kbd>
+| 平台 | 字幕翻译 | 网页翻译 |
+|------|----------|----------|
+| YouTube | ✅ | ✅ |
+| Udemy | ✅ | ✅ |
+| Coursera | ✅ | ✅ |
+| Khan Academy | ✅ | ✅ |
+| 通用网页 | — | ✅ |
 
-## 📦 安装
+---
 
-| 浏览器 | 安装方式 |
-|-------|---------|
-| Chrome | [Chrome 应用商店](https://chromewebstore.google.com/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/djnlaiohfaaifbibleebjggkghlmcpcj?hl=zh-CN&authuser=0) \| [国内镜像](https://www.crxsoso.com/webstore/detail/djnlaiohfaaifbibleebjggkghlmcpcj) |
-| Edge | [Edge 应用商店](https://microsoftedge.microsoft.com/addons/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/kakgmllfpjldjhcnkghpplmlbnmcoflp?hl=zh-CN) |
-| Firefox | [Firefox 附加组件商店](https://addons.mozilla.org/zh-CN/firefox/addon/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/) |
+## 安装
 
-## 📖 使用文档
+> Chrome 扩展商店版本即将上线，敬请期待。
 
-请直接访问 [流畅阅读官方文档](https://fluent.thinkstu.com/) 获取详细的：
-- 功能介绍
-- 配置指南
-- 使用教程
-- 常见问题
+**手动安装（开发者模式）：**
 
-# Star 历史记录
+1. 前往 [Releases](https://github.com/airhunter/OnlyTranslate/releases) 下载最新 `.zip` 包并解压。
+2. 打开 Chrome，进入 `chrome://extensions/`。
+3. 开启右上角「开发者模式」。
+4. 点击「加载已解压的扩展程序」，选择解压后的目录。
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Bistutu/FluentRead&type=Date)](https://star-history.com/#Bistutu/FluentRead&Date)
+---
 
+## 开发
+
+```bash
+# 安装依赖
+pnpm install
+
+# 开发模式（Chrome）
+pnpm dev
+
+# 构建
+pnpm build
+
+# 打包 zip
+pnpm zip
+```
+
+技术栈：[WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript，Manifest V3。
+
+---
+
+## 致谢
+
+本项目基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/FluentRead) 开发，在其基础上进行了功能扩展与界面重设计。感谢原作者的开源贡献。
+
+---
+
+## 开源协议
+
+本项目遵循 [GNU GPL v3.0](./LICENSE) 协议开源。
