@@ -9,7 +9,8 @@ import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoi
 import { cancelAllTranslations, translateText } from "@/entrypoints/utils/translateApi";
 import { createApp } from 'vue';
 import TranslationStatus from '@/components/TranslationStatus.vue';
-import { mountNewApiComponent } from "@/entrypoints/utils/newApi";
+import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
+import { initVideoSubtitle } from "@/entrypoints/video/manager";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -54,6 +55,9 @@ export default defineContentScript({
         }
 
         mountNewApiComponent();
+
+        // 初始化视频字幕翻译（在支持的平台上注入拦截脚本）
+        initVideoSubtitle();
 
         cache.cleaner();    // 检测是否清理缓存
 

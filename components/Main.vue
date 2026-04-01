@@ -167,6 +167,23 @@
     </el-row>
 
 
+    <!-- 视频字幕翻译 -->
+    <el-row v-if="config.on" class="margin-bottom margin-left-2em margin-top-1em">
+      <el-col :span="20" class="lightblue rounded-corner">
+        <el-tooltip class="box-item" effect="dark"
+          content="在 YouTube 等平台上，开启原生字幕后自动翻译并以双语形式叠加显示（需先在视频播放器中开启字幕）"
+          placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">
+            视频字幕翻译
+            <el-icon class="icon-margin"><ChatDotRound /></el-icon>
+          </span>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="4" class="flex-end">
+        <el-switch v-model="config.enableVideoSubtitle" inline-prompt active-text="开" inactive-text="关" />
+      </el-col>
+    </el-row>
+
     <!-- 划词翻译模式选择 -->
     <el-row v-if="config.on" class="margin-bottom margin-left-2em margin-top-1em">
       <el-col :span="14" class="lightblue rounded-corner">
