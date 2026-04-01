@@ -11,17 +11,37 @@ export function parseYouTubeXML(xmlText: string): SubtitleCue[] {
     try {
         const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
         if (doc.querySelector('parsererror')) return []
-        const cues: SubtitleCue[] = []
+        const raw: SubtitleCue[] = []
         doc.querySelectorAll('text').forEach(node => {
             const start = parseFloat(node.getAttribute('start') || '0')
             const dur   = parseFloat(node.getAttribute('dur')   || '0')
             const text  = decodeEntities(node.textContent || '').trim()
-            if (text) cues.push({ start, end: start + dur, text })
+            if (text) raw.push({ start, end: start + dur, text })
         })
-        return cues
+        // YouTube timedtext 会产生时间重叠的 cue（滚动字幕效果），
+        // 合并重叠 cue 使碎片句回归完整，减少翻译时的上下文割裂
+        return mergeOverlappingCues(raw)
     } catch {
         return []
     }
+}
+
+/** 合并时间上有重叠的相邻 cue，文本以空格拼接，时间取并集 */
+function mergeOverlappingCues(cues: SubtitleCue[]): SubtitleCue[] {
+    if (!cues.length) return cues
+    const merged: SubtitleCue[] = [{ ...cues[0] }]
+    for (let i = 1; i < cues.length; i++) {
+        const prev = merged[merged.length - 1]
+        const cur  = cues[i]
+        if (cur.start < prev.end) {
+            // 重叠：合并文本，延伸结束时间
+            prev.text = prev.text + ' ' + cur.text
+            prev.end  = Math.max(prev.end, cur.end)
+        } else {
+            merged.push({ ...cur })
+        }
+    }
+    return merged
 }
 
 // ── WebVTT ────────────────────────────────────────────────────────────────────

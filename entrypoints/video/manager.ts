@@ -6,8 +6,15 @@ import { config } from '@/entrypoints/utils/config'
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
-const BATCH_SIZE = 15   // 每批翻译的 cue 条数
+const BATCH_SIZE = 5    // 每批翻译的句子组数（小批量保证上下文集中）
+const MAX_GROUP_SIZE = 8 // 单组最多合并 cue 数
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
+
+// ── 类型 ──────────────────────────────────────────────────────────────────────
+interface SentenceGroup {
+    cues: SubtitleCue[]
+    text: string
+}
 
 // ── 模块状态 ──────────────────────────────────────────────────────────────────
 const overlay = new SubtitleOverlay()
@@ -97,21 +104,59 @@ async function handleSubtitleData(url: string, rawData: string) {
 }
 
 /**
- * 每批 BATCH_SIZE 条 cue，加上字幕专用指令和前批末尾上下文后发给翻译服务。
- * 英文 cue 与译文严格一一对应，由模型自行利用相邻行处理碎片句的连贯性。
+ * 将连续碎片 cue 合并为句子组后批量翻译。
+ * 组内所有 cue 共享同一译文，跨组边界由 [previous context] + 字幕专用指令处理。
  */
+function mergeSentenceGroups(cues: SubtitleCue[]): SentenceGroup[] {
+    const groups: SentenceGroup[] = []
+    let current: SubtitleCue[] = []
+
+    const isSentenceEnd = (cue: SubtitleCue, next: SubtitleCue | undefined): boolean => {
+        if (!next) return true
+        const text = cue.text.trimEnd()
+        if (/[.!?。！？…]$/.test(text)) return true
+        if (/^[A-Z\u4e00-\u9fff]/.test(next.text.trimStart())) return true
+        return false
+    }
+
+    const flush = (arr: SubtitleCue[]) => groups.push({
+        cues: [...arr],
+        text: arr.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+    })
+
+    for (let i = 0; i < cues.length; i++) {
+        current.push(cues[i])
+        const sentenceEnds = isSentenceEnd(cues[i], cues[i + 1])
+        const maxed = current.length >= MAX_GROUP_SIZE
+
+        if (sentenceEnds || maxed) {
+            if (maxed && !sentenceEnds && current.length > 1) {
+                // 满组但末尾是碎片 → 末尾 cue 进位到下一组
+                const carryOver = current.pop()!
+                flush(current)
+                current = [carryOver]
+            } else {
+                flush(current)
+                current = []
+            }
+        }
+    }
+    if (current.length) flush(current)
+    return groups
+}
+
 async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void) {
+    const groups = mergeSentenceGroups(cues)
     const instruction = 'Video subtitle segments. Lines may be sentence fragments — use adjacent lines for context to produce natural translations. Return the same number of [N] lines, no extra explanation.\n\n'
 
-    for (let i = 0; i < cues.length; i += BATCH_SIZE) {
-        const batch = cues.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < groups.length; i += BATCH_SIZE) {
+        const batch = groups.slice(i, i + BATCH_SIZE)
 
-        // 带上前一批最后 12 个词作为上下文，帮助模型理解跨批边界的句子续接
         const prevContext = i > 0
-            ? `[previous context: ...${cues.slice(Math.max(0, i - 3), i).map(c => c.text).join(' ').split(' ').slice(-12).join(' ')}]\n`
+            ? `[previous context: ...${groups[i - 1].text.split(' ').slice(-12).join(' ')}]\n`
             : ''
 
-        const joined = instruction + prevContext + batch.map((c, j) => `[${j + 1}] ${c.text}`).join('\n')
+        const joined = instruction + prevContext + batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
 
         try {
             const translated = await translateText(joined, document.title)
@@ -120,11 +165,14 @@ async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void)
                 const m = line.match(/^\[(\d+)\]\s*(.*)/)
                 if (m) map.set(parseInt(m[1]), m[2].trim())
             }
-            batch.forEach((cue, j) => {
-                cue.translatedText = map.get(j + 1) || cue.text
+            batch.forEach((group, j) => {
+                const translation = map.get(j + 1) || group.text
+                group.cues.forEach(cue => { cue.translatedText = translation })
             })
         } catch {
-            batch.forEach(cue => { cue.translatedText = cue.text })
+            batch.forEach(group => {
+                group.cues.forEach(cue => { cue.translatedText = cue.text })
+            })
         }
 
         onProgress()
