@@ -158,7 +158,16 @@ async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void)
 
     for (let i = 0; i < groups.length; i += BATCH_SIZE) {
         const batch = groups.slice(i, i + BATCH_SIZE)
-        const joined = batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
+
+        // 带上前一批的最后一组作为上下文，帮助模型理解跨批边界的句子续接
+        const prevContext = i > 0
+            ? `[previous context: ...${groups[i - 1].text.split(' ').slice(-12).join(' ')}]\n`
+            : ''
+
+        // 字幕专用指令：告知模型这是视频字幕碎片，需结合相邻行翻译，保持行数一致
+        const instruction = 'Video subtitle segments. Lines may be sentence fragments — use adjacent lines for context to produce natural translations. Return the same number of [N] lines, no extra explanation.\n\n'
+
+        const joined = instruction + prevContext + batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
 
         try {
             const translated = await translateText(joined, document.title)
