@@ -291,15 +291,27 @@ function hideNativeSubtitle() {
     const platform = detectPlatform(window.location.hostname)
     if (!platform.hideNativeSelector) return
     // 用 display:none 彻底隐藏，visibility:hidden 仍占位且有时被 YouTube 重置
+    // 隐藏前将原始内联 display 值存入 data- 属性，供还原时使用
     document.querySelectorAll<HTMLElement>(platform.hideNativeSelector)
-        .forEach(el => el.style.setProperty('display', 'none', 'important'))
+        .forEach(el => {
+            el.dataset.frOrigDisplay = el.style.display
+            el.style.setProperty('display', 'none', 'important')
+        })
 }
 
 function restoreNativeSubtitle() {
     const platform = detectPlatform(window.location.hostname)
     if (!platform.hideNativeSelector) return
     document.querySelectorAll<HTMLElement>(platform.hideNativeSelector)
-        .forEach(el => el.style.removeProperty('display'))
+        .forEach(el => {
+            const orig = el.dataset.frOrigDisplay
+            if (orig !== undefined) {
+                el.style.display = orig
+                delete el.dataset.frOrigDisplay
+            } else {
+                el.style.removeProperty('display')
+            }
+        })
 }
 
 // ── SPA 导航监听 ──────────────────────────────────────────────────────────────

@@ -64,7 +64,7 @@ export class SubtitleOverlay {
             cancelAnimationFrame(this.rafId)
             this.rafId = null
         }
-        document.getElementById(OVERLAY_ID)?.remove()
+        this.container?.remove()
         if (this.mountTarget !== undefined && this.originalMountPosition !== undefined) {
             this.mountTarget.style.position = this.originalMountPosition
         }
