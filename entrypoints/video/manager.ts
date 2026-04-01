@@ -159,9 +159,11 @@ function mountQuickButton() {
             btn.replaceChildren(buildBtnSvg(subtitleEnabled))
             btn.title = subtitleEnabled ? '流畅阅读：字幕翻译（开）' : '流畅阅读：字幕翻译（关）'
             if (subtitleEnabled) {
+                hideNativeSubtitle()
                 overlay.show()
             } else {
                 overlay.hide()
+                restoreNativeSubtitle()
             }
         })
 
