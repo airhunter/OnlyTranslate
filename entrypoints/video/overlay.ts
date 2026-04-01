@@ -83,15 +83,25 @@ export class SubtitleOverlay {
     }
 
     private findCue(time: number): SubtitleCue | null {
-        for (const cue of this.cues) {
-            if (time >= cue.start && time < cue.end) return cue
+        let lo = 0, hi = this.cues.length - 1
+        while (lo <= hi) {
+            const mid = (lo + hi) >>> 1
+            const cue = this.cues[mid]
+            if (time < cue.start) {
+                hi = mid - 1
+            } else if (time >= cue.end) {
+                lo = mid + 1
+            } else {
+                return cue
+            }
         }
         return null
     }
 
     private render(cue: SubtitleCue | null) {
         if (!this.container) return
-        if (!cue) { this.container.innerHTML = ''; return }
+        this.container.replaceChildren()
+        if (!cue) return
 
         const isBilingual = config.display === 1   // 1 = 双语对照
         const hasTranslation = !!cue.translatedText
@@ -112,23 +122,16 @@ export class SubtitleOverlay {
 
         const originalStyle = lineStyle + ';opacity:0.75;font-size:15px'
 
-        let html = ''
         if (isBilingual && cue.text) {
-            html += `<div style="${originalStyle}">${esc(cue.text)}</div>`
+            const div = document.createElement('div')
+            div.style.cssText = originalStyle
+            div.textContent = cue.text
+            this.container.appendChild(div)
         }
-        if (hasTranslation) {
-            html += `<div style="${lineStyle}">${esc(cue.translatedText!)}</div>`
-        } else {
-            // 翻译尚未完成时，仍显示原文（避免空白）
-            html += `<div style="${lineStyle}">${esc(cue.text)}</div>`
-        }
-        this.container.innerHTML = html
-    }
-}
 
-function esc(s: string): string {
-    return s.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
+        const mainDiv = document.createElement('div')
+        mainDiv.style.cssText = lineStyle
+        mainDiv.textContent = hasTranslation ? cue.translatedText! : cue.text
+        this.container.appendChild(mainDiv)
+    }
 }

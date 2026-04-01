@@ -28,7 +28,15 @@ export default defineConfig({
         // Chrome 加载 manifest content_scripts 时会绕过页面 CSP，不受 YouTube 等限制。
         content_scripts: [
             {
-                matches: ['<all_urls>'],
+                // 仅注入已支持的视频平台，避免在无关站点执行 XHR/fetch hook。
+                // 如需新增平台，在此同步添加对应域名。
+                matches: [
+                    '*://*.youtube.com/*',
+                    '*://*.youtubekids.com/*',
+                    '*://*.udemy.com/*',
+                    '*://*.coursera.org/*',
+                    '*://*.khanacademy.org/*',
+                ],
                 js: ['video-subtitle-inject.js'],
                 world: 'MAIN',
                 run_at: 'document_start',
