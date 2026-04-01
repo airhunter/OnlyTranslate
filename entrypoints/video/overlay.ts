@@ -28,7 +28,7 @@ export class SubtitleOverlay {
             'text-align:center',
             'pointer-events:none',
             'width:max-content',
-            'max-width:84%',
+            'max-width:94%',
         ].join(';')
 
         // 确保挂载目标有定位上下文，记录原始内联 position 以便 cleanup 还原
@@ -126,7 +126,7 @@ export class SubtitleOverlay {
             'color:#fff',
             'padding:4px 14px',
             'border-radius:4px',
-            'font-size:18px',
+            'font-size:22px',
             'line-height:1.65',
             'white-space:pre-wrap',
             'word-break:break-word',
@@ -134,7 +134,7 @@ export class SubtitleOverlay {
             'margin-bottom:4px',
         ].join(';')
 
-        const originalStyle = lineStyle + ';opacity:0.75;font-size:15px'
+        const originalStyle = lineStyle + ';opacity:0.75;font-size:18px'
 
         if (isBilingual && cue.text) {
             const div = document.createElement('div')
