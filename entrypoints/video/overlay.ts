@@ -9,6 +9,8 @@ export class SubtitleOverlay {
     private cues: SubtitleCue[] = []
     private rafId: number | null = null
     private lastCueKey: string | null = null  // 避免每帧重复 DOM 操作
+    private mountTarget: HTMLElement | undefined
+    private originalMountPosition: string | undefined  // undefined = 未修改过
 
     /** 在视频容器内创建字幕层，开始时间轴循环 */
     mount(video: HTMLVideoElement, mountTarget: HTMLElement) {
@@ -29,11 +31,15 @@ export class SubtitleOverlay {
             'max-width:84%',
         ].join(';')
 
-        // 确保挂载目标有定位上下文
-        const pos = window.getComputedStyle(mountTarget).position
-        if (pos === 'static') mountTarget.style.position = 'relative'
+        // 确保挂载目标有定位上下文，记录原始内联 position 以便 cleanup 还原
+        const computedPos = window.getComputedStyle(mountTarget).position
+        if (computedPos === 'static') {
+            this.originalMountPosition = mountTarget.style.position
+            mountTarget.style.position = 'relative'
+        }
 
         mountTarget.appendChild(overlay)
+        this.mountTarget = mountTarget
         this.container = overlay
         this.startLoop()
     }
@@ -52,16 +58,21 @@ export class SubtitleOverlay {
         if (this.container) this.container.style.display = 'none'
     }
 
-    /** 停止渲染并移除 DOM */
+    /** 停止渲染并移除 DOM，还原挂载目标的原始 position */
     cleanup() {
         if (this.rafId !== null) {
             cancelAnimationFrame(this.rafId)
             this.rafId = null
         }
         document.getElementById(OVERLAY_ID)?.remove()
+        if (this.mountTarget !== undefined && this.originalMountPosition !== undefined) {
+            this.mountTarget.style.position = this.originalMountPosition
+        }
         this.container = null
         this.cues = []
         this.lastCueKey = null
+        this.mountTarget = undefined
+        this.originalMountPosition = undefined
     }
 
     // ── 内部方法 ──────────────────────────────────────────────────────────────
