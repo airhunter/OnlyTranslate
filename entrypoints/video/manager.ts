@@ -106,37 +106,45 @@ async function handleSubtitleData(url: string, rawData: string) {
 /**
  * 将连续的碎片 cue 合并为完整句子组：
  * - 不以句末标点结尾，且下一条以小写开头 → 视为碎片，继续合并
- * - 超过 MAX_GROUP_SIZE 强制断开，避免过长
- * 组内所有 cue 共享同一译文，显示时呈现完整句子
+ * - 达到 MAX_GROUP_SIZE 时，若最后一条仍是碎片，将其"进位"到下一组，
+ *   确保碎片始终与续句在同一组内翻译
  */
 function mergeSentenceGroups(cues: SubtitleCue[]): SentenceGroup[] {
     const groups: SentenceGroup[] = []
     let current: SubtitleCue[] = []
 
-    const isFragment = (cue: SubtitleCue, next: SubtitleCue | undefined): boolean => {
-        if (!next || current.length >= MAX_GROUP_SIZE) return false
+    const isSentenceEnd = (cue: SubtitleCue, next: SubtitleCue | undefined): boolean => {
+        if (!next) return true
         const text = cue.text.trimEnd()
-        if (/[.!?。！？…]$/.test(text)) return false        // 句末标点 → 完整句
-        if (/^[A-Z\u4e00-\u9fff]/.test(next.text.trimStart())) return false  // 下一条首字母大写 → 新句
-        return true
+        if (/[.!?。！？…]$/.test(text)) return true
+        if (/^[A-Z\u4e00-\u9fff]/.test(next.text.trimStart())) return true
+        return false
     }
+
+    const flush = (arr: SubtitleCue[]) => groups.push({
+        cues: [...arr],
+        text: arr.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+    })
 
     for (let i = 0; i < cues.length; i++) {
         current.push(cues[i])
-        if (!isFragment(cues[i], cues[i + 1])) {
-            groups.push({
-                cues: current,
-                text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
-            })
-            current = []
+        const sentenceEnds = isSentenceEnd(cues[i], cues[i + 1])
+        const maxed = current.length >= MAX_GROUP_SIZE
+
+        if (sentenceEnds || maxed) {
+            if (maxed && !sentenceEnds && current.length > 1) {
+                // 满组但末尾是碎片 → 末尾 cue 进位到下一组
+                const carryOver = current.pop()!
+                flush(current)
+                current = [carryOver]
+            } else {
+                flush(current)
+                current = []
+            }
         }
     }
-    if (current.length) {
-        groups.push({
-            cues: current,
-            text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
-        })
-    }
+    if (current.length) flush(current)
+
     return groups
 }
 
