@@ -94,7 +94,9 @@ export class SubtitleOverlay {
     }
 
     private findCue(time: number): SubtitleCue | null {
-        let lo = 0, hi = this.cues.length - 1
+        // 二分找到第一个 start <= time 且 end > time 的 cue，
+        // 继续向后扫描以处理 YouTube 滚动字幕的 overlap cue（取最后一条）
+        let lo = 0, hi = this.cues.length - 1, result: SubtitleCue | null = null
         while (lo <= hi) {
             const mid = (lo + hi) >>> 1
             const cue = this.cues[mid]
@@ -103,10 +105,11 @@ export class SubtitleOverlay {
             } else if (time >= cue.end) {
                 lo = mid + 1
             } else {
-                return cue
+                result = cue
+                lo = mid + 1  // 继续往后找是否有更晚开始的 overlap cue
             }
         }
-        return null
+        return result
     }
 
     private render(cue: SubtitleCue | null) {

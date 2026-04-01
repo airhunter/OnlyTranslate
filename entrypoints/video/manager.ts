@@ -7,7 +7,6 @@ import { config } from '@/entrypoints/utils/config'
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
 const BATCH_SIZE = 15   // 每批翻译的字幕条数（合并成一次 API 请求）
-const SEP = '\n⌿\n'   // 字幕批量翻译分隔符（选用生僻字符减少歧义）
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
 
 // ── 模块状态 ──────────────────────────────────────────────────────────────────
@@ -104,13 +103,19 @@ async function handleSubtitleData(url: string, rawData: string) {
 async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void) {
     for (let i = 0; i < cues.length; i += BATCH_SIZE) {
         const batch = cues.slice(i, i + BATCH_SIZE)
-        const joined = batch.map(c => c.text).join(SEP)
+        // 用 [N] 编号标记每条字幕，翻译 API 通常会原样保留数字标记
+        const joined = batch.map((c, j) => `[${j + 1}] ${c.text}`).join('\n')
 
         try {
             const translated = await translateText(joined, document.title)
-            const parts = translated.split(SEP)
+            // 按 [N] 标记拆分，兼容 API 在标记前后增减空白的情况
+            const map = new Map<number, string>()
+            for (const line of translated.split('\n')) {
+                const m = line.match(/^\[(\d+)\]\s*(.*)/)
+                if (m) map.set(parseInt(m[1]), m[2].trim())
+            }
             batch.forEach((cue, j) => {
-                cue.translatedText = parts[j]?.trim() || cue.text
+                cue.translatedText = map.get(j + 1) || cue.text
             })
         } catch {
             batch.forEach(cue => { cue.translatedText = cue.text })
