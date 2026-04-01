@@ -6,9 +6,16 @@ import { config } from '@/entrypoints/utils/config'
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
-const BATCH_SIZE = 5    // 每批翻译的 cue 条数
-const CONTEXT_SIZE = 2  // 批次前后各取几条作为上下文
+const BATCH_SIZE = 5          // 每批翻译的句子组数
+const MERGE_GAP_MS  = 1500   // 相邻 cue 间隔 < 此值（毫秒）则合并为同一句
+const MAX_WORDS     = 19      // 单组超过此词数强制断开
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
+
+// ── 类型 ──────────────────────────────────────────────────────────────────────
+interface SentenceGroup {
+    cues: SubtitleCue[]
+    text: string
+}
 
 // ── 模块状态 ──────────────────────────────────────────────────────────────────
 const overlay = new SubtitleOverlay()
@@ -98,30 +105,51 @@ async function handleSubtitleData(url: string, rawData: string) {
 }
 
 /**
- * 逐条翻译，英中 cue 严格一一对应。
- * 每批在正文 [N] 前后各附 CONTEXT_SIZE 条原文作为上下文（不要求翻译），
- * 提示词允许模型跨行借用语义，使碎片句的译文自然连贯。
+ * 按时间间隔合并相邻 cue：
+ * - 相邻两条 cue 的间隔 < MERGE_GAP_MS → 合并为同一句（说话中的正常停顿）
+ * - 间隔 ≥ MERGE_GAP_MS 或词数超过 MAX_WORDS → 断开（句子之间的自然停顿）
+ * 这样"united states"等跨 cue 短语能被合并进同一组，避免词级切断的翻译错误。
+ */
+function mergeByTimeGap(cues: SubtitleCue[]): SentenceGroup[] {
+    const groups: SentenceGroup[] = []
+    let current: SubtitleCue[] = []
+
+    for (let i = 0; i < cues.length; i++) {
+        current.push(cues[i])
+        const next = cues[i + 1]
+        const wordCount = current.reduce((n, c) => n + c.text.split(/\s+/).length, 0)
+        const gapMs = next ? (next.start - cues[i].end) * 1000 : Infinity
+
+        if (!next || gapMs >= MERGE_GAP_MS || wordCount >= MAX_WORDS) {
+            groups.push({
+                cues: [...current],
+                text: current.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+            })
+            current = []
+        }
+    }
+    return groups
+}
+
+/**
+ * 将 cue 按时间间隔合并为句子组后批量翻译。
+ * 组内所有 cue 共享同一译文，消除跨 cue 词级切断问题。
  */
 async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void) {
+    const groups = mergeByTimeGap(cues)
     const instruction =
-        'These are timed video subtitle lines. Each [N] line is a separate segment and may be a sentence fragment. ' +
-        'Translate ONLY the [N] lines. The [context before] and [context after] lines are provided for reference only — do NOT translate them. ' +
-        'For natural flow, you may borrow meaning from adjacent lines (e.g. a fragment can incorporate the sense of the next line). ' +
-        'Return exactly the same number of [N] translations, no extra explanation.\n\n'
+        'Video subtitle segments. Translate each [N] line. ' +
+        'Return the same number of [N] lines, no extra explanation.\n\n'
 
-    for (let i = 0; i < cues.length; i += BATCH_SIZE) {
-        const batch = cues.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < groups.length; i += BATCH_SIZE) {
+        const batch = groups.slice(i, i + BATCH_SIZE)
 
-        const before = cues.slice(Math.max(0, i - CONTEXT_SIZE), i)
-            .map(c => `[context before: ${c.text}]`).join('\n')
-        const after  = cues.slice(i + BATCH_SIZE, i + BATCH_SIZE + CONTEXT_SIZE)
-            .map(c => `[context after: ${c.text}]`).join('\n')
+        const prevContext = i > 0
+            ? `[context: ...${groups[i - 1].text.split(' ').slice(-8).join(' ')}]\n`
+            : ''
 
-        const numbered = batch.map((c, j) => `[${j + 1}] ${c.text}`).join('\n')
-        const joined = instruction
-            + (before ? before + '\n' : '')
-            + numbered
-            + (after  ? '\n' + after  : '')
+        const joined = instruction + prevContext
+            + batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
 
         try {
             const translated = await translateText(joined, document.title)
@@ -130,11 +158,14 @@ async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void)
                 const m = line.match(/^\[(\d+)\]\s*(.*)/)
                 if (m) map.set(parseInt(m[1]), m[2].trim())
             }
-            batch.forEach((cue, j) => {
-                cue.translatedText = map.get(j + 1) || cue.text
+            batch.forEach((group, j) => {
+                const translation = map.get(j + 1) || group.text
+                group.cues.forEach(cue => { cue.translatedText = translation })
             })
         } catch {
-            batch.forEach(cue => { cue.translatedText = cue.text })
+            batch.forEach(group => {
+                group.cues.forEach(cue => { cue.translatedText = cue.text })
+            })
         }
 
         onProgress()
