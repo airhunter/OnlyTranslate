@@ -873,6 +873,25 @@ const handleSwitchChange = () => {
 
 // 处理插件状态变化
 const handlePluginStateChange = (val: boolean) => {
+  // 如果插件被开启，恢复悬浮球为启用状态
+  if (val) {
+    config.value.disableFloatingBall = false;
+    // 向所有激活的标签页发送消息，开启悬浮球
+    browser.tabs.query({}).then(tabs => {
+      tabs.forEach(tab => {
+        if (tab.id) {
+          browser.tabs.sendMessage(tab.id, {
+            type: 'toggleFloatingBall',
+            isEnabled: true
+          }).catch(() => {
+            // 忽略发送失败的错误（可能是页面未加载内容脚本）
+          });
+        }
+      });
+    });
+    return;
+  }
+
   // 如果插件被关闭，确保悬浮球和划词翻译也被关闭
   if (!val) {
     // 处理悬浮球
@@ -882,7 +901,7 @@ const handlePluginStateChange = (val: boolean) => {
       browser.tabs.query({}).then(tabs => {
         tabs.forEach(tab => {
           if (tab.id) {
-            browser.tabs.sendMessage(tab.id, { 
+            browser.tabs.sendMessage(tab.id, {
               type: 'toggleFloatingBall',
               isEnabled: false
             }).catch(() => {

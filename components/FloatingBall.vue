@@ -21,9 +21,8 @@
             d="M12.87 15.07L10.33 12.56L10.36 12.53C12.1 10.59 13.34 8.36 14.07 6H17V4H10V2H8V4H1V6H12.17C11.5 7.92 10.44 9.75 9 11.35C8.07 10.32 7.3 9.19 6.69 8H4.69C5.42 9.63 6.42 11.17 7.67 12.56L2.58 17.58L4 19L9 14L12.11 17.11L12.87 15.07Z"
             fill="#4caf50" />
         </svg>
-        <svg v-if="iconType === 'morden'" class="imt-fb-logo-img-big-bg translation-icon"
-          :class="{ 'imt-float-ball-translated': isTranslating }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-          width="20" height="20">
+        <svg v-if="iconType === 'morden'" class="imt-fb-logo-img-big-bg"
+          :class="{ 'imt-float-ball-translated': isTranslating }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <path fill="none" d="M0 0h24v24H0z"></path>
           <path
             d="M5 15v2a2 2 0 0 0 1.85 1.995L7 19h3v2H7a4 4 0 0 1-4-4v-2h2zm13-5l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16 10h2zm-1 2.885L15.753 16h2.492L17 12.885zM8 2v2h4v7H8v3H6v-3H2V4h4V2h2zm9 1a4 4 0 0 1 4 4v2h-2V7a2 2 0 0 0-2-2h-3V3h3zM6 6H4v3h2V6zm4 0H8v3h2V6z"
@@ -392,13 +391,19 @@ watch(() => props.position, (newPosition) => {
 }
 
 .imt-fb-logo-img-big-bg {
-  width: 20px;
-  height: 20px;
-  margin: 0;
-  padding: 3px;
-  background-color: #ED6D8F;
+  box-sizing: content-box !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  padding: 4px !important;
+  background-color: #5BB5F5;
   border-radius: 50%;
-  margin: 0 3px;
+  margin: 0 2px;
+  flex-shrink: 0;
+  display: block !important;
 }
 
 .floating-ball-expanded .floating-ball-icon {
