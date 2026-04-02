@@ -690,7 +690,7 @@ onBeforeUnmount(() => {
   position: absolute;
   width: 12px;
   height: 12px;
-  background-color: #ff4d4f;
+  background-color: #5BB5F5;
   border-radius: 50%;
   cursor: pointer;
   z-index: 9999;
@@ -726,15 +726,15 @@ onBeforeUnmount(() => {
 @keyframes pulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+    box-shadow: 0 0 0 0 rgba(91, 181, 245, 0.7);
   }
   70% {
     transform: scale(1.1);
-    box-shadow: 0 0 0 10px rgba(255, 77, 79, 0);
+    box-shadow: 0 0 0 10px rgba(91, 181, 245, 0);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+    box-shadow: 0 0 0 0 rgba(91, 181, 245, 0);
   }
 }
 

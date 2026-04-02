@@ -46,8 +46,13 @@ export function grabAllNode(rootNode: Node): Element[] {
                     return NodeFilter.FILTER_REJECT;
                 }
 
-                // 在初始全局翻译时 跳过header与footer
-                if (tag === 'header' || tag === 'footer') {
+                // 在初始全局翻译时 跳过页面级 header 与 footer
+                // 跳过页面级 footer
+                if (tag === 'footer') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                // 跳过包含导航元素的 header（页面导航栏），但保留不含导航的 header（文章标题区）
+                if (tag === 'header' && node.querySelector('nav, [role="navigation"]')) {
                     return NodeFilter.FILTER_REJECT;
                 }
 
