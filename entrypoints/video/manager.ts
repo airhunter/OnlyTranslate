@@ -203,7 +203,7 @@ function mountQuickButton() {
 
         const btn = document.createElement('button')
         btn.id = QUICK_BTN_ID
-        btn.title = '流畅阅读：字幕翻译'
+        btn.title = '只译：字幕翻译'
         btn.setAttribute('aria-label', '字幕翻译')
         btn.style.cssText = [
             'background:transparent',
@@ -222,7 +222,7 @@ function mountQuickButton() {
         btn.addEventListener('click', () => {
             subtitleEnabled = !subtitleEnabled
             btn.replaceChildren(buildBtnSvg(subtitleEnabled))
-            btn.title = subtitleEnabled ? '流畅阅读：字幕翻译（开）' : '流畅阅读：字幕翻译（关）'
+            btn.title = subtitleEnabled ? '只译：字幕翻译（开）' : '只译：字幕翻译（关）'
             if (subtitleEnabled) {
                 hideNativeSubtitle()
                 overlay.show()
@@ -243,9 +243,11 @@ function buildBtnSvg(active: boolean): SVGElement {
     svg.setAttribute('viewBox', '0 0 24 24')
     svg.setAttribute('width', '22')
     svg.setAttribute('height', '22')
-    svg.setAttribute('fill', active ? '#fff' : 'rgba(255,255,255,0.4)')
+    svg.setAttribute('fill', active ? '#fff' : 'rgba(255,255,255,0.35)')
+    svg.style.transition = 'fill 0.2s ease'
     const path = document.createElementNS(ns, 'path')
-    path.setAttribute('d', 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z')
+    // Material Design "translate" icon
+    path.setAttribute('d', 'M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z')
     svg.appendChild(path)
     return svg
 }

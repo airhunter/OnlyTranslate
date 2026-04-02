@@ -1,5 +1,5 @@
 <template>
-  <h1 class="title">流畅阅读 <span class="version">V{{version}}</span></h1>
+  <h1 class="title">只译 <span class="version">V{{version}}</span></h1>
 </template>
 
 <script lang="ts" setup>

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         流畅阅读
+// @name         只译
 // @license      GPL-3.0 license
 // @namespace    https://fr.unmeta.cn/
 // @version      1.31
