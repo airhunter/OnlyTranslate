@@ -1,5 +1,5 @@
 :root {
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
     line-height: 1.5;
     font-weight: 400;
     /* 颜色与主题交由 styles/theme.css 控制 */
@@ -12,48 +12,10 @@
     -webkit-text-size-adjust: 100%;
 }
 
-/* 标题样式 */
-.title {
-    font-size: 1.5em;
-    font-weight: 600;
-    margin: 1em 0;
-    color: var(--fr-text-color);
-}
-
-.rounded-corner {
-    border-radius: 5px;
-}
-
-/*popup选项框文字*/
-.popup-text {
-    font-size: 15px;
-    font-weight: 500;
-}
-
-.popup-vertical-left {
-    display: flex;
-    align-items: center;
-    justify-content: left;
-    height: 100%;
-}
-
-.margin-left-2em {
-    margin-left: 2em;
-}
-
-.margin-bottom {
-    margin-bottom: 10px;
-}
-
-.custom-padding {
-    padding: 10px !important;
-}
-
 #app {
-    min-width: 340px;
+    min-width: 360px;
+    max-width: 360px;
     margin: 0 auto;
     padding: 0;
-    text-align: center;
+    text-align: left;
 }
-
-/* 由 .dark 类与变量控制主题，这里不再强制全局颜色 */

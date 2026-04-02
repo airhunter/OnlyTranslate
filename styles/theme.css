@@ -11,6 +11,17 @@
   --fr-border-color-light: #dcdfe6;
   --fr-bg-color-darker: #0a0a0a;
   color-scheme: light;
+
+  /* Popup 新设计变量 */
+  --fr-section-border: #ebeef5;
+  --fr-section-title-bg: #fafafa;
+  --fr-section-title-border: #f0f0f0;
+  --fr-row-border: #f2f2f2;
+  --fr-row-hover-bg: #fafcff;
+  --fr-header-border: #ebeef5;
+  --fr-footer-border: #ebeef5;
+  --fr-label-color: #303133;
+  --fr-info-icon-color: #c0c4cc;
 }
 
 /* 全局基础前景/背景，确保 Popup 与页面根节点使用变量 */
@@ -36,6 +47,17 @@ html, body, #app {
   --fr-border-color-light: #4c4c4c;
   --fr-bg-color-darker: #0a0a0a;
   color-scheme: dark;
+
+  /* Popup 新设计变量（暗色） */
+  --fr-section-border: #2e2e2e;
+  --fr-section-title-bg: #222222;
+  --fr-section-title-border: #2a2a2a;
+  --fr-row-border: #252525;
+  --fr-row-hover-bg: #1f1f1f;
+  --fr-header-border: #2e2e2e;
+  --fr-footer-border: #2e2e2e;
+  --fr-label-color: #e5eaf3;
+  --fr-info-icon-color: #555;
 }
 
 /* Element Plus 组件适配 */
