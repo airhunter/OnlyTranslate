@@ -1,6 +1,7 @@
 <template>
   <span class="status-badge" :class="isConfigured ? 'configured' : 'not-configured'">
-    {{ isConfigured ? '✅ 已配置' : '🔑 未配置' }}
+    <span class="badge-dot"></span>
+    {{ isConfigured ? '已配置' : '未配置' }}
   </span>
 </template>
 
@@ -85,25 +86,33 @@ const isConfigured = computed(() => {
   padding: 2px 8px;
   border-radius: 10px;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .configured {
-  background: #f0f9eb;
-  color: #67c23a;
+  background: var(--fr-badge-configured-bg, #f0f9eb);
+  color: var(--el-color-success);
+}
+
+.configured .badge-dot {
+  background: var(--el-color-success);
 }
 
 .not-configured {
-  background: #f4f4f5;
-  color: #909399;
+  background: var(--fr-badge-not-configured-bg, #f4f4f5);
+  color: var(--fr-badge-not-configured-color, #909399);
 }
 
-/* Dark mode */
-:root.dark .configured {
-  background: #1a3a1a;
-}
-
-:root.dark .not-configured {
-  background: #2c2c2c;
-  color: #6c6c6c;
+.not-configured .badge-dot {
+  background: var(--fr-badge-not-configured-color, #909399);
 }
 </style>

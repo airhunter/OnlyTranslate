@@ -2,7 +2,9 @@
   <div v-if="!dismissed" class="onboarding-card">
     <button class="onboarding-close" @click="dismiss">×</button>
     <div class="onboarding-header">
-      <span class="onboarding-icon">👋</span>
+      <span class="onboarding-icon">
+        <el-icon><ChatDotRound /></el-icon>
+      </span>
       <h3 class="onboarding-title">欢迎使用「只译」</h3>
     </div>
     <p class="onboarding-desc">
@@ -49,13 +51,13 @@ const dismiss = async () => {
   await storage.setItem('local:onboardingDismissed', true)
 }
 
+const emit = defineEmits<{
+  (e: 'navigate', panel: string): void
+}>()
+
 const selectService = (service: string) => {
   config.value.service = service
-  // Scroll to service config section
-  const serviceGroup = document.querySelector('.service-group')
-  if (serviceGroup) {
-    serviceGroup.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  emit('navigate', 'service')
 }
 </script>
 
@@ -64,7 +66,7 @@ const selectService = (service: string) => {
   position: relative;
   background: #fff;
   border: 1px solid #e4e7ed;
-  border-left: 4px solid #5BB5F5;
+  border-left: 4px solid var(--fr-accent-color);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
@@ -102,7 +104,8 @@ const selectService = (service: string) => {
 }
 
 .onboarding-icon {
-  font-size: 22px;
+  font-size: 20px;
+  color: #5BB5F5;
 }
 
 .onboarding-title {
@@ -150,7 +153,7 @@ const selectService = (service: string) => {
 
 .onboarding-service-item:hover {
   background: #ecf5ff;
-  border-color: #5BB5F5;
+  border-color: var(--fr-accent-color);
 }
 
 .service-name {
