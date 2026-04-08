@@ -1,0 +1,93 @@
+/**
+ * Shared settings row styles
+ * 
+ * Used by: ServiceGroup, PreferenceGroup, InteractionGroup, AdvancedGroup, Main
+ * 
+ * This file contains common CSS for setting rows in the options UI.
+ * All styles use CSS variables defined in theme.css for light/dark mode support.
+ */
+
+/* ===== Setting row base ===== */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 10px;
+  background: var(--fr-bg-color);
+  transition: background 0.15s;
+  min-height: 40px;
+}
+
+.setting-row:not(:last-child) {
+  border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
+.setting-row:hover {
+  background: var(--fr-hover-color);
+}
+
+/* ===== Setting row variants ===== */
+.setting-row--col {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.setting-row--expanded {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* ===== Setting label ===== */
+.setting-label {
+  font-size: 13.5px;
+  color: var(--fr-label-color);
+  font-weight: 450;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ===== Info icon ===== */
+.info-icon {
+  color: var(--fr-info-icon-color);
+  font-size: 13px;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+/* ===== Setting control ===== */
+.setting-control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: 165px;
+}
+
+/* ===== Setting control variants ===== */
+.setting-control--full {
+  width: 100%;
+  max-width: 100%;
+  align-items: flex-start;
+}
+
+.setting-control--switch {
+  max-width: none;
+  flex-direction: row;
+}
+
+/* ===== Element Plus overrides ===== */
+:deep(.el-select) {
+  width: 100%;
+}
+
+:deep(.el-input) {
+  width: 100%;
+}

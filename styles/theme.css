@@ -1,27 +1,43 @@
-/* 基础变量 */
+/* 基础变量 - 极简扁平风格：3层灰 + 1个强调色 */
 :root {
+  /* 核心三层灰 */
   --fr-bg-color: #ffffff;
-  --fr-text-color: #000000;
-  --fr-border-color: #dcdfe6;
-  --fr-hover-color: #f5f7fa;
-  --fr-popup-bg-color: #ffffff;
-  --fr-text-color-regular: #606266;
   --fr-text-color-primary: #303133;
-  --fr-border-color-lighter: #e4e7ed;
-  --fr-border-color-light: #dcdfe6;
+  --fr-text-color-regular: #606266;
+  --fr-text-color: #000000;
+
+  /* 强调色 */
+  --fr-accent-color: #5BB5F5;
+
+  /* 弱化边框和hover */
+  --fr-border-color: #e8e8e8;
+  --fr-hover-color: #f5f5f5;
+  --fr-popup-bg-color: #ffffff;
+  --fr-border-color-lighter: #f0f0f0;
+  --fr-border-color-light: #e8e8e8;
   --fr-bg-color-darker: #0a0a0a;
+
+  /* Element Plus 主色覆盖 */
+  --el-color-primary: var(--fr-accent-color);
+  --el-color-primary-light-3: #7cc4f7;
+  --el-color-primary-light-5: #9dd3f9;
+  --el-color-primary-light-7: #bde2fb;
+  --el-color-primary-light-8: #ceeafd;
+  --el-color-primary-light-9: #dff3fe;
+  --el-color-primary-dark-2: #4a9de0;
+
   color-scheme: light;
 
-  /* Popup 新设计变量 */
-  --fr-section-border: #ebeef5;
-  --fr-section-title-bg: #fafafa;
-  --fr-section-title-border: #f0f0f0;
-  --fr-row-border: #f2f2f2;
-  --fr-row-hover-bg: #fafcff;
-  --fr-header-border: #ebeef5;
-  --fr-footer-border: #ebeef5;
-  --fr-label-color: #303133;
-  --fr-info-icon-color: #c0c4cc;
+  /* 极简设计变量 - 减少border使用 */
+  --fr-section-border: #f0f0f0;
+  --fr-section-title-bg: transparent;
+  --fr-section-title-border: #f5f5f5;
+  --fr-row-border: #f5f5f5;
+  --fr-row-hover-bg: #fafafa;
+  --fr-header-border: #f0f0f0;
+  --fr-footer-border: #f0f0f0;
+  --fr-label-color: var(--fr-text-color-primary);
+  --fr-info-icon-color: #909399;
 }
 
 /* 全局基础前景/背景，确保 Popup 与页面根节点使用变量 */
@@ -30,34 +46,56 @@ html, body, #app {
   color: var(--fr-text-color);
 }
 
-/* 深色模式变量 */
+/* 深色模式变量 - 极简扁平风格 */
 :root.dark {
+  /* 核心三层灰 */
   --fr-bg-color: #1a1a1a;
+  --fr-text-color-primary: #e5e5e5;
+  --fr-text-color-regular: #999999;
   --fr-text-color: #ffffff;
-  --fr-border-color: #4c4c4c;
-  --fr-hover-color: #2c2c2c;
+
+  /* 强调色（暗色模式保持相同） */
+  --fr-accent-color: #5BB5F5;
+
+  /* 弱化边框和hover */
+  --fr-border-color: #333333;
+  --fr-hover-color: #252525;
   --fr-popup-bg-color: #1a1a1a;
   --fr-fill-color-blank: #1a1a1a;
   --fr-bg-color-overlay: #1a1a1a;
-  --fr-fill-color-light: #2c2c2c;
+  --fr-fill-color-light: #252525;
   --fr-component-bg-color: #1a1a1a;
-  --fr-text-color-regular: #e5eaf3;
-  --fr-text-color-primary: #e5eaf3;
-  --fr-border-color-lighter: #414243;
-  --fr-border-color-light: #4c4c4c;
+  --fr-border-color-lighter: #2a2a2a;
+  --fr-border-color-light: #333333;
   --fr-bg-color-darker: #0a0a0a;
+
+  /* Element Plus 主色覆盖（暗色模式） */
+  --el-color-primary: var(--fr-accent-color);
+  --el-color-primary-light-3: #7cc4f7;
+  --el-color-primary-light-5: #9dd3f9;
+  --el-color-primary-light-7: #bde2fb;
+  --el-color-primary-light-8: #ceeafd;
+  --el-color-primary-light-9: #dff3fe;
+  --el-color-primary-dark-2: #4a9de0;
+
   color-scheme: dark;
 
-  /* Popup 新设计变量（暗色） */
-  --fr-section-border: #2e2e2e;
-  --fr-section-title-bg: #222222;
-  --fr-section-title-border: #2a2a2a;
+  /* 极简设计变量 - 暗色模式 */
+  --fr-section-border: #2a2a2a;
+  --fr-section-title-bg: transparent;
+  --fr-section-title-border: #252525;
   --fr-row-border: #252525;
   --fr-row-hover-bg: #1f1f1f;
-  --fr-header-border: #2e2e2e;
-  --fr-footer-border: #2e2e2e;
-  --fr-label-color: #e5eaf3;
-  --fr-info-icon-color: #555;
+  --fr-header-border: #2a2a2a;
+  --fr-footer-border: #2a2a2a;
+  --fr-label-color: var(--fr-text-color-primary);
+  --fr-info-icon-color: #666666;
+
+  /* ServiceStatusBadge 暗色模式变量 */
+  --fr-badge-configured-bg: #1a3a1a;
+  --fr-badge-configured-color: #67c23a;
+  --fr-badge-not-configured-bg: #2c2c2c;
+  --fr-badge-not-configured-color: #6c6c6c;
 }
 
 /* Element Plus 组件适配 */
