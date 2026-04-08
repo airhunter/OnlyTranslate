@@ -240,7 +240,7 @@ function openSettingsPage() {
 .header-icon {
   width: 26px;
   height: 26px;
-  background: #5BB5F5;
+  background: var(--fr-accent-color);
   border-radius: 7px;
   display: flex;
   align-items: center;
@@ -279,7 +279,7 @@ function openSettingsPage() {
 }
 
 .status-on {
-  color: #67c23a;
+  color: var(--el-color-success);
 }
 
 .status-off {
@@ -343,70 +343,9 @@ function openSettingsPage() {
   display: inline-block;
   width: 3px;
   height: 10px;
-  background: #5BB5F5;
+  background: var(--fr-accent-color);
   border-radius: 2px;
   flex-shrink: 0;
-}
-
-/* ===== Setting row ===== */
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  gap: 10px;
-  background: var(--fr-bg-color);
-  transition: background 0.15s;
-  min-height: 40px;
-}
-
-.setting-row:not(:last-child) {
-  border-bottom: 1px solid var(--fr-row-border);
-}
-
-.setting-row:hover {
-  background: var(--fr-row-hover-bg);
-}
-
-.setting-label {
-  font-size: 13.5px;
-  color: var(--fr-label-color);
-  font-weight: 450;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.info-icon {
-  color: var(--fr-info-icon-color);
-  font-size: 13px;
-  cursor: help;
-  flex-shrink: 0;
-}
-
-.setting-control {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  min-width: 0;
-  max-width: 165px;
-}
-
-.setting-control--switch {
-  max-width: none;
-  flex-direction: row;
-}
-
-:deep(.el-select) {
-  width: 100%;
-}
-
-:deep(.el-input) {
-  width: 100%;
 }
 
 /* ===== Footer ===== */
@@ -433,7 +372,7 @@ function openSettingsPage() {
   padding: 0 8px;
   border-radius: 5px;
   font-size: 12.5px;
-  color: #5BB5F5;
+  color: var(--fr-accent-color);
   cursor: pointer;
   background: none;
   border: 1px solid #d9ecff;
