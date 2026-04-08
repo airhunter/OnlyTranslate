@@ -1,5 +1,47 @@
 <template>
   <div class="interaction-group">
+    <!-- 划词翻译 -->
+    <div class="setting-row">
+      <span class="setting-label">
+        划词翻译
+        <el-tooltip effect="dark" content="选中文本后显示蓝点，鼠标移到蓝点上查看翻译结果。可选择关闭、双语显示或只显示译文" placement="top-start" :show-after="500">
+          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+        </el-tooltip>
+      </span>
+      <div class="setting-control">
+        <el-select v-model="config.selectionTranslatorMode" placeholder="选择模式">
+          <el-option label="关闭" value="disabled" />
+          <el-option label="双语显示" value="bilingual" />
+          <el-option label="只显示译文" value="translation-only" />
+        </el-select>
+      </div>
+    </div>
+
+    <!-- 输入框翻译 -->
+    <div class="setting-row">
+      <span class="setting-label">
+        输入框翻译
+        <el-tooltip effect="dark" content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。" placement="top-start" :show-after="500">
+          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+        </el-tooltip>
+      </span>
+      <div class="setting-control">
+        <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
+          <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+    </div>
+
+    <!-- 输入框翻译目标语言 -->
+    <div v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="setting-row">
+      <span class="setting-label">翻译目标语言</span>
+      <div class="setting-control">
+        <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
+          <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+    </div>
+
     <!-- 鼠标悬浮快捷键 -->
     <div class="setting-row" :class="{ 'setting-row--expanded': config.hotkey === 'custom' }">
       <span class="setting-label">
@@ -191,80 +233,6 @@ const getCustomHotkeyDisplayName = () => {
 </script>
 
 <style scoped>
-.interaction-group {
-  display: flex;
-  flex-direction: column;
-}
-
-/* ===== Setting row ===== */
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  gap: 10px;
-  background: var(--fr-bg-color);
-  transition: background 0.15s;
-  min-height: 40px;
-}
-
-.setting-row:not(:last-child) {
-  border-bottom: 1px solid var(--fr-row-border);
-}
-
-.setting-row:hover {
-  background: var(--fr-row-hover-bg);
-}
-
-.setting-row--expanded {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.setting-label {
-  font-size: 13.5px;
-  color: var(--fr-label-color);
-  font-weight: 450;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.info-icon {
-  color: var(--fr-info-icon-color);
-  font-size: 13px;
-  cursor: help;
-  flex-shrink: 0;
-}
-
-.setting-control {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  min-width: 0;
-  max-width: 165px;
-}
-
-.setting-control--switch {
-  max-width: none;
-  flex-direction: row;
-}
-
-.setting-control--full {
-  width: 100%;
-  max-width: 100%;
-  align-items: flex-start;
-}
-
-:deep(.el-select) {
-  width: 100%;
-}
-
 /* ===== Hotkey config ===== */
 .hotkey-config {
   display: flex;

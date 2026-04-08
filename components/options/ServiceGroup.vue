@@ -288,74 +288,6 @@ const handleTestConnection = async () => {
 </script>
 
 <style scoped>
-/* ===== Setting row ===== */
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  gap: 10px;
-  background: var(--fr-bg-color);
-  transition: background 0.15s;
-  min-height: 40px;
-}
-
-.setting-row:not(:last-child) {
-  border-bottom: 1px solid var(--fr-row-border);
-}
-
-.setting-row:hover {
-  background: var(--fr-row-hover-bg);
-}
-
-.setting-row--col {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.setting-label {
-  font-size: 13.5px;
-  color: var(--fr-label-color);
-  font-weight: 450;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.info-icon {
-  color: var(--fr-info-icon-color);
-  font-size: 13px;
-  cursor: help;
-  flex-shrink: 0;
-}
-
-.setting-control {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  min-width: 0;
-  max-width: 165px;
-}
-
-.setting-control--full {
-  width: 100%;
-  max-width: 100%;
-  align-items: flex-start;
-}
-
-:deep(.el-select) {
-  width: 100%;
-}
-
-:deep(.el-input) {
-  width: 100%;
-}
-
 /* ===== Select styles ===== */
 .select-left {
   text-align: left;
@@ -363,7 +295,7 @@ const handleTestConnection = async () => {
 
 .select-divider {
   background: #f2f6fc;
-  color: #409eff;
+  color: var(--el-color-primary);
   font-size: 12px;
   padding: 4px 12px;
   cursor: default;
