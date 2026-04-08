@@ -15,7 +15,8 @@
     "postinstall": "wxt prepare",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -31,12 +32,15 @@
     "@types/crypto-js": "^4.2.2",
     "@types/webextension-polyfill": "^0.12.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
     "@vuepress/client": "2.0.0-rc.19",
     "@wxt-dev/webextension-polyfill": "^1.0.0",
+    "happy-dom": "^20.8.9",
     "typescript": "^5.7.3",
     "vite": "^5.4.11",
     "vite-plugin-imagemin": "^0.6.1",
     "vitepress": "^1.6.3",
+    "vitest": "^1.6.1",
     "vue": "^3.5.13",
     "vue-tsc": "^2.2.0",
     "vuepress": "2.0.0-rc.19",
