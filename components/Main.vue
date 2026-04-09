@@ -210,6 +210,11 @@ loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
   // 初始化 previousService
   previousService.value = config.value.service || ''
+  // 检查当前服务是否已配置，未配置则回退到默认服务
+  if (!isServiceConfigured(config.value.service, config.value)) {
+    config.value.service = 'microsoft' // microsoft 总是可用的
+    previousService.value = 'microsoft'
+  }
   // 查询当前页面翻译状态
   checkTranslationStatus()
 })

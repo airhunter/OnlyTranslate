@@ -12,8 +12,10 @@
       <div class="setting-control">
         <el-select v-model="config.service" placeholder="请选择翻译服务">
           <el-option class="select-left" v-for="item in filteredServices" :key="item.value"
-            :label="item.label" :value="item.value" :disabled="item.disabled"
-            :class="{ 'select-divider': item.disabled }" />
+            :label="item.label" :value="item.value" :disabled="item.disabled">
+            <span :class="{ 'unconfigured-service': item.unconfigured }">{{ item.label }}</span>
+            <span v-if="item.unconfigured" class="unconfigured-hint">（未配置）</span>
+          </el-option>
         </el-select>
       </div>
     </div>
@@ -202,7 +204,7 @@
 import { computed, ref } from 'vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { models, options, services, servicesType } from '@/entrypoints/utils/option'
+import { models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection } from '@/entrypoints/utils/testConnection'
 import ServiceStatusBadge from './ServiceStatusBadge.vue'
@@ -237,8 +239,17 @@ const modelList = computed(() => models.get(config.value.service) || [])
 
 // Filtered services for the dropdown (hide Google in non-bilingual mode)
 const filteredServices = computed(() =>
-  options.services.filter((service: any) =>
-    !([service.google].includes(service.value) && config.value.display !== 1))
+  options.services.map((service: any) => {
+    // Google 只在双语模式下显示
+    if (service.value === services.google && config.value.display !== 1) {
+      return { ...service, hidden: true }
+    }
+    // 标记未配置的服务（用于显示提示，但不阻止选择）
+    if (!service.disabled && !isServiceConfigured(service.value, config.value)) {
+      return { ...service, unconfigured: true }
+    }
+    return service
+  }).filter((service: any) => !service.hidden)
 )
 
 // Show service config section when any config field is needed
@@ -324,5 +335,16 @@ const handleTestConnection = async () => {
 .service-config {
   margin-top: 8px;
   border-top: 1px solid var(--fr-section-border);
+}
+
+/* ===== Unconfigured service styles ===== */
+.unconfigured-service {
+  color: var(--el-text-color-placeholder);
+}
+
+.unconfigured-hint {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+  margin-left: 4px;
 }
 </style>
