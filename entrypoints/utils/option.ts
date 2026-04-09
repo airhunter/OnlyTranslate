@@ -1,3 +1,4 @@
+import { Config } from "./model";
 export const services = {
     // 传统机器翻译
     microsoft: "microsoft",
@@ -409,4 +410,57 @@ export const defaultOption = {
     inputBoxTranslationTrigger: "disabled", // 默认关闭输入框翻译
     inputBoxTranslationTarget: "en", // 默认翻译成英文
 };
+
+/**
+ * Check if a service is properly configured
+ * @param service - The service name to check
+ * @param config - The Config object
+ * @returns boolean - true if the service is configured
+ */
+export function isServiceConfigured(service: string, config: Config): boolean {
+    // Always configured - no additional config needed
+    if (service === services.microsoft || service === services.google || service === services.chromeTranslator) {
+        return true;
+    }
+
+    // Special checks for specific services
+    if (servicesType.isYoudao(service)) {
+        return !!(config.youdaoAppKey && config.youdaoAppSecret);
+    }
+
+    if (servicesType.isTencent(service)) {
+        return !!(config.tencentSecretId && config.tencentSecretKey);
+    }
+
+    if (servicesType.isAzureOpenai(service)) {
+        return !!(config.azureOpenaiEndpoint && config.token[service]);
+    }
+
+    if (servicesType.isNewApi(service)) {
+        return !!(config.newApiUrl && config.token.newapi);
+    }
+
+    if (service === services.deeplx) {
+        return !!config.deeplx;
+    }
+
+    if (servicesType.isCustom(service)) {
+        return !!config.custom;
+    }
+
+    if (servicesType.isUseAkSk(service)) {
+        return !!(config.ak && config.sk);
+    }
+
+    if (servicesType.isCoze(service)) {
+        return !!config.robot_id[service];
+    }
+
+    // Token-based services (except special cases handled above)
+    if (servicesType.isUseToken(service)) {
+        return !!config.token[service];
+    }
+
+    return false;
+}
 

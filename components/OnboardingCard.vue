@@ -64,8 +64,8 @@ const selectService = (service: string) => {
 <style scoped>
 .onboarding-card {
   position: relative;
-  background: #fff;
-  border: 1px solid #e4e7ed;
+  background: var(--fr-bg-color);
+  border: 1px solid var(--fr-border-color);
   border-left: 4px solid var(--fr-accent-color);
   border-radius: 12px;
   padding: 20px;
@@ -81,7 +81,7 @@ const selectService = (service: string) => {
   height: 24px;
   border: none;
   background: transparent;
-  color: #909399;
+  color: var(--fr-text-color-regular);
   font-size: 18px;
   cursor: pointer;
   border-radius: 4px;
@@ -92,8 +92,8 @@ const selectService = (service: string) => {
 }
 
 .onboarding-close:hover {
-  background: #f5f7fa;
-  color: #303133;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-primary);
 }
 
 .onboarding-header {
@@ -105,19 +105,19 @@ const selectService = (service: string) => {
 
 .onboarding-icon {
   font-size: 20px;
-  color: #5BB5F5;
+  color: var(--fr-accent-color);
 }
 
 .onboarding-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--fr-text-color-primary);
   margin: 0;
 }
 
 .onboarding-desc {
   font-size: 13px;
-  color: #606266;
+  color: var(--fr-text-color-regular);
   line-height: 1.5;
   margin: 0 0 16px 0;
 }
@@ -128,7 +128,7 @@ const selectService = (service: string) => {
 
 .onboarding-services-label {
   font-size: 13px;
-  color: #606266;
+  color: var(--fr-text-color-regular);
   margin: 0 0 10px 0;
   font-weight: 500;
 }
@@ -144,44 +144,44 @@ const selectService = (service: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #f5f7fa;
-  border: 1px solid #e4e7ed;
+  background: var(--fr-hover-color);
+  border: 1px solid var(--fr-border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .onboarding-service-item:hover {
-  background: #ecf5ff;
+  background: var(--fr-bg-color);
   border-color: var(--fr-accent-color);
 }
 
 .service-name {
   font-size: 13px;
   font-weight: 500;
-  color: #303133;
+  color: var(--fr-text-color-primary);
 }
 
 .service-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--fr-text-color-regular);
 }
 
 .onboarding-dismiss {
   width: 100%;
   padding: 10px;
   background: transparent;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--fr-border-color);
   border-radius: 8px;
-  color: #909399;
+  color: var(--fr-text-color-regular);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .onboarding-dismiss:hover {
-  background: #f5f7fa;
-  color: #606266;
-  border-color: #c0c4cc;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-primary);
+  border-color: var(--fr-border-color);
 }
 </style>

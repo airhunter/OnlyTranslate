@@ -19,7 +19,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
-        <el-switch v-model="config.useCache" inline-prompt active-text="启用" inactive-text="禁用" />
+        <el-switch v-model="config.useCache" />
       </div>
     </div>
 

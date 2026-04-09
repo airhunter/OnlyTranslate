@@ -6,8 +6,8 @@
   --fr-text-color-regular: #606266;
   --fr-text-color: #000000;
 
-  /* 强调色 */
-  --fr-accent-color: #5BB5F5;
+  /* 强调色（沉稳的企业级蓝） */
+  --fr-accent-color: #2563eb;
 
   /* 弱化边框和hover */
   --fr-border-color: #e8e8e8;
@@ -17,14 +17,14 @@
   --fr-border-color-light: #e8e8e8;
   --fr-bg-color-darker: #0a0a0a;
 
-  /* Element Plus 主色覆盖 */
+  /* Element Plus 主色覆盖 (企业蓝系) */
   --el-color-primary: var(--fr-accent-color);
-  --el-color-primary-light-3: #7cc4f7;
-  --el-color-primary-light-5: #9dd3f9;
-  --el-color-primary-light-7: #bde2fb;
-  --el-color-primary-light-8: #ceeafd;
-  --el-color-primary-light-9: #dff3fe;
-  --el-color-primary-dark-2: #4a9de0;
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
 
   color-scheme: light;
 
@@ -54,8 +54,8 @@ html, body, #app {
   --fr-text-color-regular: #999999;
   --fr-text-color: #ffffff;
 
-  /* 强调色（暗色模式保持相同） */
-  --fr-accent-color: #5BB5F5;
+  /* 强调色（暗色模式选用稍微明亮一点的蓝，保证可见度） */
+  --fr-accent-color: #3b82f6;
 
   /* 弱化边框和hover */
   --fr-border-color: #333333;
@@ -69,14 +69,14 @@ html, body, #app {
   --fr-border-color-light: #333333;
   --fr-bg-color-darker: #0a0a0a;
 
-  /* Element Plus 主色覆盖（暗色模式） */
+  /* Element Plus 主色覆盖（暗色模式下蓝系） */
   --el-color-primary: var(--fr-accent-color);
-  --el-color-primary-light-3: #7cc4f7;
-  --el-color-primary-light-5: #9dd3f9;
-  --el-color-primary-light-7: #bde2fb;
-  --el-color-primary-light-8: #ceeafd;
-  --el-color-primary-light-9: #dff3fe;
-  --el-color-primary-dark-2: #4a9de0;
+  --el-color-primary-light-3: #2563eb;
+  --el-color-primary-light-5: #1d4ed8;
+  --el-color-primary-light-7: #1e3a8a;
+  --el-color-primary-light-8: #172554;
+  --el-color-primary-light-9: #0f172a;
+  --el-color-primary-dark-2: #60a5fa;
 
   color-scheme: dark;
 

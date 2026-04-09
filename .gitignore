@@ -96,3 +96,6 @@ web-ext.config.ts
 *.sln
 *.sw?
 .continue/
+
+# Sisyphus agent
+.sisyphus/

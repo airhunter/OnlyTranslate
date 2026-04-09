@@ -100,7 +100,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
-        <el-switch v-model="floatingBallEnabled" inline-prompt active-text="启用" inactive-text="禁用" />
+        <el-switch v-model="floatingBallEnabled" />
       </div>
     </div>
 
@@ -113,7 +113,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
-        <el-switch v-model="config.translationStatus" inline-prompt active-text="启动" inactive-text="禁用" />
+        <el-switch v-model="config.translationStatus" />
       </div>
     </div>
 
@@ -126,7 +126,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
-        <el-switch v-model="config.animations" inline-prompt active-text="启动" inactive-text="禁用" />
+        <el-switch v-model="config.animations" />
       </div>
     </div>
 
