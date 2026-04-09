@@ -28,11 +28,11 @@
     <div v-show="config.on">
 
       <!-- 翻译当前页面按钮 -->
-      <button class="translate-page-btn" :disabled="translating" @click="translateCurrentPage">
+      <button class="translate-page-btn" :class="{ 'restore-btn': isTranslated }" :disabled="translating" @click="handleTranslateClick">
         <svg class="translate-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
         </svg>
-        <span>{{ translating ? '翻译中...' : '翻译当前页面' }}</span>
+        <span>{{ translating ? '处理中...' : (isTranslated ? '还原原文' : '翻译当前页面') }}</span>
       </button>
 
       <!-- 翻译模式 -->
@@ -126,17 +126,93 @@ import { useTheme } from '@/composables/useTheme';
 // Config management
 const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
-loadConfig().then(() => {
-  updateTheme(config.value.theme || 'auto')
-  // 初始化 previousService
-  previousService.value = config.value.service || ''
-})
 
 // 应用版本号
 const appVersion = browser.runtime.getManifest().version;
 
-// 筛选翻译服务列表 - 只显示已配置的服务
+// 翻译状态相关变量
 const previousService = ref<string>('');
+const translating = ref(false);
+const isTranslated = ref(false);
+
+// 查询当前页面的翻译状态
+async function checkTranslationStatus() {
+  try {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (!tabs[0]?.id) return;
+    const response = await browser.tabs.sendMessage(tabs[0].id, {
+      type: 'contextMenuTranslate',
+      action: 'getStatus'
+    });
+    if (response?.status === 'success') {
+      isTranslated.value = response.isTranslated || false;
+    }
+  } catch (error) {
+    console.error('查询翻译状态失败:', error);
+  }
+}
+
+// 处理翻译按钮点击（切换逻辑）
+async function handleTranslateClick() {
+  if (isTranslated.value) {
+    // 已翻译，还原原文
+    await restoreCurrentPage();
+  } else {
+    // 未翻译，执行翻译
+    await translateCurrentPage();
+  }
+}
+
+async function translateCurrentPage() {
+  try {
+    translating.value = true;
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (!tabs[0]?.id) {
+      ElMessage.error('未找到活动标签页');
+      return;
+    }
+    await browser.tabs.sendMessage(tabs[0].id, {
+      type: 'contextMenuTranslate',
+      action: 'fullPage'
+    });
+    isTranslated.value = true;
+  } catch (error) {
+    console.error('翻译失败:', error);
+    ElMessage.error('翻译失败');
+  } finally {
+    translating.value = false;
+  }
+}
+
+async function restoreCurrentPage() {
+  try {
+    translating.value = true;
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (!tabs[0]?.id) {
+      ElMessage.error('未找到活动标签页');
+      return;
+    }
+    await browser.tabs.sendMessage(tabs[0].id, {
+      type: 'contextMenuTranslate',
+      action: 'restore'
+    });
+    isTranslated.value = false;
+    ElMessage.success('已还原原文');
+  } catch (error) {
+    console.error('还原失败:', error);
+    ElMessage.error('还原失败');
+  } finally {
+    translating.value = false;
+  }
+}
+
+loadConfig().then(() => {
+  updateTheme(config.value.theme || 'auto')
+  // 初始化 previousService
+  previousService.value = config.value.service || ''
+  // 查询当前页面翻译状态
+  checkTranslationStatus()
+})
 
 const availableServices = computed(() => {
   type ServiceOption = { value: string; label: string; disabled?: boolean; isAction?: boolean };
@@ -275,29 +351,6 @@ const cacheBtnDisabled = ref(false);
 const cacheBtnText = ref('清空缓存');
 const cacheLoading = ref(false);
 const cacheStatus = ref<'idle' | 'success' | 'failed'>('idle');
-
-// ===== Body: 翻译当前页面 =====
-const translating = ref(false);
-
-async function translateCurrentPage() {
-  try {
-    translating.value = true;
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    if (!tabs[0]?.id) {
-      ElMessage.error('未找到活动标签页');
-      return;
-    }
-    await browser.tabs.sendMessage(tabs[0].id, {
-      type: 'contextMenuTranslate',
-      action: 'fullPage'
-    });
-  } catch (error) {
-    console.error('翻译失败:', error);
-    ElMessage.error('翻译失败');
-  } finally {
-    translating.value = false;
-  }
-}
 
 const cacheBtnType = computed(() => {
   if (cacheStatus.value === 'success') return 'success';
@@ -459,6 +512,19 @@ function openSettingsPage() {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* 还原按钮样式 */
+.translate-page-btn.restore-btn {
+  background: var(--el-color-warning);
+}
+
+.translate-page-btn.restore-btn:hover {
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.25);
+}
+
+.dark .translate-page-btn.restore-btn:hover {
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.25);
 }
 
 .translate-icon {

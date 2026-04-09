@@ -121,6 +121,11 @@ export default defineContentScript({
                     restoreOriginalContent();
                     sendResponse({ status: 'success', action: 'restored' });
                     return true;
+                } else if (message.action === 'getStatus') {
+                    // 查询当前页面的翻译状态
+                    const hasTranslatedNodes = document.querySelectorAll('[data-fr-translated="true"]').length > 0;
+                    sendResponse({ status: 'success', isTranslated: hasTranslatedNodes });
+                    return true;
                 }
             }
             return false;
