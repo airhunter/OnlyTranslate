@@ -9,7 +9,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--full">
-        <el-input type="textarea" v-model="config.system_role[config.service]" maxlength="8192" placeholder="system message" />
+        <el-input type="textarea" v-model="config.system_role[config.service]" maxlength="8192" placeholder="system message" :autosize="{ minRows: 4, maxRows: 12 }" />
       </div>
     </div>
 
@@ -22,7 +22,7 @@
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--full">
-        <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192" placeholder="user message template" />
+        <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192" placeholder="user message template" :autosize="{ minRows: 4, maxRows: 12 }" />
       </div>
     </div>
 
