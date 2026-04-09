@@ -1,6 +1,10 @@
 import {_service} from "@/entrypoints/service/_service";
 import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
+import {
+    checkChromeTranslationAvailability,
+    preloadChromeTranslationModel
+} from "@/entrypoints/service/chrome-translator";
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -171,6 +175,35 @@ export default defineBackground({
                     if (message.type === 'inputBoxTranslation') {
                         const translatedText = await translateWithMicrosoftInBackground(message.text, message.targetLang);
                         resolve({ success: true, translatedText });
+                        return;
+                    }
+
+                    // 处理 Chrome AI 翻译可用性检查
+                    if (message.type === 'CHROME_AI_CHECK_AVAILABILITY') {
+                        const result = await checkChromeTranslationAvailability(
+                            message.sourceLang || 'en',
+                            message.targetLang || 'zh-Hans'
+                        );
+                        resolve(result);
+                        return;
+                    }
+
+                    // 处理 Chrome AI 翻译预下载
+                    if (message.type === 'CHROME_AI_PRELOAD_MODEL') {
+                        const result = await preloadChromeTranslationModel(
+                            message.sourceLang || 'en',
+                            message.targetLang || 'zh-Hans',
+                            (progress) => {
+                                // 发送进度更新到 options 页面
+                                browser.runtime.sendMessage({
+                                    type: 'CHROME_AI_PRELOAD_PROGRESS',
+                                    sourceLang: message.sourceLang || 'en',
+                                    targetLang: message.targetLang || 'zh-Hans',
+                                    progress
+                                }).catch(() => {}); // 忽略发送错误
+                            }
+                        );
+                        resolve(result);
                         return;
                     }
 

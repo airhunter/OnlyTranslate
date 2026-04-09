@@ -196,12 +196,71 @@
           </el-button>
         </div>
       </div>
+
+      <!-- Chrome AI 翻译特殊配置 -->
+      <div v-show="showChromeAiConfig" class="chrome-ai-config">
+        <!-- 状态显示 -->
+        <div class="setting-row">
+          <span class="setting-label">
+            模型状态
+            <el-tooltip effect="dark" content="Chrome 内置 AI 翻译需要下载语言模型。首次使用请点击下方按钮预下载。" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control chrome-ai-status">
+            <span v-if="chromeAiAvailability" class="status-text" :class="chromeAiAvailability.status">
+              {{ chromeAiAvailability.message }}
+            </span>
+            <span v-else class="status-text checking">检查中...</span>
+          </div>
+        </div>
+
+        <!-- 预下载按钮 -->
+        <div class="setting-row">
+          <span class="setting-label">预下载模型</span>
+          <div class="setting-control">
+            <el-button
+              @click="handleChromeAiPreload"
+              :loading="chromeAiPreloading"
+              :disabled="chromeAiAvailability?.status === 'available'"
+              type="primary"
+              size="small"
+              plain>
+              <template v-if="chromeAiPreloading">
+                下载中 {{ chromeAiPreloadProgress }}%
+              </template>
+              <template v-else-if="chromeAiAvailability?.status === 'available'">
+                已就绪 ✓
+              </template>
+              <template v-else>
+                预下载语言模型
+              </template>
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div v-if="chromeAiPreloading" class="setting-row">
+          <div class="setting-control setting-control--full">
+            <el-progress 
+              :percentage="chromeAiPreloadProgress" 
+              :stroke-width="8"
+              :show-text="false" />
+          </div>
+        </div>
+
+        <!-- 提示信息 -->
+        <div class="chrome-ai-tip">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>Chrome 内置 AI 翻译需要 Chrome v138+ 浏览器。首次使用需下载语言模型（约几十MB）。</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
@@ -212,6 +271,79 @@ import ServiceStatusBadge from './ServiceStatusBadge.vue'
 const { config } = useConfig()
 
 const testLoading = ref(false)
+
+// Chrome AI 翻译相关状态
+const chromeAiAvailability = ref<{
+  available: boolean;
+  status: string;
+  message: string;
+} | null>(null)
+
+const chromeAiPreloading = ref(false)
+const chromeAiPreloadProgress = ref(0)
+
+// 检查 Chrome AI 可用性
+const checkChromeAiAvailability = async () => {
+  try {
+    const result = await browser.runtime.sendMessage({
+      type: 'CHROME_AI_CHECK_AVAILABILITY',
+      sourceLang: 'en',
+      targetLang: config.value.to || 'zh-Hans'
+    })
+    chromeAiAvailability.value = result
+  } catch (error) {
+    console.error('检查 Chrome AI 可用性失败:', error)
+    chromeAiAvailability.value = {
+      available: false,
+      status: 'unavailable',
+      message: '检查失败'
+    }
+  }
+}
+
+// 预下载 Chrome AI 语言模型
+const handleChromeAiPreload = async () => {
+  if (chromeAiPreloading.value) return
+  
+  chromeAiPreloading.value = true
+  chromeAiPreloadProgress.value = 0
+
+  // 监听进度更新
+  const progressHandler = (message: any) => {
+    if (message.type === 'CHROME_AI_PRELOAD_PROGRESS') {
+      chromeAiPreloadProgress.value = message.progress
+    }
+  }
+  browser.runtime.onMessage.addListener(progressHandler)
+
+  try {
+    const result = await browser.runtime.sendMessage({
+      type: 'CHROME_AI_PRELOAD_MODEL',
+      sourceLang: 'en',
+      targetLang: config.value.to || 'zh-Hans'
+    })
+
+    if (result.success) {
+      ElMessage.success(result.message)
+      // 重新检查可用性
+      await checkChromeAiAvailability()
+    } else {
+      ElMessage.error(result.message)
+    }
+  } catch (error: any) {
+    ElMessage.error(`预下载失败: ${error.message || '未知错误'}`)
+  } finally {
+    browser.runtime.onMessage.removeListener(progressHandler)
+    chromeAiPreloading.value = false
+  }
+}
+
+// 监听服务切换，当选择 Chrome AI 时检查可用性
+watch(() => config.value.service, (newService) => {
+  if (newService === 'chromeTranslator') {
+    checkChromeAiAvailability()
+  }
+}, { immediate: true })
 
 // Computed properties for conditional display
 const showToken = computed(() => servicesType.isUseToken(config.value.service))
@@ -233,6 +365,9 @@ const showTestButton = computed(() => {
          servicesType.isAI(currentService) || 
          currentService === services.deepL
 })
+
+// Chrome AI 翻译配置显示
+const showChromeAiConfig = computed(() => config.value.service === services.chromeTranslator)
 
 // Model list for the selected service
 const modelList = computed(() => models.get(config.value.service) || [])
@@ -346,5 +481,63 @@ const handleTestConnection = async () => {
   font-size: 11px;
   color: var(--el-text-color-placeholder);
   margin-left: 4px;
+}
+
+/* ===== Chrome AI 配置 ===== */
+.chrome-ai-config {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--fr-section-border);
+}
+
+.chrome-ai-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-text {
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.status-text.available {
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
+}
+
+.status-text.downloadable,
+.status-text.downloading {
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
+
+.status-text.unavailable,
+.status-text.not-supported {
+  color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
+}
+
+.status-text.checking {
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-light);
+}
+
+.chrome-ai-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+}
+
+.chrome-ai-tip .el-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 </style>
