@@ -254,22 +254,24 @@ export const options = {
         {value: "custom", label: "自定义快捷键（测试版）"},
     ],
     services: [
-        // 传统机器翻译
-        {value: "machine", label: "机器翻译", disabled: true},
+        // 即时可用（无需配置）
+        {value: "instant", label: "即时可用", disabled: true},
         {value: services.microsoft, label: "微软翻译"},
         {value: services.google, label: "谷歌翻译"},
+        {value: services.chromeTranslator, label: "Chrome内置AI翻译"},
+        // 机器翻译服务（需配置API）
+        {value: "machine-api", label: "机器翻译服务", disabled: true},
         {value: services.deepL, label: "DeepL"},
         {value: services.deeplx, label: "DeepLX"},
         {value: services.xiaoniu, label: "小牛翻译"},
         {value: services.youdao, label: "有道翻译"},
         {value: services.tencent, label: "腾讯云翻译"},
-        // 大模型翻译
-        {value: "ai", label: "AI翻译", disabled: true},
-        {value: services.chromeTranslator, label: "Chrome内置AI翻译⭐"},
-        {value: services.siliconCloud, label: "硅基流动⭐️"},
-        {value: services.huanYuan, label: "腾讯混元⭐"},
+        // AI大模型服务（需配置Token）
+        {value: "ai-token", label: "AI大模型服务", disabled: true},
+        {value: services.siliconCloud, label: "硅基流动"},
+        {value: services.huanYuan, label: "腾讯混元"},
         {value: services.newapi, label: "New API"},
-        {value: services.deepseek, label: "DeepSeek️"},
+        {value: services.deepseek, label: "DeepSeek"},
         {value: services.openai, label: "OpenAI"},
         {value: services.azureOpenai, label: "Azure OpenAI"},
         {value: services.huanYuanTranslation, label: "腾讯混元翻译"},
@@ -290,7 +292,7 @@ export const options = {
         {value: services.claude, label: "Claude"},
         {value: services.gemini, label: "Gemini"},
         {value: services.yiyan, label: "文心一言"},
-        {value: services.custom, label: "自定义接口⭐️"},
+        {value: services.custom, label: "自定义接口"},
     ],
     display: [
         {value: 0, label: "仅译文模式"},

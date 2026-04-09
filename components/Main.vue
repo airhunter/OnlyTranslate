@@ -46,21 +46,18 @@
       </div>
 
       <!-- 翻译服务 -->
-      <div class="setting-row setting-row--tall">
-        <span class="setting-label setting-label--with-action">
-          <div class="label-inner">
-            翻译服务
-            <el-tooltip effect="dark" content="机器翻译：快速稳定；AI翻译：更自然流畅" placement="top-start" :show-after="500">
-              <el-icon class="info-icon"><ChatDotRound /></el-icon>
-            </el-tooltip>
-          </div>
-          <button class="more-services-link" @click="openSettingsPage">添加服务 ▸</button>
+      <div class="setting-row">
+        <span class="setting-label">
+          翻译服务
+          <el-tooltip effect="dark" content="机器翻译：快速稳定；AI翻译：更自然流畅" placement="top-start" :show-after="500">
+            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          </el-tooltip>
         </span>
         <div class="setting-control">
-          <el-select v-model="config.service" placeholder="请选择翻译服务" class="service-select">
+          <el-select v-model="config.service" placeholder="请选择翻译服务" class="service-select" @change="handleServiceChange">
             <el-option class="select-left" v-for="item in availableServices" :key="item.value"
               :label="item.label" :value="item.value" :disabled="item.disabled"
-              :class="{ 'select-divider': item.disabled }" />
+              :class="{ 'select-divider': item.disabled, 'select-action': item.isAction }" />
           </el-select>
         </div>
       </div>
@@ -131,14 +128,18 @@ const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
 loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
+  // 初始化 previousService
+  previousService.value = config.value.service || ''
 })
 
 // 应用版本号
 const appVersion = browser.runtime.getManifest().version;
 
 // 筛选翻译服务列表 - 只显示已配置的服务
+const previousService = ref<string>('');
+
 const availableServices = computed(() => {
-  type ServiceOption = { value: string; label: string; disabled?: boolean };
+  type ServiceOption = { value: string; label: string; disabled?: boolean; isAction?: boolean };
   const result: ServiceOption[] = [];
   let currentGroupHeader: ServiceOption | null = null;
   let currentGroupItems: ServiceOption[] = [];
@@ -168,8 +169,24 @@ const availableServices = computed(() => {
     result.push(...currentGroupItems);
   }
 
+  // Add "添加更多服务..." option at the end
+  result.push({ value: '__add_more__', label: '添加更多服务...', isAction: true });
+
   return result;
 });
+
+// 处理翻译服务选择变化
+const handleServiceChange = (value: string) => {
+  if (value === '__add_more__') {
+    // 恢复原来的服务选择
+    config.value.service = previousService.value;
+    // 跳转设置页
+    openSettingsPage();
+  } else {
+    // 记录当前选择的服务
+    previousService.value = value;
+  }
+};
 
 // 处理插件状态变化
 const handlePluginStateChange = (val: boolean) => {
@@ -459,26 +476,9 @@ function openSettingsPage() {
   border-bottom: 1px solid var(--fr-border-color-lighter);
 }
 
-:deep(.setting-row--tall) {
-  align-items: flex-start;
-  padding: 14px 0 12px;
-}
-
 :deep(.setting-label) {
   font-size: 13px;
   color: var(--fr-text-color-primary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-:deep(.setting-label--with-action) {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-:deep(.label-inner) {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -513,26 +513,6 @@ function openSettingsPage() {
 
 .service-select {
   flex: 1;
-}
-
-.more-services-link {
-  font-size: 11px;
-  color: var(--fr-text-color-regular);
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: inherit;
-  transition: color 0.15s;
-  white-space: nowrap;
-}
-
-.more-services-link:hover {
-  color: var(--fr-text-color-primary);
-}
-
-.dark .more-services-link {
-  color: var(--fr-accent-color);
 }
 
 /* ===== Footer ===== */
@@ -638,6 +618,27 @@ function openSettingsPage() {
   background: transparent;
   border-bottom: none;
   margin: 0;
+}
+
+/* ===== Select Action Item ===== */
+.select-action {
+  font-size: 12px;
+  color: var(--fr-accent-color);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  background: transparent;
+  border-top: 1px solid var(--fr-border-color-lighter);
+  margin-top: 4px;
+}
+
+.select-action:hover {
+  background: var(--fr-hover-color);
+  color: var(--fr-accent-color);
+}
+
+.dark .select-action {
+  color: var(--fr-accent-color);
 }
 
 /* ===== Scrollbar ===== */
