@@ -13,6 +13,7 @@ const directSet = new Set([
 const skipSet = new Set([
     'html', 'body', 'script', 'style', 'noscript', 'iframe',
     'input', 'textarea', 'select', 'button', 'code', 'pre',
+    'template', 'summary',
 ]);
 
 // 内联元素集合（可以包含在其他元素内的元素）
@@ -45,6 +46,16 @@ export function grabAllNode(rootNode: Node): Element[] {
                     node.classList?.contains('notranslate')) {
                     return NodeFilter.FILTER_REJECT;
                 }
+
+                // 跳过隐藏元素（hidden 属性、aria-hidden 或 CSS display:none）
+                if (node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                try {
+                    if (window.getComputedStyle(node).display === 'none') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                } catch (_) {}
 
                 // 在初始全局翻译时 跳过页面级 header 与 footer
                 // 跳过页面级 footer
@@ -168,11 +179,22 @@ function shouldSkipNode(node: any, tag: string): boolean {
     // 3. 判断节点是否可编辑
     // 4. 判断文本是否过长
     // 5. 判断文本是否为纯数字或标准数字格式（仅当节点内容几乎全是数字时才跳过）
+    // 6. 判断文本是否为 JSON 格式数据
     return skipSet.has(tag) ||
         node.classList?.contains('notranslate') ||
         node.isContentEditable ||
         checkTextSize(node) ||
-        isMainlyNumericContent(node);
+        isMainlyNumericContent(node) ||
+        isJSONContent(node);
+}
+
+// 检查文本是否为 JSON 格式数据（不应被翻译）
+function isJSONContent(node: any): boolean {
+    const text = node.textContent?.trim();
+    if (!text || text.length < 10) return false;
+    // 检查文本是否以 { 或 [ 开头，且包含 JSON 键值对特征
+    return (text.startsWith('{') || text.startsWith('[')) &&
+        /"[a-zA-Z]+"[\s]*:/.test(text);
 }
 
 // 检查文本长度
@@ -369,6 +391,11 @@ function handleFirstLineText(node: any): boolean {
     let child = node.firstChild;
     while (child) {
         if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+            const text = child.textContent.trim();
+            // 跳过 JSON 格式数据
+            if ((text.startsWith('{') || text.startsWith('[')) && /"[a-zA-Z]+"[\s]*:/.test(text)) {
+                return false;
+            }
             browser.runtime.sendMessage({
                 context: document.title,
                 origin: child.textContent
