@@ -21,7 +21,7 @@
       <div class="setting-control">
         <el-select v-model="config.style" placeholder="请选择译文显示样式">
           <el-option-group v-for="group in styleGroups" :key="group.value" :label="group.label">
-            <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value" :class="item.class" />
+            <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value" />
           </el-option-group>
         </el-select>
       </div>
@@ -70,6 +70,10 @@ const currentStyleClass = computed(() => {
   return selected?.class || 'fluent-display-default'
 })
 </script>
+
+<style>
+@import '@/entrypoints/style.css';
+</style>
 
 <style scoped>
 /* ===== Style preview ===== */
