@@ -10,31 +10,33 @@
       </div>
     </div>
 
-    <!-- 译文样式 -->
-    <div v-show="config.display === 1" class="setting-row">
-      <span class="setting-label">
+    <!-- 译文样式 — 可视化网格选择器 -->
+    <div v-if="config.display === 1" class="style-picker">
+      <div class="style-picker-label">
         译文样式
-        <el-tooltip effect="dark" content="选择双语模式下译文的显示样式，提供多种美观的效果" placement="top-start" :show-after="500">
+        <el-tooltip effect="dark" content="选择双语模式下译文的显示样式" placement="top-start" :show-after="500">
           <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
-      </span>
-      <div class="setting-control">
-        <el-select v-model="config.style" placeholder="请选择译文显示样式">
-          <el-option-group v-for="group in styleGroups" :key="group.value" :label="group.label">
-            <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value" />
-          </el-option-group>
-        </el-select>
+      </div>
+      <div v-for="group in styleGroups" :key="group.value" class="style-group">
+        <div class="style-group-title">{{ group.label }}</div>
+        <div class="style-grid">
+          <div
+            v-for="item in group.options"
+            :key="item.value"
+            class="style-card"
+            :class="{ 'style-card--active': config.style === item.value }"
+            @click="config.style = item.value"
+          >
+            <div class="style-card-preview">
+              <span class="style-card-original">The quick brown fox</span>
+              <span :class="item.class" class="style-card-translation">敏捷的棕色狐狸</span>
+            </div>
+            <div class="style-card-name">{{ item.label }}</div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- 样式预览 -->
-    <div v-if="config.display === 1" class="style-preview">
-      <span class="preview-label">预览效果</span>
-      <div class="preview-box">
-        <span :class="currentStyleClass">这是译文预览效果</span>
-      </div>
-    </div>
-
   </div>
 </template>
 
@@ -46,19 +48,12 @@ import { InfoFilled } from '@element-plus/icons-vue'
 
 const { config } = useConfig()
 
-// Style groups for grouped selector
 const styleGroups = computed(() => {
   const groups = options.styles.filter(item => item.disabled)
   return groups.map(group => ({
     ...group,
     options: options.styles.filter(item => !item.disabled && item.group === group.value)
   }))
-})
-
-// Current style class for preview
-const currentStyleClass = computed(() => {
-  const selected = options.styles.find(s => s.value === config.value.style)
-  return selected?.class || 'fluent-display-default'
 })
 </script>
 
@@ -67,38 +62,115 @@ const currentStyleClass = computed(() => {
 </style>
 
 <style scoped>
-/* ===== Style preview ===== */
-.style-preview {
+/* ===== Style picker ===== */
+.style-picker {
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--fr-row-border);
+}
+
+.style-picker-label {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  gap: 10px;
-  background: var(--fr-bg-color);
-  border-bottom: 1px solid var(--fr-row-border);
+  gap: 4px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--fr-text-color-primary);
+  margin-bottom: 12px;
 }
 
-.preview-label {
-  font-size: 12px;
-  color: var(--fr-text-color-regular);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.preview-box {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 8px 12px;
-  background: var(--el-bg-color-page);
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  min-height: 32px;
-  max-width: 280px;
-}
-
-.preview-box span {
+.info-icon {
   font-size: 13px;
+  color: var(--el-text-color-placeholder);
+  cursor: default;
+}
+
+/* ===== Style group ===== */
+.style-group {
+  margin-bottom: 14px;
+}
+
+.style-group:last-child {
+  margin-bottom: 0;
+}
+
+.style-group-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--el-text-color-placeholder);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+/* ===== Style grid ===== */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+/* ===== Style card ===== */
+.style-card {
+  border: 1.5px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 8px 10px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--el-bg-color-page);
+  overflow: hidden;
+}
+
+.style-card:hover {
+  border-color: var(--fr-accent-color);
+}
+
+.style-card--active {
+  border-color: var(--fr-accent-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fr-accent-color) 20%, transparent);
+  background: color-mix(in srgb, var(--fr-accent-color) 5%, var(--el-bg-color-page));
+}
+
+/* ===== Card content ===== */
+.style-card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 40px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.style-card-original {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.style-card-translation {
+  font-size: 12px;
+  color: var(--fr-text-color-primary);
+  line-height: 1.5;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-all;
+}
+
+.style-card-name {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+  border-top: 1px solid var(--el-border-color-lighter);
+  padding-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.style-card--active .style-card-name {
+  color: var(--fr-accent-color);
 }
 
 /* ===== Select ===== */

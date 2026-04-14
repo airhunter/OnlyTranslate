@@ -298,3 +298,35 @@
     border-radius: 3px;
     border: 1px solid #eee;
 }
+
+/* ===== Dark mode overrides ===== */
+:root.dark .fluent-display-modern-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%);
+}
+
+:root.dark .fluent-display-paper {
+    background-color: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+}
+
+:root.dark .fluent-display-tech {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.12);
+    color: inherit;
+}
+
+:root.dark .fluent-display-clean {
+    border-bottom-color: rgba(255,255,255,0.15);
+}
+
+:root.dark .fluent-display-elegant {
+    color: #aaa;
+}
+
+:root.dark .fluent-display-marker {
+    background: rgba(255, 235, 59, 0.25);
+}
+
+:root.dark .fluent-display-learning-mode {
+    background: linear-gradient(transparent 60%, rgba(255, 215, 0, 0.25) 40%);
+}
