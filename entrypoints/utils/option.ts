@@ -122,7 +122,7 @@ export const servicesType = {
         services.grok,
         services.newapi,
     ]),
-    // 支持代理
+    // 支持代理 / 自定义接入地址
     useProxy: new Set([
         services.openai,
         services.azureOpenai,
@@ -133,6 +133,7 @@ export const servicesType = {
         services.deeplx,
         services.moonshot,
         services.tongyi,
+        services.zhipu,
         services.xiaoniu,
         services.youdao,
         services.tencent,
@@ -141,6 +142,7 @@ export const servicesType = {
         services.lingyi,
         services.jieyue,
         services.groq,
+        services.infini,
         services.cozecom,
         services.cozecn,
         services.huanYuan,

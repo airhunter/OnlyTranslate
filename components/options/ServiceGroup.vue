@@ -35,13 +35,16 @@
       <!-- Token input -->
       <div v-show="showToken" class="setting-row">
         <span class="setting-label">
-          访问令牌
-          <el-tooltip effect="dark" content="API访问令牌仅保存在本地，用于访问翻译服务。获取方式请参考对应服务的官方文档；翻译服务为 ollama 时，token 可为任意值" placement="top-start" :show-after="500">
+          API Key
+          <el-tooltip effect="dark" content="API Key 仅保存在本地，用于访问翻译服务。翻译服务为 Ollama 等本地服务时可填任意值。" placement="top-start" :show-after="500">
             <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
+          <a v-if="currentApiKeyUrl" :href="currentApiKeyUrl" target="_blank" rel="noopener noreferrer" class="apikey-link">
+            去获取 →
+          </a>
         </span>
         <div class="setting-control">
-          <el-input v-model="config.token[config.service]" type="password" show-password placeholder="请输入API访问令牌" />
+          <el-input v-model="config.token[config.service]" type="password" show-password placeholder="请输入 API Key" />
         </div>
       </div>
 
@@ -207,16 +210,31 @@
         </div>
       </div>
 
-      <!-- 代理地址 -->
-      <div v-show="showProxy" class="setting-row">
+      <!-- 接入地址 / 代理地址 -->
+      <div v-show="showProxy" :class="isAIService ? 'setting-row setting-row--col' : 'setting-row'">
         <span class="setting-label">
-          代理地址
-          <el-tooltip effect="dark" content="使用代理可以解决网络无法访问的问题，如不熟悉代理设置请留空！" placement="top-start" :show-after="500">
+          {{ isAIService ? '接入地址' : '代理地址' }}
+          <el-tooltip
+            effect="dark"
+            :content="isAIService
+              ? '可替换为自己的代理地址或兼容接口，默认使用官方地址。修改后需确保该接口与原服务协议兼容。'
+              : '使用代理可以解决网络无法访问的问题，如不熟悉代理设置请留空！'"
+            placement="top-start"
+            :show-after="500"
+          >
             <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
-        <div class="setting-control">
-          <el-input v-model="config.proxy[config.service]" placeholder="默认不使用代理" />
+        <div :class="isAIService ? 'setting-control setting-control--full' : 'setting-control'">
+          <el-input
+            v-model="proxyInputValue"
+            :placeholder="isAIService ? '输入接入地址' : '默认不使用代理'"
+          />
+          <div v-if="isAIService && isProxyCustomized" class="proxy-reset-row">
+            <el-button type="primary" link size="small" @click="resetToDefaultUrl">
+              还原默认地址
+            </el-button>
+          </div>
         </div>
       </div>
 
@@ -287,6 +305,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
+import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection } from '@/entrypoints/utils/testConnection'
 import ServiceStatusBadge from './ServiceStatusBadge.vue'
@@ -372,6 +391,56 @@ watch(() => config.value.service, (newService) => {
 const showToken = computed(() => servicesType.isUseToken(config.value.service))
 const showModel = computed(() => servicesType.isUseModel(config.value.service))
 const showProxy = computed(() => servicesType.isUseProxy(config.value.service))
+const isAIService = computed(() => servicesType.isAI(config.value.service))
+
+// Default API URL for the current service
+const defaultServiceUrl = computed(() => {
+  const u = urls[config.value.service]
+  return typeof u === 'string' ? u : null
+})
+
+// Show the actual URL in the input (default URL when no custom value is set)
+const proxyInputValue = computed({
+  get: () => config.value.proxy[config.value.service] || defaultServiceUrl.value || '',
+  set: (val: string) => { config.value.proxy[config.value.service] = val }
+})
+
+// Whether the user has customized the URL (differs from default)
+const isProxyCustomized = computed(() => {
+  const custom = config.value.proxy[config.value.service]
+  return !!custom && custom !== defaultServiceUrl.value
+})
+
+const resetToDefaultUrl = () => {
+  config.value.proxy[config.value.service] = ''
+}
+
+// API Key management URLs per service
+const apiKeyLinks: Record<string, string> = {
+  [services.openai]:             'https://platform.openai.com/api-keys',
+  [services.gemini]:             'https://aistudio.google.com/apikey',
+  [services.claude]:             'https://console.anthropic.com/settings/keys',
+  [services.deepseek]:           'https://platform.deepseek.com/api_keys',
+  [services.siliconCloud]:       'https://cloud.siliconflow.cn/account/ak',
+  [services.tongyi]:             'https://bailian.console.aliyun.com/',
+  [services.zhipu]:              'https://bigmodel.cn/usercenter/proj-mgmt/apikey',
+  [services.moonshot]:           'https://platform.moonshot.cn/console/api-keys',
+  [services.baichuan]:           'https://platform.baichuan-ai.com/console/apikey',
+  [services.lingyi]:             'https://platform.lingyiwanwu.com/apikeys',
+  [services.deepL]:              'https://www.deepl.com/your-account/keys',
+  [services.minimax]:            'https://platform.minimaxi.com/user-center/basic-information/interface-key',
+  [services.jieyue]:             'https://platform.stepfun.com/interface-key',
+  [services.groq]:               'https://console.groq.com/keys',
+  [services.huanYuan]:           'https://console.cloud.tencent.com/hunyuan/start',
+  [services.doubao]:             'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
+  [services.grok]:               'https://console.x.ai/',
+  [services.openrouter]:         'https://openrouter.ai/keys',
+  [services.infini]:             'https://cloud.infini-ai.com/',
+  [services.cozecom]:            'https://www.coze.com/open/oauth/pats',
+  [services.cozecn]:             'https://www.coze.cn/open/oauth/pats',
+}
+
+const currentApiKeyUrl = computed(() => apiKeyLinks[config.value.service] ?? null)
 const showAkSk = computed(() => servicesType.isUseAkSk(config.value.service))
 const showYoudao = computed(() => servicesType.isYoudao(config.value.service))
 const showTencent = computed(() => servicesType.isTencent(config.value.service))
@@ -460,6 +529,26 @@ const handleTestConnection = async () => {
 /* ===== Select styles ===== */
 .select-left {
   text-align: left;
+}
+
+/* ===== Proxy reset ===== */
+.proxy-reset-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+/* ===== API Key link ===== */
+.apikey-link {
+  font-size: 12px;
+  color: var(--fr-accent-color);
+  text-decoration: none;
+  white-space: nowrap;
+  margin-left: 2px;
+}
+
+.apikey-link:hover {
+  text-decoration: underline;
 }
 
 .select-divider {
