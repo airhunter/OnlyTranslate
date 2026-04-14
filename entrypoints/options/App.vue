@@ -8,7 +8,6 @@
         <button
           v-for="item in navItems"
           :key="item.key"
-          v-show="!item.aiOnly || isAIService"
           class="nav-item"
           :class="{ 'nav-item--active': activePanel === item.key }"
           @click="activePanel = item.key"
@@ -24,7 +23,7 @@
           <ServiceGroup v-if="activePanel === 'service'" />
           <AppearanceGroup v-if="activePanel === 'appearance'" />
           <InteractionGroup v-if="activePanel === 'interaction'" />
-          <AISettingsGroup v-if="activePanel === 'ai'" v-show="isAIService" />
+          <AISettingsGroup v-if="activePanel === 'ai'" />
           <GeneralGroup v-if="activePanel === 'general'" />
         </div>
       </main>
@@ -33,10 +32,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
-import { servicesType } from '@/entrypoints/utils/option'
 import OnboardingCard from '@/components/OnboardingCard.vue'
 import ServiceGroup from '@/components/options/ServiceGroup.vue'
 import AppearanceGroup from '@/components/options/AppearanceGroup.vue'
@@ -56,14 +54,12 @@ loadConfig().then(() => {
 
 const activePanel = ref('service')
 
-const isAIService = computed(() => servicesType.isAI(config.value.service))
-
 const navItems = [
-  { key: 'service', label: '翻译服务', aiOnly: false },
-  { key: 'appearance', label: '翻译外观', aiOnly: false },
-  { key: 'interaction', label: '交互设置', aiOnly: false },
-  { key: 'ai', label: 'AI 设置', aiOnly: true },
-  { key: 'general', label: '通用', aiOnly: false },
+  { key: 'service', label: '翻译服务' },
+  { key: 'appearance', label: '翻译外观' },
+  { key: 'interaction', label: '交互设置' },
+  { key: 'ai', label: 'AI 设置' },
+  { key: 'general', label: '通用' },
 ]
 
 const handleNavigate = (panel: string) => {
@@ -150,6 +146,7 @@ const handleNavigate = (panel: string) => {
 .nav-item--active:hover {
   background: transparent;
 }
+
 
 /* ===== Content ===== */
 .options-content {

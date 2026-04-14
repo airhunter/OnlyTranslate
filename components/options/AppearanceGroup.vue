@@ -15,7 +15,7 @@
       <span class="setting-label">
         译文样式
         <el-tooltip effect="dark" content="选择双语模式下译文的显示样式，提供多种美观的效果" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control">
@@ -35,15 +35,6 @@
       </div>
     </div>
 
-    <!-- 目标语言 -->
-    <div class="setting-row">
-      <span class="setting-label">目标语言</span>
-      <div class="setting-control">
-        <el-select v-model="config.to" placeholder="请选择目标语言">
-          <el-option class="select-left" v-for="item in options.to" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -51,7 +42,7 @@
 import { computed } from 'vue'
 import { options } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
-import { ChatDotRound } from '@element-plus/icons-vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 
 const { config } = useConfig()
 
@@ -103,7 +94,7 @@ const currentStyleClass = computed(() => {
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   min-height: 32px;
-  max-width: 165px;
+  max-width: 280px;
 }
 
 .preview-box span {

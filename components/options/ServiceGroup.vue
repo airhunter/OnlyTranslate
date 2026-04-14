@@ -6,7 +6,7 @@
         翻译服务
         <ServiceStatusBadge :service="config.service" />
         <el-tooltip effect="dark" content="机器翻译：快速稳定，适合日常使用；AI翻译：更自然流畅，需要配置令牌" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control">
@@ -20,6 +20,16 @@
       </div>
     </div>
 
+    <!-- 目标语言 -->
+    <div class="setting-row">
+      <span class="setting-label">目标语言</span>
+      <div class="setting-control">
+        <el-select v-model="config.to" placeholder="请选择目标语言">
+          <el-option class="select-left" v-for="item in options.to" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>
+    </div>
+
     <!-- Service configuration section (shown based on selected service) -->
     <div class="service-config" v-show="showServiceConfig">
       <!-- Token input -->
@@ -27,7 +37,7 @@
         <span class="setting-label">
           访问令牌
           <el-tooltip effect="dark" content="API访问令牌仅保存在本地，用于访问翻译服务。获取方式请参考对应服务的官方文档；翻译服务为 ollama 时，token 可为任意值" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -40,7 +50,7 @@
         <span class="setting-label">
           Azure 端点
           <el-tooltip effect="dark" content="Azure OpenAI 服务端点地址，必须包含完整的部署信息。格式：https://your-resource-name.openai.azure.com/openai/deployments/your-deployment-name/chat/completions?api-version=2024-02-15-preview" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control setting-control--full">
@@ -66,7 +76,7 @@
         <span class="setting-label">
           API Key
           <el-tooltip effect="dark" content="百度文心一言API密钥对，用于访问翻译服务" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -85,7 +95,7 @@
         <span class="setting-label">
           App Key
           <el-tooltip effect="dark" content="有道智云翻译API应用ID，用于访问有道翻译服务。可在有道智云控制台获取" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -104,7 +114,7 @@
         <span class="setting-label">
           Secret ID
           <el-tooltip effect="dark" content="腾讯云API访问密钥ID，用于访问腾讯云机器翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -123,7 +133,7 @@
         <span class="setting-label">
           机器人ID
           <el-tooltip effect="dark" content="Coze机器人ID，可在Coze开发者文档中查看获取方式" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -136,7 +146,7 @@
         <span class="setting-label">
           自定义接口
           <el-tooltip effect="dark" content="目前仅支持OpenAI格式的请求接口，如http://localhost:3000/v1/chat/completions" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -149,7 +159,7 @@
         <span class="setting-label">
           NewAPI接口
           <el-tooltip effect="dark" content="填写 New API 的访问地址，如：http://localhost:3000" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -174,7 +184,7 @@
           <el-tooltip effect="dark"
             :content="config.service === 'doubao' ? '豆包的model为接入点，获取方式见官方文档：https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint' : '注意：自定义模型名称需要与服务商提供的模型名称一致，否则无法使用！'"
             placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
@@ -197,6 +207,19 @@
         </div>
       </div>
 
+      <!-- 代理地址 -->
+      <div v-show="showProxy" class="setting-row">
+        <span class="setting-label">
+          代理地址
+          <el-tooltip effect="dark" content="使用代理可以解决网络无法访问的问题，如不熟悉代理设置请留空！" placement="top-start" :show-after="500">
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
+          </el-tooltip>
+        </span>
+        <div class="setting-control">
+          <el-input v-model="config.proxy[config.service]" placeholder="默认不使用代理" />
+        </div>
+      </div>
+
       <!-- Chrome AI 翻译特殊配置 -->
       <div v-show="showChromeAiConfig" class="chrome-ai-config">
         <!-- 状态显示 -->
@@ -204,7 +227,7 @@
           <span class="setting-label">
             模型状态
             <el-tooltip effect="dark" content="Chrome 内置 AI 翻译需要下载语言模型。首次使用请点击下方按钮预下载。" placement="top-start" :show-after="500">
-              <el-icon class="info-icon"><ChatDotRound /></el-icon>
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control chrome-ai-status">
@@ -251,7 +274,7 @@
 
         <!-- 提示信息 -->
         <div class="chrome-ai-tip">
-          <el-icon><ChatDotRound /></el-icon>
+          <el-icon><InfoFilled /></el-icon>
           <span>Chrome 内置 AI 翻译需要 Chrome v138+ 浏览器。首次使用需下载语言模型（约几十MB）。</span>
         </div>
       </div>
@@ -261,7 +284,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { ChatDotRound } from '@element-plus/icons-vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
@@ -375,16 +398,16 @@ const modelList = computed(() => models.get(config.value.service) || [])
 // Filtered services for the dropdown (hide Google in non-bilingual mode)
 const filteredServices = computed(() =>
   options.services.map((service: any) => {
-    // Google 只在双语模式下显示
+    // Google 仅双语模式可用，非双语模式下 disable 并加说明
     if (service.value === services.google && config.value.display !== 1) {
-      return { ...service, hidden: true }
+      return { ...service, disabled: true, label: 'Google 翻译（需双语模式）' }
     }
     // 标记未配置的服务（用于显示提示，但不阻止选择）
     if (!service.disabled && !isServiceConfigured(service.value, config.value)) {
       return { ...service, unconfigured: true }
     }
     return service
-  }).filter((service: any) => !service.hidden)
+  })
 )
 
 // Show service config section when any config field is needed

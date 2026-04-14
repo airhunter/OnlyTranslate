@@ -5,7 +5,7 @@
       <span class="setting-label">
         划词翻译
         <el-tooltip effect="dark" content="选中文本后显示蓝点，鼠标移到蓝点上查看翻译结果。可选择关闭、双语显示或只显示译文" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control">
@@ -22,7 +22,7 @@
       <span class="setting-label">
         输入框翻译
         <el-tooltip effect="dark" content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control">
@@ -47,7 +47,7 @@
       <span class="setting-label">
         鼠标悬浮
         <el-tooltip effect="dark" content="按住指定快捷键并悬停在文本上进行翻译" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control" :class="{ 'setting-control--full': config.hotkey === 'custom' }">
@@ -72,7 +72,7 @@
       <span class="setting-label">
         全文快捷键
         <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换全文翻译状态，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control" :class="{ 'setting-control--full': config.floatingBallHotkey === 'custom' }">
@@ -96,7 +96,7 @@
       <span class="setting-label">
         全文悬浮球
         <el-tooltip effect="dark" content="（测试版）控制是否显示屏幕边缘的即时翻译悬浮球，用于对整个网页进行翻译" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
@@ -109,7 +109,7 @@
       <span class="setting-label">
         进度面板
         <el-tooltip effect="dark" content="翻译进度面板（默认关）：关闭后将不再显示右下角的全文翻译进度面板，适合移动端或希望更少打扰的用户。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
@@ -122,7 +122,7 @@
       <span class="setting-label">
         动画效果
         <el-tooltip effect="dark" content="动画效果（默认开）：禁用后将关闭加载/悬浮等动画，以节省GPU资源和电量。适合低配置设备或希望节省资源的用户。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          <el-icon class="info-icon"><InfoFilled /></el-icon>
         </el-tooltip>
       </span>
       <div class="setting-control setting-control--switch">
@@ -156,7 +156,7 @@ import { defineAsyncComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 import { parseHotkey } from '@/entrypoints/utils/hotkey'
 import browser from 'webextension-polyfill'
-import { ChatDotRound, Edit } from '@element-plus/icons-vue'
+import { InfoFilled, Edit } from '@element-plus/icons-vue'
 
 const CustomHotkeyInput = defineAsyncComponent(() => import('@/components/CustomHotkeyInput.vue'))
 const { config } = useConfig()
