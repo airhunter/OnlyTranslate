@@ -144,32 +144,6 @@
         </div>
       </div>
 
-      <!-- Custom URL -->
-      <div v-show="showCustom" class="setting-row">
-        <span class="setting-label">
-          自定义接口
-          <el-tooltip effect="dark" content="目前仅支持OpenAI格式的请求接口，如http://localhost:3000/v1/chat/completions" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.custom" placeholder="请输入自定义接口地址" />
-        </div>
-      </div>
-
-      <!-- NewAPI URL -->
-      <div v-show="showNewAPI" class="setting-row">
-        <span class="setting-label">
-          NewAPI接口
-          <el-tooltip effect="dark" content="填写 New API 的访问地址，如：http://localhost:3000" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.newApiUrl" placeholder="请输入您的New API接口地址" />
-        </div>
-      </div>
-
       <!-- Model selector -->
       <div v-show="showModel" class="setting-row">
         <span class="setting-label">模型</span>
@@ -207,6 +181,32 @@
             plain>
             {{ testLoading ? '测试中...' : '测试连接' }}
           </el-button>
+        </div>
+      </div>
+
+      <!-- Custom service URL -->
+      <div v-show="showCustom" class="setting-row setting-row--col">
+        <span class="setting-label">
+          接入地址
+          <el-tooltip effect="dark" content="仅支持 OpenAI 格式接口，如 http://localhost:11434/v1/chat/completions" placement="top-start" :show-after="500">
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
+          </el-tooltip>
+        </span>
+        <div class="setting-control setting-control--full">
+          <el-input v-model="config.custom" placeholder="http://localhost:11434/v1/chat/completions" />
+        </div>
+      </div>
+
+      <!-- NewAPI URL -->
+      <div v-show="showNewAPI" class="setting-row setting-row--col">
+        <span class="setting-label">
+          接入地址
+          <el-tooltip effect="dark" content="填写 New API 的访问地址，如 http://localhost:3000" placement="top-start" :show-after="500">
+            <el-icon class="info-icon"><InfoFilled /></el-icon>
+          </el-tooltip>
+        </span>
+        <div class="setting-control setting-control--full">
+          <el-input v-model="config.newApiUrl" placeholder="http://localhost:3000" />
         </div>
       </div>
 
