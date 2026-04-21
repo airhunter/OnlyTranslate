@@ -1,38 +1,48 @@
 <template>
   <div class="appearance-group">
-    <!-- 翻译模式 -->
-    <div class="setting-row">
-      <span class="setting-label">翻译模式</span>
-      <div class="setting-control">
-        <el-select v-model="config.display" placeholder="请选择翻译模式">
-          <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
+    <!-- 卡片1：基础模式 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">🎨 基础排版模式</h3>
+        <p class="setting-card-desc">配置网页上翻译结果和原文的交互呈现关系</p>
+      </div>
+      <div class="setting-card-body">
+        <div class="setting-row">
+          <span class="setting-label">翻译模式</span>
+          <div class="setting-control">
+            <el-select v-model="config.display" placeholder="请选择翻译模式">
+              <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 译文样式 — 可视化网格选择器 -->
-    <div v-if="config.display === 1" class="style-picker">
-      <div class="style-picker-label">
-        译文样式
-        <el-tooltip effect="dark" content="选择双语模式下译文的显示样式" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
+    <!-- 卡片2：样式库 -->
+    <div v-if="config.display === 1" class="setting-card setting-card--full">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">✨ 双语排版视觉样式库</h3>
+        <p class="setting-card-desc">选择最契合您个人阅读习惯的双语对照呈现版式</p>
       </div>
-      <div v-for="group in styleGroups" :key="group.value" class="style-group">
-        <div class="style-group-title">{{ group.label }}</div>
-        <div class="style-grid">
-          <div
-            v-for="item in group.options"
-            :key="item.value"
-            class="style-card"
-            :class="{ 'style-card--active': config.style === item.value }"
-            @click="config.style = item.value"
-          >
-            <div class="style-card-preview">
-              <span class="style-card-original">The quick brown fox</span>
-              <span :class="item.class" class="style-card-translation">敏捷的棕色狐狸</span>
+      <div class="setting-card-body">
+        <div class="style-picker">
+          <div v-for="group in styleGroups" :key="group.value" class="style-group">
+            <div class="style-group-title">{{ group.label }}</div>
+            <div class="style-grid">
+              <div
+                v-for="item in group.options"
+                :key="item.value"
+                class="style-card"
+                :class="{ 'style-card--active': config.style === item.value }"
+                @click="config.style = item.value"
+              >
+                <div class="style-card-preview">
+                  <span class="style-card-original">The quick brown fox</span>
+                  <span :class="item.class" class="style-card-translation">敏捷的棕色狐狸</span>
+                </div>
+                <div class="style-card-name">{{ item.label }}</div>
+              </div>
             </div>
-            <div class="style-card-name">{{ item.label }}</div>
           </div>
         </div>
       </div>
@@ -62,26 +72,72 @@ const styleGroups = computed(() => {
 </style>
 
 <style scoped>
-/* ===== Style picker ===== */
-.style-picker {
-  padding: 8px 12px 12px;
-  border-top: 1px solid var(--fr-row-border);
+/* ===== Card Dashboard Layout ===== */
+.appearance-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  align-items: start;
+  padding-top: 8px;
 }
 
-.style-picker-label {
+.setting-card {
+  background: var(--el-bg-color);
+  border: 1px solid var(--fr-border-color-light);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.setting-card--full {
+  grid-column: 1 / -1;
+}
+
+.setting-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.setting-card-header {
+  padding: 16px 20px 14px;
+  background: var(--el-fill-color-extra-light);
+  border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
+.setting-card-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--fr-text-color-primary);
-  margin-bottom: 12px;
+  gap: 8px;
 }
 
-.info-icon {
-  font-size: 13px;
-  color: var(--el-text-color-placeholder);
-  cursor: default;
+.setting-card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+}
+
+.setting-card-body {
+  padding: 8px 16px 16px;
+}
+
+/* Card inner rows customization */
+.appearance-group :deep(.setting-row) {
+  padding: 14px 4px;
+  background: transparent !important;
+}
+
+.appearance-group :deep(.setting-row:not(:last-child)) {
+  border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
+/* ===== Style picker ===== */
+.style-picker {
+  padding: 6px 4px 4px;
 }
 
 /* ===== Style group ===== */
@@ -102,11 +158,10 @@ const styleGroups = computed(() => {
   margin-bottom: 6px;
 }
 
-/* ===== Style grid ===== */
 .style-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 /* ===== Style card ===== */

@@ -89,18 +89,18 @@ const handleNavigate = (panel: string) => {
   border-radius: 12px;
   overflow: hidden;
   background: var(--fr-bg-color);
-  min-height: 500px;
+  min-height: 600px;
 }
 
 /* ===== Sidebar - 极简风格 ===== */
 .options-sidebar {
-  width: 200px;
+  width: 240px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background: transparent;
   border-right: 1px solid var(--fr-border-color-lighter);
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .nav-item {

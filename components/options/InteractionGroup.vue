@@ -1,144 +1,170 @@
 <template>
   <div class="interaction-group">
-    <!-- 划词翻译 -->
-    <div class="setting-row">
-      <span class="setting-label">
-        划词翻译
-        <el-tooltip effect="dark" content="选中文本后显示蓝点，鼠标移到蓝点上查看翻译结果。可选择关闭、双语显示或只显示译文" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control">
-        <el-select v-model="config.selectionTranslatorMode" placeholder="选择模式">
-          <el-option label="关闭" value="disabled" />
-          <el-option label="双语显示" value="bilingual" />
-          <el-option label="只显示译文" value="translation-only" />
-        </el-select>
+    <!-- 卡片1：网页划词协作 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">🖱️ 网页划词协作</h3>
+        <p class="setting-card-desc">控制选中网页文本后的相关翻译交互行为</p>
       </div>
-    </div>
+      <div class="setting-card-body">
+        <div class="setting-row">
+          <span class="setting-label">
+            划词翻译
+            <el-tooltip effect="dark" content="选中文本后显示蓝点，鼠标移到蓝点上查看翻译结果。可选择关闭、双语显示或只显示译文" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control">
+            <el-select v-model="config.selectionTranslatorMode" placeholder="选择模式">
+              <el-option label="关闭" value="disabled" />
+              <el-option label="双语显示" value="bilingual" />
+              <el-option label="只显示译文" value="translation-only" />
+            </el-select>
+          </div>
+        </div>
 
-    <!-- 输入框翻译 -->
-    <div class="setting-row">
-      <span class="setting-label">
-        输入框翻译
-        <el-tooltip effect="dark" content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control">
-        <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
-          <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
-
-    <!-- 输入框翻译目标语言 -->
-    <div v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="setting-row">
-      <span class="setting-label">翻译目标语言</span>
-      <div class="setting-control">
-        <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
-          <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
-
-    <!-- 鼠标悬浮快捷键 -->
-    <div class="setting-row" :class="{ 'setting-row--expanded': config.hotkey === 'custom' }">
-      <span class="setting-label">
-        鼠标悬浮
-        <el-tooltip effect="dark" content="按住指定快捷键并悬停在文本上进行翻译" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control" :class="{ 'setting-control--full': config.hotkey === 'custom' }">
-        <div class="hotkey-config">
-          <el-select v-model="config.hotkey" placeholder="请选择快捷键" size="small" style="width: 100%" @change="handleMouseHotkeyChange">
-            <el-option v-for="item in options.keys" :key="item.value" :label="item.label" :value="item.value"
-              :disabled="item.disabled" :class="{ 'select-divider': item.disabled }" />
-          </el-select>
-          <div v-if="config.hotkey === 'custom'" class="custom-hotkey-display">
-            <span class="hotkey-text" v-if="config.customHotkey">{{ getCustomMouseHotkeyDisplayName() }}</span>
-            <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
-            <el-button size="small" type="text" @click="showCustomMouseHotkeyDialog = true" class="edit-button">
-              <el-icon><Edit /></el-icon>
-            </el-button>
+        <div class="setting-row">
+          <span class="setting-label">
+            动画效果
+            <el-tooltip effect="dark" content="动画效果（默认开）：禁用后将关闭加载/悬浮等动画，以节省GPU资源和电量。" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control setting-control--switch">
+            <el-switch v-model="config.animations" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 全文翻译快捷键 -->
-    <div v-if="config.on" class="setting-row" :class="{ 'setting-row--expanded': config.floatingBallHotkey === 'custom' }">
-      <span class="setting-label">
-        全文快捷键
-        <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换全文翻译状态，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control" :class="{ 'setting-control--full': config.floatingBallHotkey === 'custom' }">
-        <div class="hotkey-config">
-          <el-select v-model="config.floatingBallHotkey" placeholder="选择快捷键" size="small" style="width: 100%" @change="handleHotkeyChange">
-            <el-option v-for="item in options.floatingBallHotkeys" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-          <div v-if="config.floatingBallHotkey === 'custom'" class="custom-hotkey-display">
-            <span class="hotkey-text" v-if="config.customFloatingBallHotkey">{{ getCustomHotkeyDisplayName() }}</span>
-            <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
-            <el-button size="small" type="text" @click="showCustomHotkeyDialog = true" class="edit-button">
-              <el-icon><Edit /></el-icon>
-            </el-button>
+    <!-- 卡片2：输入框增强 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">⌨️ 输入框增强</h3>
+        <p class="setting-card-desc">在任意网页输入框内触发快速打字翻译</p>
+      </div>
+      <div class="setting-card-body">
+        <div class="setting-row">
+          <span class="setting-label">
+            输入框翻译
+            <el-tooltip effect="dark" content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control">
+            <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
+              <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </div>
+        </div>
+
+        <div v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="setting-row">
+          <span class="setting-label">翻译目标语言</span>
+          <div class="setting-control">
+            <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
+              <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 全文悬浮球 -->
-    <div v-if="config.on" class="setting-row">
-      <span class="setting-label">
-        全文悬浮球
-        <el-tooltip effect="dark" content="（测试版）控制是否显示屏幕边缘的即时翻译悬浮球，用于对整个网页进行翻译" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control setting-control--switch">
-        <el-switch v-model="floatingBallEnabled" />
+    <!-- 卡片3：快捷键与指令 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">⚡ 快捷键与指令</h3>
+        <p class="setting-card-desc">使用键盘快捷方式快速触发翻译模块</p>
+      </div>
+      <div class="setting-card-body">
+        <div class="setting-row" :class="{ 'setting-row--expanded': config.hotkey === 'custom' }">
+          <span class="setting-label">
+            鼠标悬浮翻译
+            <el-tooltip effect="dark" content="按住指定快捷键并悬停在文本上进行翻译" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control" :class="{ 'setting-control--full': config.hotkey === 'custom' }">
+            <div class="hotkey-config">
+              <el-select v-model="config.hotkey" placeholder="请选择快捷键" size="small" style="width: 100%" @change="handleMouseHotkeyChange">
+                <el-option v-for="item in options.keys" :key="item.value" :label="item.label" :value="item.value"
+                  :disabled="item.disabled" :class="{ 'select-divider': item.disabled }" />
+              </el-select>
+              <div v-if="config.hotkey === 'custom'" class="custom-hotkey-display">
+                <span class="hotkey-text" v-if="config.customHotkey">{{ getCustomMouseHotkeyDisplayName() }}</span>
+                <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
+                <el-button size="small" type="text" @click="showCustomMouseHotkeyDialog = true" class="edit-button">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="config.on" class="setting-row" :class="{ 'setting-row--expanded': config.floatingBallHotkey === 'custom' }">
+          <span class="setting-label">
+            全文翻译切换
+            <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换全文翻译状态，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control" :class="{ 'setting-control--full': config.floatingBallHotkey === 'custom' }">
+            <div class="hotkey-config">
+              <el-select v-model="config.floatingBallHotkey" placeholder="选择快捷键" size="small" style="width: 100%" @change="handleHotkeyChange">
+                <el-option v-for="item in options.floatingBallHotkeys" :key="item.value" :label="item.label" :value="item.value" />
+              </el-select>
+              <div v-if="config.floatingBallHotkey === 'custom'" class="custom-hotkey-display">
+                <span class="hotkey-text" v-if="config.customFloatingBallHotkey">{{ getCustomHotkeyDisplayName() }}</span>
+                <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
+                <el-button size="small" type="text" @click="showCustomHotkeyDialog = true" class="edit-button">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 翻译进度面板 -->
-    <div class="setting-row">
-      <span class="setting-label">
-        进度面板
-        <el-tooltip effect="dark" content="翻译进度面板（默认关）：关闭后将不再显示右下角的全文翻译进度面板，适合移动端或希望更少打扰的用户。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control setting-control--switch">
-        <el-switch v-model="config.translationStatus" />
+    <!-- 卡片4：全文面板组件 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">📖 全文沉浸面板</h3>
+        <p class="setting-card-desc">配置网页整页翻译时的浮动挂件</p>
+      </div>
+      <div class="setting-card-body">
+        <div v-if="config.on" class="setting-row">
+          <span class="setting-label">
+            开启侧边悬浮球
+            <el-tooltip effect="dark" content="（测试版）控制是否显示屏幕边缘的即时翻译悬浮球" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control setting-control--switch">
+            <el-switch v-model="floatingBallEnabled" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">
+            显示翻译进度条
+            <el-tooltip effect="dark" content="关闭后将不再显示右下角的全文翻译进度面板，适合希望更少打扰的用户。" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control setting-control--switch">
+            <el-switch v-model="config.translationStatus" />
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 动画效果 -->
-    <div class="setting-row">
-      <span class="setting-label">
-        动画效果
-        <el-tooltip effect="dark" content="动画效果（默认开）：禁用后将关闭加载/悬浮等动画，以节省GPU资源和电量。适合低配置设备或希望节省资源的用户。" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control setting-control--switch">
-        <el-switch v-model="config.animations" />
-      </div>
-    </div>
-
-    <!-- 自定义快捷键对话框 - 鼠标悬浮 -->
+    <!-- 自定义快捷键对话框 -->
     <CustomHotkeyInput
       v-model="showCustomMouseHotkeyDialog"
       :current-value="config.customHotkey || ''"
       @confirm="handleCustomMouseHotkeyConfirm"
       @cancel="handleCustomMouseHotkeyCancel"
     />
-
-    <!-- 自定义快捷键对话框 - 全文翻译 -->
     <CustomHotkeyInput
       v-model="showCustomHotkeyDialog"
       :current-value="config.customFloatingBallHotkey || ''"
@@ -233,6 +259,65 @@ const getCustomHotkeyDisplayName = () => {
 </script>
 
 <style scoped>
+/* ===== Card Dashboard Layout ===== */
+.interaction-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  align-items: start;
+  padding-top: 8px;
+}
+
+.setting-card {
+  background: var(--el-bg-color);
+  border: 1px solid var(--fr-border-color-light);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.setting-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.setting-card-header {
+  padding: 16px 20px 14px;
+  background: var(--el-fill-color-extra-light);
+  border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
+.setting-card-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+}
+
+.setting-card-body {
+  padding: 8px 20px 12px;
+}
+
+/* Card inner rows customization */
+.interaction-group :deep(.setting-row) {
+  padding: 14px 0;
+  background: transparent !important;
+}
+
+.interaction-group :deep(.setting-row:not(:last-child)) {
+  border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
 /* ===== Hotkey config ===== */
 .hotkey-config {
   display: flex;

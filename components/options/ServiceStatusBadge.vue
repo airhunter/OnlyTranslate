@@ -8,7 +8,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useConfig } from '@/composables/useConfig'
-import { servicesType } from '@/entrypoints/utils/option'
+import { isServiceConfigured } from '@/entrypoints/utils/option'
 
 const props = defineProps<{
   service: string
@@ -16,68 +16,7 @@ const props = defineProps<{
 
 const { config } = useConfig()
 
-const isConfigured = computed(() => {
-  const service = props.service
-  const conf = config.value
-
-  // Chrome Translator - always configured (no config needed)
-  if (service === 'chromeTranslator') {
-    return true
-  }
-
-  // Microsoft - always configured (uses edge auth by default)
-  if (service === 'microsoft') {
-    return true
-  }
-
-  // Token-based services
-  if (servicesType.isUseToken(service)) {
-    return !!conf.token?.[service]?.trim()
-  }
-
-  // AkSk services (yiyan)
-  if (servicesType.isUseAkSk(service)) {
-    return !!conf.ak?.trim() && !!conf.sk?.trim()
-  }
-
-  // Youdao
-  if (servicesType.isYoudao(service)) {
-    return !!conf.youdaoAppKey?.trim() && !!conf.youdaoAppSecret?.trim()
-  }
-
-  // Tencent
-  if (servicesType.isTencent(service)) {
-    return !!conf.tencentSecretId?.trim() && !!conf.tencentSecretKey?.trim()
-  }
-
-  // DeepLX
-  if (service === 'deeplx') {
-    return !!conf.deeplx?.trim()
-  }
-
-  // Custom
-  if (servicesType.isCustom(service)) {
-    return !!conf.custom?.trim()
-  }
-
-  // NewAPI
-  if (servicesType.isNewApi(service)) {
-    return !!conf.newApiUrl?.trim()
-  }
-
-  // Azure OpenAI
-  if (servicesType.isAzureOpenai(service)) {
-    return !!conf.azureOpenaiEndpoint?.trim()
-  }
-
-  // Coze
-  if (servicesType.isCoze(service)) {
-    return !!conf.robot_id?.[service]?.trim()
-  }
-
-  // Default: check if token exists
-  return !!conf.token?.[service]?.trim()
-})
+const isConfigured = computed(() => isServiceConfigured(props.service, config.value))
 </script>
 
 <style scoped>

@@ -37,12 +37,22 @@ export function mountNewApiComponent() {
     );
     if (!confirmed) return;
 
-    config.newApiUrl = baseUrl;
-    config.token[services.newapi] = apiKey;
-    config.service = services.newapi;
+    let finalUrl = baseUrl || '';
+    if (finalUrl.endsWith('/')) {
+        finalUrl = finalUrl.slice(0, -1);
+    }
+    if (!finalUrl.endsWith('/chat/completions')) {
+         if (finalUrl.endsWith('/v1')) finalUrl += '/chat/completions';
+         else finalUrl += '/v1/chat/completions';
+    }
+
+    config.custom = finalUrl;
+    config.token[services.custom] = apiKey;
+    config.service = services.custom;
+    
     if (model && model !== '') {
-      config.model[config.service] = customModelString
-      config.customModel[config.service] = model;
+      config.model[services.custom] = customModelString;
+      config.customModel[services.custom] = model;
     }
 
 

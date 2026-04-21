@@ -1,655 +1,696 @@
 <template>
   <div class="service-group">
-    <!-- Service selector -->
-    <div class="setting-row">
-      <span class="setting-label">
-        翻译服务
-        <ServiceStatusBadge :service="config.service" />
-        <el-tooltip effect="dark" content="机器翻译：快速稳定，适合日常使用；AI翻译：更自然流畅，需要配置令牌" placement="top-start" :show-after="500">
-          <el-icon class="info-icon"><InfoFilled /></el-icon>
-        </el-tooltip>
-      </span>
-      <div class="setting-control">
-        <el-select v-model="config.service" placeholder="请选择翻译服务">
-          <el-option class="select-left" v-for="item in filteredServices" :key="item.value"
-            :label="item.label" :value="item.value" :disabled="item.disabled">
-            <span :class="{ 'unconfigured-service': item.unconfigured }">{{ item.label }}</span>
-            <span v-if="item.unconfigured" class="unconfigured-hint">（未配置）</span>
-          </el-option>
-        </el-select>
+    <!-- 顶部控制台卡片 -->
+    <div class="setting-card service-dashboard-card">
+      <div class="setting-card-body" style="padding: 24px;">
+        <div class="service-intro">
+          <div class="service-intro-copy">
+            <div class="service-intro-title">配置翻译引擎</div>
+            <div class="service-intro-desc">
+              请下方选定某一引擎作为主力翻译核心。配置后可一键切换体验效果。
+            </div>
+            
+            <div class="dashboard-setting-row" style="margin-top: 16px;">
+              <span class="setting-label">默认目标语言</span>
+              <div class="setting-control" style="width: 200px;">
+                <el-select v-model="config.to" placeholder="选择目标语言">
+                  <el-option
+                    v-for="item in options.to"
+                    :key="item.value"
+                    class="select-left"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="current-service-panel">
+            <div class="current-service-panel-title">主引擎状态</div>
+            <div class="current-service-panel-name">{{ currentServiceDisplay.title }}</div>
+            <div class="current-service-panel-desc">{{ currentServiceDisplay.description }}</div>
+            <div class="current-service-panel-meta">
+              <span class="provider-badge" :class="currentServiceDisplay.configured ? 'provider-badge--configured' : ''">
+                {{ currentServiceDisplay.configured ? '系统已就绪' : '接口未配置' }}
+              </span>
+              <span v-if="currentServiceDisplay.category" class="provider-badge">{{ currentServiceDisplay.category }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 目标语言 -->
-    <div class="setting-row">
-      <span class="setting-label">目标语言</span>
-      <div class="setting-control">
-        <el-select v-model="config.to" placeholder="请选择目标语言">
-          <el-option class="select-left" v-for="item in options.to" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
-
-    <!-- Service configuration section (shown based on selected service) -->
-    <div class="service-config" v-show="showServiceConfig">
-      <!-- Token input -->
-      <div v-show="showToken" class="setting-row">
-        <span class="setting-label">
-          API Key
-          <el-tooltip effect="dark" content="API Key 仅保存在本地，用于访问翻译服务。翻译服务为 Ollama 等本地服务时可填任意值。" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-          <a v-if="currentApiKeyUrl" :href="currentApiKeyUrl" target="_blank" rel="noopener noreferrer" class="apikey-link">
-            去获取 →
-          </a>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.token[config.service]" type="password" show-password placeholder="请输入 API Key" />
-        </div>
+    <section v-for="section in serviceSections" :key="section.key" class="provider-section">
+      <div class="provider-section-meta">
+        <div class="provider-section-title">{{ section.title }}</div>
+        <div class="provider-section-desc">{{ section.description }}</div>
       </div>
 
-      <!-- Azure OpenAI endpoint -->
-      <div v-show="showAzureOpenaiEndpoint" class="setting-row setting-row--col">
-        <span class="setting-label">
-          Azure 端点
-          <el-tooltip effect="dark" content="Azure OpenAI 服务端点地址，必须包含完整的部署信息。格式：https://your-resource-name.openai.azure.com/openai/deployments/your-deployment-name/chat/completions?api-version=2024-02-15-preview" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control setting-control--full">
-          <el-input v-model="config.azureOpenaiEndpoint"
-            placeholder="https://your-resource.openai.azure.com/..."
-            :class="{ 'input-error': config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint) }" />
-          <div v-if="config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint)" class="error-text">
-            端点地址格式不正确，请确保包含 openai.azure.com 域名和 /chat/completions 路径
+      <div class="provider-section-body">
+        <article
+          v-for="service in section.items"
+          :key="service.value"
+          class="provider-panel"
+          :class="{ 'provider-panel--active': config.service === service.value, 'provider-panel--expanded': expandedServices[service.value] }"
+        >
+          <button type="button" class="provider-panel-head" @click="toggleExpanded(service.value)">
+            <div class="provider-panel-title-wrap">
+              <div class="provider-panel-title-row">
+                <span class="provider-panel-title">{{ service.label }}</span>
+                <span v-if="config.service === service.value" 
+                      class="provider-badge provider-badge--active"
+                      :class="{ 'provider-badge--error': !isConfigured(service.value) }">
+                  {{ isConfigured(service.value) ? '当前服务' : '当前服务 (缺少配置)' }}
+                </span>
+                <span v-else-if="isConfigured(service.value)" class="provider-badge provider-badge--configured">已配置</span>
+                <span v-else class="provider-badge">未配置</span>
+              </div>
+              <div class="provider-panel-hint">{{ service.hint }}</div>
+            </div>
+            <div class="provider-panel-actions">
+              <el-button
+                v-if="config.service !== service.value"
+                size="small"
+                plain
+                @click.stop="setAsCurrent(service.value)"
+              >
+                设为当前服务
+              </el-button>
+              <span class="provider-panel-toggle">{{ expandedServices[service.value] ? '收起' : '展开' }}</span>
+            </div>
+          </button>
+
+          <div v-show="expandedServices[service.value]" class="provider-panel-body">
+            <div v-if="usesToken(service.value)" class="provider-form-row">
+              <div class="provider-form-label">
+                API Key
+                <a
+                  v-if="apiKeyLinks[service.value]"
+                  :href="apiKeyLinks[service.value]"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="apikey-link"
+                >
+                  获取
+                </a>
+              </div>
+              <div class="provider-form-control">
+                <el-input
+                  v-model="config.token[service.value]"
+                  type="password"
+                  show-password
+                  placeholder="输入 API Key"
+                />
+              </div>
+            </div>
+
+            <div v-if="usesModel(service.value)" class="provider-form-row">
+              <div class="provider-form-label">模型</div>
+              <div class="provider-form-control">
+                <el-select v-model="config.model[service.value]" placeholder="选择模型">
+                  <el-option
+                    v-for="item in models.get(service.value) || []"
+                    :key="item"
+                    class="select-left"
+                    :label="item"
+                    :value="item"
+                  />
+                </el-select>
+              </div>
+            </div>
+
+            <div
+              v-if="usesModel(service.value) && config.model[service.value] === customModelString"
+              class="provider-form-row"
+            >
+              <div class="provider-form-label">自定义模型</div>
+              <div class="provider-form-control">
+                <el-input v-model="config.customModel[service.value]" placeholder="输入模型名称" />
+              </div>
+            </div>
+
+            <div v-if="service.value === services.custom" class="provider-form-row">
+              <div class="provider-form-label">接口地址</div>
+              <div class="provider-form-control">
+                <el-input v-model="config.custom" placeholder="例如: https://api.xxx.com 结尾自带智能补正" />
+              </div>
+            </div>
+
+            <div v-if="usesProxy(service.value)" class="provider-form-row">
+              <div class="provider-form-label">{{ usesModel(service.value) ? '接口 URL' : '代理 URL' }}</div>
+              <div class="provider-form-control">
+                <el-input
+                  :model-value="getProxyValue(service.value)"
+                  :placeholder="usesModel(service.value) ? '输入接口 URL' : '输入代理 URL'"
+                  @update:model-value="setProxyValue(service.value, $event)"
+                />
+                <div v-if="isProxyCustomized(service.value)" class="provider-inline-action">
+                  <el-button type="primary" link size="small" @click="resetProxy(service.value)">恢复默认</el-button>
+                </div>
+              </div>
+            </div>
+
+            <div class="provider-form-row">
+              <div class="provider-form-label">连接测试</div>
+              <div class="provider-form-control provider-form-control--inline">
+                <el-button
+                  type="primary"
+                  size="small"
+                  plain
+                  :loading="testingService === service.value"
+                  @click="handleTestConnection(service.value)"
+                >
+                  {{ testingService === service.value ? '测试中...' : '测试连接' }}
+                </el-button>
+              </div>
+            </div>
           </div>
-        </div>
+        </article>
       </div>
-
-      <!-- DeepLX URL -->
-      <div v-show="showDeepLX" class="setting-row">
-        <span class="setting-label">服务地址</span>
-        <div class="setting-control">
-          <el-input v-model="config.deeplx" placeholder="http://localhost:1188/translate" />
-        </div>
-      </div>
-
-      <!-- AkSk (Baidu) -->
-      <div v-show="showAkSk" class="setting-row">
-        <span class="setting-label">
-          API Key
-          <el-tooltip effect="dark" content="百度文心一言API密钥对，用于访问翻译服务" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.ak" placeholder="请输入Access Key" />
-        </div>
-      </div>
-      <div v-show="showAkSk" class="setting-row">
-        <span class="setting-label">Secret Key</span>
-        <div class="setting-control">
-          <el-input v-model="config.sk" type="password" placeholder="请输入Secret Key" />
-        </div>
-      </div>
-
-      <!-- Youdao -->
-      <div v-show="showYoudao" class="setting-row">
-        <span class="setting-label">
-          App Key
-          <el-tooltip effect="dark" content="有道智云翻译API应用ID，用于访问有道翻译服务。可在有道智云控制台获取" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.youdaoAppKey" placeholder="有道 AppKey" />
-        </div>
-      </div>
-      <div v-show="showYoudao" class="setting-row">
-        <span class="setting-label">App Secret</span>
-        <div class="setting-control">
-          <el-input v-model="config.youdaoAppSecret" type="password" show-password placeholder="有道 AppSecret" />
-        </div>
-      </div>
-
-      <!-- Tencent -->
-      <div v-show="showTencent" class="setting-row">
-        <span class="setting-label">
-          Secret ID
-          <el-tooltip effect="dark" content="腾讯云API访问密钥ID，用于访问腾讯云机器翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.tencentSecretId" placeholder="腾讯云 SecretId" />
-        </div>
-      </div>
-      <div v-show="showTencent" class="setting-row">
-        <span class="setting-label">Secret Key</span>
-        <div class="setting-control">
-          <el-input v-model="config.tencentSecretKey" type="password" show-password placeholder="腾讯云 SecretKey" />
-        </div>
-      </div>
-
-      <!-- Coze robot ID -->
-      <div v-show="showRobotId" class="setting-row">
-        <span class="setting-label">
-          机器人ID
-          <el-tooltip effect="dark" content="Coze机器人ID，可在Coze开发者文档中查看获取方式" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.robot_id[config.service]" placeholder="请输入Coze机器人ID" />
-        </div>
-      </div>
-
-      <!-- Model selector -->
-      <div v-show="showModel" class="setting-row">
-        <span class="setting-label">模型</span>
-        <div class="setting-control">
-          <el-select v-model="config.model[config.service]" placeholder="请选择模型">
-            <el-option class="select-left" v-for="item in modelList" :key="item" :label="item" :value="item" />
-          </el-select>
-        </div>
-      </div>
-
-      <!-- Custom model input -->
-      <div v-show="showCustomModel" class="setting-row">
-        <span class="setting-label">
-          {{ config.service === 'doubao' ? '接入点' : '自定义模型' }}
-          <el-tooltip effect="dark"
-            :content="config.service === 'doubao' ? '豆包的model为接入点，获取方式见官方文档：https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint' : '注意：自定义模型名称需要与服务商提供的模型名称一致，否则无法使用！'"
-            placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control">
-          <el-input v-model="config.customModel[config.service]" placeholder="例如：gemma:7b" />
-        </div>
-      </div>
-
-      <!-- Test connection button -->
-      <div v-show="showTestButton" class="setting-row">
-        <span class="setting-label">连接测试</span>
-        <div class="setting-control">
-          <el-button 
-            @click="handleTestConnection" 
-            :loading="testLoading"
-            type="primary"
-            size="small"
-            plain>
-            {{ testLoading ? '测试中...' : '测试连接' }}
-          </el-button>
-        </div>
-      </div>
-
-      <!-- Custom service URL -->
-      <div v-show="showCustom" class="setting-row setting-row--col">
-        <span class="setting-label">
-          接入地址
-          <el-tooltip effect="dark" content="仅支持 OpenAI 格式接口，如 http://localhost:11434/v1/chat/completions" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control setting-control--full">
-          <el-input v-model="config.custom" placeholder="http://localhost:11434/v1/chat/completions" />
-        </div>
-      </div>
-
-      <!-- NewAPI URL -->
-      <div v-show="showNewAPI" class="setting-row setting-row--col">
-        <span class="setting-label">
-          接入地址
-          <el-tooltip effect="dark" content="填写 New API 的访问地址，如 http://localhost:3000" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control setting-control--full">
-          <el-input v-model="config.newApiUrl" placeholder="http://localhost:3000" />
-        </div>
-      </div>
-
-      <!-- 接入地址 / 代理地址 -->
-      <div v-show="showProxy" :class="isAIService ? 'setting-row setting-row--col' : 'setting-row'">
-        <span class="setting-label">
-          {{ isAIService ? '接入地址' : '代理地址' }}
-          <el-tooltip
-            effect="dark"
-            :content="isAIService
-              ? '可替换为自己的代理地址或兼容接口，默认使用官方地址。修改后需确保该接口与原服务协议兼容。'
-              : '使用代理可以解决网络无法访问的问题，如不熟悉代理设置请留空！'"
-            placement="top-start"
-            :show-after="500"
-          >
-            <el-icon class="info-icon"><InfoFilled /></el-icon>
-          </el-tooltip>
-        </span>
-        <div :class="isAIService ? 'setting-control setting-control--full' : 'setting-control'">
-          <el-input
-            v-model="proxyInputValue"
-            :placeholder="isAIService ? '输入接入地址' : '默认不使用代理'"
-          />
-          <div v-if="isAIService && isProxyCustomized" class="proxy-reset-row">
-            <el-button type="primary" link size="small" @click="resetToDefaultUrl">
-              还原默认地址
-            </el-button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chrome AI 翻译特殊配置 -->
-      <div v-show="showChromeAiConfig" class="chrome-ai-config">
-        <!-- 状态显示 -->
-        <div class="setting-row">
-          <span class="setting-label">
-            模型状态
-            <el-tooltip effect="dark" content="Chrome 内置 AI 翻译需要下载语言模型。首次使用请点击下方按钮预下载。" placement="top-start" :show-after="500">
-              <el-icon class="info-icon"><InfoFilled /></el-icon>
-            </el-tooltip>
-          </span>
-          <div class="setting-control chrome-ai-status">
-            <span v-if="chromeAiAvailability" class="status-text" :class="chromeAiAvailability.status">
-              {{ chromeAiAvailability.message }}
-            </span>
-            <span v-else class="status-text checking">检查中...</span>
-          </div>
-        </div>
-
-        <!-- 预下载按钮 -->
-        <div class="setting-row">
-          <span class="setting-label">预下载模型</span>
-          <div class="setting-control">
-            <el-button
-              @click="handleChromeAiPreload"
-              :loading="chromeAiPreloading"
-              :disabled="chromeAiAvailability?.status === 'available'"
-              type="primary"
-              size="small"
-              plain>
-              <template v-if="chromeAiPreloading">
-                下载中 {{ chromeAiPreloadProgress }}%
-              </template>
-              <template v-else-if="chromeAiAvailability?.status === 'available'">
-                已就绪 ✓
-              </template>
-              <template v-else>
-                预下载语言模型
-              </template>
-            </el-button>
-          </div>
-        </div>
-
-        <!-- 进度条 -->
-        <div v-if="chromeAiPreloading" class="setting-row">
-          <div class="setting-control setting-control--full">
-            <el-progress 
-              :percentage="chromeAiPreloadProgress" 
-              :stroke-width="8"
-              :show-text="false" />
-          </div>
-        </div>
-
-        <!-- 提示信息 -->
-        <div class="chrome-ai-tip">
-          <el-icon><InfoFilled /></el-icon>
-          <span>Chrome 内置 AI 翻译需要 Chrome v138+ 浏览器。首次使用需下载语言模型（约几十MB）。</span>
-        </div>
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { InfoFilled } from '@element-plus/icons-vue'
+import { computed, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
+import { customModelString, models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection } from '@/entrypoints/utils/testConnection'
-import ServiceStatusBadge from './ServiceStatusBadge.vue'
+
+type ConfigurableService = {
+  value: string
+  label: string
+  hint: string
+}
+
+type ServiceSection = {
+  key: string
+  title: string
+  description: string
+  items: ConfigurableService[]
+}
 
 const { config } = useConfig()
 
-const testLoading = ref(false)
-
-// Chrome AI 翻译相关状态
-const chromeAiAvailability = ref<{
-  available: boolean;
-  status: string;
-  message: string;
-} | null>(null)
-
-const chromeAiPreloading = ref(false)
-const chromeAiPreloadProgress = ref(0)
-
-// 检查 Chrome AI 可用性
-const checkChromeAiAvailability = async () => {
-  try {
-    const result = await browser.runtime.sendMessage({
-      type: 'CHROME_AI_CHECK_AVAILABILITY',
-      sourceLang: 'en',
-      targetLang: config.value.to || 'zh-Hans'
-    })
-    chromeAiAvailability.value = result
-  } catch (error) {
-    console.error('检查 Chrome AI 可用性失败:', error)
-    chromeAiAvailability.value = {
-      available: false,
-      status: 'unavailable',
-      message: '检查失败'
-    }
-  }
-}
-
-// 预下载 Chrome AI 语言模型
-const handleChromeAiPreload = async () => {
-  if (chromeAiPreloading.value) return
-  
-  chromeAiPreloading.value = true
-  chromeAiPreloadProgress.value = 0
-
-  // 监听进度更新
-  const progressHandler = (message: any) => {
-    if (message.type === 'CHROME_AI_PRELOAD_PROGRESS') {
-      chromeAiPreloadProgress.value = message.progress
-    }
-  }
-  browser.runtime.onMessage.addListener(progressHandler)
-
-  try {
-    const result = await browser.runtime.sendMessage({
-      type: 'CHROME_AI_PRELOAD_MODEL',
-      sourceLang: 'en',
-      targetLang: config.value.to || 'zh-Hans'
-    })
-
-    if (result.success) {
-      ElMessage.success(result.message)
-      // 重新检查可用性
-      await checkChromeAiAvailability()
-    } else {
-      ElMessage.error(result.message)
-    }
-  } catch (error: any) {
-    ElMessage.error(`预下载失败: ${error.message || '未知错误'}`)
-  } finally {
-    browser.runtime.onMessage.removeListener(progressHandler)
-    chromeAiPreloading.value = false
-  }
-}
-
-// 监听服务切换，当选择 Chrome AI 时检查可用性
-watch(() => config.value.service, (newService) => {
-  if (newService === 'chromeTranslator') {
-    checkChromeAiAvailability()
-  }
-}, { immediate: true })
-
-// Computed properties for conditional display
-const showToken = computed(() => servicesType.isUseToken(config.value.service))
-const showModel = computed(() => servicesType.isUseModel(config.value.service))
-const showProxy = computed(() => servicesType.isUseProxy(config.value.service))
-const isAIService = computed(() => servicesType.isAI(config.value.service))
-
-// Default API URL for the current service
-const defaultServiceUrl = computed(() => {
-  const u = urls[config.value.service]
-  return typeof u === 'string' ? u : null
+const testingService = computed({
+  get: () => state.testingService,
+  set: (value: string) => { state.testingService = value }
 })
 
-// Show the actual URL in the input (default URL when no custom value is set)
-const proxyInputValue = computed({
-  get: () => config.value.proxy[config.value.service] || defaultServiceUrl.value || '',
-  set: (val: string) => { config.value.proxy[config.value.service] = val }
+const state = reactive({
+  testingService: '',
+  expandedServices: {
+    [services.openai]: true,
+    [services.deepL]: false,
+    [services.deepseek]: false,
+    [services.gemini]: false,
+    [services.claude]: false,
+    [services.moonshot]: false,
+    [services.zhipu]: false,
+    [services.minimax]: false,
+    [services.jieyue]: false,
+    [services.siliconCloud]: false,
+    [services.grok]: false,
+    [services.custom]: false,
+  } as Record<string, boolean>
 })
 
-// Whether the user has customized the URL (differs from default)
-const isProxyCustomized = computed(() => {
-  const custom = config.value.proxy[config.value.service]
-  return !!custom && custom !== defaultServiceUrl.value
+const expandedServices = state.expandedServices
+
+const serviceSections = computed<ServiceSection[]>(() => [
+  {
+    key: 'translation-api',
+    title: '翻译 API',
+    description: '偏传统翻译接口，配置项通常更少，适合稳定翻译场景。',
+    items: [
+      { value: services.deepL, label: 'DeepL', hint: '翻译质量稳定，需 API Key' },
+    ],
+  },
+  {
+    key: 'llm-services',
+    title: 'AI 服务',
+    description: '适合自然表达、复杂句式和更灵活的翻译结果。',
+    items: [
+      { value: services.openai, label: 'OpenAI', hint: '通用性强，需 API Key' },
+      { value: services.deepseek, label: 'DeepSeek', hint: '性价比高，需 API Key' },
+      { value: services.gemini, label: 'Gemini', hint: 'Google 模型，需 API Key' },
+      { value: services.claude, label: 'Claude', hint: '写作风格好，需 API Key' },
+      { value: services.moonshot, label: 'Kimi', hint: 'Moonshot，需 API Key' },
+      { value: services.zhipu, label: '智谱', hint: 'GLM 系列，需 API Key' },
+      { value: services.minimax, label: 'MiniMax', hint: '需 API Key' },
+      { value: services.jieyue, label: '阶跃星辰', hint: 'Step 系列，需 API Key' },
+      { value: services.siliconCloud, label: 'SiliconCloud', hint: '模型聚合平台，需 API Key' },
+      { value: services.grok, label: 'Grok', hint: 'xAI，需 API Key' },
+    ],
+  },
+  {
+    key: 'advanced',
+    title: '高级接入',
+    description: '适合已经有自建网关、聚合路由或兼容接口的用户。',
+    items: [
+      { value: services.custom, label: '自定义接口 (兼容各种中转网关)', hint: '支持标准 OpenAI 格式接口池、Ollama 本地大模型。' },
+    ],
+  },
+])
+
+const builtinServiceNotice = computed(() => {
+  if (config.value.service === services.microsoft) {
+    return {
+      title: '微软翻译',
+      description: '这是免配置服务，不需要在此页填写参数。可直接在弹窗或通用区域切换使用。'
+    }
+  }
+  if (config.value.service === services.google) {
+    return {
+      title: 'Google 翻译',
+      description: '这是免配置服务，不需要在此页填写参数。仅在双语对照模式下可用。'
+    }
+  }
+  if (config.value.service === services.chromeTranslator) {
+    return {
+      title: 'Chrome 内置 AI 翻译',
+      description: '这是本地模型服务，不需要 API Key。模型下载和可用性建议放在独立的内置 AI 设置里。'
+    }
+  }
+  return null
 })
 
-const resetToDefaultUrl = () => {
-  config.value.proxy[config.value.service] = ''
-}
+const currentServiceDisplay = computed(() => {
+  const configured = isServiceConfigured(config.value.service, config.value)
+  if (builtinServiceNotice.value) {
+    return {
+      title: builtinServiceNotice.value.title,
+      description: builtinServiceNotice.value.description,
+      configured: true,
+      category: '内置服务'
+    }
+  }
 
-// API Key management URLs per service
+  for (const section of serviceSections.value) {
+    const found = section.items.find(item => item.value === config.value.service)
+    if (found) {
+      return {
+        title: found.label,
+        description: found.hint,
+        configured,
+        category: section.title
+      }
+    }
+  }
+
+  return {
+    title: config.value.service,
+    description: '当前服务',
+    configured,
+    category: ''
+  }
+})
+
 const apiKeyLinks: Record<string, string> = {
-  [services.openai]:             'https://platform.openai.com/api-keys',
-  [services.gemini]:             'https://aistudio.google.com/apikey',
-  [services.claude]:             'https://console.anthropic.com/settings/keys',
-  [services.deepseek]:           'https://platform.deepseek.com/api_keys',
-  [services.siliconCloud]:       'https://cloud.siliconflow.cn/account/ak',
-  [services.tongyi]:             'https://bailian.console.aliyun.com/',
-  [services.zhipu]:              'https://bigmodel.cn/usercenter/proj-mgmt/apikey',
-  [services.moonshot]:           'https://platform.moonshot.cn/console/api-keys',
-  [services.baichuan]:           'https://platform.baichuan-ai.com/console/apikey',
-  [services.lingyi]:             'https://platform.lingyiwanwu.com/apikeys',
-  [services.deepL]:              'https://www.deepl.com/your-account/keys',
-  [services.minimax]:            'https://platform.minimaxi.com/user-center/basic-information/interface-key',
-  [services.jieyue]:             'https://platform.stepfun.com/interface-key',
-  [services.groq]:               'https://console.groq.com/keys',
-  [services.huanYuan]:           'https://console.cloud.tencent.com/hunyuan/start',
-  [services.doubao]:             'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
-  [services.grok]:               'https://console.x.ai/',
-  [services.openrouter]:         'https://openrouter.ai/keys',
-  [services.infini]:             'https://cloud.infini-ai.com/',
-  [services.cozecom]:            'https://www.coze.com/open/oauth/pats',
-  [services.cozecn]:             'https://www.coze.cn/open/oauth/pats',
+  [services.openai]: 'https://platform.openai.com/api-keys',
+  [services.gemini]: 'https://aistudio.google.com/apikey',
+  [services.claude]: 'https://console.anthropic.com/settings/keys',
+  [services.deepseek]: 'https://platform.deepseek.com/api_keys',
+  [services.siliconCloud]: 'https://cloud.siliconflow.cn/account/ak',
+  [services.zhipu]: 'https://bigmodel.cn/usercenter/proj-mgmt/apikey',
+  [services.moonshot]: 'https://platform.moonshot.cn/console/api-keys',
+  [services.deepL]: 'https://www.deepl.com/your-account/keys',
+  [services.minimax]: 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
+  [services.jieyue]: 'https://platform.stepfun.com/interface-key',
+  [services.grok]: 'https://console.x.ai/',
+  [services.openrouter]: 'https://openrouter.ai/keys',
 }
 
-const currentApiKeyUrl = computed(() => apiKeyLinks[config.value.service] ?? null)
-const showAkSk = computed(() => servicesType.isUseAkSk(config.value.service))
-const showYoudao = computed(() => servicesType.isYoudao(config.value.service))
-const showTencent = computed(() => servicesType.isTencent(config.value.service))
-const showRobotId = computed(() => servicesType.isCoze(config.value.service))
-const showCustom = computed(() => servicesType.isCustom(config.value.service))
-const showDeepLX = computed(() => config.value.service === 'deeplx')
-const showCustomModel = computed(() => servicesType.isAI(config.value.service) && config.value.model[config.value.service] === "自定义模型")
-const showNewAPI = computed(() => servicesType.isNewApi(config.value.service))
-const showAzureOpenaiEndpoint = computed(() => servicesType.isAzureOpenai(config.value.service))
+const toggleExpanded = (service: string) => {
+  expandedServices[service] = !expandedServices[service]
+}
 
-const showTestButton = computed(() => {
-  const currentService = config.value.service
-  return currentService === services.microsoft || 
-         servicesType.isAI(currentService) || 
-         currentService === services.deepL
-})
-
-// Chrome AI 翻译配置显示
-const showChromeAiConfig = computed(() => config.value.service === services.chromeTranslator)
-
-// Model list for the selected service
-const modelList = computed(() => models.get(config.value.service) || [])
-
-// Filtered services for the dropdown (hide Google in non-bilingual mode)
-const filteredServices = computed(() =>
-  options.services.map((service: any) => {
-    // Google 仅双语模式可用，非双语模式下 disable 并加说明
-    if (service.value === services.google && config.value.display !== 1) {
-      return { ...service, disabled: true, label: 'Google 翻译（需双语模式）' }
-    }
-    // 标记未配置的服务（用于显示提示，但不阻止选择）
-    if (!service.disabled && !isServiceConfigured(service.value, config.value)) {
-      return { ...service, unconfigured: true }
-    }
-    return service
-  })
-)
-
-// Show service config section when any config field is needed
-const showServiceConfig = computed(() =>
-  showToken.value ||
-  showAzureOpenaiEndpoint.value ||
-  showDeepLX.value ||
-  showAkSk.value ||
-  showYoudao.value ||
-  showTencent.value ||
-  showRobotId.value ||
-  showCustom.value ||
-  showNewAPI.value ||
-  showModel.value
-)
-
-// Azure endpoint validation
-const isValidAzureEndpoint = (endpoint: string) => {
-  if (!endpoint || endpoint.trim() === '') {
-    return false
+const setAsCurrent = (service: string) => {
+  if (!isConfigured(service)) {
+    ElMessage.warning('未能切换：请先在下方填写该引擎所需的 API Key 或接口地址')
+    expandedServices[service] = true
+    return
   }
-  const hasHttps = endpoint.startsWith('https://')
-  const hasAzureDomain = endpoint.includes('openai.azure.com')
-  const hasChatCompletions = endpoint.includes('/chat/completions')
-  return hasHttps && hasAzureDomain && hasChatCompletions
+  config.value.service = service
+  expandedServices[service] = true
+  ElMessage.success(`已切换翻译主力引擎为 ${serviceSections.value.flatMap(s => s.items).find(i => i.value === service)?.label || service}`)
 }
 
-const handleTestConnection = async () => {
-  testLoading.value = true
+const isConfigured = (service: string) => isServiceConfigured(service, config.value)
+const usesToken = (service: string) => servicesType.isUseToken(service)
+const usesModel = (service: string) => servicesType.isUseModel(service)
+const usesProxy = (service: string) => servicesType.isUseProxy(service)
+
+const getProxyValue = (service: string) => {
+  const defaultUrl = urls[service]
+  return config.value.proxy[service] || (typeof defaultUrl === 'string' ? defaultUrl : '')
+}
+
+const setProxyValue = (service: string, value: string) => {
+  config.value.proxy[service] = value
+}
+
+const isProxyCustomized = (service: string) => {
+  const defaultUrl = urls[service]
+  return !!config.value.proxy[service] && config.value.proxy[service] !== defaultUrl
+}
+
+const resetProxy = (service: string) => {
+  config.value.proxy[service] = ''
+}
+
+const handleTestConnection = async (service: string) => {
+  testingService.value = service
   try {
-    const result = await testConnection(config.value.service, {
+    const result = await testConnection(service, {
       token: config.value.token,
-      proxy: config.value.proxy
+      proxy: {
+        ...config.value.proxy,
+        [services.custom]: config.value.custom,
+        [services.newapi]: config.value.newApiUrl,
+      }
     })
-    
+
     if (result.success) {
       ElMessage.success(result.message)
     } else {
       ElMessage.error(result.message)
     }
   } catch (error: any) {
-    ElMessage.error(`测试失败: ${error.message || '未知错误'}`)
+    ElMessage.error(`连接测试失败: ${error.message || '未知错误'}`)
   } finally {
-    testLoading.value = false
+    testingService.value = ''
   }
 }
 </script>
 
 <style scoped>
-/* ===== Select styles ===== */
+.service-group {
+  width: 100%;
+}
+
+.service-group :deep(.setting-row) {
+  padding: 20px 0;
+}
+
+.service-group :deep(.setting-row--col) {
+  align-items: flex-start;
+}
+
+.service-group :deep(.setting-control) {
+  width: 100%;
+}
+
+.service-group :deep(.setting-control .el-select),
+.service-group :deep(.setting-control .el-input) {
+  width: 100%;
+}
+
 .select-left {
   text-align: left;
 }
 
-/* ===== Proxy reset ===== */
-.proxy-reset-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 2px;
-}
-
-/* ===== API Key link ===== */
-.apikey-link {
-  font-size: 12px;
-  color: var(--fr-accent-color);
-  text-decoration: none;
-  white-space: nowrap;
-  margin-left: 2px;
-}
-
-.apikey-link:hover {
-  text-decoration: underline;
-}
-
-.select-divider {
-  background: #f2f6fc;
-  color: var(--el-color-primary);
-  font-size: 12px;
-  padding: 4px 12px;
-  cursor: default;
-  font-weight: 500;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border-bottom: 1px solid #e4e7ed;
-  margin: 4px 0;
-  pointer-events: none;
-  opacity: 0.9;
-}
-
-/* ===== Error styles ===== */
-.input-error {
-  border-color: var(--el-color-danger) !important;
-}
-
-.error-text {
-  color: var(--el-color-danger);
-  font-size: 12px;
-  margin-top: 4px;
-  line-height: 1.4;
-}
-
-/* ===== Service config container ===== */
-.service-config {
-  margin-top: 8px;
-  border-top: 1px solid var(--fr-section-border);
-}
-
-/* ===== Unconfigured service styles ===== */
-.unconfigured-service {
-  color: var(--el-text-color-placeholder);
-}
-
-.unconfigured-hint {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-  margin-left: 4px;
-}
-
-/* ===== Chrome AI 配置 ===== */
-.chrome-ai-config {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--fr-section-border);
-}
-
-.chrome-ai-status {
-  display: flex;
+.service-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
   align-items: center;
 }
 
-.status-text {
-  font-size: 13px;
-  padding: 4px 12px;
-  border-radius: 4px;
+.service-intro-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.status-text.available {
+.service-intro-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.service-intro-desc {
+  max-width: 480px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.dashboard-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.builtin-service-notice {
+  min-height: 96px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--el-fill-color-light) 0%, var(--el-bg-color) 100%);
+  border: 1px solid var(--fr-section-border);
+}
+
+.builtin-service-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.builtin-service-desc {
+  margin-top: 6px;
+  max-width: 760px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--el-text-color-secondary);
+}
+
+.current-service-panel {
+  min-height: 124px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-bg-color) 100%);
+  border: 1px solid var(--el-color-primary-light-7);
+}
+
+.current-service-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+}
+
+.current-service-panel-name {
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--el-text-color-primary);
+}
+
+.current-service-panel-desc {
+  margin-top: 8px;
+  max-width: 760px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--el-text-color-secondary);
+}
+
+.current-service-panel-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.provider-section {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  padding: 28px 0;
+  border-top: 1px solid var(--fr-section-border);
+}
+
+.provider-section-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.provider-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.provider-section-desc {
+  max-width: 240px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--el-text-color-secondary);
+}
+
+.provider-section-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.provider-panel {
+  border: 1px solid var(--fr-border-color-light);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.provider-panel:hover:not(.provider-panel--active) {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.provider-panel--active {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 0 0 1px var(--el-color-primary-light-8);
+}
+
+.provider-panel--expanded {
+  grid-column: 1 / -1;
+}
+
+.provider-panel-head {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 20px;
+  text-align: left;
+  background: var(--el-fill-color-extra-light);
+  border-bottom: 1px solid transparent;
+}
+
+.provider-panel--expanded .provider-panel-head {
+  border-bottom-color: var(--el-border-color-lighter);
+}
+
+.provider-panel-title-wrap {
+  min-width: 0;
+}
+
+.provider-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.provider-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.provider-panel-hint {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--el-text-color-secondary);
+}
+
+.provider-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.provider-panel-toggle {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.provider-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.provider-badge--active {
+  color: white;
+  background: var(--el-color-primary);
+}
+
+.provider-badge--error {
+  color: white;
+  background: var(--el-color-danger);
+}
+
+.provider-badge--configured {
   color: var(--el-color-success);
   background: var(--el-color-success-light-9);
 }
 
-.status-text.downloadable,
-.status-text.downloading {
-  color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
+.provider-panel-body {
+  padding: 8px 20px 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
-.status-text.unavailable,
-.status-text.not-supported {
-  color: var(--el-color-danger);
-  background: var(--el-color-danger-light-9);
+.provider-form-row {
+  display: grid;
+  grid-template-columns: 140px minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+  padding: 16px 0;
 }
 
-.status-text.checking {
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-light);
+.provider-form-row + .provider-form-row {
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
-.chrome-ai-tip {
+.provider-form-label {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: var(--el-fill-color-light);
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.5;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
 }
 
-.chrome-ai-tip .el-icon {
-  flex-shrink: 0;
-  margin-top: 2px;
+.provider-form-control {
+  min-width: 0;
+}
+
+.provider-form-control--inline {
+  display: flex;
+  align-items: center;
+}
+
+.provider-form-control :deep(.el-select),
+.provider-form-control :deep(.el-input) {
+  width: 100%;
+}
+
+.provider-inline-action {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.apikey-link {
+  font-size: 12px;
+  color: var(--fr-accent-color);
+  text-decoration: none;
+}
+
+.apikey-link:hover {
+  text-decoration: underline;
 }
 </style>
