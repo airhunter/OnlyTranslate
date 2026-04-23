@@ -9,7 +9,7 @@ import { urls } from "./constant";
  */
 export async function testConnection(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string> }
+  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string> }
 ): Promise<{ success: boolean; message: string }> {
   const timeout = 10000;
   const controller = new AbortController();
@@ -78,12 +78,13 @@ async function testMicrosoft(signal: AbortSignal): Promise<{ success: boolean; m
 
 async function testAI(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string> },
+  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string> },
   signal: AbortSignal
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const token = config.token[service];
-    if (!token) {
+    const token = config.token[service] || "";
+    // 除了 custom 和 newapi 以外，一般需要 token
+    if (!token && service !== services.custom && service !== services.newapi) {
       return { success: false, message: "请先配置访问令牌" };
     }
 
@@ -94,19 +95,33 @@ async function testAI(
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     };
+    
+    // 只有在 token 存在时才添加 Authorization 头部
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
     if (service === services.openrouter) {
       headers["HTTP-Referer"] = "https://fluent.thinkstu.com";
       headers["X-Title"] = "FluentRead";
     }
 
+    // 获取当前配置的模型
+    let currentModel = "gpt-3.5-turbo"; // 默认兜底
+    if (config.model && config.model[service]) {
+        currentModel = config.model[service];
+        // 如果是自定义模型，则取自定义模型的名称
+        if (currentModel === "自定义模型" && config.customModel && config.customModel[service]) {
+            currentModel = config.customModel[service];
+        }
+    }
+
     const resp = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: currentModel,
         messages: [
           { role: "system", content: "You are a translator." },
           { role: "user", content: "Translate 'hello' to Chinese." },

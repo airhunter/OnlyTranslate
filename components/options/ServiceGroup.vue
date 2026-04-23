@@ -367,6 +367,8 @@ const handleTestConnection = async (service: string) => {
   try {
     const result = await testConnection(service, {
       token: config.value.token,
+      model: config.value.model,
+      customModel: config.value.customModel,
       proxy: {
         ...config.value.proxy,
         [services.custom]: config.value.custom,
