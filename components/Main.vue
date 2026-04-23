@@ -250,8 +250,19 @@ const availableServices = computed(() => {
     result.push(...currentGroupItems);
   }
 
+  // Add custom providers
+  if (config.value.customProviders && config.value.customProviders.length > 0) {
+    result.push({ value: '__custom_header__', label: '自定义网关池', disabled: true });
+    for (const provider of config.value.customProviders) {
+      result.push({
+        value: provider.id,
+        label: provider.name || provider.id
+      });
+    }
+  }
+
   // Add "添加更多服务..." option at the end
-  result.push({ value: '__add_more__', label: '添加更多服务...', isAction: true });
+  result.push({ value: '__add_more__', label: '管理自定义接口...', isAction: true });
 
   return result;
 });

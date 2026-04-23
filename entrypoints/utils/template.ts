@@ -5,7 +5,18 @@ import {config} from "@/entrypoints/utils/config";
 // openai 格式的消息模板（通用模板）
 export function commonMsgTemplate(origin: string) {
     // 检测是否使用自定义模型
-    let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
+    let model = config.model[config.service];
+    let customModel = config.customModel[config.service];
+    
+    if (config.service.startsWith('custom_') || config.service === 'custom') {
+        const provider = config.customProviders?.find(p => p.id === config.service);
+        if (provider) {
+            model = provider.model;
+            customModel = provider.customModel;
+        }
+    }
+    
+    model = model === customModelString ? customModel : model;
 
     // 删除模型名称中的中文括号及其内容，如"gpt-4（推荐）" -> "gpt-4"
     model = model.replace(/（.*）/g, "");

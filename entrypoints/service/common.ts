@@ -7,17 +7,32 @@ import { services } from "../utils/option";
 async function common(message: any) {
     try {
 
+        let token = config.token[config.service] || "";
+        let url = config.proxy[config.service] || urls[config.service];
+        
+        // 从 customProviders 动态获取
+        if (config.service.startsWith('custom_') || config.service === 'custom') {
+            const provider = config.customProviders?.find(p => p.id === config.service);
+            if (provider) {
+                token = provider.token || "";
+                url = provider.url;
+            } else if (config.service === 'custom') {
+                url = config.custom;
+            }
+        }
+
         const headers = new Headers({
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.token[config.service]}`
+            'Content-Type': 'application/json'
         });
+        
+        if (token) {
+            headers.append('Authorization', `Bearer ${token}`);
+        }
 
         if(config.service === services.openrouter){
             headers.append('HTTP-Referer', 'https://fluent.thinkstu.com');
             headers.append('X-Title', 'FluentRead');
         }
-                
-        const url = config.proxy[config.service] || urls[config.service];
 
         const resp = await fetch(url, {
             method: method.POST,

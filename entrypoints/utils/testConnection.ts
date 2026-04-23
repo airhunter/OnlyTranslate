@@ -9,7 +9,7 @@ import { urls } from "./constant";
  */
 export async function testConnection(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string> }
+  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string>; customProviders?: any[] }
 ): Promise<{ success: boolean; message: string }> {
   const timeout = 10000;
   const controller = new AbortController();
@@ -78,17 +78,37 @@ async function testMicrosoft(signal: AbortSignal): Promise<{ success: boolean; m
 
 async function testAI(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string> },
+  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string>; customProviders?: any[] },
   signal: AbortSignal
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const token = config.token[service] || "";
-    // 除了 custom 和 newapi 以外，一般需要 token
-    if (!token && service !== services.custom && service !== services.newapi) {
+    let token = config.token[service] || "";
+    let url = config.proxy[service] || urls[service];
+    let currentModel = "gpt-3.5-turbo"; // 默认兜底
+    
+    if (config.model && config.model[service]) {
+        currentModel = config.model[service];
+        if (currentModel === "自定义模型" && config.customModel && config.customModel[service]) {
+            currentModel = config.customModel[service];
+        }
+    }
+
+    if (service.startsWith('custom_') || service === 'custom') {
+        const provider = config.customProviders?.find(p => p.id === service);
+        if (provider) {
+            token = provider.token || "";
+            url = provider.url;
+            currentModel = provider.model === "自定义模型" ? provider.customModel : provider.model;
+        } else if (service === 'custom') {
+            url = config.proxy[service];
+        }
+    }
+
+    // 除了 custom 以外，一般需要 token
+    if (!token && !service.startsWith('custom_') && service !== services.custom && service !== services.newapi) {
       return { success: false, message: "请先配置访问令牌" };
     }
 
-    const url = config.proxy[service] || urls[service];
     if (!url) {
       return { success: false, message: "未找到服务地址" };
     }
@@ -107,24 +127,14 @@ async function testAI(
       headers["X-Title"] = "FluentRead";
     }
 
-    // 获取当前配置的模型
-    let currentModel = "gpt-3.5-turbo"; // 默认兜底
-    if (config.model && config.model[service]) {
-        currentModel = config.model[service];
-        // 如果是自定义模型，则取自定义模型的名称
-        if (currentModel === "自定义模型" && config.customModel && config.customModel[service]) {
-            currentModel = config.customModel[service];
-        }
-    }
-
     const resp = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: currentModel,
+        model: currentModel || "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "You are a translator." },
-          { role: "user", content: "Translate 'hello' to Chinese." },
+          { role: "system", content: "你是一个专业的翻译器。请将用户的输入翻译为中文，且只能输出翻译结果，禁止输出任何拼音、解释或额外的英文字符。" },
+          { role: "user", content: "hello" },
         ],
         max_tokens: 100,
       }),

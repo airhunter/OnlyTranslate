@@ -93,13 +93,13 @@ export const servicesType = {
     ]),
 
     isMachine: (service: string) => servicesType.machine.has(service),
-    isAI: (service: string) => servicesType.AI.has(service),
-    isUseToken: (service: string) => servicesType.useToken.has(service),
+    isAI: (service: string) => servicesType.AI.has(service) || service.startsWith('custom_') || service === 'custom',
+    isUseToken: (service: string) => servicesType.useToken.has(service) || service.startsWith('custom_') || service === 'custom',
     isUseProxy: (service: string) => servicesType.useProxy.has(service),
-    isUseModel: (service: string) => servicesType.useModel.has(service),
-    isCustom: (service: string) => service === services.custom,
+    isUseModel: (service: string) => servicesType.useModel.has(service) || service.startsWith('custom_') || service === 'custom',
+    isCustom: (service: string) => service === services.custom || service.startsWith('custom_'),
     isNewApi: (service: string) => service === services.newapi,
-    isUseCustomUrl: (service: string) => servicesType.useCustomUrl.has(service),
+    isUseCustomUrl: (service: string) => servicesType.useCustomUrl.has(service) || service.startsWith('custom_'),
 };
 
 export const customModelString = "自定义模型";
@@ -301,7 +301,11 @@ export function isServiceConfigured(service: string, config: Config): boolean {
     }
 
     if (servicesType.isCustom(service)) {
-        return !!config.custom;
+        const customProvider = config.customProviders?.find(p => p.id === service);
+        if (customProvider) {
+            return !!customProvider.url; // 只要有 URL 就算配置好了
+        }
+        return !!config.custom; // 回退判断
     }
 
     if (servicesType.isUseToken(service)) {
