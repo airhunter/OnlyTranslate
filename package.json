@@ -16,7 +16,8 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "release": "release-it"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -29,6 +30,7 @@
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.6",
     "@types/crypto-js": "^4.2.2",
     "@types/webextension-polyfill": "^0.12.1",
     "@vitejs/plugin-vue": "^5.2.1",
@@ -36,6 +38,7 @@
     "@vuepress/client": "2.0.0-rc.19",
     "@wxt-dev/webextension-polyfill": "^1.0.0",
     "happy-dom": "^20.8.9",
+    "release-it": "^20.0.0",
     "typescript": "^5.7.3",
     "vite": "^5.4.21",
     "vite-plugin-imagemin": "^0.6.1",
