@@ -1,6 +1,6 @@
-import {defineConfig} from 'wxt';
+import { defineConfig } from 'wxt';
 import vue from '@vitejs/plugin-vue';
-import {resolve} from 'path';
+import { resolve } from 'path';
 import fs from 'fs';
 
 
@@ -16,13 +16,14 @@ export default defineConfig({
         },
     },
     vite: () => ({
-        plugins: [vue()],
+        plugins: [vue() as any],
         define: {
             'process.env.VUE_APP_VERSION': JSON.stringify(packageJson.version),
         }
     }),
     manifest: {
-        permissions: ['storage', 'contextMenus', 'offscreen'],
+        permissions: ['storage', 'contextMenus', 'offscreen', 'sidePanel', 'activeTab'],
+        host_permissions: ['<all_urls>'],
         // 直接在 manifest 中声明 MAIN world 脚本，绕开 WXT entrypoint 命名体系。
         // public/video-subtitle-inject.js 会被 WXT 原样复制到扩展根目录。
         // Chrome 加载 manifest content_scripts 时会绕过页面 CSP，不受 YouTube 等限制。
