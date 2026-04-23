@@ -2,7 +2,7 @@
   "name": "只译",
   "description": "一款专注翻译的浏览器插件，强大而克制，只做一件事。",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
