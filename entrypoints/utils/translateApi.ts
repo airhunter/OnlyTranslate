@@ -13,6 +13,24 @@ import { storage } from '@wxt-dev/storage';
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
 
+function normalizeRuntimeTranslationResult(result: any): string {
+  if (typeof result === 'string') return result;
+
+  if (result && typeof result === 'object') {
+    if (result.success === false) {
+      throw new Error(result.error || 'Translation failed');
+    }
+
+    for (const key of ['translatedText', 'text', 'content']) {
+      if (typeof result[key] === 'string') return result[key];
+    }
+
+    throw new Error(`Unexpected translation response: ${JSON.stringify(result)}`);
+  }
+
+  return result == null ? '' : String(result);
+}
+
 /**
  * 翻译API的统一入口
  * 所有翻译请求都应该通过此函数发送，以便集中管理队列和重试逻辑
@@ -57,12 +75,13 @@ export async function translateText(origin: string, context: string = document.t
     const translationTask = async (retryCount: number = 0): Promise<string> => {
       try {
         // 发送翻译请求给background脚本处理
-        const result = await Promise.race([
+        const response = await Promise.race([
           browser.runtime.sendMessage({ context, origin }),
           new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('翻译请求超时')), timeout)
           )
-        ]) as string;
+        ]);
+        const result = normalizeRuntimeTranslationResult(response);
 
         // 如果翻译结果为空或与原文完全相同，直接返回原文
         if (!result || result === origin) {

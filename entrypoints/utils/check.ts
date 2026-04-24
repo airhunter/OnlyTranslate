@@ -60,8 +60,28 @@ export function searchClassName(node: Node, className: string): Node | null {
     return null;
 }
 
-export function contentPostHandler(text: string) {
-    let content = text;
+function normalizeContentValue(value: any): string {
+    if (typeof value === 'string') return value;
+    if (value == null) return '';
+
+    if (Array.isArray(value)) {
+        return value.map(item => normalizeContentValue(item)).join('');
+    }
+
+    if (typeof value === 'object') {
+        for (const key of ['text', 'content', 'translation', 'translatedText', 'output', 'response']) {
+            if (key in value) {
+                return normalizeContentValue(value[key]);
+            }
+        }
+        return JSON.stringify(value);
+    }
+
+    return String(value);
+}
+
+export function contentPostHandler(text: any) {
+    let content = normalizeContentValue(text);
     content = content.replace(/^<think>[\s\S]*?<\/think>/, "");
     return content;
 }

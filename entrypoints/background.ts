@@ -1,6 +1,7 @@
 import {_service} from "@/entrypoints/service/_service";
 import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
+import {services, servicesType} from "@/entrypoints/utils/option";
 import {
     checkChromeTranslationAvailability,
     preloadChromeTranslationModel
@@ -208,7 +209,15 @@ export default defineBackground({
                     }
 
                     // 处理普通翻译请求
-                    _service[config.service](message)
+                    const serviceHandler = servicesType.isCustom(config.service)
+                        ? _service[services.openai]
+                        : _service[config.service];
+
+                    if (!serviceHandler) {
+                        throw new Error(`Unsupported translation service: ${config.service}`);
+                    }
+
+                    serviceHandler(message)
                         .then(resp => resolve(resp))    // 成功
                         .catch(error => reject(error)); // 失败
                 } catch (error) {

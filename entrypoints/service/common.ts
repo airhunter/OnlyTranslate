@@ -4,6 +4,20 @@ import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import { services } from "../utils/option";
 
+function normalizeOpenAICompatibleUrl(url: string): string {
+    let normalizedUrl = url || '';
+    if (normalizedUrl.endsWith('/')) {
+        normalizedUrl = normalizedUrl.slice(0, -1);
+    }
+    if (normalizedUrl.endsWith('/v1')) {
+        return `${normalizedUrl}/chat/completions`;
+    }
+    if (!normalizedUrl.endsWith('/chat/completions') && !normalizedUrl.includes('/api/generate')) {
+        return `${normalizedUrl}/v1/chat/completions`;
+    }
+    return normalizedUrl;
+}
+
 async function common(message: any) {
     try {
 
@@ -19,6 +33,7 @@ async function common(message: any) {
             } else if (config.service === 'custom') {
                 url = config.custom;
             }
+            url = normalizeOpenAICompatibleUrl(url);
         }
 
         const headers = new Headers({
