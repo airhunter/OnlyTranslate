@@ -10,6 +10,33 @@
         </div>
       </el-tooltip>
       <span class="header-name">只译</span>
+      <div class="release-notes-wrap">
+        <button
+          type="button"
+          class="release-notes-trigger"
+          aria-label="查看更新说明"
+          @click="toggleReleaseNotes"
+        >
+          <el-icon><Bell /></el-icon>
+          <span v-if="hasUnreadReleaseNotes" class="release-notes-badge" />
+        </button>
+
+        <div v-if="releaseNotesVisible" class="release-notes-card">
+          <div>
+            <div class="release-notes-kicker">v{{ appVersion }}</div>
+            <div class="release-notes-title">{{ releaseNotesHeading }}</div>
+          </div>
+
+          <ul v-if="currentReleaseNote" class="release-notes-list">
+            <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
+          </ul>
+          <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+
+          <button type="button" class="release-notes-confirm" @click="handleReleaseNotesConfirm">
+            知道了
+          </button>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <span class="status-text">{{ config.on ? '已启用' : '已禁用' }}</span>
@@ -117,7 +144,8 @@
 import { computed, ref } from 'vue'
 import { options, isServiceConfigured } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
-import { ChatDotRound } from '@element-plus/icons-vue'
+import { useReleaseNotes } from '@/composables/useReleaseNotes'
+import { Bell, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import browser from 'webextension-polyfill';
 import { useTheme } from '@/composables/useTheme';
@@ -126,14 +154,37 @@ import { useTheme } from '@/composables/useTheme';
 // Config management
 const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
+const {
+  currentReleaseNote,
+  hasUnreadReleaseNotes,
+  loadReleaseNotesState,
+  markCurrentReleaseNotesAsSeen
+} = useReleaseNotes()
 
 // 应用版本号
 const appVersion = browser.runtime.getManifest().version;
+const releaseNotesVisible = ref(false);
 
 // 翻译状态相关变量
 const previousService = ref<string>('');
 const translating = ref(false);
 const isTranslated = ref(false);
+
+const releaseNotesHeading = computed(() => {
+  return currentReleaseNote.value?.title || '当前版本'
+})
+
+async function handleReleaseNotesConfirm() {
+  if (currentReleaseNote.value) {
+    await markCurrentReleaseNotesAsSeen();
+  }
+  releaseNotesVisible.value = false;
+}
+
+async function toggleReleaseNotes() {
+  await loadReleaseNotesState();
+  releaseNotesVisible.value = !releaseNotesVisible.value;
+}
 
 // 查询当前页面的翻译状态
 async function checkTranslationStatus() {
@@ -217,6 +268,10 @@ loadConfig().then(() => {
   }
   // 查询当前页面翻译状态
   checkTranslationStatus()
+})
+
+loadReleaseNotesState().catch((error) => {
+  console.error('读取更新说明状态失败:', error);
 })
 
 const availableServices = computed(() => {
@@ -426,7 +481,7 @@ function openSettingsPage() {
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .header-icon {
@@ -454,6 +509,51 @@ function openSettingsPage() {
   letter-spacing: 0.5px;
 }
 
+.release-notes-wrap {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.release-notes-trigger {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fr-text-color-regular);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.release-notes-trigger:hover {
+  color: var(--fr-text-color-primary);
+  background: var(--fr-hover-color);
+}
+
+.release-notes-trigger :deep(.el-icon) {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.release-notes-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  box-shadow: 0 0 0 2px var(--fr-bg-color);
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -464,6 +564,80 @@ function openSettingsPage() {
   font-size: 12px;
   font-weight: 500;
   color: var(--fr-text-color-regular);
+}
+
+.release-notes-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 20;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--fr-border-color-lighter);
+  border-radius: 8px;
+  background: var(--fr-bg-color);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+}
+
+.release-notes-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fr-text-color-regular);
+}
+
+.release-notes-title {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fr-text-color-primary);
+}
+
+.release-notes-list {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--fr-text-color-primary);
+}
+
+.release-notes-list li {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.release-notes-list li:last-child {
+  margin-bottom: 0;
+}
+
+.release-notes-empty {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fr-text-color-regular);
+}
+
+.release-notes-confirm {
+  align-self: flex-end;
+  min-width: 64px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--fr-accent-color);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.release-notes-confirm:hover {
+  opacity: 0.92;
 }
 
 /* ===== Body ===== */

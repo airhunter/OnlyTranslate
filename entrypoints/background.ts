@@ -2,6 +2,7 @@ import {_service} from "@/entrypoints/service/_service";
 import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
 import {services, servicesType} from "@/entrypoints/utils/option";
+import {syncReleaseNotesInstallState} from "@/entrypoints/utils/releaseNotes";
 import {
     checkChromeTranslationAvailability,
     preloadChromeTranslationModel
@@ -63,6 +64,15 @@ export default defineBackground({
     },
     main() {
         const isContextMenuSupported = !!browser.contextMenus
+
+        browser.runtime.onInstalled.addListener((details: any) => {
+            void syncReleaseNotesInstallState(
+                details?.reason,
+                browser.runtime.getManifest().version
+            ).catch((error) => {
+                console.error('同步更新说明状态失败:', error);
+            });
+        });
 
         // 创建右键菜单项
         if (isContextMenuSupported) {
