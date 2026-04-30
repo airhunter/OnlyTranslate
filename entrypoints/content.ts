@@ -7,8 +7,6 @@ import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, unmountFloatingBall, toggleFloatingBallPosition } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations, translateText } from "@/entrypoints/utils/translateApi";
-import { createApp } from 'vue';
-import TranslationStatus from '@/components/TranslationStatus.vue';
 import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
 import { initVideoSubtitle } from "@/entrypoints/video/manager";
 
@@ -24,7 +22,7 @@ export default defineContentScript({
         setupFloatingBallHotkey();
         // 当悬浮球关闭时，仍然允许使用快捷键进行全文翻译的独立开关
         let isFullPageTranslating = false;
-        document.addEventListener('fluentread-toggle-translation', () => {
+        document.addEventListener('onlytranslate-toggle-translation', () => {
             // 仅在悬浮球被禁用（未挂载）时由内容脚本接管快捷键
             if (config.disableFloatingBall === true) {
                 isFullPageTranslating = !isFullPageTranslating;
@@ -49,11 +47,6 @@ export default defineContentScript({
             mountSelectionTranslator();
         }
         
-        // 挂载翻译状态组件（可配置禁用）
-        if (config.translationStatus === true) {
-            mountTranslationStatusComponent();
-        }
-
         mountNewApiComponent();
 
         // 初始化视频字幕翻译（在支持的平台上注入拦截脚本）
@@ -95,7 +88,7 @@ export default defineContentScript({
                     unmountSelectionTranslator();
                 } else {
                     // 如果之前没有挂载，现在挂载
-                    if (!document.getElementById('fluent-read-selection-translator-container')) {
+                    if (!document.getElementById('only-translate-selection-translator-container')) {
                         mountSelectionTranslator();
                     }
                 }
@@ -477,7 +470,7 @@ function setupFloatingBallHotkey() {
     };
     
     if (isDev) {
-        console.log(`[FluentRead] 设置悬浮球快捷键: ${config.floatingBallHotkey}, 系统: ${isMac ? 'macOS' : '其他'}`);
+        console.log(`[OnlyTranslate] 设置悬浮球快捷键: ${config.floatingBallHotkey}, 系统: ${isMac ? 'macOS' : '其他'}`);
     }
     
     // 监听按键按下事件
@@ -560,13 +553,13 @@ function setupFloatingBallHotkey() {
             event.stopPropagation();
             
             // 通过自定义事件来触发翻译
-            document.dispatchEvent(new CustomEvent('fluentread-toggle-translation'));
+            document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation'));
             
             if (isDev) {
                 const activeHotkey = config.floatingBallHotkey === 'custom' 
                     ? config.customFloatingBallHotkey 
                     : config.floatingBallHotkey;
-                console.log(`[FluentRead] 触发悬浮球翻译，快捷键: ${activeHotkey}`);
+                console.log(`[OnlyTranslate] 触发悬浮球翻译，快捷键: ${activeHotkey}`);
             }
         }
     });
@@ -629,37 +622,23 @@ function autoTranslationEvent() {
 // 清除所有翻译的函数
 function clearAllTranslations() {
     // 1. 移除所有翻译结果元素
-    document.querySelectorAll('.fluent-read-translation').forEach(el => el.remove());
+    document.querySelectorAll('.only-translate-translation').forEach(el => el.remove());
 
     // 2. 移除所有加载状态
-    document.querySelectorAll('.fluent-read-loading').forEach(el => el.remove());
+    document.querySelectorAll('.only-translate-loading').forEach(el => el.remove());
 
     // 3. 移除所有错误状态
-    document.querySelectorAll('.fluent-read-failure').forEach(el => el.remove());
+    document.querySelectorAll('.only-translate-failure').forEach(el => el.remove());
 
     // 4. 移除所有翻译相关的类名
-    document.querySelectorAll('.fluent-read-processed').forEach(el => {
-        el.classList.remove('fluent-read-processed');
+    document.querySelectorAll('.only-translate-processed').forEach(el => {
+        el.classList.remove('only-translate-processed');
     });
 
     // 5. 清除内存中的缓存
     cache.clean();
 
     console.log('已清除所有翻译缓存');
-}
-
-/**
- * 挂载翻译状态组件
- */
-function mountTranslationStatusComponent() {
-    // 创建容器元素
-    const container = document.createElement('div');
-    container.id = 'fluent-read-translation-status-container';
-    document.body.appendChild(container);
-    
-    // 创建并挂载组件
-    const app = createApp(TranslationStatus);
-    app.mount(container);
 }
 
 /**

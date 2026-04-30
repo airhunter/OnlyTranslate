@@ -34,7 +34,7 @@ function debugLog(type: string, message: string, ...args: any[]): void {
   };
   
   const color = colors[type] || colors['Default'];
-  const prefix = `%c[FluentRead][${type}]`;
+  const prefix = `%c[OnlyTranslate][${type}]`;
   
   // 根据日志类型决定是否需要分组
   if (['Content', 'Skip', 'YouTube', 'GitHub', 'Twitter'].includes(type) && args.length > 0) {

@@ -33,6 +33,6 @@ export const styles = {
 }
 
 export const CONTEXT_MENU_IDS = {
-    TRANSLATE_FULL_PAGE: 'fluent-read-translate-full-page',
-    RESTORE_ORIGINAL: 'fluent-read-restore-original',
+    TRANSLATE_FULL_PAGE: 'only-translate-translate-full-page',
+    RESTORE_ORIGINAL: 'only-translate-restore-original',
 }

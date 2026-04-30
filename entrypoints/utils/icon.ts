@@ -28,21 +28,21 @@ export function insertFailedTip(
 
   // 创建包装元素
   const wrapper = document.createElement("span");
-  wrapper.classList.add("fluent-read-retry-wrapper");
+  wrapper.classList.add("only-translate-retry-wrapper");
 
   // 创建重试按钮
   const retryBtn = document.createElement("span");
   retryBtn.innerText = "重试";
-  retryBtn.classList.add("fluent-read-retry");
+  retryBtn.classList.add("only-translate-retry");
   retryBtn.addEventListener("click", handleRetryClick(node, wrapper));
 
   // 添加失败标记
-  node.classList.add("fluent-read-failure");
+  node.classList.add("only-translate-failure");
 
   // 创建错误信息提示按钮
   const errorTip = document.createElement("span");
   errorTip.innerText = "错误原因";
-  errorTip.classList.add("fluent-read-reason");
+  errorTip.classList.add("only-translate-reason");
   errorTip.addEventListener("click", handleErrorClick(errMsg));
 
   // 创建图标元素
@@ -61,7 +61,7 @@ function handleRetryClick(node: HTMLElement, wrapper: HTMLElement) {
     event.stopPropagation();
 
     wrapper.remove(); // 移除错误提示元素，重新翻译
-    node.classList.remove("fluent-read-failure"); // 移除失败标记
+    node.classList.remove("only-translate-failure"); // 移除失败标记
 
     // 根据当前配置的翻译模式决定使用哪种翻译方式
     if (config.display === styles.bilingualTranslation) {
@@ -114,7 +114,7 @@ export function insertLoadingSpinner(
   isCache: boolean = false
 ): HTMLElement {
   const spinner = document.createElement("span");
-  spinner.className = "fluent-read-loading";
+  spinner.className = "only-translate-loading";
   if (isCache) spinner.style.borderTop = "3px solid green"; // 存在缓存时改为绿色
   
   // 异步检查动画配置

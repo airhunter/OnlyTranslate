@@ -19,7 +19,7 @@ export function mountNewApiComponent() {
   document.body.appendChild(container);
   containerEl = container;
 
-  container.addEventListener('fluent:prefill', async (e) => {
+  container.addEventListener('onlytranslate:prefill', async (e) => {
     const customEvent = e as CustomEvent;
     const payload = (customEvent?.detail) || {};
 

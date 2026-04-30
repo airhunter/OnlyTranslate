@@ -37,17 +37,17 @@ export function restoreOriginalContent() {
             node.removeAttribute(TRANSLATED_ID_ATTR);
             
             // 移除可能添加的翻译相关类
-            node.classList.remove('fluent-read-bilingual');
+            node.classList.remove('only-translate-bilingual');
         }
     });
     
     // 2. 移除所有翻译内容元素
-    document.querySelectorAll('.fluent-read-bilingual-content').forEach(element => {
+    document.querySelectorAll('.only-translate-bilingual-content').forEach(element => {
         element.remove();
     });
     
     // 3. 移除所有翻译过程中添加的加载动画和错误提示
-    document.querySelectorAll('.fluent-read-loading, .fluent-read-retry-wrapper').forEach(element => {
+    document.querySelectorAll('.only-translate-loading, .only-translate-retry-wrapper').forEach(element => {
         element.remove();
     });
     
@@ -192,7 +192,7 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
 export function handleBilingualTranslation(node: any, slide: boolean) {
     let nodeOuterHTML = node.outerHTML;
     // 如果已经翻译过，250ms 后删除翻译结果
-    let bilingualNode = searchClassName(node, 'fluent-read-bilingual');
+    let bilingualNode = searchClassName(node, 'only-translate-bilingual');
     if (bilingualNode) {
         if (slide) {
             htmlSet.delete(nodeOuterHTML);
@@ -201,9 +201,9 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
         let spinner = insertLoadingSpinner(bilingualNode as HTMLElement, true);
         setTimeout(() => {
             spinner.remove();
-            const content = searchClassName(bilingualNode as HTMLElement, 'fluent-read-bilingual-content');
+            const content = searchClassName(bilingualNode as HTMLElement, 'only-translate-bilingual-content');
             if (content && content instanceof HTMLElement) content.remove();
-            (bilingualNode as HTMLElement).classList.remove('fluent-read-bilingual');
+            (bilingualNode as HTMLElement).classList.remove('only-translate-bilingual');
             htmlSet.delete(nodeOuterHTML);
         }, 250);
         return;
@@ -320,9 +320,9 @@ export const handleBtnTranslation = throttle((node: any) => {
 
 
 function bilingualAppendChild(node: any, text: string) {
-    node.classList.add("fluent-read-bilingual");
+    node.classList.add("only-translate-bilingual");
     let newNode = document.createElement("span");
-    newNode.classList.add("fluent-read-bilingual-content");
+    newNode.classList.add("only-translate-bilingual-content");
     // find the style
     const style = options.styles.find(s => s.value === config.style && !s.disabled);
     if (style?.class) {

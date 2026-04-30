@@ -129,7 +129,7 @@
     <div class="setting-card">
       <div class="setting-card-header">
         <h3 class="setting-card-title">📖 全文沉浸面板</h3>
-        <p class="setting-card-desc">配置网页整页翻译时的浮动挂件</p>
+        <p class="setting-card-desc">配置网页整页翻译时的侧边浮动挂件</p>
       </div>
       <div class="setting-card-body">
         <div v-if="config.on" class="setting-row">
@@ -141,18 +141,6 @@
           </span>
           <div class="setting-control setting-control--switch">
             <el-switch v-model="floatingBallEnabled" />
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <span class="setting-label">
-            显示翻译进度条
-            <el-tooltip effect="dark" content="关闭后将不再显示右下角的全文翻译进度面板，适合希望更少打扰的用户。" placement="top-start" :show-after="500">
-              <el-icon class="info-icon"><InfoFilled /></el-icon>
-            </el-tooltip>
-          </span>
-          <div class="setting-control setting-control--switch">
-            <el-switch v-model="config.translationStatus" />
           </div>
         </div>
       </div>

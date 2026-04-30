@@ -180,7 +180,7 @@ export function cozeTemplate(origin: string) {
 
     return JSON.stringify({
         bot_id: config.robot_id[config.service],
-        user: "FluentRead",
+        user: "OnlyTranslate",
         query: system + user,
         stream: false
     });

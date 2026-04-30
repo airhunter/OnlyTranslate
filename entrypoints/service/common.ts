@@ -45,8 +45,8 @@ async function common(message: any) {
         }
 
         if(config.service === services.openrouter){
-            headers.append('HTTP-Referer', 'https://fluent.thinkstu.com');
-            headers.append('X-Title', 'FluentRead');
+            headers.append('HTTP-Referer', 'https://github.com/airhunter/OnlyTranslate');
+            headers.append('X-Title', 'OnlyTranslate');
         }
 
         const resp = await fetch(url, {

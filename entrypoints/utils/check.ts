@@ -33,7 +33,7 @@ export function skipNode(node: Node): boolean {
 
 export function hasLoadingSpinner(node: Node): boolean {
     if (node.nodeType === Node.TEXT_NODE) return false;
-    if (node instanceof Element && node.classList.contains('fluent-read-loading')) return true;
+    if (node instanceof Element && node.classList.contains('only-translate-loading')) return true;
     if (node instanceof Element) {
         return Array.from(node.children).some(child => hasLoadingSpinner(child));
     }
@@ -42,7 +42,7 @@ export function hasLoadingSpinner(node: Node): boolean {
 
 export function hasRetryTag(node: Node): boolean {
     if (node.nodeType === Node.TEXT_NODE) return false;
-    if (node instanceof Element && node.classList.contains('fluent-read-failure')) return true;
+    if (node instanceof Element && node.classList.contains('only-translate-failure')) return true;
     if (node instanceof Element) {
         return Array.from(node.children).some(child => hasRetryTag(child));
     }

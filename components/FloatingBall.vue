@@ -281,9 +281,9 @@ const toggleTranslation = (event: MouseEvent) => {
   
   // 触发自定义事件
   if (isTranslating.value) {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-started'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
   } else {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-ended'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
   }
   
   if (floatingBall.value?.matches(':hover')) {
@@ -302,9 +302,9 @@ const handleExternalToggle = () => {
   
   // 触发自定义事件
   if (isTranslating.value) {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-started'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
   } else {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-ended'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
   }
   
   // 通知父组件
@@ -332,7 +332,7 @@ onMounted(() => {
   document.addEventListener('mousemove', handleMouseMove);
   
   // 监听自定义事件
-  document.addEventListener('fluentread-toggle-translation', handleExternalToggle);
+  document.addEventListener('onlytranslate-toggle-translation', handleExternalToggle);
   
   // 使组件暴露给父组件
   if (floatingBall.value) {
@@ -349,7 +349,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('mousemove', handleMouseMove);
   
   // 移除自定义事件监听
-  document.removeEventListener('fluentread-toggle-translation', handleExternalToggle);
+  document.removeEventListener('onlytranslate-toggle-translation', handleExternalToggle);
 });
 
 watch(() => props.position, (newPosition) => {

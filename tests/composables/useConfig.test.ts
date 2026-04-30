@@ -51,7 +51,6 @@ vi.mock('../../entrypoints/utils/model', () => ({
     tencentSecretKey = ''
     azureOpenaiEndpoint = ''
     animations = true
-    translationStatus = true
     inputBoxTranslationTrigger = 'disabled'
     inputBoxTranslationTarget = 'en'
     enableVideoSubtitle = true

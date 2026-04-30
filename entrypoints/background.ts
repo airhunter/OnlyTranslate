@@ -79,8 +79,8 @@ export default defineBackground({
             try {
                 // 创建父菜单
                 browser.contextMenus.create({
-                    id: 'fluentread-parent',
-                    title: 'FluentRead',
+                    id: 'onlytranslate-parent',
+                    title: '只译',
                     contexts: ['page', 'selection'],
                 });
 
@@ -88,7 +88,7 @@ export default defineBackground({
                 browser.contextMenus.create({
                     id: CONTEXT_MENU_IDS.TRANSLATE_FULL_PAGE,
                     title: '全文翻译',
-                    parentId: 'fluentread-parent',
+                    parentId: 'onlytranslate-parent',
                     contexts: ['page', 'selection'],
                 });
 
@@ -96,7 +96,7 @@ export default defineBackground({
                 browser.contextMenus.create({
                     id: CONTEXT_MENU_IDS.RESTORE_ORIGINAL,
                     title: '撤销翻译',
-                    parentId: 'fluentread-parent',
+                    parentId: 'onlytranslate-parent',
                     contexts: ['page', 'selection'],
                     enabled: false, // 初始状态为禁用
                 });

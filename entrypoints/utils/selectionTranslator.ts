@@ -17,7 +17,7 @@ export function mountSelectionTranslator() {
 
   // 创建容器元素
   const container = document.createElement('div');
-  container.id = 'fluent-read-selection-translator-container';
+  container.id = 'only-translate-selection-translator-container';
   document.body.appendChild(container);
 
   // 创建Vue应用实例
@@ -35,7 +35,7 @@ export function mountSelectionTranslator() {
 export function unmountSelectionTranslator() {
   if (selectionTranslatorInstance && app) {
     // 获取容器
-    const container = document.getElementById('fluent-read-selection-translator-container');
+    const container = document.getElementById('only-translate-selection-translator-container');
     
     // 卸载Vue应用
     app.unmount();

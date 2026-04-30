@@ -2,7 +2,7 @@
     0% { transform: rotate(-1deg); }
     100% { transform: rotate(360deg); }
 }
-.fluent-read-loading {
+.only-translate-loading {
     border: 3px solid #f3f3f3; /* 轨迹灰色 */
     border-top: 3px solid blue;   /* 主色调，首次翻译蓝色、缓存应改为绿色 */
     border-radius: 50%;
@@ -13,7 +13,7 @@
 }
 
 /* 静态加载样式（禁用动画时） */
-.fluent-read-loading.static {
+.only-translate-loading.static {
     animation: none;
     background: radial-gradient(circle, rgb(230, 151, 171) 30%, rgba(230, 151, 171, 0.6) 70%);
     border: 2px solid rgb(200, 121, 141);
@@ -22,7 +22,7 @@
 }
 
 /* 添加一个微妙的内阴影效果 */
-.fluent-read-loading.static::before {
+.only-translate-loading.static::before {
     content: '';
     position: absolute;
     top: 2px;
@@ -34,11 +34,11 @@
     pointer-events: none;
 }
 
-.fluent-read-retry-wrapper {
+.only-translate-retry-wrapper {
     display: inline-flex;
     align-items: center;
 }
-.fluent-read-retry, .fluent-read-reason {
+.only-translate-retry, .only-translate-reason {
     color: #428ADF;
     text-decoration: underline;
     text-underline-offset: 0.2em;
@@ -199,7 +199,7 @@
 }
 
 /* 双语模式，block 强制换行、inline-block 自适应换行 */
-.fluent-read-bilingual-content {
+.only-translate-bilingual-content {
     display: block; /* 设置为块级元素，强制换行 */
     word-break: break-word; /* 允许在单词内断行，避免超出容器边界 */
     margin: 8px 0 !important; /* 上下边距设置为8px，并强制覆盖其他样式 */

@@ -123,8 +123,8 @@ async function testAI(
     }
 
     if (service === services.openrouter) {
-      headers["HTTP-Referer"] = "https://fluent.thinkstu.com";
-      headers["X-Title"] = "FluentRead";
+      headers["HTTP-Referer"] = "https://github.com/airhunter/OnlyTranslate";
+      headers["X-Title"] = "OnlyTranslate";
     }
 
     const resp = await fetch(url, {

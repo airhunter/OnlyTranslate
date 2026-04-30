@@ -27,7 +27,7 @@ export function mountFloatingBall(position?: 'left' | 'right') {
 
   // 创建容器元素
   const container = document.createElement('div');
-  container.id = 'fluent-read-floating-ball-container';
+  container.id = 'only-translate-floating-ball-container';
   document.body.appendChild(container);
 
   // 创建 Vue 应用实例
@@ -52,14 +52,14 @@ export function mountFloatingBall(position?: 'left' | 'right') {
     onTranslationToggle: (isTranslating: boolean) => {
       if (isTranslating && !isTranslated) {
         // 触发翻译开始事件
-        document.dispatchEvent(new CustomEvent('fluentread-translation-started'));
+        document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
 
         // 触发即时翻译
         autoTranslateEnglishPage();
         isTranslated = true;
       } else if (!isTranslating && isTranslated) {
         // 触发翻译结束事件
-        document.dispatchEvent(new CustomEvent('fluentread-translation-ended'));
+        document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
         
         // 恢复原文
         restoreOriginalContent();
@@ -75,7 +75,7 @@ export function mountFloatingBall(position?: 'left' | 'right') {
   floatingBallInstance = app.mount(container);
   
   // 监听自定义事件，用于通过快捷键触发悬浮球
-  document.addEventListener('fluentread-toggle-translation', toggleFloatingBallTranslation);
+  document.addEventListener('onlytranslate-toggle-translation', toggleFloatingBallTranslation);
 
   return floatingBallInstance;
 }
@@ -92,9 +92,9 @@ export function toggleFloatingBallTranslation() {
   
   // 触发对应的自定义事件
   if (newState) {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-started'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
   } else {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-ended'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
   }
   
   // 更新悬浮球状态
@@ -103,11 +103,11 @@ export function toggleFloatingBallTranslation() {
   // 更新UI状态 - 使用Vue实例的$el属性
   if (floatingBallInstance.$el) {
     if (newState) {
-      floatingBallInstance.$el.classList.add('fluent-read-floating-ball-active');
+      floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
       // 开始翻译
       autoTranslateEnglishPage();
     } else {
-      floatingBallInstance.$el.classList.remove('fluent-read-floating-ball-active');
+      floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
       // 恢复原文
       restoreOriginalContent();
     }
@@ -126,19 +126,19 @@ function handleFloatingBallClick() {
   
   // 触发对应的自定义事件
   if (newState) {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-started'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
   } else {
-    document.dispatchEvent(new CustomEvent('fluentread-translation-ended'));
+    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
   }
   
   // 更新UI状态 - 使用Vue实例的$el属性
   if (floatingBallInstance.$el) {
     if (newState) {
-      floatingBallInstance.$el.classList.add('fluent-read-floating-ball-active');
+      floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
       // 开始翻译
       autoTranslateEnglishPage();
     } else {
-      floatingBallInstance.$el.classList.remove('fluent-read-floating-ball-active');
+      floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
       // 恢复原文
       restoreOriginalContent();
     }
@@ -201,10 +201,10 @@ function saveConfig() {
 export function unmountFloatingBall() {
   if (floatingBallInstance && app) {
     // 移除事件监听
-    document.removeEventListener('fluentread-toggle-translation', toggleFloatingBallTranslation);
+    document.removeEventListener('onlytranslate-toggle-translation', toggleFloatingBallTranslation);
     
     // 获取容器
-    const container = document.getElementById('fluent-read-floating-ball-container');
+    const container = document.getElementById('only-translate-floating-ball-container');
     
     // 卸载 Vue 应用
     app.unmount();

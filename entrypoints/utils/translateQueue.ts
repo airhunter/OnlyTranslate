@@ -17,6 +17,11 @@ function getMaxConcurrentTranslations(): number {
   return config.maxConcurrentTranslations || 6; // 默认值为6
 }
 
+function logQueueStatus(event: string) {
+  if (!isDev) return;
+  console.debug('[OnlyTranslate][translation-queue]', event, getQueueStatus());
+}
+
 /**
  * 添加翻译任务到队列
  * @param translationTask 翻译任务函数, 需要返回Promise
@@ -38,6 +43,7 @@ export function enqueueTranslation<T>(translationTask: () => Promise<T>): Promis
       } finally {
         // 无论成功失败，都需要减少活跃任务计数并处理队列
         activeTranslations--;
+        logQueueStatus('finished');
         processQueue();
         
       }
@@ -47,9 +53,11 @@ export function enqueueTranslation<T>(translationTask: () => Promise<T>): Promis
     if (activeTranslations < getMaxConcurrentTranslations()) {
       // 直接执行任务
       activeTranslations++;
+      logQueueStatus('started');
       taskWrapper();
     } else {
       pendingTranslations.push(taskWrapper);
+      logQueueStatus('queued');
     }
   });
 }
@@ -63,6 +71,7 @@ function processQueue() {
     const nextTask = pendingTranslations.shift();
     if (nextTask) {
       activeTranslations++;
+      logQueueStatus('dequeued-started');
       nextTask().catch(() => {
         // 错误已在任务内部处理，这里仅防止未捕获的Promise异常
       });
@@ -77,6 +86,7 @@ function processQueue() {
 export function clearTranslationQueue() {
   
   pendingTranslations = [];
+  logQueueStatus('cleared');
   // 不重置activeTranslations，让活跃的翻译任务自然完成
 }
 
