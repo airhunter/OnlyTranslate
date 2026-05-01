@@ -10,18 +10,46 @@
               请下方选定某一引擎作为主力翻译核心。配置后可一键切换体验效果。
             </div>
             
-            <div class="dashboard-setting-row" style="margin-top: 16px;">
-              <span class="setting-label">默认目标语言</span>
-              <div class="setting-control" style="width: 200px;">
-                <el-select v-model="config.to" placeholder="选择目标语言">
-                  <el-option
-                    v-for="item in options.to"
-                    :key="item.value"
-                    class="select-left"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </el-select>
+            <div class="language-settings">
+              <div class="dashboard-setting-row">
+                <span class="setting-label">默认目标语言</span>
+                <div class="setting-control">
+                  <el-select v-model="config.to" placeholder="选择目标语言">
+                    <el-option
+                      v-for="item in options.to"
+                      :key="item.value"
+                      class="select-left"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </div>
+              </div>
+
+              <div class="dashboard-setting-row">
+                <span class="setting-label">双向互译</span>
+                <div class="setting-control bidirectional-toggle">
+                  <el-switch v-model="config.bidirectionalTranslation" />
+                  <span class="toggle-status">{{ config.bidirectionalTranslation ? '已开启' : '未开启' }}</span>
+                </div>
+              </div>
+
+              <div v-if="config.bidirectionalTranslation" class="bidirectional-panel">
+                <div class="dashboard-setting-row">
+                  <span class="setting-label">互译语言</span>
+                  <div class="setting-control">
+                    <el-select v-model="config.bidirectionalTarget" placeholder="选择互译语言">
+                      <el-option
+                        v-for="item in options.to"
+                        :key="item.value"
+                        class="select-left"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </el-select>
+                  </div>
+                </div>
+                <p class="bidirectional-help">{{ bidirectionalHelpText }}</p>
               </div>
             </div>
           </div>
@@ -357,6 +385,21 @@ const currentServiceDisplay = computed(() => {
   return { title: config.value.service, description: '当前服务', configured, category: '' }
 })
 
+const getLanguageLabel = (value: string) => {
+  return options.to.find(item => item.value === value)?.label || value
+}
+
+const bidirectionalHelpText = computed(() => {
+  const defaultTarget = getLanguageLabel(config.value.to)
+  const bidirectionalTarget = getLanguageLabel(config.value.bidirectionalTarget)
+
+  if (config.value.to === config.value.bidirectionalTarget) {
+    return '默认目标语言和互译语言相同，当前会按固定目标语言处理。'
+  }
+
+  return `当原文是 ${defaultTarget} 时译为 ${bidirectionalTarget}；当原文是 ${bidirectionalTarget} 时译为 ${defaultTarget}；其他语言仍译为 ${defaultTarget}。`
+})
+
 const apiKeyLinks: Record<string, string> = {
   [services.openai]: 'https://platform.openai.com/api-keys',
   [services.gemini]: 'https://aistudio.google.com/apikey',
@@ -497,7 +540,37 @@ const handleTestConnection = async (service: string) => {
 .service-intro-copy { display: flex; flex-direction: column; gap: 8px; }
 .service-intro-title { font-size: 22px; font-weight: 700; color: var(--el-text-color-primary); }
 .service-intro-desc { max-width: 480px; font-size: 13px; line-height: 1.6; color: var(--el-text-color-secondary); }
+.language-settings {
+  margin-top: 16px;
+  max-width: 460px;
+}
 .dashboard-setting-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.dashboard-setting-row .setting-control { width: 220px; }
+.bidirectional-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toggle-status {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.bidirectional-panel {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--el-color-primary-light-7);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-bg-color) 100%);
+}
+.bidirectional-panel .dashboard-setting-row {
+  margin-top: 0;
+}
+.bidirectional-help {
+  margin: 10px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
 
 .current-service-panel {
   min-height: 124px;

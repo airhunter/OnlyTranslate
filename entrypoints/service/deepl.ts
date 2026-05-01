@@ -4,7 +4,8 @@ import {config} from "@/entrypoints/utils/config";
 
 async function deepl(message: any) {
     // deepl 不支持 zh-Hans，需要转换为 zh
-    let targetLang = config.to === 'zh-Hans' ? 'zh' : config.to;
+    const rawTargetLang = message.targetLang || config.to;
+    let targetLang = rawTargetLang === 'zh-Hans' ? 'zh' : rawTargetLang;
 
     // 判断是否使用代理
     let url: string = config.proxy[config.service] ? config.proxy[config.service] : urls[services.deepL]
@@ -34,4 +35,3 @@ async function deepl(message: any) {
 }
 
 export default deepl;
-

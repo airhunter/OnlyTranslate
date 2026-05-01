@@ -47,8 +47,8 @@ async function translateWithOffscreen(message: any): Promise<any> {
                 type: 'CHROME_TRANSLATE_OFFSCREEN',
                 data: {
                     text: message.origin,
-                    from: config.from,
-                    to: config.to
+                    from: message.sourceLang || config.from,
+                    to: message.targetLang || config.to
                 }
             }, (response: any) => {
                 if (chrome.runtime.lastError) {

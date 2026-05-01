@@ -4,11 +4,11 @@ import { config } from "@/entrypoints/utils/config";
 const prefix = "flcache_"; // fluent read cache
 
 // 构建缓存 key
-function buildKey(message: string) {
+function buildKey(message: string, targetLang = config.to) {
     const { service, model, to, style, customModel } = config;
     const selectedModel = model[service] === customModelString ? customModel[service] : model[service];
     // 前缀_服务_模型_目标语言_消息
-    return [prefix, style, service, selectedModel, to, message].join('_');
+    return [prefix, style, service, selectedModel, targetLang || to, message].join('_');
 }
 
 export const cache = {
@@ -24,34 +24,34 @@ export const cache = {
     },
 
     // local 系列为特化的缓存方法，用于操作翻译缓存
-    localSet(key: string, value: string) {
+    localSet(key: string, value: string, targetLang = config.to) {
         // 如果禁用缓存，则不执行任何操作
         if (!config.useCache) return;
         
-        localStorage.setItem(buildKey(key), value);
+        localStorage.setItem(buildKey(key, targetLang), value);
     },
 
-    localSetDual(key: string, value: string) {
+    localSetDual(key: string, value: string, targetLang = config.to) {
         // 如果禁用缓存，则不执行任何操作
         if (!config.useCache) return;
         
-        this.localSet(value, key);
-        this.localSet(key, value);
+        this.localSet(value, key, targetLang);
+        this.localSet(key, value, targetLang);
     },
 
-    localGet(origin: string) {
+    localGet(origin: string, targetLang = config.to) {
         // 如果禁用缓存，则始终返回 null
         if (!config.useCache) return null;
         
-        return localStorage.getItem(buildKey(origin));
+        return localStorage.getItem(buildKey(origin, targetLang));
     },
 
-    localRemove(origin: string) {
-        const key = buildKey(origin);
+    localRemove(origin: string, targetLang = config.to) {
+        const key = buildKey(origin, targetLang);
         const result = localStorage.getItem(key);
         localStorage.removeItem(key);
         if (result) {
-            localStorage.removeItem(buildKey(result));
+            localStorage.removeItem(buildKey(result, targetLang));
         }
     },
 

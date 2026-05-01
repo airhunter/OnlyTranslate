@@ -10,4 +10,10 @@ describe('Config', () => {
     const config = new Config()
     expect(typeof config.service).toBe('string')
   })
+
+  it('should disable bidirectional translation by default', () => {
+    const config = new Config()
+    expect(config.bidirectionalTranslation).toBe(false)
+    expect(config.bidirectionalTarget).toBe('en')
+  })
 })

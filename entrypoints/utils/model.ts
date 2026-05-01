@@ -59,6 +59,8 @@ export class Config {
     tencentSecretKey: string; // 腾讯云 Secret Key
     azureOpenaiEndpoint: string; // Azure OpenAI 端点地址
     animations: boolean; // 是否启用动画效果
+    bidirectionalTranslation: boolean; // 是否启用默认目标语言与互译语言的双向互译
+    bidirectionalTarget: string; // 双向互译的另一侧语言
     inputBoxTranslationTrigger: string; // 输入框翻译触发方式
     inputBoxTranslationTarget: string; // 输入框翻译目标语言
     enableVideoSubtitle: boolean; // 是否启用视频字幕翻译
@@ -106,6 +108,8 @@ export class Config {
         this.tencentSecretKey = ''; // 腾讯云 Secret Key
         this.azureOpenaiEndpoint = ''; // Azure OpenAI 端点地址
         this.animations = true; // 默认启用动画
+        this.bidirectionalTranslation = false; // 默认关闭双向互译
+        this.bidirectionalTarget = 'en'; // 默认与英文互译
         this.inputBoxTranslationTrigger = 'disabled'; // 默认关闭输入框翻译
         this.inputBoxTranslationTarget = 'en'; // 默认翻译成英文
         this.enableVideoSubtitle = true; // 默认启用视频字幕翻译

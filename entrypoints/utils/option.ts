@@ -287,6 +287,8 @@ export const defaultOption = {
     count: 0,
     useCache: true,
     floatingBallHotkey: "Alt+T",
+    bidirectionalTranslation: false,
+    bidirectionalTarget: "en",
     inputBoxTranslationTrigger: "disabled",
     inputBoxTranslationTarget: "en",
 };

@@ -7,8 +7,8 @@ import { enqueueTranslation, clearTranslationQueue } from './translateQueue';
 import browser from 'webextension-polyfill';
 import { config } from './config';
 import { cache } from './cache';
-import { detectlang } from './common';
 import { storage } from '@wxt-dev/storage';
+import { resolveTranslationDirection } from './translationDirection';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -48,14 +48,16 @@ export async function translateText(origin: string, context: string = document.t
     useCache = config.useCache,
   } = options;
 
-  // 如果目标语言与当前文本语言相同，直接返回原文
-  if (detectlang(origin.replace(/[\s\u3000]/g, '')) === config.to) {
+  const direction = resolveTranslationDirection(origin);
+
+  // 如果本次目标语言与当前文本语言相同，直接返回原文
+  if (!direction.shouldTranslate) {
     return origin;
   }
 
   // 检查缓存
   if (useCache) {
-    const cachedResult = cache.localGet(origin);
+    const cachedResult = cache.localGet(origin, direction.targetLang);
     if (cachedResult) {
       if (isDev) {
         console.log('[翻译API] 命中缓存，直接返回缓存结果');
@@ -76,7 +78,12 @@ export async function translateText(origin: string, context: string = document.t
       try {
         // 发送翻译请求给background脚本处理
         const response = await Promise.race([
-          browser.runtime.sendMessage({ context, origin }),
+          browser.runtime.sendMessage({
+            context,
+            origin,
+            sourceLang: direction.sourceLang,
+            targetLang: direction.targetLang,
+          }),
           new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('翻译请求超时')), timeout)
           )
@@ -90,7 +97,7 @@ export async function translateText(origin: string, context: string = document.t
 
         // 缓存翻译结果
         if (useCache) {
-          cache.localSet(origin, result);
+          cache.localSet(origin, result, direction.targetLang);
         }
 
         return result;

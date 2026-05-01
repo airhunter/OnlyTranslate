@@ -52,7 +52,7 @@ async function common(message: any) {
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: commonMsgTemplate(message.origin)
+            body: commonMsgTemplate(message.origin, message.targetLang)
         });
 
         if (!resp.ok) {

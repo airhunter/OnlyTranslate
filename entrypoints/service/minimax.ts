@@ -17,7 +17,7 @@ async function minimax(message: any) {
     const resp = await fetch(url, {
         method: method.POST,
         headers: headers,
-        body: minimaxTemplate(message.origin)
+        body: minimaxTemplate(message.origin, message.targetLang)
     })
     if (resp.ok) {
         let result = await resp.json();

@@ -4,10 +4,11 @@ import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import { beautyHTML, grabNode, grabAllNode, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
-import { detectlang, throttle } from "@/entrypoints/utils/common";
+import { throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 
 let hoverTimer: any; // 鼠标悬停计时器
 let htmlSet = new Set(); // 防抖
@@ -252,7 +253,7 @@ export function handleSingleTranslation(node: any, slide: boolean) {
 
 
 function bilingualTranslate(node: any, nodeOuterHTML: any) {
-    if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
+    if (!shouldTranslateText(node.textContent)) return;
 
     let origin = node.textContent;
     let spinner = insertLoadingSpinner(node);
@@ -272,7 +273,7 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
 
 
 export function singleTranslate(node: any) {
-    if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
+    if (!shouldTranslateText(node.textContent)) return;
 
     let origin = servicesType.isMachine(config.service) ? node.innerHTML : LLMStandardHTML(node);
     let spinner = insertLoadingSpinner(node);
