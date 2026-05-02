@@ -21,6 +21,10 @@ export default defineConfig({
             'process.env.VUE_APP_VERSION': JSON.stringify(packageJson.version),
         }
     }),
+    zip: {
+        name: 'OnlyTranslate',
+        artifactTemplate: '{{name}}-v{{version}}-{{browser}}.zip',
+    },
     manifest: {
         permissions: ['storage', 'contextMenus', 'offscreen'],
         host_permissions: ['<all_urls>'],

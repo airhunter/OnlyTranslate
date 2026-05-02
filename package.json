@@ -17,7 +17,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "test": "vitest run",
-    "release": "release-it"
+    "release": "GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token)} release-it"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",

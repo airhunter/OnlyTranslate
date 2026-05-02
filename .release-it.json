@@ -5,10 +5,17 @@
     "tagName": "v${version}"
   },
   "github": {
-    "release": false
+    "release": true,
+    "releaseName": "v${version}",
+    "assets": [
+      ".output/OnlyTranslate-v${version}-chrome.zip"
+    ]
   },
   "npm": {
     "publish": false
+  },
+  "hooks": {
+    "before:github:release": "pnpm zip"
   },
   "plugins": {
     "@release-it/conventional-changelog": {
