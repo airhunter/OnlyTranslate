@@ -11,6 +11,16 @@ export const RELEASE_NOTES_INIT_KEY = 'local:releaseNotesInitialized';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.2.0',
+    title: '双向互译与翻译稳定性优化',
+    items: [
+      '新增双向互译设置，可在默认目标语言和互译语言之间自动判断翻译方向。',
+      'Popup 新增更新说明入口，后续版本的新功能可以在扩展内快速查看。',
+      '优化 Reddit、CNN 等页面的全文翻译稳定性，减少空内容误翻译和重复译文。',
+      '清理商店版运行时体验，减少无关调试信息对日常使用的干扰。'
+    ]
+  },
+  {
     version: '0.1.0',
     title: '首个商店版本',
     items: [
