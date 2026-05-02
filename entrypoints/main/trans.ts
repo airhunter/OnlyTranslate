@@ -20,8 +20,14 @@ let mutationObserver: MutationObserver | null = null; // 保存 DOM 变化观察
 // 使用自定义属性标记已翻译的节点
 const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
+const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 
 let nodeIdCounter = 0; // 节点ID计数器
+
+function isManagedTranslationNode(node: Node): boolean {
+    if (!(node instanceof Element)) return false;
+    return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+}
 
 // 恢复原文内容
 export function restoreOriginalContent() {
@@ -145,9 +151,11 @@ export function autoTranslateEnglishPage() {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === 1) { // 元素节点
+                    if (isManagedTranslationNode(node)) return;
+
                     // 只处理未翻译的新节点
                     const newNodes = grabAllNode(node as Element).filter(
-                        n => !n.hasAttribute(TRANSLATED_ATTR)
+                        n => !n.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(n)
                     );
                     newNodes.forEach(n => observer?.observe(n));
                 }
@@ -326,9 +334,11 @@ export const handleBtnTranslation = throttle((node: any) => {
 
 
 function bilingualAppendChild(node: any, text: string) {
+    if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return;
+
     node.classList.add("only-translate-bilingual");
     let newNode = document.createElement("span");
-    newNode.classList.add("only-translate-bilingual-content");
+    newNode.classList.add(BILINGUAL_CONTENT_CLASS);
     // find the style
     const style = options.styles.find(s => s.value === config.style && !s.disabled);
     if (style?.class) {

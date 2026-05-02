@@ -16,6 +16,9 @@ const skipSet = new Set([
     'template', 'summary',
 ]);
 
+const translationContentClass = 'only-translate-bilingual-content';
+const translatedAttr = 'data-fr-translated';
+
 // 内联元素集合（可以包含在其他元素内的元素）
 export const inlineSet = new Set([
     'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
@@ -42,6 +45,8 @@ export function grabAllNode(rootNode: Node): Element[] {
 
                 // 跳过黑名单标签
                 if (skipSet.has(tag) ||
+                    node.classList?.contains(translationContentClass) ||
+                    node.closest?.(`.${translationContentClass}, [${translatedAttr}="true"]`) ||
                     node.classList?.contains('sr-only') ||
                     node.classList?.contains('notranslate')) {
                     return NodeFilter.FILTER_REJECT;
@@ -114,7 +119,11 @@ export function grabAllNode(rootNode: Node): Element[] {
             walker.currentNode = currentNode.nextSibling || currentNode;
         }
     }
-    return Array.from(new Set(result));;
+    return removeNestedTranslateNodes(Array.from(new Set(result)));
+}
+
+function removeNestedTranslateNodes(nodes: Element[]): Element[] {
+    return nodes.filter(node => !nodes.some(other => node !== other && node.contains(other)));
 }
 
 // 返回最终应该翻译的父节点或 false
