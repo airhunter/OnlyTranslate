@@ -256,6 +256,7 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
     if (!shouldTranslateText(node.textContent)) return;
 
     let origin = node.textContent;
+    if (!origin?.trim()) return;
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
@@ -276,6 +277,10 @@ export function singleTranslate(node: any) {
     if (!shouldTranslateText(node.textContent)) return;
 
     let origin = servicesType.isMachine(config.service) ? node.innerHTML : LLMStandardHTML(node);
+    if (!origin?.trim()) {
+        origin = node.textContent?.trim() || '';
+    }
+    if (!origin) return;
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API

@@ -48,7 +48,14 @@ export async function translateText(origin: string, context: string = document.t
     useCache = config.useCache,
   } = options;
 
-  const direction = resolveTranslationDirection(origin);
+  const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
+
+  // 空原文不进入翻译队列，避免 AI 服务在空提示下生成无关内容。
+  if (!safeOrigin.trim()) {
+    return safeOrigin;
+  }
+
+  const direction = resolveTranslationDirection(safeOrigin);
 
   // 如果本次目标语言与当前文本语言相同，直接返回原文
   if (!direction.shouldTranslate) {
@@ -57,7 +64,7 @@ export async function translateText(origin: string, context: string = document.t
 
   // 检查缓存
   if (useCache) {
-    const cachedResult = cache.localGet(origin, direction.targetLang);
+    const cachedResult = cache.localGet(safeOrigin, direction.targetLang);
     if (cachedResult) {
       if (isDev) {
         console.log('[翻译API] 命中缓存，直接返回缓存结果');
@@ -80,7 +87,7 @@ export async function translateText(origin: string, context: string = document.t
         const response = await Promise.race([
           browser.runtime.sendMessage({
             context,
-            origin,
+            origin: safeOrigin,
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
           }),
@@ -91,13 +98,13 @@ export async function translateText(origin: string, context: string = document.t
         const result = normalizeRuntimeTranslationResult(response);
 
         // 如果翻译结果为空或与原文完全相同，直接返回原文
-        if (!result || result === origin) {
-          return origin;
+        if (!result || result === safeOrigin) {
+          return safeOrigin;
         }
 
         // 缓存翻译结果
         if (useCache) {
-          cache.localSet(origin, result, direction.targetLang);
+          cache.localSet(safeOrigin, result, direction.targetLang);
         }
 
         return result;

@@ -11,6 +11,10 @@ import {
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
 
+function isTranslationMessage(message: any): boolean {
+    return typeof message?.origin === 'string' && message.origin.trim().length > 0;
+}
+
 /**
  * 在background脚本中调用微软翻译API（避免Firefox CORS问题）
  */
@@ -180,60 +184,59 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any) => {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    // 处理输入框翻译请求
-                    if (message.type === 'inputBoxTranslation') {
-                        const translatedText = await translateWithMicrosoftInBackground(message.text, message.targetLang);
-                        resolve({ success: true, translatedText });
-                        return;
+            // 处理输入框翻译请求
+            if (message?.type === 'inputBoxTranslation') {
+                return translateWithMicrosoftInBackground(message.text, message.targetLang)
+                    .then(translatedText => ({ success: true, translatedText }))
+                    .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+            }
+
+            // 处理 Chrome AI 翻译可用性检查
+            if (message?.type === 'CHROME_AI_CHECK_AVAILABILITY') {
+                return checkChromeTranslationAvailability(
+                    message.sourceLang || 'en',
+                    message.targetLang || 'zh-Hans'
+                );
+            }
+
+            // 处理 Chrome AI 翻译预下载
+            if (message?.type === 'CHROME_AI_PRELOAD_MODEL') {
+                return preloadChromeTranslationModel(
+                    message.sourceLang || 'en',
+                    message.targetLang || 'zh-Hans',
+                    (progress) => {
+                        // 发送进度更新到 options 页面
+                        browser.runtime.sendMessage({
+                            type: 'CHROME_AI_PRELOAD_PROGRESS',
+                            sourceLang: message.sourceLang || 'en',
+                            targetLang: message.targetLang || 'zh-Hans',
+                            progress
+                        }).catch(() => {}); // 忽略发送错误
                     }
+                );
+            }
 
-                    // 处理 Chrome AI 翻译可用性检查
-                    if (message.type === 'CHROME_AI_CHECK_AVAILABILITY') {
-                        const result = await checkChromeTranslationAvailability(
-                            message.sourceLang || 'en',
-                            message.targetLang || 'zh-Hans'
-                        );
-                        resolve(result);
-                        return;
-                    }
+            if (message?.type === 'openOptionsPage') {
+                return browser.runtime.openOptionsPage()
+                    .then(() => ({ success: true }))
+                    .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+            }
 
-                    // 处理 Chrome AI 翻译预下载
-                    if (message.type === 'CHROME_AI_PRELOAD_MODEL') {
-                        const result = await preloadChromeTranslationModel(
-                            message.sourceLang || 'en',
-                            message.targetLang || 'zh-Hans',
-                            (progress) => {
-                                // 发送进度更新到 options 页面
-                                browser.runtime.sendMessage({
-                                    type: 'CHROME_AI_PRELOAD_PROGRESS',
-                                    sourceLang: message.sourceLang || 'en',
-                                    targetLang: message.targetLang || 'zh-Hans',
-                                    progress
-                                }).catch(() => {}); // 忽略发送错误
-                            }
-                        );
-                        resolve(result);
-                        return;
-                    }
+            // 不是翻译消息的 runtime 通信不应进入翻译服务，避免空原文触发 AI 幻觉。
+            if (!isTranslationMessage(message)) {
+                return undefined;
+            }
 
-                    // 处理普通翻译请求
-                    const serviceHandler = servicesType.isCustom(config.service)
-                        ? _service[services.openai]
-                        : _service[config.service];
+            // 处理普通翻译请求
+            const serviceHandler = servicesType.isCustom(config.service)
+                ? _service[services.openai]
+                : _service[config.service];
 
-                    if (!serviceHandler) {
-                        throw new Error(`Unsupported translation service: ${config.service}`);
-                    }
+            if (!serviceHandler) {
+                return Promise.reject(new Error(`Unsupported translation service: ${config.service}`));
+            }
 
-                    serviceHandler(message)
-                        .then(resp => resolve(resp))    // 成功
-                        .catch(error => reject(error)); // 失败
-                } catch (error) {
-                    resolve({ success: false, error: error instanceof Error ? error.message : String(error) });
-                }
-            });
+            return serviceHandler(message);
         });
     }
 });
