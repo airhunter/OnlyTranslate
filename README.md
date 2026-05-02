@@ -55,7 +55,9 @@ OnlyTranslate 基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/F
 
 ## 安装
 
-> Chrome 扩展商店版本即将上线，敬请期待。
+**Chrome 扩展商店：**
+
+[只译 - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
 
 **手动安装（开发者模式）：**
 
@@ -89,6 +91,7 @@ pnpm zip
 - 继续使用 `release-it` 维护版本号与开发向变更记录。
 - 每次发版时，同步更新项目内的用户版更新说明数据。
 - 用户版更新说明建议控制在 `3-5` 条，优先描述用户能直接感知到的新功能、优化和修复。
+- 完整流程见 [RELEASE.md](./RELEASE.md)。
 
 ---
 
