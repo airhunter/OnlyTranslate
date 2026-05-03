@@ -25,6 +25,7 @@
           <InteractionGroup v-if="activePanel === 'interaction'" />
           <AISettingsGroup v-if="activePanel === 'ai'" />
           <GeneralGroup v-if="activePanel === 'general'" />
+          <AboutGroup v-if="activePanel === 'about'" />
         </div>
       </main>
     </div>
@@ -41,6 +42,7 @@ import AppearanceGroup from '@/components/options/AppearanceGroup.vue'
 import InteractionGroup from '@/components/options/InteractionGroup.vue'
 import AISettingsGroup from '@/components/options/AISettingsGroup.vue'
 import GeneralGroup from '@/components/options/GeneralGroup.vue'
+import AboutGroup from '@/components/options/AboutGroup.vue'
 import '../../styles/theme.css'
 import '../../styles/settings-row.css'
 import 'element-plus/theme-chalk/base.css'
@@ -60,6 +62,7 @@ const navItems = [
   { key: 'interaction', label: '交互设置' },
   { key: 'ai', label: 'AI 设置' },
   { key: 'general', label: '通用' },
+  { key: 'about', label: '关于只译' },
 ]
 
 const handleNavigate = (panel: string) => {

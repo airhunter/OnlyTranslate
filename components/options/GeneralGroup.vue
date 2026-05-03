@@ -78,7 +78,6 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
 import { options, defaultOption } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
 import { InfoFilled, Upload, Download } from '@element-plus/icons-vue'

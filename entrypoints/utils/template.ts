@@ -125,7 +125,7 @@ export function tongyiMsgTemplate(origin: string, targetLang = config.to) {
             {value: "ru"},
         ]
         let targetItem = langMap.find(i => i.value === targetLang) || langMap[0]
-        let targetLang = targetItem.target || targetItem.value
+        let resolvedTargetLang = targetItem.target || targetItem.value
         return JSON.stringify({
             "model": model,
             "messages": [
@@ -133,7 +133,7 @@ export function tongyiMsgTemplate(origin: string, targetLang = config.to) {
             ],
             "translation_options": {
                 "source_lang": "auto",
-                "target_lang": targetLang
+                "target_lang": resolvedTargetLang
             }
         })
     }

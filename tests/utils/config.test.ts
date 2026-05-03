@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { Config } from '@/entrypoints/utils/model'
 
 describe('Config', () => {

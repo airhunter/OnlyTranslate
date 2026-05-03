@@ -33,8 +33,8 @@
                 v-for="item in group.options"
                 :key="item.value"
                 class="style-card"
-                :class="{ 'style-card--active': config.style === item.value }"
-                @click="config.style = item.value"
+                :class="{ 'style-card--active': config.style === Number(item.value) }"
+                @click="config.style = Number(item.value)"
               >
                 <div class="style-card-preview">
                   <span class="style-card-original">The quick brown fox</span>

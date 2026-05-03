@@ -219,7 +219,7 @@ export default defineBackground({
             if (message?.type === 'openOptionsPage') {
                 return browser.runtime.openOptionsPage()
                     .then(() => ({ success: true }))
-                    .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+                    .catch((error: unknown) => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
             }
 
             // 不是翻译消息的 runtime 通信不应进入翻译服务，避免空原文触发 AI 幻觉。

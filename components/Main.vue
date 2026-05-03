@@ -194,7 +194,7 @@ async function checkTranslationStatus() {
     const response = await browser.tabs.sendMessage(tabs[0].id, {
       type: 'contextMenuTranslate',
       action: 'getStatus'
-    });
+    }) as { status?: string; isTranslated?: boolean };
     if (response?.status === 'success') {
       isTranslated.value = response.isTranslated || false;
     }
