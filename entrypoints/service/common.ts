@@ -21,16 +21,17 @@ function normalizeOpenAICompatibleUrl(url: string): string {
 async function common(message: any) {
     try {
 
-        let token = config.token[config.service] || "";
-        let url = config.proxy[config.service] || urls[config.service];
+        const service = typeof message.service === 'string' && message.service ? message.service : config.service;
+        let token = config.token[service] || "";
+        let url = config.proxy[service] || urls[service];
         
         // 从 customProviders 动态获取
-        if (config.service.startsWith('custom_') || config.service === 'custom') {
-            const provider = config.customProviders?.find(p => p.id === config.service);
+        if (service.startsWith('custom_') || service === 'custom') {
+            const provider = config.customProviders?.find(p => p.id === service);
             if (provider) {
                 token = provider.token || "";
                 url = provider.url;
-            } else if (config.service === 'custom') {
+            } else if (service === 'custom') {
                 url = config.custom;
             }
             url = normalizeOpenAICompatibleUrl(url);
@@ -44,7 +45,7 @@ async function common(message: any) {
             headers.append('Authorization', `Bearer ${token}`);
         }
 
-        if(config.service === services.openrouter){
+        if(service === services.openrouter){
             headers.append('HTTP-Referer', 'https://github.com/airhunter/OnlyTranslate');
             headers.append('X-Title', 'OnlyTranslate');
         }
@@ -52,7 +53,7 @@ async function common(message: any) {
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: commonMsgTemplate(message.origin, message.targetLang)
+            body: commonMsgTemplate(message.origin, message.targetLang, service)
         });
 
         if (!resp.ok) {

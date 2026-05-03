@@ -5,17 +5,18 @@ import { contentPostHandler } from "@/entrypoints/utils/check";
 
 async function deepseek(message: any) {
     try {
+        const service = typeof message.service === 'string' && message.service ? message.service : config.service;
         const headers = new Headers({
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.token[config.service]}`
+            'Authorization': `Bearer ${config.token[service]}`
         });
 
-        const url = config.proxy[config.service] || urls[config.service];
+        const url = config.proxy[service] || urls[service];
 
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: deepseekMsgTemplate(message.origin, message.targetLang)
+            body: deepseekMsgTemplate(message.origin, message.targetLang, service)
         });
 
         if (!resp.ok) {

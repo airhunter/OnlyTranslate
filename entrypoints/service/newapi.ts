@@ -5,9 +5,10 @@ import { contentPostHandler } from "@/entrypoints/utils/check";
 
 async function newapi(message: any) {
     try {
+        const service = typeof message.service === 'string' && message.service ? message.service : config.service;
         const headers = new Headers({
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.token[config.service]}`
+            'Authorization': `Bearer ${config.token[service]}`
         });
 
         let url = config.newApiUrl
@@ -30,7 +31,7 @@ async function newapi(message: any) {
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: commonMsgTemplate(message.origin, message.targetLang)
+            body: commonMsgTemplate(message.origin, message.targetLang, service)
         });
 
         if (!resp.ok) {

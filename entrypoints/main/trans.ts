@@ -1,6 +1,6 @@
 import { checkConfig, searchClassName, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
-import { options, servicesType } from "../utils/option";
+import { customModelString, isServiceConfigured, options, services, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import { beautyHTML, grabNode, grabAllNode, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
@@ -21,8 +21,13 @@ let mutationObserver: MutationObserver | null = null; // 保存 DOM 变化观察
 const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
 const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
+const RETRANSLATE_BUTTON_ID = 'only-translate-retranslate-button';
+const RETRANSLATE_MENU_ID = 'only-translate-retranslate-menu';
+const RETRANSLATING_CLASS = 'only-translate-retranslating';
 
 let nodeIdCounter = 0; // 节点ID计数器
+let activeRetranslateNode: HTMLElement | null = null;
+let retranslateControlsMounted = false;
 
 function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
@@ -54,7 +59,7 @@ export function restoreOriginalContent() {
     });
     
     // 3. 移除所有翻译过程中添加的加载动画和错误提示
-    document.querySelectorAll('.only-translate-loading, .only-translate-retry-wrapper').forEach(element => {
+    document.querySelectorAll('.only-translate-loading, .only-translate-retry-wrapper, #only-translate-retranslate-button, #only-translate-retranslate-menu').forEach(element => {
         element.remove();
     });
     
@@ -75,6 +80,7 @@ export function restoreOriginalContent() {
     isAutoTranslating = false;
     htmlSet.clear(); // 清空防抖集合
     nodeIdCounter = 0; // 重置节点ID计数器
+    activeRetranslateNode = null;
     
     // 7. 消除可能存在的全局样式污染
     const tempStyleElements = document.querySelectorAll('style[data-fr-temp-style]');
@@ -85,6 +91,7 @@ export function restoreOriginalContent() {
 export function autoTranslateEnglishPage() {
     // 如果已经在翻译中，则返回
     if (isAutoTranslating) return;
+    mountRetranslateControls();
     
     // 获取当前页面的语言（暂时注释，存在识别问题）
     // const text = document.documentElement.innerText || '';
@@ -347,4 +354,184 @@ function bilingualAppendChild(node: any, text: string) {
     newNode.append(text);
     smashTruncationStyle(node);
     node.appendChild(newNode);
+}
+
+function mountRetranslateControls() {
+    if (retranslateControlsMounted) return;
+    retranslateControlsMounted = true;
+
+    document.addEventListener('mousemove', handleRetranslateMouseMove, true);
+    document.addEventListener('click', handleRetranslateDocumentClick, true);
+    document.addEventListener('scroll', hideRetranslateMenu, true);
+    window.addEventListener('resize', hideRetranslateMenu);
+}
+
+function handleRetranslateMouseMove(event: MouseEvent) {
+    const target = event.target as Element | null;
+    if (!target || target.closest(`#${RETRANSLATE_BUTTON_ID}, #${RETRANSLATE_MENU_ID}`)) return;
+
+    const node = target.closest(`[${TRANSLATED_ATTR}="true"]`) as HTMLElement | null;
+    if (!node || !node.getAttribute(TRANSLATED_ID_ATTR)) {
+        removeRetranslateButton();
+        return;
+    }
+
+    showRetranslateButton(node);
+}
+
+function showRetranslateButton(node: HTMLElement) {
+    activeRetranslateNode = node;
+    let button = document.getElementById(RETRANSLATE_BUTTON_ID) as HTMLButtonElement | null;
+    if (!button) {
+        button = document.createElement('button');
+        button.id = RETRANSLATE_BUTTON_ID;
+        button.type = 'button';
+        button.className = 'only-translate-retranslate-button notranslate';
+        button.textContent = '重译';
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (activeRetranslateNode) showRetranslateMenu(activeRetranslateNode);
+        });
+        document.body.appendChild(button);
+    }
+
+    const rect = node.getBoundingClientRect();
+    button.style.top = `${Math.max(8, rect.top + 8)}px`;
+    button.style.left = `${Math.min(window.innerWidth - 64, Math.max(8, rect.right - 48))}px`;
+}
+
+function removeRetranslateButton() {
+    if (document.getElementById(RETRANSLATE_MENU_ID)) return;
+    document.getElementById(RETRANSLATE_BUTTON_ID)?.remove();
+    activeRetranslateNode = null;
+}
+
+function showRetranslateMenu(node: HTMLElement) {
+    hideRetranslateMenu();
+
+    const serviceItems = getRetranslateServices();
+    if (!serviceItems.length) return;
+
+    const menu = document.createElement('div');
+    menu.id = RETRANSLATE_MENU_ID;
+    menu.className = 'only-translate-retranslate-menu notranslate';
+
+    serviceItems.forEach((item) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'only-translate-retranslate-menu-item';
+        option.textContent = item.label;
+        option.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            hideRetranslateMenu();
+            void retranslateNode(node, item.value);
+        });
+        menu.appendChild(option);
+    });
+
+    const rect = node.getBoundingClientRect();
+    menu.style.top = `${Math.min(window.innerHeight - 16, rect.top + 34)}px`;
+    menu.style.left = `${Math.min(window.innerWidth - 180, Math.max(8, rect.right - 172))}px`;
+    document.body.appendChild(menu);
+}
+
+function hideRetranslateMenu() {
+    document.getElementById(RETRANSLATE_MENU_ID)?.remove();
+}
+
+function handleRetranslateDocumentClick(event: MouseEvent) {
+    const target = event.target as Element | null;
+    if (target?.closest(`#${RETRANSLATE_BUTTON_ID}, #${RETRANSLATE_MENU_ID}`)) return;
+    hideRetranslateMenu();
+}
+
+function getRetranslateServices() {
+    const items: Array<{ value: string; label: string }> = [];
+    const addService = (value: string, label: string) => {
+        if (items.some(item => item.value === value)) return;
+        if (config.display === styles.singleTranslation && value === services.google) return;
+        if (!isServiceConfigured(value, config)) return;
+        if (!hasUsableModel(value)) return;
+        items.push({ value, label });
+    };
+
+    options.services.forEach((item: any) => {
+        if (item.disabled || !item.value || item.value === 'advanced') return;
+        if (item.value === services.custom) return;
+        addService(item.value, item.label);
+    });
+
+    config.customProviders?.forEach(provider => {
+        if (provider.url) addService(provider.id, provider.name || '自定义接口');
+    });
+
+    return items;
+}
+
+function hasUsableModel(service: string) {
+    if (!servicesType.isAI(service) || !servicesType.isUseModel(service)) return true;
+
+    if (servicesType.isCustom(service)) {
+        const provider = config.customProviders?.find(item => item.id === service);
+        if (!provider) return true;
+        return !!provider.model && (provider.model !== customModelString || !!provider.customModel);
+    }
+
+    const model = config.model[service];
+    return !!model && (model !== customModelString || !!config.customModel[service]);
+}
+
+async function retranslateNode(node: HTMLElement, service: string) {
+    const original = getOriginalSegmentContent(node);
+    if (!original.text.trim()) return;
+
+    const button = document.getElementById(RETRANSLATE_BUTTON_ID) as HTMLButtonElement | null;
+    const originalButtonText = button?.textContent || '重译';
+    if (button) {
+        button.textContent = '重译中';
+        button.disabled = true;
+    }
+    node.classList.add(RETRANSLATING_CLASS);
+
+    try {
+        const source = searchClassName(node, BILINGUAL_CONTENT_CLASS)
+            ? original.text
+            : original.html;
+        let text = await translateText(source, document.title, {
+            service,
+            useCache: false,
+            maxRetries: 1
+        });
+
+        const content = searchClassName(node, BILINGUAL_CONTENT_CLASS);
+        if (content && content instanceof HTMLElement) {
+            content.textContent = text;
+        } else {
+            text = beautyHTML(text);
+            if (text) node.innerHTML = text;
+        }
+    } catch (error) {
+        insertFailedTip(node, error instanceof Error ? error.message : '重译失败', document.createElement('span'));
+    } finally {
+        node.classList.remove(RETRANSLATING_CLASS);
+        if (button) {
+            button.textContent = originalButtonText;
+            button.disabled = false;
+        }
+    }
+}
+
+function getOriginalSegmentContent(node: HTMLElement) {
+    const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
+    const html = nodeId && originalContents.has(nodeId)
+        ? originalContents.get(nodeId)
+        : node.innerHTML;
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    return {
+        html,
+        text: template.content.textContent || node.textContent || ''
+    };
 }

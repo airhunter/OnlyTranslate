@@ -4,20 +4,21 @@ import {claudeMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 
 async function claude(message: any) {
+    const service = typeof message.service === 'string' && message.service ? message.service : services.claude;
     // 构建请求头
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('x-api-key', config.token[services.claude]);
+    headers.append('x-api-key', config.token[service]);
     headers.append('anthropic-version', '2023-06-01');
     headers.append('anthropic-dangerous-direct-browser-access', 'true');
 
-    const url = config.proxy[config.service] || urls[services.claude];
+    const url = config.proxy[service] || urls[services.claude];
 
     try {
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: claudeMsgTemplate(message.origin, message.targetLang)
+            body: claudeMsgTemplate(message.origin, message.targetLang, service)
         });
 
         if (!resp.ok) {

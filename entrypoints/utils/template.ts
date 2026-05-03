@@ -3,13 +3,13 @@ import {customModelString, defaultOption, services} from "./option";
 import {config} from "@/entrypoints/utils/config";
 
 // openai 格式的消息模板（通用模板）
-export function commonMsgTemplate(origin: string, targetLang = config.to) {
+export function commonMsgTemplate(origin: string, targetLang = config.to, service = config.service) {
     // 检测是否使用自定义模型
-    let model = config.model[config.service];
-    let customModel = config.customModel[config.service];
+    let model = config.model[service];
+    let customModel = config.customModel[service];
     
-    if (config.service.startsWith('custom_') || config.service === 'custom') {
-        const provider = config.customProviders?.find(p => p.id === config.service);
+    if (service.startsWith('custom_') || service === 'custom') {
+        const provider = config.customProviders?.find(p => p.id === service);
         if (provider) {
             model = provider.model;
             customModel = provider.customModel;
@@ -19,10 +19,10 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
     model = model === customModelString ? customModel : model;
 
     // 删除模型名称中的中文括号及其内容，如"gpt-4（推荐）" -> "gpt-4"
-    model = model.replace(/（.*）/g, "");
+    model = (model || '').replace(/（.*）/g, "");
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    let system = config.system_role[service] || defaultOption.system_role;
+    let user = (config.user_role[service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({
@@ -36,15 +36,15 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
 }
 
 // deepseek
-export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
+export function deepseekMsgTemplate(origin: string, targetLang = config.to, service = config.service) {
     // 检测是否使用自定义模型
-    let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
+    let model = config.model[service] === customModelString ? config.customModel[service] : config.model[service]
 
     // 删除模型名称中的中文括号及其内容，如"gpt-4（推荐）" -> "gpt-4"
-    model = model.replace(/（.*）/g, "");
+    model = (model || '').replace(/（.*）/g, "");
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    let system = config.system_role[service] || defaultOption.system_role;
+    let user = (config.user_role[service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const payload: any = {
@@ -64,8 +64,8 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
 }
 
 // gemini
-export function geminiMsgTemplate(origin: string, targetLang = config.to) {
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+export function geminiMsgTemplate(origin: string, targetLang = config.to, service = config.service) {
+    let user = (config.user_role[service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({
@@ -76,14 +76,14 @@ export function geminiMsgTemplate(origin: string, targetLang = config.to) {
 }
 
 // claude
-export function claudeMsgTemplate(origin: string, targetLang = config.to) {
-    let model = config.model[services.claude];
+export function claudeMsgTemplate(origin: string, targetLang = config.to, service = services.claude) {
+    let model = config.model[service];
     if (model === "claude-3-5-haiku") model = "claude-3-5-haiku-20241022";
     else if (model === "claude-3-5-sonnet") model = "claude-3-5-sonnet-20241022";
     else if (model === "claude-3-opus") model = "claude-3-opus-20240229";
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    let system = config.system_role[service] || defaultOption.system_role;
+    let user = (config.user_role[service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({
@@ -98,11 +98,11 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to) {
 }
 
 // 通义千问
-export function tongyiMsgTemplate(origin: string, targetLang = config.to) {
-    let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
+export function tongyiMsgTemplate(origin: string, targetLang = config.to, service = config.service) {
+    let model = config.model[service] === customModelString ? config.customModel[service] : config.model[service]
     const normalTemplate = () => {
-        let system = config.system_role[config.service] || defaultOption.system_role;
-        let user = (config.user_role[config.service] || defaultOption.user_role)
+        let system = config.system_role[service] || defaultOption.system_role;
+        let user = (config.user_role[service] || defaultOption.user_role)
             .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
         return JSON.stringify({
@@ -155,10 +155,10 @@ export function yiyanMsgTemplate(origin: string, targetLang = config.to) {
     })
 }
 
-export function minimaxTemplate(origin: string, targetLang = config.to) {
+export function minimaxTemplate(origin: string, targetLang = config.to, service = config.service) {
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    let system = config.system_role[service] || defaultOption.system_role;
+    let user = (config.user_role[service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({

@@ -4,12 +4,13 @@ import {minimaxTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 
 async function minimax(message: any) {
+    const service = typeof message.service === 'string' && message.service ? message.service : services.minimax;
     // 构建请求头
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('Authorization', `Bearer ${config.token[services.minimax]}`);
+    headers.append('Authorization', `Bearer ${config.token[service]}`);
 
-    let url = "https://api.minimax.chat/v1/text/" + config.model[services.minimax];
+    let url = "https://api.minimax.chat/v1/text/" + config.model[service];
 
     console.log(url)
 
@@ -17,7 +18,7 @@ async function minimax(message: any) {
     const resp = await fetch(url, {
         method: method.POST,
         headers: headers,
-        body: minimaxTemplate(message.origin, message.targetLang)
+        body: minimaxTemplate(message.origin, message.targetLang, service)
     })
     if (resp.ok) {
         let result = await resp.json();

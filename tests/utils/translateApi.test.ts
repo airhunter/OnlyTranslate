@@ -70,4 +70,23 @@ describe('translateText', () => {
     expect(resolveTranslationDirection).not.toHaveBeenCalled()
     expect(mockSendMessage).not.toHaveBeenCalled()
   })
+
+  it('passes per-request service without changing global config', async () => {
+    mockResolveTranslationDirection.mockReturnValue({
+      shouldTranslate: true,
+      sourceLang: 'en',
+      targetLang: 'zh-Hans'
+    })
+    mockSendMessage.mockResolvedValue('你好')
+
+    await expect(translateText('hello', 'Reddit', { service: 'deepL', useCache: false })).resolves.toBe('你好')
+
+    expect(mockSendMessage).toHaveBeenCalledWith({
+      context: 'Reddit',
+      origin: 'hello',
+      sourceLang: 'en',
+      targetLang: 'zh-Hans',
+      service: 'deepL'
+    })
+  })
 })

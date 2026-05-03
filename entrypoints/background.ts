@@ -228,12 +228,15 @@ export default defineBackground({
             }
 
             // 处理普通翻译请求
-            const serviceHandler = servicesType.isCustom(config.service)
+            const requestedService = typeof message.service === 'string' && message.service
+                ? message.service
+                : config.service;
+            const serviceHandler = servicesType.isCustom(requestedService)
                 ? _service[services.openai]
-                : _service[config.service];
+                : _service[requestedService];
 
             if (!serviceHandler) {
-                return Promise.reject(new Error(`Unsupported translation service: ${config.service}`));
+                return Promise.reject(new Error(`Unsupported translation service: ${requestedService}`));
             }
 
             return serviceHandler(message);

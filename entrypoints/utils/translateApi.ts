@@ -41,11 +41,12 @@ function normalizeRuntimeTranslationResult(result: any): string {
  * @returns 翻译结果的Promise
  */
 export async function translateText(origin: string, context: string = document.title, options: TranslateOptions = {}): Promise<string> {
-  const {
+    const {
     maxRetries = 3, 
     retryDelay = 1000, 
     timeout = 45000,
     useCache = config.useCache,
+    service,
   } = options;
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
@@ -90,6 +91,7 @@ export async function translateText(origin: string, context: string = document.t
             origin: safeOrigin,
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
+            service,
           }),
           new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('翻译请求超时')), timeout)
@@ -152,4 +154,6 @@ export interface TranslateOptions {
   timeout?: number;
   /** 是否使用缓存 */
   useCache?: boolean;
+  /** 指定本次翻译使用的服务，不影响全局默认服务 */
+  service?: string;
 } 
