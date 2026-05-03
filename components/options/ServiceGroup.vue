@@ -168,9 +168,22 @@
               <div v-if="usesModel(service.id)" class="provider-form-row">
                 <div class="provider-form-label">模型</div>
                 <div class="provider-form-control">
-                  <el-select v-model="config.model[service.id]" placeholder="选择模型">
-                    <el-option v-for="item in models.get(service.id) || []" :key="item" class="select-left" :label="item" :value="item" />
-                  </el-select>
+                  <div class="model-picker">
+                    <el-select v-model="config.model[service.id]" filterable placeholder="选择模型" :loading="loadingModels[service.id]">
+                      <el-option v-for="item in getModelOptions(service.id)" :key="item" class="select-left" :label="item" :value="item" />
+                    </el-select>
+                    <el-tooltip :content="canFetchModels(service.id) ? '从厂商接口刷新模型列表' : '该服务暂不支持自动获取模型'" placement="top">
+                      <el-button
+                        :icon="Refresh"
+                        :loading="loadingModels[service.id]"
+                        :disabled="!canFetchModels(service.id)"
+                        plain
+                        aria-label="刷新模型列表"
+                        @click="handleFetchModels(service.id)"
+                      />
+                    </el-tooltip>
+                  </div>
+                  <div v-if="modelFetchHints[service.id]" class="model-fetch-hint">{{ modelFetchHints[service.id] }}</div>
                 </div>
               </div>
 
@@ -250,10 +263,12 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { customModelString, models, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
+import { Refresh } from '@element-plus/icons-vue'
+import { customModelString, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection } from '@/entrypoints/utils/testConnection'
+import { canFetchProviderModels, fetchProviderModels, getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
 
 const { config } = useConfig()
 
@@ -266,10 +281,15 @@ const testingService = computed({
 
 const state = reactive({
   testingService: '',
-  expandedServices: {} as Record<string, boolean>
+  expandedServices: {} as Record<string, boolean>,
+  loadingModels: {} as Record<string, boolean>,
+  modelOptions: {} as Record<string, string[]>,
+  modelFetchHints: {} as Record<string, string>
 })
 
 const expandedServices = state.expandedServices
+const loadingModels = state.loadingModels
+const modelFetchHints = state.modelFetchHints
 
 // 所有预设的库定义
 const allPresets = [
@@ -478,6 +498,8 @@ const isConfigured = (service: string) => isServiceConfigured(service, config.va
 const usesToken = (service: string) => servicesType.isUseToken(service)
 const usesModel = (service: string) => servicesType.isUseModel(service)
 const usesProxy = (service: string) => servicesType.isUseProxy(service)
+const canFetchModels = (service: string) => canFetchProviderModels(service)
+const getModelOptions = (service: string) => state.modelOptions[service] || getStaticModelOptions(service)
 
 const getProxyValue = (service: string) => {
   const defaultUrl = urls[service]
@@ -495,6 +517,36 @@ const isProxyCustomized = (service: string) => {
 
 const resetProxy = (service: string) => {
   config.value.proxy[service] = ''
+}
+
+const handleFetchModels = async (service: string) => {
+  if (!canFetchModels(service)) return
+
+  loadingModels[service] = true
+  modelFetchHints[service] = ''
+
+  try {
+    const items = await fetchProviderModels(service, {
+      token: config.value.token[service],
+      url: getProxyValue(service)
+    })
+
+    state.modelOptions[service] = items
+    const currentModel = config.value.model[service]
+    if (!currentModel || (currentModel !== customModelString && !items.includes(currentModel))) {
+      config.value.model[service] = items.find((item) => item !== customModelString) || customModelString
+    }
+
+    const remoteModelCount = items.filter((item) => item !== customModelString).length
+    modelFetchHints[service] = `已从厂商接口获取 ${remoteModelCount} 个模型`
+    ElMessage.success('模型列表已更新')
+  } catch (error: any) {
+    const message = error?.message || '未知错误'
+    modelFetchHints[service] = message
+    ElMessage.error(message)
+  } finally {
+    loadingModels[service] = false
+  }
 }
 
 const handleTestConnection = async (service: string) => {
@@ -645,6 +697,20 @@ const handleTestConnection = async (service: string) => {
 .provider-form-control { min-width: 0; }
 .provider-form-control--inline { display: flex; align-items: center; }
 .provider-form-control :deep(.el-select), .provider-form-control :deep(.el-input) { width: 100%; }
+.model-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.model-picker :deep(.el-button) {
+  flex-shrink: 0;
+}
+.model-fetch-hint {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .provider-inline-action { margin-top: 6px; display: flex; justify-content: flex-end; }
 .apikey-link { font-size: 12px; color: var(--fr-accent-color); text-decoration: none; }
 .apikey-link:hover { text-decoration: underline; }
