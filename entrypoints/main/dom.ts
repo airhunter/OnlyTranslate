@@ -16,6 +16,12 @@ const skipSet = new Set([
     'template', 'summary',
 ]);
 
+// 需要跳过的 ARIA role（交互式 UI 元素）
+const skipAriaRoles = new Set([
+    'button', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+    'tab', 'menu', 'menubar', 'tablist', 'toolbar', 'navigation',
+]);
+
 const translationContentClass = 'only-translate-bilingual-content';
 const translatedAttr = 'data-fr-translated';
 
@@ -48,7 +54,8 @@ export function grabAllNode(rootNode: Node): Element[] {
                     node.classList?.contains(translationContentClass) ||
                     node.closest?.(`.${translationContentClass}, [${translatedAttr}="true"]`) ||
                     node.classList?.contains('sr-only') ||
-                    node.classList?.contains('notranslate')) {
+                    node.classList?.contains('notranslate') ||
+                    skipAriaRoles.has(node.getAttribute('role'))) {
                     return NodeFilter.FILTER_REJECT;
                 }
 
@@ -194,7 +201,8 @@ function shouldSkipNode(node: any, tag: string): boolean {
         node.isContentEditable ||
         checkTextSize(node) ||
         isMainlyNumericContent(node) ||
-        isJSONContent(node);
+        isJSONContent(node) ||
+        skipAriaRoles.has(node.getAttribute?.('role'));
 }
 
 // 检查文本是否为 JSON 格式数据（不应被翻译）
