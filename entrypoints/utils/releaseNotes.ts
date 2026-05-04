@@ -11,6 +11,17 @@ export const RELEASE_NOTES_INIT_KEY = 'local:releaseNotesInitialized';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.3.0',
+    title: '智能识文与交互体验升级',
+    items: [
+      '翻译范围改为「✦ 识文 / 全页」分段按钮，快速进行模式切换。',
+      '智能模式更精准，自动跳过按钮、菜单等交互元素，减少干扰性译文。',
+      '修复 GitHub 全文翻译不一致，About 侧边栏各条目不再出现部分原文、部分译文混排。',
+      '设置页新增「关于只译」页面。',
+      '支持一键刷新 AI 厂商模型列表。'
+    ]
+  },
+  {
     version: '0.2.0',
     title: '双向互译与翻译稳定性优化',
     items: [
