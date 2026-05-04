@@ -27,10 +27,12 @@
             <div class="release-notes-title">{{ releaseNotesHeading }}</div>
           </div>
 
-          <ul v-if="currentReleaseNote" class="release-notes-list">
-            <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
-          </ul>
-          <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+          <div class="release-notes-content">
+            <ul v-if="currentReleaseNote" class="release-notes-list">
+              <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
+            </ul>
+            <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+          </div>
 
           <button type="button" class="release-notes-confirm" @click="handleReleaseNotesConfirm">
             知道了
@@ -567,16 +569,17 @@ function openSettingsPage() {
 }
 
 .release-notes-card {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 20;
-  width: 220px;
+  width: min(260px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
+  max-height: min(320px, calc(100vh - 72px));
+  overflow: hidden;
   padding: 12px;
   border: 1px solid var(--fr-border-color-lighter);
   border-radius: 8px;
@@ -596,6 +599,21 @@ function openSettingsPage() {
   font-weight: 600;
   line-height: 1.4;
   color: var(--fr-text-color-primary);
+}
+
+.release-notes-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.release-notes-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.release-notes-content::-webkit-scrollbar-thumb {
+  background: var(--fr-border-color);
+  border-radius: 2px;
 }
 
 .release-notes-list {
@@ -623,6 +641,7 @@ function openSettingsPage() {
 
 .release-notes-confirm {
   align-self: flex-end;
+  flex-shrink: 0;
   min-width: 64px;
   height: 28px;
   padding: 0 10px;
