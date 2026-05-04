@@ -108,8 +108,8 @@ export default defineContentScript({
                 }
                 
                 if (message.action === 'fullPage') {
-                    // 触发全文翻译
-                    autoTranslateEnglishPage();
+                    // 触发全文翻译（scope 由 popup 显式传入，避免 storage 同步竞态）
+                    autoTranslateEnglishPage(message.scope);
                     sendResponse({ status: 'success', action: 'translated' });
                     return true;
                 } else if (message.action === 'restore') {

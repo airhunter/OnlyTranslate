@@ -8,6 +8,8 @@ import { throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { findMainContent } from '@/entrypoints/utils/contentDetector';
+import { shouldSkipContentBlock } from '@/entrypoints/utils/contentFilter';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 
 let hoverTimer: any; // 鼠标悬停计时器
@@ -82,7 +84,7 @@ export function restoreOriginalContent() {
 }
 
 // 自动翻译整个页面的功能
-export function autoTranslateEnglishPage() {
+export function autoTranslateEnglishPage(scopeOverride?: string) {
     // 如果已经在翻译中，则返回
     if (isAutoTranslating) return;
     
@@ -98,8 +100,17 @@ export function autoTranslateEnglishPage() {
     // }
     // console.log('当前页面非目标语言，开始翻译');
 
-    // 获取所有需要翻译的节点
-    const nodes = grabAllNode(document.body);
+    // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
+    const scope = scopeOverride ?? config.translationScope;
+    const contentRoot = scope === 'full'
+        ? document.body
+        : findMainContent();
+    const grabOptions = scope === 'full'
+        ? undefined
+        : { shouldSkipSubtree: shouldSkipContentBlock };
+
+    const nodes = grabAllNode(contentRoot, grabOptions);
+
     if (!nodes.length) return;
 
     isAutoTranslating = true;
@@ -147,14 +158,17 @@ export function autoTranslateEnglishPage() {
     // 创建 MutationObserver 监听 DOM 变化
     mutationObserver = new MutationObserver((mutations) => {
         if (!isAutoTranslating) return;
-        
+
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === 1) { // 元素节点
                     if (isManagedTranslationNode(node)) return;
 
+                    // 智能模式下，忽略 contentRoot 范围之外的动态插入节点
+                    if (scope !== 'full' && !contentRoot.contains(node as Node)) return;
+
                     // 只处理未翻译的新节点
-                    const newNodes = grabAllNode(node as Element).filter(
+                    const newNodes = grabAllNode(node as Element, grabOptions).filter(
                         n => !n.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(n)
                     );
                     newNodes.forEach(n => observer?.observe(n));

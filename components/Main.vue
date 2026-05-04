@@ -108,9 +108,25 @@
       <div class="setting-row">
         <span class="setting-label">划词翻译</span>
         <div class="setting-control setting-control--switch">
-          <el-switch 
-            :model-value="config.selectionTranslatorMode !== 'disabled'" 
+          <el-switch
+            :model-value="config.selectionTranslatorMode !== 'disabled'"
             @update:model-value="toggleSelectionTranslator"
+          />
+        </div>
+      </div>
+
+      <!-- 翻译范围 -->
+      <div class="setting-row">
+        <span class="setting-label">
+          全页模式
+          <el-tooltip effect="dark" content="开启后翻译整页所有文字，关闭时仅翻译自动识别的正文区域" placement="top-start" :show-after="500">
+            <el-icon class="info-icon"><ChatDotRound /></el-icon>
+          </el-tooltip>
+        </span>
+        <div class="setting-control setting-control--switch">
+          <el-switch
+            :model-value="config.translationScope === 'full'"
+            @update:model-value="(val: boolean) => { config.translationScope = val ? 'full' : 'smart' }"
           />
         </div>
       </div>
@@ -226,7 +242,8 @@ async function translateCurrentPage() {
     }
     await browser.tabs.sendMessage(tabs[0].id, {
       type: 'contextMenuTranslate',
-      action: 'fullPage'
+      action: 'fullPage',
+      scope: config.value.translationScope ?? 'smart'
     });
     isTranslated.value = true;
   } catch (error) {
@@ -661,7 +678,7 @@ function openSettingsPage() {
 
 /* ===== Body ===== */
 .popup-body {
-  padding: 16px 20px 10px;
+  padding: 12px 20px 8px;
   overflow-y: auto;
   max-height: 480px;
   background: var(--fr-bg-color);
@@ -746,8 +763,8 @@ function openSettingsPage() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
-  min-height: 44px;
+  padding: 10px 0;
+  min-height: 36px;
   border-bottom: 1px solid var(--fr-border-color-lighter);
 }
 

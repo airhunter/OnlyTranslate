@@ -25,6 +25,10 @@ const skipAriaRoles = new Set([
 const translationContentClass = 'only-translate-bilingual-content';
 const translatedAttr = 'data-fr-translated';
 
+export interface GrabAllNodeOptions {
+    shouldSkipSubtree?: (element: Element) => boolean;
+}
+
 // 内联元素集合（可以包含在其他元素内的元素）
 export const inlineSet = new Set([
     'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
@@ -33,7 +37,7 @@ export const inlineSet = new Set([
 ]);
 
 // 传入父节点，返回所有需要翻译的 DOM 元素数组
-export function grabAllNode(rootNode: Node): Element[] {
+export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): Element[] {
     if (!rootNode) return [];
 
     const result: Element[] = [];
@@ -49,13 +53,19 @@ export function grabAllNode(rootNode: Node): Element[] {
 
                 const tag = node.tagName.toLowerCase();
 
+                if (options.shouldSkipSubtree?.(node)) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+
                 // 跳过黑名单标签
+                const role = node.getAttribute('role') ?? '';
+
                 if (skipSet.has(tag) ||
                     node.classList?.contains(translationContentClass) ||
                     node.closest?.(`.${translationContentClass}, [${translatedAttr}="true"]`) ||
                     node.classList?.contains('sr-only') ||
                     node.classList?.contains('notranslate') ||
-                    skipAriaRoles.has(node.getAttribute('role'))) {
+                    skipAriaRoles.has(role)) {
                     return NodeFilter.FILTER_REJECT;
                 }
 
