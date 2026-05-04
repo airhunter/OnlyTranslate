@@ -24,6 +24,7 @@ const skipAriaRoles = new Set([
 
 const translationContentClass = 'only-translate-bilingual-content';
 const translatedAttr = 'data-fr-translated';
+const nonTranslatableContentSelector = 'script, style, noscript, template, iframe';
 
 export interface GrabAllNodeOptions {
     shouldSkipSubtree?: (element: Element) => boolean;
@@ -239,7 +240,7 @@ function checkTextSize(node: any): boolean {
 function isMainlyNumericContent(node: any): boolean {
     if (!node || !node.textContent) return false;
     
-    const text = node.textContent.trim();
+    const text = getTranslatableText(node).trim();
     if (!text) return false;
     
     // 如果内容很短，且是纯数字格式，则跳过
@@ -253,7 +254,17 @@ function isMainlyNumericContent(node: any): boolean {
     // 处理节点可能含有多个文本子节点的情况
     // 这有助于更精确地识别混合内容中的数字部分
     const textNodes = [];
-    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+    const walker = document.createTreeWalker(
+        node,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode: (textNode: Node): number => {
+                return isInsideNonTranslatableContent(textNode)
+                    ? NodeFilter.FILTER_REJECT
+                    : NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    );
     let textNode;
     while (textNode = walker.nextNode()) {
         const nodeText = textNode.textContent?.trim() || '';
@@ -331,6 +342,9 @@ function isNumericContent(text: string): boolean {
 
     // 首先检查是否为用户标识符
     if (isUserIdentifier(trimmedText)) return true;
+
+    // 检查是否为范围数字 (例如: 1-123, 1989 - 2026)
+    if (/^\d+\s*[-~]\s*\d+$/.test(trimmedText)) return true;
     
     // 如果包含多个单词，则不视为纯数字内容
     if (/\s+/.test(trimmedText.replace(/[\d,.\-%+]/g, ''))) return false;
@@ -340,9 +354,6 @@ function isNumericContent(text: string): boolean {
     
     // 检查是否为标准数字格式：带逗号的数字 (例如: 1,234,567)
     if (/^-?(\d{1,3}(,\d{3})+)$/.test(trimmedText)) return true;
-    
-    // 检查是否为范围数字 (例如: 1-123)
-    if (/^\d+\s*[-~]\s*\d+$/.test(trimmedText)) return true;
     
     // 检查是否为小数
     if (/^-?\d+\.\d+$/.test(trimmedText)) return true;
@@ -465,6 +476,8 @@ export function LLMStandardHTML(node: any) {
         if (child.nodeType === Node.TEXT_NODE) {
             text += child.nodeValue;
         } else if (child.nodeType === Node.ELEMENT_NODE) {
+            if (isNonTranslatableContentElement(child)) return;
+
             if (inlineSet.has(child.tagName.toLowerCase())) {
                 text += child.outerHTML;
             } else {
@@ -473,6 +486,50 @@ export function LLMStandardHTML(node: any) {
         }
     });
     return text;
+}
+
+export function getTranslatableText(node: Node): string {
+    if (node instanceof Text) {
+        return isInsideNonTranslatableContent(node) ? '' : node.nodeValue ?? '';
+    }
+
+    if (!(node instanceof Element)) return node.textContent ?? '';
+    if (isNonTranslatableContentElement(node)) return '';
+
+    let text = '';
+    const walker = document.createTreeWalker(
+        node,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode: (textNode: Node): number => {
+                return isInsideNonTranslatableContent(textNode)
+                    ? NodeFilter.FILTER_REJECT
+                    : NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    );
+
+    let currentNode: Node | null;
+    while (currentNode = walker.nextNode()) {
+        text += currentNode.nodeValue ?? '';
+    }
+
+    return text;
+}
+
+export function getTranslatableHTML(node: Element): string {
+    const clone = node.cloneNode(true) as Element;
+    clone.querySelectorAll(nonTranslatableContentSelector).forEach(element => element.remove());
+    return clone.innerHTML;
+}
+
+function isNonTranslatableContentElement(node: Element): boolean {
+    return node.matches(nonTranslatableContentSelector);
+}
+
+function isInsideNonTranslatableContent(node: Node): boolean {
+    const parent = node.parentElement;
+    return Boolean(parent?.closest(nonTranslatableContentSelector));
 }
 
 export function beautyHTML(text: string): string {

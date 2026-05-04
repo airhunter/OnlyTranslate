@@ -3,7 +3,16 @@ import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
-import { beautyHTML, grabNode, grabAllNode, type GrabAllNodeOptions, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
+import {
+    beautyHTML,
+    getTranslatableHTML,
+    getTranslatableText,
+    grabNode,
+    grabAllNode,
+    type GrabAllNodeOptions,
+    LLMStandardHTML,
+    smashTruncationStyle
+} from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
@@ -255,6 +264,7 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
 // 双语翻译
 export function handleBilingualTranslation(node: any, slide: boolean) {
     let nodeOuterHTML = node.outerHTML;
+    const originText = getTranslatableText(node);
     // 如果已经翻译过，250ms 后删除翻译结果
     let bilingualNode = searchClassName(node, 'only-translate-bilingual');
     if (bilingualNode) {
@@ -274,7 +284,7 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
     }
 
     // 检查是否有缓存
-    let cached = cache.localGet(node.textContent);
+    let cached = cache.localGet(originText);
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         setTimeout(() => {
@@ -316,9 +326,9 @@ export function handleSingleTranslation(node: any, slide: boolean) {
 
 
 function bilingualTranslate(node: any, nodeOuterHTML: any) {
-    if (!shouldTranslateText(node.textContent)) return;
+    const origin = getTranslatableText(node);
+    if (!shouldTranslateText(origin)) return;
 
-    let origin = node.textContent;
     if (!origin?.trim()) return;
     let spinner = insertLoadingSpinner(node);
     
@@ -337,11 +347,12 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
 
 
 export function singleTranslate(node: any) {
-    if (!shouldTranslateText(node.textContent)) return;
+    const translatableText = getTranslatableText(node);
+    if (!shouldTranslateText(translatableText)) return;
 
-    let origin = servicesType.isMachine(config.service) ? node.innerHTML : LLMStandardHTML(node);
+    let origin = servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node);
     if (!origin?.trim()) {
-        origin = node.textContent?.trim() || '';
+        origin = translatableText.trim();
     }
     if (!origin) return;
     let spinner = insertLoadingSpinner(node);
