@@ -66,6 +66,7 @@ export class Config {
     enableVideoSubtitle: boolean; // 是否启用视频字幕翻译
     customProviders: CustomProvider[]; // 动态自定义网关池
     activeBuiltinProviders: string[]; // 用户手动启用/留存在面板的内置预设服务 ID
+    translationScope: 'smart' | 'full'; // 翻译范围：smart=智能识别主内容，full=翻译整个页面
 
     constructor() {
         this.on = true;
@@ -115,6 +116,7 @@ export class Config {
         this.enableVideoSubtitle = true; // 默认启用视频字幕翻译
         this.customProviders = []; // 默认没有自定义节点
         this.activeBuiltinProviders = []; // 默认空的启用列表，加载时会进行迁移
+        this.translationScope = 'smart'; // 默认智能识别主内容
     }
 }
 

@@ -27,10 +27,12 @@
             <div class="release-notes-title">{{ releaseNotesHeading }}</div>
           </div>
 
-          <ul v-if="currentReleaseNote" class="release-notes-list">
-            <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
-          </ul>
-          <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+          <div class="release-notes-content">
+            <ul v-if="currentReleaseNote" class="release-notes-list">
+              <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
+            </ul>
+            <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+          </div>
 
           <button type="button" class="release-notes-confirm" @click="handleReleaseNotesConfirm">
             知道了
@@ -106,10 +108,37 @@
       <div class="setting-row">
         <span class="setting-label">划词翻译</span>
         <div class="setting-control setting-control--switch">
-          <el-switch 
-            :model-value="config.selectionTranslatorMode !== 'disabled'" 
+          <el-switch
+            :model-value="config.selectionTranslatorMode !== 'disabled'"
             @update:model-value="toggleSelectionTranslator"
           />
+        </div>
+      </div>
+
+      <!-- 翻译范围 -->
+      <div class="setting-row">
+        <span class="setting-label">翻译范围</span>
+        <div class="setting-control">
+          <div class="scope-toggle">
+            <el-tooltip effect="dark" content="自动识别正文区域翻译，跳过导航、侧边栏等无关内容" placement="top" :show-after="600">
+              <button
+                class="scope-btn"
+                :class="{ 'scope-btn--active': config.translationScope !== 'full' }"
+                @click="config.translationScope = 'smart'"
+              >
+                <span class="scope-star">✦</span>识文
+              </button>
+            </el-tooltip>
+            <el-tooltip effect="dark" content="翻译整个页面的可见文字" placement="top" :show-after="600">
+              <button
+                class="scope-btn"
+                :class="{ 'scope-btn--active': config.translationScope === 'full' }"
+                @click="config.translationScope = 'full'"
+              >
+                全页
+              </button>
+            </el-tooltip>
+          </div>
         </div>
       </div>
 
@@ -224,7 +253,8 @@ async function translateCurrentPage() {
     }
     await browser.tabs.sendMessage(tabs[0].id, {
       type: 'contextMenuTranslate',
-      action: 'fullPage'
+      action: 'fullPage',
+      scope: config.value.translationScope ?? 'smart'
     });
     isTranslated.value = true;
   } catch (error) {
@@ -567,16 +597,17 @@ function openSettingsPage() {
 }
 
 .release-notes-card {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 20;
-  width: 220px;
+  width: min(260px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
+  max-height: min(320px, calc(100vh - 72px));
+  overflow: hidden;
   padding: 12px;
   border: 1px solid var(--fr-border-color-lighter);
   border-radius: 8px;
@@ -596,6 +627,21 @@ function openSettingsPage() {
   font-weight: 600;
   line-height: 1.4;
   color: var(--fr-text-color-primary);
+}
+
+.release-notes-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.release-notes-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.release-notes-content::-webkit-scrollbar-thumb {
+  background: var(--fr-border-color);
+  border-radius: 2px;
 }
 
 .release-notes-list {
@@ -623,6 +669,7 @@ function openSettingsPage() {
 
 .release-notes-confirm {
   align-self: flex-end;
+  flex-shrink: 0;
   min-width: 64px;
   height: 28px;
   padding: 0 10px;
@@ -642,7 +689,7 @@ function openSettingsPage() {
 
 /* ===== Body ===== */
 .popup-body {
-  padding: 16px 20px 10px;
+  padding: 12px 20px 8px;
   overflow-y: auto;
   max-height: 480px;
   background: var(--fr-bg-color);
@@ -727,8 +774,8 @@ function openSettingsPage() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
-  min-height: 44px;
+  padding: 10px 0;
+  min-height: 36px;
   border-bottom: 1px solid var(--fr-border-color-lighter);
 }
 
@@ -895,6 +942,59 @@ function openSettingsPage() {
 
 .dark .select-action {
   color: var(--fr-accent-color);
+}
+
+/* ===== Scope Toggle ===== */
+.scope-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--fr-hover-color);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.scope-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--fr-text-color-regular);
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.scope-btn:hover {
+  color: var(--fr-text-color-primary);
+}
+
+.scope-btn--active {
+  background: var(--fr-bg-color);
+  color: var(--fr-text-color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .scope-btn--active {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.scope-star {
+  font-size: 9px;
+  color: var(--fr-accent-color);
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.scope-btn:not(.scope-btn--active) .scope-star {
+  color: var(--fr-text-color-regular);
 }
 
 /* ===== Scrollbar ===== */

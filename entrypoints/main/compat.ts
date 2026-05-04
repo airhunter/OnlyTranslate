@@ -3,7 +3,11 @@
 import {findMatchingElement} from "@/entrypoints/utils/common";
 
 type ReplaceFunction = (node: any, text: any) => any;
-type SelectFunction = (node: any) => any | {skip: boolean} | false;
+export interface SelectCompatContext {
+    mode?: 'smart' | 'full';
+}
+
+type SelectFunction = (node: any, context?: SelectCompatContext) => any | {skip: boolean} | false;
 
 const parser = new DOMParser();
 
@@ -336,9 +340,9 @@ export const selectCompatFn: SelectCompatFn = {
         // 默认返回false，表示不翻译
         return false;
     },
-    ['github.com']: (node: any) => {
+    ['github.com']: (node: any, context?: SelectCompatContext) => {
         // 判断是否应该跳过该节点
-        if (shouldSkipGitHubElement(node)) {
+        if (shouldSkipGitHubElement(node, context?.mode ?? 'smart')) {
             return { skip: true };
         }
         
@@ -694,7 +698,18 @@ function shouldSkipTwitterElement(node: any): boolean {
 /**
  * 判断是否应该跳过GitHub网站上的特定元素
  */
-function shouldSkipGitHubElement(node: any): boolean {
+function shouldSkipGitHubElement(node: any, mode: 'smart' | 'full' = 'smart'): boolean {
+    // Safety层：保护页面结构和GitHub语义，full/smart 都生效。
+    if (shouldSkipGitHubSafetyElement(node)) return true;
+
+    // full模式不再使用历史的大范围UI拦截；它只做样式和语义保护。
+    if (mode === 'full') return false;
+
+    // Smart-only层：为了只翻核心内容，继续跳过侧栏、元数据、列表控件等。
+    return shouldSkipGitHubSmartOnlyElement(node);
+}
+
+function shouldSkipGitHubSafetyElement(node: any): boolean {
     // 检查是否为特殊内容（URL、邮箱、用户名等）
     if (node.textContent && isSpecialContent(node.textContent)) {
         debugLog('GitHub', '特殊内容跳过', node.textContent);
@@ -726,7 +741,9 @@ function shouldSkipGitHubElement(node: any): boolean {
         'Changes requested', 'Review required', 'Needs work', 'Ready for review',
         'Assignee', 'Author', 'Changed', 'Comments', 'Commits', 'Conversation',
         'Files changed', 'Participants', 'Reviewers', 'Unresolved conversations',
-        'View changes', 'Clone', 'Code', 'Contributors', 'Raw', 'Blame', 'History',
+        'View changes', 'Clone', 'Code', 'Issues', 'Pull requests', 'Discussions',
+        'Actions', 'Projects', 'Security', 'Security and quality', 'Insights',
+        'Wiki', 'Settings', 'Contributors', 'Raw', 'Blame', 'History',
         'is:issue', 'is:pr', 'is:open', 'is:closed', 'state:open', 'state:closed',
         'No wrap', 'Soft wrap', 'Set status'
     ];
@@ -734,10 +751,11 @@ function shouldSkipGitHubElement(node: any): boolean {
     // 如果节点文本是GitHub标签或状态文本，跳过翻译
     if (node.textContent) {
         const text = node.textContent.trim();
+        const uiText = normalizeGitHubUiText(text);
         
         // 检查是否为GitHub Label文本
         for (const label of gitHubLabels) {
-            if (text.toLowerCase() === label.toLowerCase()) {
+            if (uiText.toLowerCase() === label.toLowerCase()) {
                 debugLog('GitHub', 'GitHub Label跳过', text);
                 return true;
             }
@@ -745,7 +763,7 @@ function shouldSkipGitHubElement(node: any): boolean {
         
         // 检查是否为GitHub状态文本
         for (const status of gitHubStatusTexts) {
-            if (text === status) {
+            if (uiText === status) {
                 debugLog('GitHub', 'GitHub状态文本跳过', text);
                 return true;
             }
@@ -764,6 +782,61 @@ function shouldSkipGitHubElement(node: any): boolean {
             return true;
         }
     }
+
+    const safeSkipSelectors = [
+        'nav[aria-label="Repository"]',
+        'nav.js-repo-nav',
+        'a.UnderlineNav-item',
+        'pre',
+        'code',
+        'table.highlight',
+        'table.diff-table',
+        'button',
+        'input',
+        'textarea',
+        'summary',
+        'span.Counter',
+        '.octicon',
+        'svg',
+        // 仓库右侧元信息侧边栏统一兜底：保持整组 About / Releases 标签
+        // 翻译行为一致，避免出现部分翻译、部分原文的撕裂效果
+        'aside.Layout-sidebar',
+        'div.Layout-sidebar',
+        'div.release-entry'
+    ];
+
+    for (const selector of safeSkipSelectors) {
+        if (matchesOrClosest(node, selector)) {
+            debugLog('GitHub', '安全选择器匹配跳过', selector, node.textContent);
+            return true;
+        }
+    }
+
+    // 检查是否为统计数字和计数（例如：16.3k stars, 854 watching等）
+    const statCountPattern = /^\s*\d+(\.\d+)?[kKmMbB]?\s*(stars|watching|forks|views|issues|pull|commits|watchers)?\s*$/;
+    if (statCountPattern.test(node.textContent?.trim())) {
+        debugLog('GitHub', '统计数字跳过', node.textContent);
+        return true;
+    }
+
+    // 检查是否为仓库标签文本
+    if (node.className?.includes('topic-tag-link') ||
+        node.className?.includes('topic-tag') ||
+        node.parentElement?.className?.includes('topic-tag')) {
+        debugLog('GitHub', '仓库标签跳过', node.textContent);
+        return true;
+    }
+
+    // 检查是否为许可证文本
+    if (/^Apache-[\d.]+|MIT|GPL-[\d.]+|BSD|LGPL/.test(node.textContent?.trim())) {
+        debugLog('GitHub', '许可证文本跳过', node.textContent);
+        return true;
+    }
+
+    return false;
+}
+
+function shouldSkipGitHubSmartOnlyElement(node: any): boolean {
     
     // 如果当前节点或其祖先节点匹配这些选择器，则跳过
     const skipSelectors = [
@@ -952,7 +1025,7 @@ function shouldSkipGitHubElement(node: any): boolean {
 
     // 检查当前节点是否匹配跳过选择器
     for (const selector of skipSelectors) {
-        if (node.matches?.(selector)) {
+        if (matchesOrClosest(node, selector)) {
             debugLog('GitHub', '选择器匹配跳过', selector, node.textContent);
             return true;
         }
@@ -996,40 +1069,22 @@ function shouldSkipGitHubElement(node: any): boolean {
         return true;
     }
     
-    // 忽略代码片段
-    if (node.tagName?.toLowerCase() === 'pre' || node.tagName?.toLowerCase() === 'code') {
-        debugLog('GitHub', '代码片段跳过', node.tagName);
-        return true;
-    }
-    
-    // 忽略图标
-    if (node.tagName?.toLowerCase() === 'svg') {
-        debugLog('GitHub', 'SVG图标跳过');
-        return true;
-    }
-    
-    // 检查是否为统计数字和计数（例如：16.3k stars, 854 watching等）
-    const statCountPattern = /^\s*\d+(\.\d+)?[kKmMbB]?\s*(stars|watching|forks|views|issues|pull|commits|watchers)?\s*$/;
-    if (statCountPattern.test(node.textContent?.trim())) {
-        debugLog('GitHub', '统计数字跳过', node.textContent);
-        return true;
-    }
-    
-    // 检查是否为仓库标签文本
-    if (node.className?.includes('topic-tag-link') || 
-        node.className?.includes('topic-tag') || 
-        node.parentElement?.className?.includes('topic-tag')) {
-        debugLog('GitHub', '仓库标签跳过', node.textContent);
-        return true;
-    }
-    
-    // 检查是否为许可证文本
-    if (/^Apache-[\d.]+|MIT|GPL-[\d.]+|BSD|LGPL/.test(node.textContent?.trim())) {
-        debugLog('GitHub', '许可证文本跳过', node.textContent);
-        return true;
-    }
-    
     return false;
+}
+
+function normalizeGitHubUiText(text: string): string {
+    return text
+        .replace(/\s+/g, ' ')
+        .replace(/\s+\d+$/g, '')
+        .trim();
+}
+
+function matchesOrClosest(node: any, selector: string): boolean {
+    try {
+        return Boolean(node.matches?.(selector) || node.closest?.(selector));
+    } catch (_) {
+        return false;
+    }
 }
 
 /**

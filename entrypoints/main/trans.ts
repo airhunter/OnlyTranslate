@@ -3,11 +3,13 @@ import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
-import { beautyHTML, grabNode, grabAllNode, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
+import { beautyHTML, grabNode, grabAllNode, type GrabAllNodeOptions, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { findMainContent } from '@/entrypoints/utils/contentDetector';
+import { shouldSkipContentBlock } from '@/entrypoints/utils/contentFilter';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 
 let hoverTimer: any; // 鼠标悬停计时器
@@ -24,9 +26,57 @@ const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 
 let nodeIdCounter = 0; // 节点ID计数器
 
+interface AutoTranslateTarget {
+    contentRoot: Element;
+    nodes: Element[];
+    grabOptions?: GrabAllNodeOptions;
+}
+
 function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
     return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+}
+
+export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
+    if (scope === 'full') {
+        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
+        return {
+            contentRoot: document.body,
+            nodes: grabAllNode(document.body, grabOptions),
+            grabOptions
+        };
+    }
+
+    const contentRoot = findMainContent();
+    const grabOptions: GrabAllNodeOptions = {
+        shouldSkipSubtree: shouldSkipContentBlock,
+        siteCompatMode: 'smart'
+    };
+    const filteredNodes = grabAllNode(contentRoot, grabOptions);
+
+    if (filteredNodes.length > 0) {
+        return {
+            contentRoot,
+            nodes: filteredNodes,
+            grabOptions
+        };
+    }
+
+    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'smart' };
+    const unfilteredRootNodes = grabAllNode(contentRoot, fallbackOptions);
+    if (unfilteredRootNodes.length > 0) {
+        return {
+            contentRoot,
+            nodes: unfilteredRootNodes,
+            grabOptions: fallbackOptions
+        };
+    }
+
+    return {
+        contentRoot: document.body,
+        nodes: contentRoot === document.body ? unfilteredRootNodes : grabAllNode(document.body, fallbackOptions),
+        grabOptions: fallbackOptions
+    };
 }
 
 // 恢复原文内容
@@ -82,7 +132,7 @@ export function restoreOriginalContent() {
 }
 
 // 自动翻译整个页面的功能
-export function autoTranslateEnglishPage() {
+export function autoTranslateEnglishPage(scopeOverride?: string) {
     // 如果已经在翻译中，则返回
     if (isAutoTranslating) return;
     
@@ -98,8 +148,10 @@ export function autoTranslateEnglishPage() {
     // }
     // console.log('当前页面非目标语言，开始翻译');
 
-    // 获取所有需要翻译的节点
-    const nodes = grabAllNode(document.body);
+    // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
+    const scope = scopeOverride ?? config.translationScope;
+    const { contentRoot, nodes, grabOptions } = resolveAutoTranslateTarget(scope);
+
     if (!nodes.length) return;
 
     isAutoTranslating = true;
@@ -147,14 +199,17 @@ export function autoTranslateEnglishPage() {
     // 创建 MutationObserver 监听 DOM 变化
     mutationObserver = new MutationObserver((mutations) => {
         if (!isAutoTranslating) return;
-        
+
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === 1) { // 元素节点
                     if (isManagedTranslationNode(node)) return;
 
+                    // 智能模式下，忽略 contentRoot 范围之外的动态插入节点
+                    if (scope !== 'full' && !contentRoot.contains(node as Node)) return;
+
                     // 只处理未翻译的新节点
-                    const newNodes = grabAllNode(node as Element).filter(
+                    const newNodes = grabAllNode(node as Element, grabOptions).filter(
                         n => !n.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(n)
                     );
                     newNodes.forEach(n => observer?.observe(n));
