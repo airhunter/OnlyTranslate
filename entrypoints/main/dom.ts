@@ -1,4 +1,4 @@
-import { getMainDomain, selectCompatFn } from "@/entrypoints/main/compat";
+import { getMainDomain, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { html } from 'js-beautify';
 import { handleBtnTranslation } from "@/entrypoints/main/trans";
 
@@ -27,6 +27,7 @@ const translatedAttr = 'data-fr-translated';
 
 export interface GrabAllNodeOptions {
     shouldSkipSubtree?: (element: Element) => boolean;
+    siteCompatMode?: SelectCompatContext['mode'];
 }
 
 // 内联元素集合（可以包含在其他元素内的元素）
@@ -129,7 +130,7 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
     // 遍历出所有可翻译的节点
     let currentNode: Node | null;
     while (currentNode = walker.nextNode()) {
-        const translateNode = grabNode(currentNode as Element | Text);
+        const translateNode = grabNode(currentNode as Element | Text, options);
         if (translateNode) {
             result.push(translateNode);
             // 跳过已确定要翻译的节点的所有子节点
@@ -144,13 +145,13 @@ function removeNestedTranslateNodes(nodes: Element[]): Element[] {
 }
 
 // 返回最终应该翻译的父节点或 false
-export function grabNode(node: any): any {
+export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
     // 空节点检查
     if (!node) return false;
 
     // 对于 Text 节点，尝试找到其可翻译的父节点
     if (node instanceof Text) {
-        const parentOrSelf = findTranslatableParent(node);
+        const parentOrSelf = findTranslatableParent(node, options);
         if (parentOrSelf && parentOrSelf !== node) {
             return parentOrSelf;
         }
@@ -167,7 +168,7 @@ export function grabNode(node: any): any {
     // 2. 特殊适配：根据域名进行特殊处理
     const domainHandler = selectCompatFn[getMainDomain(location.href.split('?')[0])];
     if (domainHandler) {
-        const result = domainHandler(node);
+        const result = domainHandler(node, { mode: options.siteCompatMode ?? 'smart' });
         // 如果返回的是对象且包含skip属性为true，则跳过该节点
         if (result && typeof result === 'object' && 'skip' in result && result.skip === true) {
             return false;
@@ -187,7 +188,7 @@ export function grabNode(node: any): any {
 
     // 5. 内联元素处理：向上查找合适的父节点
     if (isInlineElement(node, curTag)) {
-        return findTranslatableParent(node);
+        return findTranslatableParent(node, options);
     }
 
     // 6. 首行文本处理：处理 div 和 label 的首行文本
@@ -291,7 +292,9 @@ function isUserIdentifier(text: string): boolean {
     if (/关注.*\w+/.test(trimmedText) || /Follow.*\w+/.test(trimmedText)) return true;
     
     // 检查是否为纯粹的用户名格式（字母、数字、下划线组合）
-    if (/^[A-Za-z0-9_]{1,15}$/.test(trimmedText)) return true;
+    // 必须含数字或下划线，避免把 Readme / Contributing / Activity 这类
+    // 普通英文单词误判为社交媒体用户名
+    if (/^(?=[A-Za-z0-9_]*[0-9_])[A-Za-z0-9_]{1,15}$/.test(trimmedText)) return true;
     
     // 特殊格式：带点击动作的用户名
     if (/点击.*\w+/.test(trimmedText) && trimmedText.length < 50) return true;
@@ -403,10 +406,10 @@ function isInlineElement(node: any, tag: string): boolean {
 }
 
 // 查找可翻译的父节点
-function findTranslatableParent(node: any): any {
+function findTranslatableParent(node: any, options: GrabAllNodeOptions = {}): any {
     // 1. 递归调用 grabNode 查找父节点是否可翻译
     // 2. 若父节点不可翻译，则返回当前节点
-    const parentResult = grabNode(node.parentNode);
+    const parentResult = grabNode(node.parentNode, options);
     return parentResult || node;
 }
 

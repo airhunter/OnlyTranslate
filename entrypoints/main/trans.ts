@@ -3,7 +3,7 @@ import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
-import { beautyHTML, grabNode, grabAllNode, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
+import { beautyHTML, grabNode, grabAllNode, type GrabAllNodeOptions, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
@@ -26,9 +26,57 @@ const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 
 let nodeIdCounter = 0; // 节点ID计数器
 
+interface AutoTranslateTarget {
+    contentRoot: Element;
+    nodes: Element[];
+    grabOptions?: GrabAllNodeOptions;
+}
+
 function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
     return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+}
+
+export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
+    if (scope === 'full') {
+        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
+        return {
+            contentRoot: document.body,
+            nodes: grabAllNode(document.body, grabOptions),
+            grabOptions
+        };
+    }
+
+    const contentRoot = findMainContent();
+    const grabOptions: GrabAllNodeOptions = {
+        shouldSkipSubtree: shouldSkipContentBlock,
+        siteCompatMode: 'smart'
+    };
+    const filteredNodes = grabAllNode(contentRoot, grabOptions);
+
+    if (filteredNodes.length > 0) {
+        return {
+            contentRoot,
+            nodes: filteredNodes,
+            grabOptions
+        };
+    }
+
+    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'smart' };
+    const unfilteredRootNodes = grabAllNode(contentRoot, fallbackOptions);
+    if (unfilteredRootNodes.length > 0) {
+        return {
+            contentRoot,
+            nodes: unfilteredRootNodes,
+            grabOptions: fallbackOptions
+        };
+    }
+
+    return {
+        contentRoot: document.body,
+        nodes: contentRoot === document.body ? unfilteredRootNodes : grabAllNode(document.body, fallbackOptions),
+        grabOptions: fallbackOptions
+    };
 }
 
 // 恢复原文内容
@@ -102,14 +150,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
     const scope = scopeOverride ?? config.translationScope;
-    const contentRoot = scope === 'full'
-        ? document.body
-        : findMainContent();
-    const grabOptions = scope === 'full'
-        ? undefined
-        : { shouldSkipSubtree: shouldSkipContentBlock };
-
-    const nodes = grabAllNode(contentRoot, grabOptions);
+    const { contentRoot, nodes, grabOptions } = resolveAutoTranslateTarget(scope);
 
     if (!nodes.length) return;
 
