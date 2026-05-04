@@ -102,8 +102,8 @@
 
         <div v-if="config.on" class="setting-row" :class="{ 'setting-row--expanded': config.floatingBallHotkey === 'custom' }">
           <span class="setting-label">
-            全文翻译切换
-            <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换全文翻译状态，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
+            翻译范围切换
+            <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换识文/全页翻译范围，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>

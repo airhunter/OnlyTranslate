@@ -117,17 +117,28 @@
 
       <!-- 翻译范围 -->
       <div class="setting-row">
-        <span class="setting-label">
-          全页模式
-          <el-tooltip effect="dark" content="开启后翻译整页所有文字，关闭时仅翻译自动识别的正文区域" placement="top-start" :show-after="500">
-            <el-icon class="info-icon"><ChatDotRound /></el-icon>
-          </el-tooltip>
-        </span>
-        <div class="setting-control setting-control--switch">
-          <el-switch
-            :model-value="config.translationScope === 'full'"
-            @update:model-value="(val: boolean) => { config.translationScope = val ? 'full' : 'smart' }"
-          />
+        <span class="setting-label">翻译范围</span>
+        <div class="setting-control">
+          <div class="scope-toggle">
+            <el-tooltip effect="dark" content="自动识别正文区域翻译，跳过导航、侧边栏等无关内容" placement="top" :show-after="600">
+              <button
+                class="scope-btn"
+                :class="{ 'scope-btn--active': config.translationScope !== 'full' }"
+                @click="config.translationScope = 'smart'"
+              >
+                <span class="scope-star">✦</span>识文
+              </button>
+            </el-tooltip>
+            <el-tooltip effect="dark" content="翻译整个页面的可见文字" placement="top" :show-after="600">
+              <button
+                class="scope-btn"
+                :class="{ 'scope-btn--active': config.translationScope === 'full' }"
+                @click="config.translationScope = 'full'"
+              >
+                全页
+              </button>
+            </el-tooltip>
+          </div>
         </div>
       </div>
 
@@ -931,6 +942,59 @@ function openSettingsPage() {
 
 .dark .select-action {
   color: var(--fr-accent-color);
+}
+
+/* ===== Scope Toggle ===== */
+.scope-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--fr-hover-color);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.scope-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--fr-text-color-regular);
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.scope-btn:hover {
+  color: var(--fr-text-color-primary);
+}
+
+.scope-btn--active {
+  background: var(--fr-bg-color);
+  color: var(--fr-text-color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .scope-btn--active {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.scope-star {
+  font-size: 9px;
+  color: var(--fr-accent-color);
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.scope-btn:not(.scope-btn--active) .scope-star {
+  color: var(--fr-text-color-regular);
 }
 
 /* ===== Scrollbar ===== */
