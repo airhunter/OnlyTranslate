@@ -6,6 +6,8 @@ const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next|popular|trending)\b/i;
 
+export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
+
 interface BlockMetrics {
     text: string;
     textLength: number;
@@ -17,24 +19,28 @@ interface BlockMetrics {
     hasCodeOrTable: boolean;
 }
 
-export function shouldSkipContentBlock(element: Element): boolean {
+export function getContentFilterDecision(element: Element): ContentFilterDecision {
     const tag = element.tagName.toLowerCase();
-    if (NOISE_TAGS.has(tag)) return true;
+    if (NOISE_TAGS.has(tag)) return 'skip-subtree';
 
     const role = element.getAttribute('role')?.toLowerCase();
-    if (role && NOISE_ROLES.has(role)) return true;
+    if (role && NOISE_ROLES.has(role)) return 'skip-subtree';
 
     const metrics = getBlockMetrics(element);
-    if (metrics.textLength === 0) return false;
+    if (metrics.textLength === 0) return 'keep';
 
     const hint = getElementSignalText(element, metrics.text);
 
-    if (isShareBlock(hint, metrics)) return true;
-    if (isTagCluster(hint, metrics)) return true;
-    if (isPromoOrCtaBlock(hint, metrics)) return true;
-    if (isRelatedBlock(hint, metrics)) return true;
+    if (isShareBlock(hint, metrics)) return 'skip-self';
+    if (isTagCluster(hint, metrics)) return 'skip-self';
+    if (isPromoOrCtaBlock(hint, metrics)) return 'skip-self';
+    if (isRelatedBlock(hint, metrics)) return 'skip-self';
 
-    return false;
+    return 'keep';
+}
+
+export function shouldSkipContentBlock(element: Element): boolean {
+    return getContentFilterDecision(element) !== 'keep';
 }
 
 function isShareBlock(hint: string, metrics: BlockMetrics): boolean {

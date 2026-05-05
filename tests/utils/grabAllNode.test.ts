@@ -70,4 +70,20 @@ describe('grabAllNode', () => {
     expect(ids).not.toContain('year')
     expect(ids).toContain('intro')
   })
+
+  it('continues into skip-self blocks without translating their short controls', () => {
+    document.body.innerHTML = `
+      <section>
+        <p id="body">This readable paragraph sits inside a mixed container with enough text to translate safely.</p>
+        <a id="share" href="/share">Share</a>
+      </section>
+    `
+
+    const ids = grabAllNode(document.body, {
+      contentFilter: (element) => element.tagName.toLowerCase() === 'section' ? 'skip-self' : 'keep'
+    }).map((node) => node.id)
+
+    expect(ids).toContain('body')
+    expect(ids).not.toContain('share')
+  })
 })

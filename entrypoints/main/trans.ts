@@ -18,7 +18,7 @@ import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';
-import { shouldSkipContentBlock } from '@/entrypoints/utils/contentFilter';
+import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 
 let hoverTimer: any; // 鼠标悬停计时器
@@ -58,7 +58,7 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
 
     const contentRoot = findMainContent();
     const grabOptions: GrabAllNodeOptions = {
-        shouldSkipSubtree: shouldSkipContentBlock,
+        contentFilter: getContentFilterDecision,
         siteCompatMode: 'smart'
     };
     const filteredNodes = grabAllNode(contentRoot, grabOptions);
@@ -71,7 +71,9 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
         };
     }
 
-    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'smart' };
+    // 智能过滤没有结果时，兜底路径放松站点兼容层，只保留 full 模式下的安全跳过。
+    // 否则部分站点的历史 smart 强规则仍会把正文挡掉，看起来像兜底没有生效。
+    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
     const unfilteredRootNodes = grabAllNode(contentRoot, fallbackOptions);
     if (unfilteredRootNodes.length > 0) {
         return {

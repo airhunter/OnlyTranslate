@@ -26,8 +26,14 @@ vi.mock('element-plus', () => ({
 import { resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
 
 describe('resolveAutoTranslateTarget', () => {
+  const originalLocation = window.location
+
   beforeEach(() => {
     document.body.innerHTML = ''
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      configurable: true
+    })
   })
 
   it('falls back to unfiltered root nodes when smart filtering removes every node', () => {
@@ -48,7 +54,7 @@ describe('resolveAutoTranslateTarget', () => {
     expect(translatedText).toContain('Business leaders respond')
     expect(translatedText).toContain('Technology companies prepare')
     expect(target.grabOptions?.shouldSkipSubtree).toBeUndefined()
-    expect(target.grabOptions?.siteCompatMode).toBe('smart')
+    expect(target.grabOptions?.siteCompatMode).toBe('full')
   })
 
   it('keeps strict filtering when smart mode finds readable content', () => {
@@ -93,5 +99,40 @@ describe('resolveAutoTranslateTarget', () => {
     expect(translatedText).toContain('Technology companies prepare')
     expect(target.grabOptions?.shouldSkipSubtree).toBeUndefined()
     expect(target.grabOptions?.siteCompatMode).toBe('full')
+  })
+
+  it('keeps Reddit post and comment bodies in smart mode', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://www.reddit.com/r/digitalnomad/comments/1t3d0e0/china/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <shreddit-post>
+          <h1 id="post-title" slot="title">China</h1>
+          <div id="post-body" slot="text-body" data-post-click-location="text-body">
+            Considering spending a month in China. Wondering how much of a headache it is to work there.
+          </div>
+          <button>Share</button>
+        </shreddit-post>
+        <shreddit-comment>
+          <div id="comment-body" slot="comment">
+            Very bad idea if you need to work and need access to the non-chinese internet.
+          </div>
+          <button>Share</button>
+        </shreddit-comment>
+      </main>
+      <aside>
+        <h2>r/digitalnomad</h2>
+        <p>Digital Nomads are individuals that leverage technology in order to work remotely.</p>
+      </aside>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('post-title')
+    expect(ids).toContain('post-body')
+    expect(ids).toContain('comment-body')
   })
 })

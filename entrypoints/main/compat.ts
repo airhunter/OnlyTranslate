@@ -486,18 +486,40 @@ export const selectCompatFn: SelectCompatFn = {
         // 默认不翻译
         return false;
     },
-    ['reddit.com']: (node: any) => {
-        // 判断是否应该跳过该节点
-        if (shouldSkipRedditElement(node)) {
-            debugLog('Reddit', '跳过Reddit元素', node.textContent);
-            return { skip: true };
-        }
-        
+    ['reddit.com']: (node: any, context?: SelectCompatContext) => {
         // 帖子标题
-        const postTitle = findMatchingElement(node, 'h1, h3[data-click-id="body"]');
+        const postTitle = findMatchingElement(node, 'h1, h3[data-click-id="body"], [slot="title"]');
         if (postTitle) {
             debugLog('Reddit', '翻译帖子标题', postTitle.textContent);
             return postTitle;
+        }
+
+        // 新版 Reddit 帖子正文。旧规则曾把 data-post-click-location="text-body"
+        // 当作点击区域跳过，但它在新 UI 中就是正文容器。
+        const postBody = findMatchingElement(
+            node,
+            'div[data-post-click-location="text-body"], [slot="text-body"], shreddit-post [slot="text-body"]'
+        );
+        if (postBody) {
+            debugLog('Reddit', '翻译帖子正文', postBody.textContent?.substring(0, 50) + '...');
+            return postBody;
+        }
+
+        // 新版 Reddit 评论正文
+        const commentBody = findMatchingElement(
+            node,
+            'shreddit-comment [slot="comment"], div[id$="-comment-rtjson-content"], div[data-testid="comment"]'
+        );
+        if (commentBody) {
+            debugLog('Reddit', '翻译评论正文', commentBody.textContent?.substring(0, 50) + '...');
+            return commentBody;
+        }
+
+        // 判断是否应该跳过该节点。正文类选择器要先于跳过规则匹配，
+        // 否则新版 Reddit 的正文容器会被旧 UI 规则误伤。
+        if (shouldSkipRedditElement(node, context?.mode ?? 'smart')) {
+            debugLog('Reddit', '跳过Reddit元素', node.textContent);
+            return { skip: true };
         }
         
         // 描述文本
@@ -1287,7 +1309,7 @@ function shouldSkipMediumElement(node: any): boolean {
 /**
  * 判断是否应该跳过Reddit网站上的特定元素
  */
-function shouldSkipRedditElement(node: any): boolean {
+function shouldSkipRedditElement(node: any, mode: 'smart' | 'full' = 'smart'): boolean {
     // 检查是否为特殊内容（URL、邮箱、用户名等）
     if (node.textContent && isSpecialContent(node.textContent)) {
         debugLog('Reddit', '特殊内容跳过', node.textContent);
@@ -1304,6 +1326,10 @@ function shouldSkipRedditElement(node: any): boolean {
     if (node.tagName?.toLowerCase() === 'time') {
         debugLog('Reddit', '时间标签跳过', node.textContent);
         return true;
+    }
+
+    if (mode === 'full') {
+        return false;
     }
     
     // 如果当前节点或其祖先节点匹配这些选择器，则跳过

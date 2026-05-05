@@ -26,7 +26,10 @@ const translationContentClass = 'only-translate-bilingual-content';
 const translatedAttr = 'data-fr-translated';
 const nonTranslatableContentSelector = 'script, style, noscript, template, iframe';
 
+type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
+
 export interface GrabAllNodeOptions {
+    contentFilter?: (element: Element) => ContentFilterDecision;
     shouldSkipSubtree?: (element: Element) => boolean;
     siteCompatMode?: SelectCompatContext['mode'];
 }
@@ -54,6 +57,14 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 if (!(node instanceof Element)) return NodeFilter.FILTER_SKIP;
 
                 const tag = node.tagName.toLowerCase();
+
+                const contentFilterDecision = options.contentFilter?.(node);
+                if (contentFilterDecision === 'skip-subtree') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                if (contentFilterDecision === 'skip-self') {
+                    return NodeFilter.FILTER_SKIP;
+                }
 
                 if (options.shouldSkipSubtree?.(node)) {
                     return NodeFilter.FILTER_REJECT;
@@ -189,12 +200,25 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
 
     // 5. 内联元素处理：向上查找合适的父节点
     if (isInlineElement(node, curTag)) {
+        if (hasContentFilterSkipSelfAncestor(node, options)) return false;
         return findTranslatableParent(node, options);
     }
 
     // 6. 首行文本处理：处理 div 和 label 的首行文本
     if (curTag === 'div' || curTag === 'label') {
         return handleFirstLineText(node);
+    }
+
+    return false;
+}
+
+function hasContentFilterSkipSelfAncestor(node: Element, options: GrabAllNodeOptions): boolean {
+    if (!options.contentFilter) return false;
+
+    let parent = node.parentElement;
+    while (parent) {
+        if (options.contentFilter(parent) === 'skip-self') return true;
+        parent = parent.parentElement;
     }
 
     return false;

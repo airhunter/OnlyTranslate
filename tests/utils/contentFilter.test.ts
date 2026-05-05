@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { shouldSkipContentBlock } from '@/entrypoints/utils/contentFilter'
+import { getContentFilterDecision, shouldSkipContentBlock } from '@/entrypoints/utils/contentFilter'
 
 const articleParagraph = 'This paragraph is part of the actual article body. It has enough detail, context, and natural language to look like readable long-form content.'
 
@@ -27,6 +27,7 @@ describe('shouldSkipContentBlock', () => {
     `)
 
     expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
   it('skips a TDS-like share block', () => {
@@ -40,6 +41,7 @@ describe('shouldSkipContentBlock', () => {
     `)
 
     expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
   it('skips a TDS-like promotional CTA', () => {
@@ -51,6 +53,7 @@ describe('shouldSkipContentBlock', () => {
     `)
 
     expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
   it('keeps normal article content', () => {
@@ -64,6 +67,7 @@ describe('shouldSkipContentBlock', () => {
     `)
 
     expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
   })
 
   it('keeps GitHub README-like documentation content', () => {
@@ -77,5 +81,31 @@ describe('shouldSkipContentBlock', () => {
     `)
 
     expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
+  it('only skips the mixed block itself when it contains share actions', () => {
+    const element = renderElement(`
+      <shreddit-post>
+        <h1 slot="title">China</h1>
+        <div slot="text-body" data-post-click-location="text-body">
+          Considering spending a month in China. Wondering how much of a headache it is to work there.
+        </div>
+        <button>Share</button>
+      </shreddit-post>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
+  })
+
+  it('rejects semantic noise subtrees', () => {
+    const element = renderElement(`
+      <aside>
+        <p>${articleParagraph}</p>
+      </aside>
+    `)
+
+    expect(getContentFilterDecision(element)).toBe('skip-subtree')
   })
 })
