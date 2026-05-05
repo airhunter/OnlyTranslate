@@ -23,7 +23,7 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { collectDynamicTranslationNodes, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
 
 describe('resolveAutoTranslateTarget', () => {
   const originalLocation = window.location
@@ -134,5 +134,49 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('post-title')
     expect(ids).toContain('post-body')
     expect(ids).toContain('comment-body')
+  })
+
+  it('collects newly revealed nodes from dynamic content regions', () => {
+    document.body.innerHTML = `
+      <main id="content-root">
+        <article id="live-card">
+          <p id="already-translated" data-fr-translated="true">Already translated paragraph.</p>
+          <div id="expanded" class="is-expanded">
+            <p id="revealed">This newly revealed paragraph should be translated after Read More expands the story.</p>
+          </div>
+        </article>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#expanded')!,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('revealed')
+    expect(ids).not.toContain('already-translated')
+  })
+
+  it('ignores dynamic nodes outside smart content root', () => {
+    document.body.innerHTML = `
+      <main id="content-root">
+        <p id="inside">Readable article paragraph.</p>
+      </main>
+      <aside id="outside">
+        <p id="outside-text">Sidebar text should not be picked up by smart dynamic scans.</p>
+      </aside>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#outside')!,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(nodes).toHaveLength(0)
   })
 })

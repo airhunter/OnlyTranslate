@@ -189,6 +189,8 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
         if (result) return result;
     }
 
+    if (hasContentFilterSkipSelfAncestor(node, options)) return false;
+
     // 3. 直接翻译：块级元素
     if (directSet.has(curTag)) return node;
 
@@ -200,7 +202,6 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
 
     // 5. 内联元素处理：向上查找合适的父节点
     if (isInlineElement(node, curTag)) {
-        if (hasContentFilterSkipSelfAncestor(node, options)) return false;
         return findTranslatableParent(node, options);
     }
 

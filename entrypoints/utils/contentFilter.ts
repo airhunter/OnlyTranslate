@@ -5,6 +5,7 @@ const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x pl
 const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|chip)\b/i;
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next|popular|trending)\b/i;
+const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
 
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
@@ -33,6 +34,7 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
 
     if (isShareBlock(hint, metrics)) return 'skip-self';
     if (isTagCluster(hint, metrics)) return 'skip-self';
+    if (isAuthorOrBylineBlock(hint, metrics)) return 'skip-self';
     if (isPromoOrCtaBlock(hint, metrics)) return 'skip-self';
     if (isRelatedBlock(hint, metrics)) return 'skip-self';
 
@@ -66,14 +68,26 @@ function isPromoOrCtaBlock(hint: string, metrics: BlockMetrics): boolean {
     if (metrics.hasCodeOrTable) return false;
 
     const hasAction = metrics.linkCount > 0 || metrics.buttonCount > 0;
-    const hasReadableArticleShape = metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.25;
+    const hasReadableArticleShape = metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.45;
 
-    return hasAction || !hasReadableArticleShape;
+    if (hasReadableArticleShape) return false;
+
+    return hasAction || metrics.longParagraphCount < 2;
+}
+
+function isAuthorOrBylineBlock(hint: string, metrics: BlockMetrics): boolean {
+    if (!AUTHOR_PATTERN.test(hint)) return false;
+    if (metrics.longParagraphCount > 0 || metrics.hasCodeOrTable) return false;
+
+    return metrics.textLength <= 260
+        || metrics.linkCount > 0
+        || metrics.buttonCount > 0
+        || metrics.shortInteractiveCount > 0;
 }
 
 function isRelatedBlock(hint: string, metrics: BlockMetrics): boolean {
     if (!RELATED_PATTERN.test(hint)) return false;
-    if (metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.25) return false;
+    if (metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.45) return false;
 
     return metrics.linkCount > 0 || metrics.shortInteractiveCount > 0;
 }

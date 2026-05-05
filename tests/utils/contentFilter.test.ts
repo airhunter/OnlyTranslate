@@ -56,6 +56,19 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
+  it('skips a TDS-like author card', () => {
+    const element = renderElement(`
+      <section class="author-card">
+        <p>WRITTEN BY</p>
+        <h2>Ibrahim Salami</h2>
+        <a href="/author/ibrahim-salami">See all from Ibrahim Salami</a>
+      </section>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
+  })
+
   it('keeps normal article content', () => {
     const element = renderElement(`
       <section class="article-content">

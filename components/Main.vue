@@ -124,15 +124,17 @@
               <button
                 class="scope-btn"
                 :class="{ 'scope-btn--active': config.translationScope !== 'full' }"
+                :aria-pressed="config.translationScope !== 'full'"
                 @click="config.translationScope = 'smart'"
               >
-                <span class="scope-star">✦</span>识文
+                识文
               </button>
             </el-tooltip>
             <el-tooltip effect="dark" content="翻译整个页面的可见文字" placement="top" :show-after="600">
               <button
                 class="scope-btn"
                 :class="{ 'scope-btn--active': config.translationScope === 'full' }"
+                :aria-pressed="config.translationScope === 'full'"
                 @click="config.translationScope = 'full'"
               >
                 全页
@@ -977,24 +979,13 @@ function openSettingsPage() {
 }
 
 .scope-btn--active {
-  background: var(--fr-bg-color);
-  color: var(--fr-text-color-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--fr-accent-color);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.22);
 }
 
 .dark .scope-btn--active {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
-.scope-star {
-  font-size: 9px;
-  color: var(--fr-accent-color);
-  line-height: 1;
-  transition: color 0.15s ease;
-}
-
-.scope-btn:not(.scope-btn--active) .scope-star {
-  color: var(--fr-text-color-regular);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.28);
 }
 
 /* ===== Scrollbar ===== */

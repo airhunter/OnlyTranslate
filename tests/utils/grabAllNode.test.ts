@@ -5,6 +5,7 @@ vi.mock('@/entrypoints/main/trans', () => ({
 }))
 
 import { getTranslatableHTML, getTranslatableText, grabAllNode, LLMStandardHTML } from '@/entrypoints/main/dom'
+import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter'
 
 describe('grabAllNode', () => {
   beforeEach(() => {
@@ -71,7 +72,7 @@ describe('grabAllNode', () => {
     expect(ids).toContain('intro')
   })
 
-  it('continues into skip-self blocks without translating their short controls', () => {
+  it('does not leak generic descendants from skip-self blocks', () => {
     document.body.innerHTML = `
       <section>
         <p id="body">This readable paragraph sits inside a mixed container with enough text to translate safely.</p>
@@ -83,7 +84,72 @@ describe('grabAllNode', () => {
       contentFilter: (element) => element.tagName.toLowerCase() === 'section' ? 'skip-self' : 'keep'
     }).map((node) => node.id)
 
-    expect(ids).toContain('body')
+    expect(ids).not.toContain('body')
     expect(ids).not.toContain('share')
+  })
+
+  it('keeps site-profile content inside skip-self containers', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://www.reddit.com/r/digitalnomad/comments/1t3d0e0/china/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <shreddit-post id="post">
+        <h1 id="post-title" slot="title">China</h1>
+        <div id="post-body" slot="text-body" data-post-click-location="text-body">
+          Considering spending a month in China. Wondering how much of a headache it is to work there.
+        </div>
+        <button id="share">Share</button>
+      </shreddit-post>
+    `
+
+    const ids = grabAllNode(document.body, {
+      contentFilter: (element) => element.tagName.toLowerCase() === 'shreddit-post' ? 'skip-self' : 'keep',
+      siteCompatMode: 'smart'
+    }).map((node) => node.id)
+
+    expect(ids).toContain('post-title')
+    expect(ids).toContain('post-body')
+    expect(ids).not.toContain('share')
+  })
+
+  it('skips TDS-like footer author, tags, share, and CTA descendants in smart filtering', () => {
+    document.body.innerHTML = `
+      <article>
+        <p id="article-body">This paragraph is part of the actual article body. It has enough detail, context, and natural language to look like readable long-form content.</p>
+        <section class="author-card">
+          <p>WRITTEN BY</p>
+          <h2>Ibrahim Salami</h2>
+          <a href="/author/ibrahim-salami">See all from Ibrahim Salami</a>
+        </section>
+        <section class="post-topics">
+          <a id="tag-data" href="/tag/data-science">Data Science</a>
+          <a id="tag-pandas" href="/tag/pandas">Pandas</a>
+          <a id="tag-productivity" href="/tag/productivity">Productivity</a>
+          <a id="tag-python" href="/tag/python">Python</a>
+        </section>
+        <section class="share-this-article">
+          <h2 id="share-title">Share This Article</h2>
+          <a id="share-facebook" href="https://www.facebook.com/sharer/sharer.php">Share on Facebook</a>
+          <a id="share-linkedin" href="https://www.linkedin.com/shareArticle">Share on LinkedIn</a>
+          <a id="share-x" href="https://x.com/intent/tweet">Share to X</a>
+        </section>
+        <section class="author-program-promo">
+          <p id="promo-text">Towards Data Science is a community publication. Submit your insights to reach our global audience and earn through the TDS Author Payment Program.</p>
+          <a id="promo-button" href="/write-for-us">Write for TDS</a>
+        </section>
+      </article>
+    `
+
+    const ids = grabAllNode(document.body, {
+      contentFilter: getContentFilterDecision
+    }).map((node) => node.id)
+
+    expect(ids).toContain('article-body')
+    expect(ids).not.toContain('tag-data')
+    expect(ids).not.toContain('share-title')
+    expect(ids).not.toContain('share-facebook')
+    expect(ids).not.toContain('promo-text')
+    expect(ids).not.toContain('promo-button')
   })
 })

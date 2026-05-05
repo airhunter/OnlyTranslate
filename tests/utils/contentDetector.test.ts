@@ -43,6 +43,23 @@ describe('contentDetector', () => {
     expect(findMainContent()).toBe(document.querySelector('#reader-shell'))
   })
 
+  it('uses a single credible main as a fast content root', () => {
+    document.body.innerHTML = `
+      <header><nav><a>US</a><a>World</a><a>Politics</a></nav></header>
+      <main id="cnn-live-root">
+        <h1>Iran war news and live updates</h1>
+        <section>
+          <h2>Two reasons why Iran may have attacked the UAE on Monday</h2>
+          <p>${paragraph.repeat(4)}</p>
+          <p>${paragraph.repeat(3)}</p>
+        </section>
+      </main>
+      <footer>Footer links</footer>
+    `
+
+    expect(findMainContent()).toBe(document.querySelector('#cnn-live-root'))
+  })
+
   it('does not promote past the content shell into a noisy page layout', () => {
     document.body.innerHTML = `
       <div id="layout">

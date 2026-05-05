@@ -32,6 +32,7 @@ let mutationObserver: MutationObserver | null = null; // 保存 DOM 变化观察
 const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
 const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden'];
 
 let nodeIdCounter = 0; // 节点ID计数器
 
@@ -44,6 +45,20 @@ interface AutoTranslateTarget {
 function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
     return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+}
+
+export function collectDynamicTranslationNodes(
+    root: Element,
+    contentRoot: Element,
+    scope: string,
+    grabOptions: GrabAllNodeOptions = {}
+): Element[] {
+    if (isManagedTranslationNode(root)) return [];
+    if (scope !== 'full' && !contentRoot.contains(root)) return [];
+
+    return grabAllNode(root, grabOptions).filter(
+        node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node)
+    );
 }
 
 export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
@@ -207,32 +222,68 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         observer?.observe(node);
     });
 
+    const observeTranslationNodes = (nodes: Element[]) => {
+        nodes.forEach(node => observer?.observe(node));
+    };
+
+    const pendingDynamicRoots = new Set<Element>();
+    let dynamicScanTimer: number | null = null;
+
+    const scheduleDynamicScan = (root: Element) => {
+        if (isManagedTranslationNode(root)) return;
+        if (scope !== 'full' && !contentRoot.contains(root)) return;
+
+        pendingDynamicRoots.add(root);
+        if (dynamicScanTimer !== null) return;
+
+        dynamicScanTimer = window.setTimeout(() => {
+            dynamicScanTimer = null;
+            const roots = Array.from(pendingDynamicRoots);
+            pendingDynamicRoots.clear();
+
+            roots.forEach(scanRoot => {
+                observeTranslationNodes(
+                    collectDynamicTranslationNodes(scanRoot, contentRoot, scope, grabOptions)
+                );
+            });
+        }, 80);
+    };
+
     // 创建 MutationObserver 监听 DOM 变化
     mutationObserver = new MutationObserver((mutations) => {
         if (!isAutoTranslating) return;
 
         mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) { // 元素节点
-                    if (isManagedTranslationNode(node)) return;
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(node => {
+                    if (node instanceof Element) {
+                        scheduleDynamicScan(node);
+                    }
+                });
+                return;
+            }
 
-                    // 智能模式下，忽略 contentRoot 范围之外的动态插入节点
-                    if (scope !== 'full' && !contentRoot.contains(node as Node)) return;
+            if (mutation.type === 'attributes' && mutation.target instanceof Element) {
+                scheduleDynamicScan(mutation.target);
+                return;
+            }
 
-                    // 只处理未翻译的新节点
-                    const newNodes = grabAllNode(node as Element, grabOptions).filter(
-                        n => !n.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(n)
-                    );
-                    newNodes.forEach(n => observer?.observe(n));
+            if (mutation.type === 'characterData') {
+                const parent = mutation.target.parentElement;
+                if (parent) {
+                    scheduleDynamicScan(parent);
                 }
-            });
+            }
         });
     });
 
     // 监听整个 body 的变化
     mutationObserver.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: DYNAMIC_MUTATION_ATTRIBUTES,
+        characterData: true
     });
 }
 

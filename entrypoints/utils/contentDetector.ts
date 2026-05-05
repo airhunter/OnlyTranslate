@@ -17,7 +17,12 @@ export function findMainContent(): Element {
     const semantic = findSemanticRoot();
     if (semantic) return semantic;
 
-    // 第二步：自底向上文本密度评分
+    // 第二步：可信的唯一 main。很多新闻 live page 没有唯一 article，
+    // 但有明确 main，先命中它能避免在大型页面上做昂贵的全页打分。
+    const main = findMainRoot();
+    if (main) return main;
+
+    // 第三步：自底向上文本密度评分
     const scored = findByBottomUpScore();
     if (scored) {
         const promoted = promoteToContentShell(scored);
@@ -48,6 +53,26 @@ function findSemanticRoot(): Element | null {
     ) {
         return art;
     }
+    return null;
+}
+
+function findMainRoot(): Element | null {
+    const mains = Array.from(
+        document.querySelectorAll<Element>('main, [role="main"]')
+    );
+
+    if (mains.length !== 1) return null;
+
+    const main = mains[0];
+    if (
+        getTextLength(main) >= MIN_TEXT_LENGTH * 2
+        && getLinkDensity(main) <= 0.5
+        && hasPrimaryHeading(main)
+        && !isLikelyNoise(main)
+    ) {
+        return main;
+    }
+
     return null;
 }
 
