@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1](https://github.com/airhunter/OnlyTranslate/compare/v0.3.0...v0.3.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* **content:** 优化文章标题识别范围 ([46e320b](https://github.com/airhunter/OnlyTranslate/commit/46e320ba183d9815e9ef31f615d0bd3fb27dced1))
+* **content:** 优化智能过滤兜底与 Reddit 正文识别 ([7052612](https://github.com/airhunter/OnlyTranslate/commit/7052612af95d4bc165e3c9d78e1ec8f40002c56d))
+* **content:** 优化识文动态内容与站点适配 ([ea0f42f](https://github.com/airhunter/OnlyTranslate/commit/ea0f42f22d14571a6dfc9a472733ed8197aeb0e9))
+* **content:** 避免脚本源码被误翻译 ([f6ab31e](https://github.com/airhunter/OnlyTranslate/commit/f6ab31e1d02551e94d280a429a147b5a73e58c21))
+
 # [0.3.0](https://github.com/airhunter/OnlyTranslate/compare/v0.2.0...v0.3.0) (2026-05-04)
 
 
