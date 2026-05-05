@@ -11,6 +11,16 @@ export const RELEASE_NOTES_INIT_KEY = 'local:releaseNotesInitialized';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.3.1',
+    title: '识文范围与页面兼容性修复',
+    items: [
+      '优化文章标题识别，CNN 等页面的正文标题可以一起翻译。',
+      '改进动态内容翻译，展开后的正文会更稳定地进入翻译流程。',
+      '增强 Reddit、GitHub 等页面的识文兜底与站点适配，减少漏翻和误翻。',
+      '修复脚本源码被当作正文翻译的问题。'
+    ]
+  },
+  {
     version: '0.3.0',
     title: '智能识文与交互体验升级',
     items: [
