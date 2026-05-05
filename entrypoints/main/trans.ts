@@ -265,6 +265,9 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
             if (mutation.type === 'attributes' && mutation.target instanceof Element) {
                 scheduleDynamicScan(mutation.target);
+                if (mutation.target.parentElement) {
+                    scheduleDynamicScan(mutation.target.parentElement);
+                }
                 return;
             }
 

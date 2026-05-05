@@ -136,6 +136,37 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('comment-body')
   })
 
+  it('keeps a leading article title when title and body are sibling modules', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://example.com/story'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <header><nav><a>World</a><a>Politics</a></nav></header>
+      <aside>
+        <p id="rail">This sidebar teaser should stay outside the smart content root.</p>
+      </aside>
+      <div id="article-shell" class="article-shell">
+        <section class="article-hero">
+          <h1 id="headline">Meteor shower peaks tonight. Here is how to watch it</h1>
+        </section>
+        <div class="article-content">
+          <p id="paragraph">Sky-gazers will have the best chance to view the cosmic display on Wednesday morning before dawn, according to astronomers.</p>
+          <p id="paragraph-2">The event is expected to be visible under clear skies, with the best viewing away from bright city lights.</p>
+        </div>
+      </div>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(target.contentRoot).toBe(document.querySelector('#article-shell'))
+    expect(ids).toContain('headline')
+    expect(ids).toContain('paragraph')
+    expect(ids).toContain('paragraph-2')
+    expect(ids).not.toContain('rail')
+  })
+
   it('collects newly revealed nodes from dynamic content regions', () => {
     document.body.innerHTML = `
       <main id="content-root">
@@ -158,6 +189,25 @@ describe('resolveAutoTranslateTarget', () => {
 
     expect(ids).toContain('revealed')
     expect(ids).not.toContain('already-translated')
+  })
+
+  it('collects a node when the dynamic mutation target is the revealed paragraph itself', () => {
+    document.body.innerHTML = `
+      <main id="content-root">
+        <article id="live-card">
+          <p id="revealed">This paragraph had aria-hidden removed by a Read More interaction and should be observed.</p>
+        </article>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#revealed')!,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(nodes.map(node => node.id)).toContain('revealed')
   })
 
   it('ignores dynamic nodes outside smart content root', () => {

@@ -60,6 +60,49 @@ describe('contentDetector', () => {
     expect(findMainContent()).toBe(document.querySelector('#cnn-live-root'))
   })
 
+  it('promotes to a shared article shell when the title is a sibling of the body', () => {
+    document.body.innerHTML = `
+      <header><nav><a>World</a><a>Science</a><a>Travel</a></nav></header>
+      <div id="article-shell" class="article-shell">
+        <section class="article-hero">
+          <h1>Meteor shower peaks tonight. Here is how to watch it</h1>
+          <p>A short summary that belongs with the story.</p>
+        </section>
+        <div class="article-content">
+          <p>${paragraph.repeat(5)}</p>
+          <p>${paragraph.repeat(4)}</p>
+        </div>
+      </div>
+      <aside class="related"><a>Related story</a><a>Another story</a></aside>
+    `
+
+    expect(findMainContent()).toBe(document.querySelector('#article-shell'))
+  })
+
+  it('promotes a semantic article to a shared shell when the title sits outside article', () => {
+    document.body.innerHTML = `
+      <header><nav><a>World</a><a>Science</a><a>Travel</a></nav></header>
+      <div id="content-shell" class="article-layout">
+        <section class="article-top">
+          <h1>May's meteor shower peaks tonight. Here is how to watch it</h1>
+        </section>
+        <section class="article-wrapper">
+          <main>
+            <article id="story" class="article">
+              <div class="article-content">
+                <p>${paragraph.repeat(5)}</p>
+                <p>${paragraph.repeat(4)}</p>
+              </div>
+            </article>
+          </main>
+        </section>
+      </div>
+      <aside class="related"><a>Related story</a><a>Another story</a></aside>
+    `
+
+    expect(findMainContent()).toBe(document.querySelector('#content-shell'))
+  })
+
   it('does not promote past the content shell into a noisy page layout', () => {
     document.body.innerHTML = `
       <div id="layout">

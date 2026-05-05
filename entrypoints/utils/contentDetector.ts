@@ -51,7 +51,7 @@ function findSemanticRoot(): Element | null {
         && getLinkDensity(art) <= 0.45
         && !isLikelyNoise(art)
     ) {
-        return art;
+        return promoteToContentShell(art);
     }
     return null;
 }
@@ -165,14 +165,15 @@ function getPromotionScore(candidate: Element, base: Element, baseLen: number, d
     const extraText = candidateLen - baseLen;
     const textRatio = baseLen > 0 ? candidateLen / baseLen : Infinity;
     const linkDensity = getLinkDensity(candidate);
-
-    // 候选外壳只允许比正文容器略宽。超出的文字太多，通常意味着带进了侧栏/推荐/评论。
-    if (textRatio > 2.4 && extraText > 600) return 0;
-    if (linkDensity > 0.35) return 0;
-    if (candidate.querySelectorAll('article, [role="article"]').length > 1) return 0;
-
     const hasHeading = hasPrimaryHeading(candidate);
     const hasHeadingOutsideBase = hasPrimaryHeadingOutsideBase(candidate, base);
+    const hasArticleLeadHeading = hasHeadingOutsideBase && looksLikeArticleShellWithLeadingHeading(candidate, base);
+
+    // 候选外壳只允许比正文容器略宽。超出的文字太多，通常意味着带进了侧栏/推荐/评论。
+    if (!hasArticleLeadHeading && textRatio > 2.4 && extraText > 600) return 0;
+    if (!hasArticleLeadHeading && linkDensity > 0.35) return 0;
+    if (candidate.querySelectorAll('article, [role="article"]').length > 1) return 0;
+
     const isSemanticShell = isSemanticContentShell(candidate);
     const hasPositiveHint = POSITIVE_PATTERN.test(getNodeHint(candidate));
 
@@ -180,13 +181,13 @@ function getPromotionScore(candidate: Element, base: Element, baseLen: number, d
     if (!hasHeadingOutsideBase && !isSemanticShell) return 0;
 
     let score = 1;
-    if (hasHeadingOutsideBase) score += 4;
+    if (hasHeadingOutsideBase) score += hasArticleLeadHeading ? 6 : 4;
     if (isSemanticShell) score += 3;
     if (hasPositiveHint) score += 1.5;
     if (candidate.tagName.toLowerCase() === 'main') score += 1;
 
-    score -= linkDensity * 6;
-    score -= Math.max(0, textRatio - 1) * 0.8;
+    score -= linkDensity * (hasArticleLeadHeading ? 3 : 6);
+    score -= Math.max(0, textRatio - 1) * (hasArticleLeadHeading ? 0.35 : 0.8);
     score -= depth * 0.35;
 
     return score;
@@ -213,6 +214,36 @@ function hasPrimaryHeadingOutsideBase(candidate: Element, base: Element): boolea
         const relation = heading.compareDocumentPosition(base);
         return Boolean(relation & Node.DOCUMENT_POSITION_FOLLOWING);
     });
+}
+
+function looksLikeArticleShellWithLeadingHeading(candidate: Element, base: Element): boolean {
+    const heading = findLeadingPrimaryHeading(candidate, base);
+    if (!heading) return false;
+
+    const candidateLen = getTextLength(candidate);
+    const baseLen = getTextLength(base);
+    const extraText = candidateLen - baseLen;
+    const linkDensity = getLinkDensity(candidate);
+
+    // 新闻/博客文章常把标题区和正文区做成同级模块。
+    // 允许这种内容壳比正文更宽，但仍限制链接密度和额外文本，避免把整页布局带进来。
+    if (linkDensity > 0.45) return false;
+    if (extraText > Math.max(1200, baseLen * 1.8)) return false;
+
+    const headingText = heading.textContent?.trim() ?? '';
+    if (headingText.length < 12 || headingText.length > 240) return false;
+
+    return true;
+}
+
+function findLeadingPrimaryHeading(candidate: Element, base: Element): Element | null {
+    return Array.from(candidate.querySelectorAll<Element>('h1, h2')).find((heading) => {
+        if (base.contains(heading)) return false;
+        if (isLikelyNoise(heading)) return false;
+
+        const relation = heading.compareDocumentPosition(base);
+        return Boolean(relation & Node.DOCUMENT_POSITION_FOLLOWING);
+    }) ?? null;
 }
 
 function getTextLength(el: Element): number {
