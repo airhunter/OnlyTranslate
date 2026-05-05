@@ -31,3 +31,16 @@ Rules:
 - When preparing a release, update `entrypoints/utils/releaseNotes.ts` for the user-facing update notes.
 - User-facing release notes should usually contain `3-5` concise items focused on visible features, improvements, and fixes.
 - Before publishing, run the release readiness checks described in `RELEASE.md`.
+
+## Content Detection Rule Changes
+
+Rules around `contentDetector`, `contentFilter`, Readability-like heuristics, and smart/full translation scope are high-impact.
+
+Before changing these rules:
+
+- Discuss the proposed approach with the user first.
+- Explain the expected matching path, affected pages, fallback behavior, and regression risks.
+- Do not change generic detection/filtering rules just to fix one site-specific issue.
+- Prefer site profiles for clearly site-specific DOM behavior.
+- Add focused tests that distinguish generic structures from site-specific structures.
+- For complex dynamic pages such as live news pages, treat them as a separate design topic before implementing.
