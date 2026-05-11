@@ -6,7 +6,7 @@ export function checkConfig(): boolean {
     if (!config.on) return false;
 
     if (servicesType.isUseToken(config.service) && !config.token[config.service]) {
-        sendErrorMessage("æµ ã‚‡å¢çæ°­æ¹­é–°å¶‡ç–†é”›å²ƒî‡¬é“å¶…ç·šç’å‰§ç–†æ¤¤ç”¸åŽ¤ç¼ƒ?");
+        sendErrorMessage("当前服务尚未配置，请前往设置页配置访问令牌后再试。");
         return false;
     }
 
@@ -14,13 +14,13 @@ export function checkConfig(): boolean {
         const model = config.model[config.service];
         const customModel = config.customModel[config.service];
         if (!model || (model === customModelString && !customModel)) {
-            sendErrorMessage("å¦¯â€³ç€·çæ°­æ¹­é–°å¶‡ç–†é”›å²ƒî‡¬é“å¶…ç·šç’å‰§ç–†æ¤¤ç”¸åŽ¤ç¼ƒ?");
+            sendErrorMessage("当前服务尚未配置模型，请前往设置页选择模型后再试。");
             return false;
         }
     }
 
     if (config.display === 0 && config.service === services.google) {
-        sendErrorMessage("éŠ†å²ƒèƒºå§å²€ç‚•ç’‡æˆ™â‚¬å¶„ç²Žé€îˆ›å¯”é™å²ƒî‡¢å¦¯â€³ç´¡é”›å²ƒî‡¬é’å›¨å´²ç¼ˆæ˜ç˜§éˆå¶…å§Ÿ");
+        sendErrorMessage("Google 翻译暂不支持仅译文模式，请切换到双语对照模式后再试。");
         return false;
     }
 
