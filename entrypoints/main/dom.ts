@@ -1,6 +1,7 @@
 import { getMainDomain, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { html } from 'js-beautify';
 import { handleBtnTranslation } from "@/entrypoints/main/trans";
+import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 
 // 直接翻译的标签集合（块级元素）
 const directSet = new Set([
@@ -30,6 +31,7 @@ type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
 export interface GrabAllNodeOptions {
     contentFilter?: (element: Element) => ContentFilterDecision;
+    contentUnitClassifier?: (element: Element) => ContentUnitDecision;
     shouldSkipSubtree?: (element: Element) => boolean;
     siteCompatMode?: SelectCompatContext['mode'];
 }
@@ -86,6 +88,9 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 if (node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true') {
                     return NodeFilter.FILTER_REJECT;
                 }
+                if (node.getAttribute('translate') === 'no') {
+                    return NodeFilter.FILTER_REJECT;
+                }
                 try {
                     if (window.getComputedStyle(node).display === 'none') {
                         return NodeFilter.FILTER_REJECT;
@@ -99,6 +104,11 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 }
                 // 跳过包含导航元素的 header（页面导航栏），但保留不含导航的 header（文章标题区）
                 if (tag === 'header' && node.querySelector('nav, [role="navigation"]')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+
+                const contentUnitDecision = options.contentUnitClassifier?.(node);
+                if (contentUnitDecision?.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
                     return NodeFilter.FILTER_REJECT;
                 }
 
@@ -191,6 +201,10 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
 
     if (hasContentFilterSkipSelfAncestor(node, options)) return false;
 
+    const contentUnitDecision = options.contentUnitClassifier?.(node);
+    if (contentUnitDecision?.action === 'skip' && contentUnitDecision.confidence >= 0.85) return false;
+    if (contentUnitDecision?.action === 'allow' && contentUnitDecision.confidence >= 0.7) return node;
+
     // 3. 直接翻译：块级元素
     if (directSet.has(curTag)) return node;
 
@@ -235,6 +249,7 @@ function shouldSkipNode(node: any, tag: string): boolean {
     // 6. 判断文本是否为 JSON 格式数据
     return skipSet.has(tag) ||
         node.classList?.contains('notranslate') ||
+        node.getAttribute?.('translate') === 'no' ||
         node.isContentEditable ||
         checkTextSize(node) ||
         isMainlyNumericContent(node) ||

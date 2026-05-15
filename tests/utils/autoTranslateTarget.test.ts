@@ -167,6 +167,67 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).not.toContain('rail')
   })
 
+  it('supplements content cards that sit outside the primary article root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ynarwal.github.io/how-llms-work/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="lesson">
+        <article id="lesson-body">
+          <h1>Downloading the Internet</h1>
+          <p id="body-paragraph">The first step is collecting an enormous amount of text. Organizations like Common Crawl have been crawling the web since 2007.</p>
+          <p id="body-paragraph-2">The goal is a large quantity of high quality, diverse documents that can be filtered into a training corpus.</p>
+        </article>
+        <aside>
+          <section id="pipeline-card" class="pipeline-card stage">
+            <strong>URL Filtering</strong>
+            <span>Blocklists · Malware · Spam · Adult content</span>
+            <div>Block-lists of known malware sites, spam networks, adult content, marketing pages, and low-quality domains are applied.</div>
+          </section>
+        </aside>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('body-paragraph')
+    expect(ids).toContain('pipeline-card')
+  })
+
+  it('keeps forum-like topic titles while skipping list metadata', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ziggit.dev/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <header><nav><a>Docs</a><a>More</a></nav></header>
+      <main>
+        <ul class="topic-list">
+          <li class="topic-list-item">
+            <a id="topic-title" class="raw-topic-link" href="/t/ai-policy">AI/LLM Policy Updates</a>
+            <p id="topic-excerpt" class="topic-excerpt">Hey all! The moderation team want to thank you for your input regarding AI showcases.</p>
+            <span id="category" class="badge-category">Site Feedback</span>
+            <span id="replies" class="replies">23</span>
+            <span id="views" class="views">486</span>
+            <span id="activity" class="activity">3h</span>
+          </li>
+        </ul>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('topic-title')
+    expect(ids).toContain('topic-excerpt')
+    expect(ids).not.toContain('category')
+    expect(ids).not.toContain('replies')
+    expect(ids).not.toContain('views')
+    expect(ids).not.toContain('activity')
+  })
+
   it('collects newly revealed nodes from dynamic content regions', () => {
     document.body.innerHTML = `
       <main id="content-root">

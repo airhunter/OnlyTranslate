@@ -19,6 +19,7 @@ import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
+import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 
 let hoverTimer: any; // 鼠标悬停计时器
@@ -74,9 +75,13 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
     const contentRoot = findMainContent();
     const grabOptions: GrabAllNodeOptions = {
         contentFilter: getContentFilterDecision,
+        contentUnitClassifier: classifyContentUnit,
         siteCompatMode: 'smart'
     };
-    const filteredNodes = grabAllNode(contentRoot, grabOptions);
+    const filteredNodes = mergeTranslationNodes([
+        ...grabAllNode(contentRoot, grabOptions),
+        ...collectHighConfidenceReadingUnits(document.body)
+    ]);
 
     if (filteredNodes.length > 0) {
         return {
@@ -103,6 +108,11 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
         nodes: contentRoot === document.body ? unfilteredRootNodes : grabAllNode(document.body, fallbackOptions),
         grabOptions: fallbackOptions
     };
+}
+
+function mergeTranslationNodes(nodes: Element[]): Element[] {
+    const uniqueNodes = Array.from(new Set(nodes));
+    return uniqueNodes.filter(node => !uniqueNodes.some(other => node !== other && other.contains(node)));
 }
 
 // 恢复原文内容
