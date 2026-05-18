@@ -43,7 +43,7 @@ export function classifyContentUnit(element: Element): ContentUnitDecision {
     const metrics = getUnitMetrics(element);
     if (metrics.textLength === 0) return neutral('empty');
 
-    if (isStructuralUi(element)) return skip('ui', 0.98, 'structural-ui');
+    if (isStructuralUi(element, metrics)) return skip('ui', 0.98, 'structural-ui');
     if (isMetadataElement(element, metrics)) return skip('metadata', 0.92, 'metadata-signal');
     if (isNoiseElement(element, metrics)) return skip('noise', 0.9, 'noise-signal');
 
@@ -142,6 +142,7 @@ function scoreSubtitle(element: Element, metrics: UnitMetrics): number {
 function scoreContentCard(element: Element, metrics: UnitMetrics): number {
     const tag = element.tagName.toLowerCase();
     if (['body', 'main', 'article', 'a', 'p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figcaption'].includes(tag)) return 0;
+    if (element.getAttribute('role') === 'list') return 0;
     if (metrics.textLength < 40 || metrics.textLength > 1200) return 0;
     if (metrics.buttonCount > 1) return 0;
 
@@ -159,6 +160,7 @@ function scoreContentCard(element: Element, metrics: UnitMetrics): number {
     if (isInReadableContainer(element)) score += 1;
     if (isEarlyInContainer(element) && metrics.textLength >= 80 && metrics.linkDensity <= 0.35) score += 1;
     if (metrics.linkDensity <= 0.35) score += 1;
+    if (element.hasAttribute('aria-expanded')) score += 1;
 
     score -= getUiPenalty(element, metrics);
     score -= NOISE_PATTERN.test(hint) ? 4 : 0;
@@ -207,13 +209,14 @@ function scoreForumExcerpt(element: Element, metrics: UnitMetrics): number {
     return score;
 }
 
-function isStructuralUi(element: Element): boolean {
+function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
     const tag = element.tagName.toLowerCase();
     if (['nav', 'footer', 'form', 'dialog'].includes(tag)) return true;
     if (tag === 'aside' && !isInReadableContainer(element)) return true;
 
     const role = element.getAttribute('role')?.toLowerCase();
-    if (role && ['navigation', 'menu', 'menubar', 'toolbar', 'tablist', 'tab', 'button', 'dialog'].includes(role)) return true;
+    if (role && ['navigation', 'menu', 'menubar', 'toolbar', 'tablist', 'tab', 'dialog'].includes(role)) return true;
+    if (role === 'button' && !isRichReadingControl(element, metrics)) return true;
 
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return true;
     if (element.closest('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]')) return true;
@@ -250,12 +253,28 @@ function getUiPenalty(element: Element, metrics: UnitMetrics): number {
     const hint = getElementHint(element);
     let penalty = 0;
 
-    if (UI_PATTERN.test(hint)) penalty += 3;
-    if (element.closest('button, [role="button"], nav, [role="navigation"]')) penalty += 4;
+    if (UI_PATTERN.test(hint) && !isRichReadingControl(element, metrics)) penalty += 3;
+    if (element.closest('button, nav, [role="navigation"]')) penalty += 4;
+    if (element.closest('[role="button"]') && !isRichReadingControl(element, metrics)) penalty += 4;
     if (metrics.buttonCount > 0 && metrics.textLength < 160) penalty += 2;
     if (metrics.linkCount >= 3 && metrics.textLength < 220) penalty += 2;
 
     return penalty;
+}
+
+function isRichReadingControl(element: Element, metrics: UnitMetrics): boolean {
+    if (element.getAttribute('role')?.toLowerCase() !== 'button') return false;
+    if (element.tagName.toLowerCase() === 'button') return false;
+    if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="menubar"], [role="toolbar"], [role="tablist"]')) return false;
+    if (metrics.textLength < 80 || metrics.textLength > 1200) return false;
+    if (metrics.linkDensity > 0.35 || metrics.buttonCount > 0) return false;
+    if (metrics.childTextBlockCount < 2 || !metrics.hasReadableSentence) return false;
+
+    const hint = getElementHint(element);
+    if (!CARD_PATTERN.test(hint)) return false;
+
+    return Array.from(element.children)
+        .some(child => getNormalizedText(child).length >= 40 && /[.!?。！？]/.test(getNormalizedText(child)));
 }
 
 function isInReadableContainer(element: Element): boolean {

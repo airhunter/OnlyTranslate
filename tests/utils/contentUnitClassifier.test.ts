@@ -57,6 +57,42 @@ describe('contentUnitClassifier', () => {
     expect(decision.kind).toBe('content-card')
   })
 
+  it('allows non-early pipeline cards with aria-expanded outside readable containers', () => {
+    document.body.innerHTML = `
+      <section class="section" aria-label="Data Collection">
+        <div class="col-text">
+          <div class="data-flow" role="list" aria-label="Data processing pipeline stages">
+            <div class="pipeline-node" data-stage="0" role="button" aria-expanded="false" aria-label="Common Crawl - click to expand">
+              <div class="pn-title">Common Crawl</div>
+              <div class="pn-sub">2.7B web pages · Raw HTML · Since 2007</div>
+              <div class="pn-detail">A non-profit organization that crawls the web and freely provides its data. Their bots follow links from seed pages, recursively indexing the internet.</div>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">↓</div>
+            <div class="pipeline-node" data-stage="1" role="button" aria-expanded="false" aria-label="URL Filtering - click to expand">
+              <div class="pn-title">URL Filtering</div>
+              <div class="pn-sub">Blocklists · Malware · Spam · Adult content</div>
+              <div class="pn-detail">Block-lists of known malware sites, spam networks, adult content, marketing pages, and low-quality domains are applied. Entire domains can be removed.</div>
+            </div>
+            <div class="pipeline-arrow" aria-hidden="true">↓</div>
+            <div id="late-card" class="pipeline-node" data-stage="2" role="button" aria-expanded="true" aria-label="Text Extraction - click to expand">
+              <div class="pn-title">Text Extraction</div>
+              <div class="pn-sub">HTML → clean text · Remove navigation &amp; CSS</div>
+              <div class="pn-detail">Raw HTML contains div tags, CSS, JavaScript, navigation menus, and ads. Parsers extract just the meaningful text content. This is harder than it sounds.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `
+
+    const decision = classifyContentUnit(document.querySelector('#late-card')!)
+    const ids = collectHighConfidenceReadingUnits(document.body).map(node => node.id)
+
+    expect(decision.action).toBe('allow')
+    expect(decision.kind).toBe('content-card')
+    expect(decision.confidence).toBeGreaterThanOrEqual(0.72)
+    expect(ids).toContain('late-card')
+  })
+
   it('allows introductory notice blocks inside reading surfaces', () => {
     document.body.innerHTML = `
       <main>
