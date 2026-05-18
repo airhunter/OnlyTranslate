@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.4.0](https://github.com/airhunter/OnlyTranslate/compare/v0.3.1...v0.4.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* **content:** 修复列表与社交链接翻译目标 ([e9f9b77](https://github.com/airhunter/OnlyTranslate/commit/e9f9b778e39280d21107c6f2b6fdf62056712ddf))
+* **content:** 修复可展开内容卡片识别 ([f74dc6f](https://github.com/airhunter/OnlyTranslate/commit/f74dc6fc851d6aebf6cbb26c09cb902e41944446))
+* **content:** 修复折叠卡片译文显示 ([686fda5](https://github.com/airhunter/OnlyTranslate/commit/686fda53addc3ad54e1c1ee11c5a6f2d40d7c2c6))
+* **content:** 修复站点卡片标题识别 ([6ad2896](https://github.com/airhunter/OnlyTranslate/commit/6ad28968883ba26863dca3d0635e46e1a7b4805d))
+* **content:** 修复配置检查提示乱码 ([e9aac6c](https://github.com/airhunter/OnlyTranslate/commit/e9aac6c1d261cc9f20c52886555a20cf071be508))
+
+
+### Features
+
+* **content:** 增强识文内容单元识别 ([241b6fd](https://github.com/airhunter/OnlyTranslate/commit/241b6fd33b7505a9e2da67db16c8fb76a13a4722))
+
 ## [0.3.1](https://github.com/airhunter/OnlyTranslate/compare/v0.3.0...v0.3.1) (2026-05-05)
 
 
