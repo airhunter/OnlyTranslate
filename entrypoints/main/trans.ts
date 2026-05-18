@@ -33,7 +33,8 @@ let mutationObserver: MutationObserver | null = null; // 保存 DOM 变化观察
 const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
 const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden'];
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
+const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
 
 let nodeIdCounter = 0; // 节点ID计数器
 
@@ -55,10 +56,13 @@ export function collectDynamicTranslationNodes(
     grabOptions: GrabAllNodeOptions = {}
 ): Element[] {
     if (isManagedTranslationNode(root)) return [];
-    if (scope !== 'full' && !contentRoot.contains(root)) return [];
+    if (!isInTranslationScope(root, contentRoot, scope)) return [];
+    if (isOpenExpandableReadingContainer(root) && isVisibleForTranslation(root) && !root.hasAttribute(TRANSLATED_ATTR)) {
+        return [root];
+    }
 
     return grabAllNode(root, grabOptions).filter(
-        node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node)
+        node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node) && isVisibleForTranslation(node)
     );
 }
 
@@ -80,7 +84,7 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
     };
     const filteredNodes = mergeTranslationNodes([
         ...grabAllNode(contentRoot, grabOptions),
-        ...collectHighConfidenceReadingUnits(document.body)
+        ...collectSupplementalReadingTargets(document.body)
     ]);
 
     if (filteredNodes.length > 0) {
@@ -113,6 +117,57 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
 function mergeTranslationNodes(nodes: Element[]): Element[] {
     const uniqueNodes = Array.from(new Set(nodes));
     return uniqueNodes.filter(node => !uniqueNodes.some(other => node !== other && other.contains(node)));
+}
+
+function collectSupplementalReadingTargets(root: ParentNode): Element[] {
+    return collectHighConfidenceReadingUnits(root)
+        .filter(unit => !isExpandableReadingContainer(unit) || isOpenExpandableReadingContainer(unit))
+        .filter(unit => isVisibleForTranslation(unit));
+}
+
+function isExpandableReadingContainer(element: Element): boolean {
+    return element.hasAttribute('aria-expanded')
+        && element.getAttribute('role')?.toLowerCase() === 'button';
+}
+
+function isOpenExpandableReadingContainer(element: Element): boolean {
+    return isExpandableReadingContainer(element) && element.getAttribute('aria-expanded') === 'true';
+}
+
+function isVisibleForTranslation(element: Element): boolean {
+    let current: Element | null = element;
+
+    while (current) {
+        if (current.hasAttribute('hidden') || current.getAttribute('aria-hidden') === 'true') {
+            return false;
+        }
+
+        try {
+            const style = window.getComputedStyle(current);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') {
+                return false;
+            }
+        } catch (_) {}
+
+        current = current.parentElement;
+    }
+
+    return true;
+}
+
+function isInTranslationScope(root: Element, contentRoot: Element, scope: string): boolean {
+    if (scope === 'full' || contentRoot.contains(root)) return true;
+
+    let current: Element | null = root;
+    while (current && current !== document.body) {
+        const decision = classifyContentUnit(current);
+        if (decision.action === 'allow' && decision.confidence >= SUPPLEMENTAL_READING_CONFIDENCE) {
+            return true;
+        }
+        current = current.parentElement;
+    }
+
+    return false;
 }
 
 // 恢复原文内容
@@ -241,7 +296,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     const scheduleDynamicScan = (root: Element) => {
         if (isManagedTranslationNode(root)) return;
-        if (scope !== 'full' && !contentRoot.contains(root)) return;
+        if (!isInTranslationScope(root, contentRoot, scope)) return;
 
         pendingDynamicRoots.add(root);
         if (dynamicScanTimer !== null) return;
@@ -478,5 +533,21 @@ function bilingualAppendChild(node: any, text: string) {
     }
     newNode.append(text);
     smashTruncationStyle(node);
-    node.appendChild(newNode);
+    getBilingualAppendTarget(node).appendChild(newNode);
+}
+
+function getBilingualAppendTarget(node: HTMLElement): HTMLElement {
+    if (!isOpenExpandableReadingContainer(node)) return node;
+
+    const candidates = Array.from(node.querySelectorAll<HTMLElement>(
+        ':scope > *, :scope [class*="detail"], :scope [class*="content"], :scope [class*="body"], :scope p'
+    ));
+    const target = candidates
+        .filter(candidate => isVisibleForTranslation(candidate))
+        .find(candidate => {
+            const text = candidate.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+            return text.length >= 40 && /[.!?。！？]/.test(text);
+        });
+
+    return target ?? node;
 }

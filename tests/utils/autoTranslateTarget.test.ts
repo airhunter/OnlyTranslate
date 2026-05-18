@@ -23,7 +23,8 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { collectDynamicTranslationNodes, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { collectDynamicTranslationNodes, handleBilingualTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { translateText } from '@/entrypoints/utils/translateApi'
 
 describe('resolveAutoTranslateTarget', () => {
   const originalLocation = window.location
@@ -194,6 +195,99 @@ describe('resolveAutoTranslateTarget', () => {
 
     expect(ids).toContain('body-paragraph')
     expect(ids).toContain('pipeline-card')
+  })
+
+  it('does not translate hidden detail text by selecting an expandable card container', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ynarwal.github.io/how-llms-work/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <style>
+        .pipeline-node:not(.active) .pn-detail { display: none; }
+      </style>
+      <main id="lesson">
+        <article id="lesson-body">
+          <h1>Downloading the Internet</h1>
+          <p id="body-paragraph">The first step is collecting an enormous amount of text from public web pages.</p>
+          <p id="body-paragraph-2">The goal is a large quantity of high quality, diverse documents for training.</p>
+        </article>
+        <aside>
+          <section class="section" aria-label="Data Collection">
+            <div class="data-flow" role="list" aria-label="Data processing pipeline stages">
+              <div id="late-card" class="pipeline-node" data-stage="2" role="button" aria-expanded="false" aria-label="Text Extraction - click to expand">
+                <div id="late-title" class="pn-title">Text Extraction</div>
+                <div id="late-sub" class="pn-sub">HTML to clean text · Remove navigation and CSS</div>
+                <div id="late-detail" class="pn-detail">Raw HTML contains div tags, CSS, JavaScript, navigation menus, and ads. Parsers extract just the meaningful text content.</div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).not.toContain('late-card')
+    expect(ids).not.toContain('late-title')
+    expect(ids).not.toContain('late-sub')
+    expect(ids).not.toContain('late-detail')
+  })
+
+  it('collects visible detail text after an expandable card opens outside the primary content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ynarwal.github.io/how-llms-work/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <style>
+        .pipeline-node:not(.active) .pn-detail { display: none; }
+      </style>
+      <main id="lesson">
+        <article id="lesson-body">
+          <h1>Downloading the Internet</h1>
+          <p>The first step is collecting an enormous amount of text from public web pages.</p>
+        </article>
+        <aside>
+          <div id="late-card" class="pipeline-node active" data-stage="2" role="button" aria-expanded="true" aria-label="Text Extraction - click to expand">
+            <div id="late-title" class="pn-title">Text Extraction</div>
+            <div id="late-sub" class="pn-sub">HTML to clean text · Remove navigation and CSS</div>
+            <div id="late-detail" class="pn-detail">Raw HTML contains div tags, CSS, JavaScript, navigation menus, and ads. Parsers extract just the meaningful text content.</div>
+          </div>
+        </aside>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#late-card')!,
+      document.querySelector('#lesson-body')!,
+      'smart'
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('late-card')
+    expect(ids).not.toContain('late-detail')
+  })
+
+  it('appends bilingual text inside the visible detail area of an expanded card', async () => {
+    vi.mocked(translateText).mockResolvedValue('原始 HTML 包含 div 标签、CSS、JavaScript、导航菜单和广告。解析器只提取有意义的文本内容。')
+    document.body.innerHTML = `
+      <div id="late-card" class="pipeline-node active" role="button" aria-expanded="true">
+        <div class="pn-title">Text Extraction</div>
+        <div class="pn-sub">HTML to clean text · Remove navigation and CSS</div>
+        <div id="late-detail" class="pn-detail">Raw HTML contains div tags, CSS, JavaScript, navigation menus, and ads. Parsers extract just the meaningful text content.</div>
+      </div>
+    `
+
+    handleBilingualTranslation(document.querySelector('#late-card')!, false)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const detail = document.querySelector('#late-detail')!
+    const translation = detail.querySelector('.only-translate-bilingual-content')
+
+    expect(translation?.textContent).toContain('原始 HTML')
+    expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
   })
 
   it('keeps forum-like topic titles while skipping list metadata', () => {
