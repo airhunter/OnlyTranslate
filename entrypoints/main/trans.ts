@@ -82,10 +82,10 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
         contentUnitClassifier: classifyContentUnit,
         siteCompatMode: 'smart'
     };
-    const filteredNodes = mergeTranslationNodes([
+    const filteredNodes = mergeTranslationNodes(normalizeTranslationTargets([
         ...grabAllNode(contentRoot, grabOptions),
         ...collectSupplementalReadingTargets(document.body)
-    ]);
+    ]));
 
     if (filteredNodes.length > 0) {
         return {
@@ -116,13 +116,66 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
 
 function mergeTranslationNodes(nodes: Element[]): Element[] {
     const uniqueNodes = Array.from(new Set(nodes));
-    return uniqueNodes.filter(node => !uniqueNodes.some(other => node !== other && other.contains(node)));
+    return uniqueNodes.filter(node => {
+        if (uniqueNodes.some(other => node !== other && isGitHubMarkdownListContainer(node) && isGitHubMarkdownListItemOf(other, node))) {
+            return false;
+        }
+
+        return !uniqueNodes.some(other => {
+            if (node === other || !other.contains(node)) return false;
+            return !(isGitHubMarkdownListContainer(other) && isGitHubMarkdownListItemOf(node, other));
+        });
+    });
+}
+
+function normalizeTranslationTargets(nodes: Element[]): Element[] {
+    return nodes.flatMap(node => {
+        const githubMarkdownListItems = getGitHubMarkdownListItems(node, false);
+        return githubMarkdownListItems.length > 0 ? githubMarkdownListItems : [node];
+    });
 }
 
 function collectSupplementalReadingTargets(root: ParentNode): Element[] {
     return collectHighConfidenceReadingUnits(root)
-        .filter(unit => !isExpandableReadingContainer(unit) || isOpenExpandableReadingContainer(unit))
+        .flatMap(expandSupplementalReadingUnit)
         .filter(unit => isVisibleForTranslation(unit));
+}
+
+function expandSupplementalReadingUnit(unit: Element): Element[] {
+    const githubMarkdownListItems = getGitHubMarkdownListItems(unit);
+    if (githubMarkdownListItems.length > 0) return githubMarkdownListItems;
+
+    if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
+
+    return [unit];
+}
+
+function getGitHubMarkdownListItems(unit: Element, includeDescendantLists = true): Element[] {
+    if (getMainDomain(location.href) !== 'github.com') return [];
+    if (!unit.closest('.markdown-body')) return [];
+    if (unit.closest('pre, code, table.highlight, table.diff-table')) return [];
+
+    const lists = unit.matches('ul, ol')
+        ? [unit]
+        : includeDescendantLists
+            ? Array.from(unit.querySelectorAll<Element>('ul, ol'))
+            : [];
+
+    return lists.flatMap(list => Array.from(list.children))
+        .filter(child => child.tagName.toLowerCase() === 'li')
+        .filter(item => (item.textContent?.replace(/\s+/g, ' ').trim().length ?? 0) >= 20);
+}
+
+function isGitHubMarkdownListContainer(element: Element): boolean {
+    return getMainDomain(location.href) === 'github.com'
+        && element.matches('ul, ol')
+        && Boolean(element.closest('.markdown-body'));
+}
+
+function isGitHubMarkdownListItemOf(item: Element, list: Element): boolean {
+    return item.tagName.toLowerCase() === 'li'
+        && item.parentElement === list
+        && Boolean(item.closest('.markdown-body'));
 }
 
 function isExpandableReadingContainer(element: Element): boolean {

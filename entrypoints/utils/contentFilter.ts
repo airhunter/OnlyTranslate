@@ -1,7 +1,8 @@
 const NOISE_TAGS = new Set(['nav', 'aside', 'footer', 'form', 'dialog']);
 const NOISE_ROLES = new Set(['navigation', 'complementary', 'contentinfo', 'dialog']);
 
-const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x platform|x\.com)\b/i;
+const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x platform|x\.com|medium|youtube|instagram|threads|mastodon|bluesky|github)\b/i;
+const SOCIAL_LINK_PATTERN = /\b(facebook\.com|linkedin\.com|twitter\.com|x\.com|medium\.com|youtube\.com|youtu\.be|instagram\.com|threads\.net|mastodon\.social|bsky\.app|github\.com)\b/i;
 const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|chip)\b/i;
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next|popular|trending)\b/i;
@@ -18,6 +19,7 @@ interface BlockMetrics {
     shortInteractiveCount: number;
     longParagraphCount: number;
     hasCodeOrTable: boolean;
+    hasSocialLinks: boolean;
 }
 
 export function getContentFilterDecision(element: Element): ContentFilterDecision {
@@ -46,9 +48,9 @@ export function shouldSkipContentBlock(element: Element): boolean {
 }
 
 function isShareBlock(hint: string, metrics: BlockMetrics): boolean {
-    if (!SHARE_PATTERN.test(hint)) return false;
+    if (!SHARE_PATTERN.test(hint) && !metrics.hasSocialLinks) return false;
     return metrics.longParagraphCount === 0
-        && (metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
+        && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
 }
 
 function isTagCluster(hint: string, metrics: BlockMetrics): boolean {
@@ -117,7 +119,8 @@ function getBlockMetrics(element: Element): BlockMetrics {
         buttonCount: buttons.length,
         shortInteractiveCount,
         longParagraphCount,
-        hasCodeOrTable: element.querySelector('pre, code, table') !== null
+        hasCodeOrTable: element.querySelector('pre, code, table') !== null,
+        hasSocialLinks: links.some(link => SOCIAL_LINK_PATTERN.test(link.getAttribute('href') ?? ''))
     };
 }
 

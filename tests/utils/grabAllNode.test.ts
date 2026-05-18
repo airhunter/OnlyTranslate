@@ -134,6 +134,12 @@ describe('grabAllNode', () => {
           <a id="share-linkedin" href="https://www.linkedin.com/shareArticle">Share on LinkedIn</a>
           <a id="share-x" href="https://x.com/intent/tweet">Share to X</a>
         </section>
+        <section class="author-social-links">
+          <a id="social-medium" href="https://medium.com/@ibrahim-salami">Medium</a>
+          <a id="social-linkedin" href="https://www.linkedin.com/in/ibrahim-salami">LinkedIn</a>
+          <a id="social-twitter" href="https://twitter.com/ibrahim_salami">Twitter</a>
+          <a id="social-youtube" href="https://www.youtube.com/@ibrahimsalami">YouTube</a>
+        </section>
         <section class="author-program-promo">
           <p id="promo-text">Towards Data Science is a community publication. Submit your insights to reach our global audience and earn through the TDS Author Payment Program.</p>
           <a id="promo-button" href="/write-for-us">Write for TDS</a>
@@ -149,6 +155,8 @@ describe('grabAllNode', () => {
     expect(ids).not.toContain('tag-data')
     expect(ids).not.toContain('share-title')
     expect(ids).not.toContain('share-facebook')
+    expect(ids).not.toContain('social-medium')
+    expect(ids).not.toContain('social-youtube')
     expect(ids).not.toContain('promo-text')
     expect(ids).not.toContain('promo-button')
   })

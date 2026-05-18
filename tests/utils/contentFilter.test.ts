@@ -44,6 +44,20 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
+  it('skips TDS-like social profile links even when the block has no share label', () => {
+    const element = renderElement(`
+      <section class="author-social-links">
+        <a href="https://medium.com/@author">Medium</a>
+        <a href="https://www.linkedin.com/in/author">LinkedIn</a>
+        <a href="https://twitter.com/author">Twitter</a>
+        <a href="https://www.youtube.com/@author">YouTube</a>
+      </section>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
+  })
+
   it('skips a TDS-like promotional CTA', () => {
     const element = renderElement(`
       <section class="author-program-promo">

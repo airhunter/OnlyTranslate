@@ -290,6 +290,61 @@ describe('resolveAutoTranslateTarget', () => {
     expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
   })
 
+  it('keeps GitHub README markdown list translations on each list item', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article class="markdown-body entry-content">
+          <h2 id="news">News</h2>
+          <ul id="news-list">
+            <li id="news-1">2026-05-15 Released v0.2.0 with sustained objectives across turns, WebUI now ships inside the wheel, and a real agent-loop refactor.</li>
+            <li id="news-2">2026-05-14 Goal mode for long-term objectives, visible multi-step progress, and long-horizon missions in chat.</li>
+            <li id="news-3">2026-05-13 Streaming reasoning before answers, automatic backup models, and smoother plug-in reconnects.</li>
+          </ul>
+        </article>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('news-1')
+    expect(ids).toContain('news-2')
+    expect(ids).toContain('news-3')
+    expect(ids).not.toContain('news-list')
+  })
+
+  it('splits GitHub README markdown lists even when the list container is selected first', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article class="markdown-body entry-content">
+          <h2 id="news">News</h2>
+          <ul id="news-list" class="pipeline-card">
+            Leading release notes
+            <li id="news-1"><strong>2026-05-15</strong> Released v0.2.0 with sustained objectives across turns, WebUI now ships inside the wheel, and a real agent-loop refactor.</li>
+            <li id="news-2"><strong>2026-05-14</strong> Goal mode for long-term objectives, visible multi-step progress, and long-horizon missions in chat.</li>
+            <li id="news-3"><strong>2026-05-13</strong> Streaming reasoning before answers, automatic backup models, and smoother plug-in reconnects.</li>
+          </ul>
+        </article>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('news-1')
+    expect(ids).toContain('news-2')
+    expect(ids).toContain('news-3')
+    expect(ids).not.toContain('news-list')
+  })
+
   it('keeps forum-like topic titles while skipping list metadata', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ziggit.dev/'),
