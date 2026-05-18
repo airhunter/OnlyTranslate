@@ -11,6 +11,17 @@ export const RELEASE_NOTES_INIT_KEY = 'local:releaseNotesInitialized';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.4.0',
+    title: '识文内容结构优化',
+    items: [
+      '增强识文模式的内容单元识别，文章外的重点卡片和说明内容也能更稳定地翻译。',
+      '修复可展开内容卡片的翻译时机和显示位置，折叠内容不再提前露出译文。',
+      '优化 GitHub README 列表翻译，长列表会按条目显示译文，阅读更清晰。',
+      '改进 CNN、Towards Data Science 等站点适配，首页标题和相关文章卡片不再漏翻。',
+      '减少社交链接、分享区和作者信息的误翻译。'
+    ]
+  },
+  {
     version: '0.3.1',
     title: '识文范围与页面兼容性修复',
     items: [
