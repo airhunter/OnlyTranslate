@@ -14,7 +14,7 @@ import {
     smashTruncationStyle
 } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
-import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
+import { getMainDomain, replaceCompatFn, supplementalCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';
@@ -136,9 +136,22 @@ function normalizeTranslationTargets(nodes: Element[]): Element[] {
 }
 
 function collectSupplementalReadingTargets(root: ParentNode): Element[] {
-    return collectHighConfidenceReadingUnits(root)
+    const siteTargets = collectSiteSupplementalReadingTargets(root);
+    const genericTargets = collectHighConfidenceReadingUnits(root)
+        .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+
+    return [
+        ...genericTargets,
+        ...siteTargets
+    ]
         .flatMap(expandSupplementalReadingUnit)
         .filter(unit => isVisibleForTranslation(unit));
+}
+
+function collectSiteSupplementalReadingTargets(root: ParentNode): Element[] {
+    const domain = getMainDomain(location.href);
+    const collect = supplementalCompatFn[domain];
+    return collect ? collect(root, { mode: 'smart' }) : [];
 }
 
 function expandSupplementalReadingUnit(unit: Element): Element[] {

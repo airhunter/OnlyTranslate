@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { replaceCompatFn, selectCompatFn } from '@/entrypoints/main/compat'
+import { replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
 
 describe('site profile registry', () => {
   it('registers migrated select profiles by domain', () => {
@@ -10,8 +10,13 @@ describe('site profile registry', () => {
     expect(selectCompatFn['x.com']).toBeTypeOf('function')
     expect(selectCompatFn['cnn.com']).toBeTypeOf('function')
     expect(selectCompatFn['medium.com']).toBeTypeOf('function')
+    expect(selectCompatFn['towardsdatascience.com']).toBeTypeOf('function')
     expect(selectCompatFn['stackoverflow.com']).toBeTypeOf('function')
     expect(selectCompatFn['news.ycombinator.com']).toBeTypeOf('function')
+  })
+
+  it('registers TDS related article supplemental profile', () => {
+    expect(supplementalCompatFn['towardsdatascience.com']).toBeTypeOf('function')
   })
 
   it('keeps YouTube replace profile registered', () => {
@@ -47,6 +52,37 @@ describe('site profile registry', () => {
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#headline')!, { mode: 'smart' })).toBe(document.querySelector('#headline'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#description')!, { mode: 'smart' })).toBe(document.querySelector('#description'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#live')!, { mode: 'smart' })).toBe(document.querySelector('#live'))
+  })
+
+  it('recognizes CNN homepage hero headlines', () => {
+    document.body.innerHTML = `
+      <main>
+        <section class="homepage-zone">
+          <a class="container__link container_lead-plus-headlines__link">
+            <div id="hero-headline" class="container__headline container_lead-plus-headlines__headline">
+              Guns on television and in Iran's streets as Trump renews war threats
+            </div>
+          </a>
+          <div class="container__title container_lead-package__title" data-editable="titleLink">
+            <a class="container__title-url container_lead-package__title-url">
+              <h2 id="lead-package-title" class="container__title_url-text container_lead-package__title_url-text" data-editable="title">
+                Guns on television and in Iran's streets as Trump renews war threats
+              </h2>
+              <p id="lead-package-subtext" class="container__title_url-sub-text container_lead-package__title_url-sub-text">Show all</p>
+            </a>
+          </div>
+          <a class="card container__link">
+            <span id="lead-headline" class="card__headline card_homepage__headline">
+              Set to host Trump, Xi targets stability under cloud of Iran uncertainty
+            </span>
+          </a>
+        </section>
+      </main>
+    `
+
+    expect(selectCompatFn['cnn.com']?.(document.querySelector('#hero-headline')!, { mode: 'smart' })).toBe(document.querySelector('#hero-headline'))
+    expect(selectCompatFn['cnn.com']?.(document.querySelector('#lead-package-title')!, { mode: 'smart' })).toBe(document.querySelector('#lead-package-title'))
+    expect(selectCompatFn['cnn.com']?.(document.querySelector('#lead-headline')!, { mode: 'smart' })).toBe(document.querySelector('#lead-headline'))
   })
 
   it('recognizes CNN live story content and skips smart side rails', () => {

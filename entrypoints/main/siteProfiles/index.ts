@@ -5,7 +5,7 @@ import { mediumProfile } from './medium';
 import { redditProfile } from './reddit';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
-import type { ReplaceCompatFn, SelectCompatFn, SiteProfile } from './types';
+import type { ReplaceCompatFn, SelectCompatFn, SiteProfile, SupplementalCompatFn } from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
 
@@ -17,7 +17,9 @@ export type {
     SiteProfileMode,
     SiteProfileReplace,
     SiteProfileResult,
-    SiteProfileSelect
+    SiteProfileSelect,
+    SiteProfileSupplemental,
+    SupplementalCompatFn
 } from './types';
 
 export const siteProfiles: SiteProfile[] = [
@@ -47,6 +49,16 @@ export const siteProfileReplaceFns: ReplaceCompatFn = siteProfiles.reduce<Replac
 
     for (const domain of profile.domains) {
         map[domain] = profile.replace;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileSupplementalFns: SupplementalCompatFn = siteProfiles.reduce<SupplementalCompatFn>((map, profile) => {
+    if (!profile.supplemental) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.supplemental;
     }
 
     return map;

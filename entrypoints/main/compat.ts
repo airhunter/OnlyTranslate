@@ -4,9 +4,11 @@
 import {
     siteProfileReplaceFns,
     siteProfileSelectFns,
+    siteProfileSupplementalFns,
     type ReplaceCompatFn,
     type SelectCompatFn,
-    type SiteProfileContext
+    type SiteProfileContext,
+    type SupplementalCompatFn
 } from './siteProfiles';
 
 export type SelectCompatContext = SiteProfileContext;
@@ -55,3 +57,6 @@ export const replaceCompatFn: ReplaceCompatFn = siteProfileReplaceFns;
 
 // 元素 node 选择环节的兼容函数
 export const selectCompatFn: SelectCompatFn = siteProfileSelectFns;
+
+// 智能范围之外的站点级补充阅读节点
+export const supplementalCompatFn: SupplementalCompatFn = siteProfileSupplementalFns;
