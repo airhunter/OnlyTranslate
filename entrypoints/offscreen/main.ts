@@ -7,6 +7,7 @@
  * 2. 预下载功能 - 在用户点击按钮时触发下载（保留用户手势上下文）
  * 3. 可用性检查 - 让 UI 能显示模型状态
  */
+import { t } from '@/entrypoints/utils/i18n';
 
 // 语言代码映射
 const languageMap: { [key: string]: string } = {
@@ -376,7 +377,7 @@ async function performTranslation(text: string, fromLang: string, toLang: string
                     targetLanguage: mappedTo
                 });
             } else {
-                throw new Error('没有可用的翻译 API');
+                throw new Error(t('runtime.noTranslationApi'));
             }
 
             // 缓存新创建的 translator
@@ -396,7 +397,7 @@ async function performTranslation(text: string, fromLang: string, toLang: string
             console.log('使用普通翻译');
             translatedText = await translator.translate(text);
         } else {
-            throw new Error('翻译器不支持翻译方法');
+            throw new Error(t('runtime.unsupportedTranslateMethod'));
         }
 
         console.log('翻译完成:', translatedText.substring(0, 50) + '...');
@@ -418,7 +419,7 @@ async function handleTranslationRequest(data: any): Promise<string> {
 
     // 检查是否支持 Chrome Translation API
     if (!isChromeTranslationSupported()) {
-        throw new Error('当前浏览器不支持 Chrome Translation API，请确保使用 Google Chrome 浏览器 v138 stable 或更高版本。');
+        throw new Error(t('runtime.chromeUnsupported'));
     }
 
     // 声明变量以便在 catch 块中使用
@@ -470,19 +471,19 @@ async function handleTranslationRequest(data: any): Promise<string> {
             
             // 用户手势错误 - 引导用户预下载
             if (errorMsg.includes('user gesture') || errorMsg.includes('user activation')) {
-                throw new Error('需要先下载语言模型。请在设置页面点击"预下载语言模型"按钮。');
+                throw new Error(t('runtime.downloadModelRequired'));
             }
             
             if (errorMsg.includes('not available') || errorMsg.includes('not ready')) {
-                throw new Error('Chrome Translation API 暂时不可用。可能需要下载语言模型，请在设置页面预下载。');
+                throw new Error(t('runtime.chromeApiTemporarilyUnavailable'));
             } else if (errorMsg.includes('language') || errorMsg.includes('not supported')) {
-                throw new Error(`不支持的语言组合：${fromLang} -> ${toLang}。请尝试其他语言对或检查浏览器版本。`);
+                throw new Error(t('runtime.unsupportedLanguagePair', { from: fromLang, to: toLang }));
             } else if (errorMsg.includes('model')) {
-                throw new Error('翻译模型未就绪，请在设置页面预下载语言模型。');
+                throw new Error(t('runtime.modelNotReady'));
             }
         }
         
-        throw new Error(`翻译失败：${error instanceof Error ? error.message : '未知错误'}`);
+        throw new Error(t('runtime.translateFailedWithMessage', { message: error instanceof Error ? error.message : t('common.unknownError') }));
     }
 }
 

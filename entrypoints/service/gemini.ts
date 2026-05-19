@@ -2,6 +2,7 @@ import {method} from "../utils/constant";
 import {geminiMsgTemplate} from "../utils/template";
 import {customModelString} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
+import {t} from "@/entrypoints/utils/i18n";
 
 
 async function gemini(message: any) {
@@ -22,7 +23,7 @@ async function gemini(message: any) {
         return result.candidates[0].content.parts[0].text;
     } else {
         console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
     }
 }
 

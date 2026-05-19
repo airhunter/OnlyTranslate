@@ -9,6 +9,7 @@ import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoi
 import { cancelAllTranslations, translateText } from "@/entrypoints/utils/translateApi";
 import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
 import { initVideoSubtitle } from "@/entrypoints/video/manager";
+import { t } from "@/entrypoints/utils/i18n";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -924,7 +925,7 @@ async function translateWithMicrosoft(text: string, targetLang: string): Promise
         if (result && result.success) {
             return result.translatedText;
         } else {
-            throw new Error(result?.error || '微软翻译失败');
+            throw new Error(result?.error || t('runtime.microsoftTranslateFailed'));
         }
     } catch (error) {
         console.error('微软翻译请求失败:', error);

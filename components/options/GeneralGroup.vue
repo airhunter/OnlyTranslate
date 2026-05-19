@@ -3,15 +3,24 @@
     <!-- 卡片1：界面外观 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">🌗 视觉呈现</h3>
-        <p class="setting-card-desc">调整扩展面板和翻译气泡的明暗色彩流</p>
+        <h3 class="setting-card-title">{{ t('options.general.visualTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.general.visualDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row">
-          <span class="setting-label">颜色首选项</span>
+          <span class="setting-label">{{ t('options.general.uiLanguage') }}</span>
           <div class="setting-control">
-            <el-select v-model="config.theme" placeholder="请选择主题模式">
-              <el-option class="select-left" v-for="item in options.theme" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select v-model="config.uiLocale" :placeholder="t('options.general.uiLanguagePlaceholder')">
+              <el-option class="select-left" v-for="item in options.uiLocale" :key="item.value" :label="t(item.labelKey)" :value="item.value" />
+            </el-select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">{{ t('options.general.theme') }}</span>
+          <div class="setting-control">
+            <el-select v-model="config.theme" :placeholder="t('options.general.themePlaceholder')">
+              <el-option class="select-left" v-for="item in options.theme" :key="item.value" :label="optionLabel(item)" :value="item.value" />
             </el-select>
           </div>
         </div>
@@ -21,14 +30,14 @@
     <!-- 卡片2：性能调度 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">🚀 性能与调度</h3>
-        <p class="setting-card-desc">配置网络请求缓存并管理并发任务极限</p>
+        <h3 class="setting-card-title">{{ t('options.general.performanceTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.general.performanceDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row">
           <span class="setting-label">
-            启用本地缓存
-            <el-tooltip effect="dark" content="开启缓存可以跨会话暂存相同的翻译请求，极大提升速度，但改变配置后旧有内容可能仍读旧档" placement="top-start" :show-after="500">
+            {{ t('options.general.useCache') }}
+            <el-tooltip effect="dark" :content="t('options.general.useCacheTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
@@ -39,8 +48,8 @@
 
         <div class="setting-row">
           <span class="setting-label">
-            渲染并发请求池
-            <el-tooltip effect="dark" content="网页全文翻译时同时请求网络的最大片段数。增大可跑满宽带，但可能触发高频封控" placement="top-start" :show-after="500">
+            {{ t('options.general.concurrency') }}
+            <el-tooltip effect="dark" :content="t('options.general.concurrencyTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
@@ -56,20 +65,20 @@
     <div class="setting-card">
       <div class="setting-card-header" style="display: flex; justify-content: space-between;">
         <div>
-          <h3 class="setting-card-title">📦 本地数据管理</h3>
-          <p class="setting-card-desc">导出此扩展的所有数据凭据或迁移至新设备</p>
+          <h3 class="setting-card-title">{{ t('options.general.dataTitle') }}</h3>
+          <p class="setting-card-desc">{{ t('options.general.dataDesc') }}</p>
         </div>
         <div class="config-autosave-badge">
-          <div class="pulse-dot"></div>自动保存
+          <div class="pulse-dot"></div>{{ t('options.general.autosave') }}
         </div>
       </div>
       <div class="setting-card-body">
         <div class="config-mgmt-btns">
           <el-button type="primary" plain @click="handleExport">
-            <el-icon><Download /></el-icon>导出完整配置 JSON
+            <el-icon><Download /></el-icon>{{ t('options.general.exportConfig') }}
           </el-button>
           <el-button type="success" plain @click="handleImport">
-            <el-icon><Upload /></el-icon>从备份恢复文件
+            <el-icon><Upload /></el-icon>{{ t('options.general.importConfig') }}
           </el-button>
         </div>
       </div>
@@ -83,24 +92,29 @@ import { useConfig } from '@/composables/useConfig'
 import { InfoFilled, Upload, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { storage } from '@wxt-dev/storage'
+import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
+const { t } = useI18n()
+
+type OptionLike = { label: string; labelKey?: string }
+const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
 
 // Handle concurrent change
 const handleConcurrentChange = (currentValue: number | undefined) => {
   if (currentValue === undefined || currentValue < 1 || currentValue > 100) {
-    ElMessage({ message: '并发数量必须在 1-100 之间', type: 'warning', duration: 2000 })
+    ElMessage({ message: t('options.general.concurrencyInvalid'), type: 'warning', duration: 2000 })
     config.value.maxConcurrentTranslations = 6
     return
   }
-  ElMessage({ message: `并发数量已更新为 ${currentValue}`, type: 'success', duration: 2000 })
+  ElMessage({ message: t('options.general.concurrencyUpdated', { count: currentValue }), type: 'success', duration: 2000 })
 }
 
 // Export config — download as JSON file
 const handleExport = async () => {
   const configStr = await storage.getItem('local:config')
   if (!configStr) {
-    ElMessage({ message: '没有找到配置信息', type: 'warning' })
+    ElMessage({ message: t('options.general.configNotFound'), type: 'warning' })
     return
   }
   const configToExport = JSON.parse(configStr as string)
@@ -126,7 +140,7 @@ const handleExport = async () => {
   a.download = 'only-translate-config.json'
   a.click()
   URL.revokeObjectURL(url)
-  ElMessage({ message: '配置已导出', type: 'success', duration: 2000 })
+  ElMessage({ message: t('options.general.configExported'), type: 'success', duration: 2000 })
 }
 
 // Import config — pick a JSON file
@@ -141,13 +155,13 @@ const handleImport = () => {
     try {
       const parsedConfig = JSON.parse(text)
       if (!validateConfig(parsedConfig)) {
-        ElMessage({ message: '配置无效或格式不正确, 请检查!', type: 'error' })
+        ElMessage({ message: t('options.general.configInvalid'), type: 'error' })
         return
       }
       await storage.setItem('local:config', JSON.stringify(parsedConfig))
-      ElMessage({ message: '配置导入成功，请刷新页面使配置生效!', type: 'success' })
+      ElMessage({ message: t('options.general.configImported'), type: 'success' })
     } catch {
-      ElMessage({ message: '配置格式错误, 请检查!', type: 'error' })
+      ElMessage({ message: t('options.general.configParseError'), type: 'error' })
     }
   }
   input.click()

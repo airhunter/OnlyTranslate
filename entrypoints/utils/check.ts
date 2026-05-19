@@ -1,12 +1,13 @@
 import { customModelString, services, servicesType } from "./option";
 import { sendErrorMessage } from "./tip";
 import { config } from "@/entrypoints/utils/config";
+import { t } from "@/entrypoints/utils/i18n";
 
 export function checkConfig(): boolean {
     if (!config.on) return false;
 
     if (servicesType.isUseToken(config.service) && !config.token[config.service]) {
-        sendErrorMessage("当前服务尚未配置，请前往设置页配置访问令牌后再试。");
+        sendErrorMessage(t("runtime.serviceNotConfigured"));
         return false;
     }
 
@@ -14,13 +15,13 @@ export function checkConfig(): boolean {
         const model = config.model[config.service];
         const customModel = config.customModel[config.service];
         if (!model || (model === customModelString && !customModel)) {
-            sendErrorMessage("当前服务尚未配置模型，请前往设置页选择模型后再试。");
+            sendErrorMessage(t("runtime.modelNotConfigured"));
             return false;
         }
     }
 
     if (config.display === 0 && config.service === services.google) {
-        sendErrorMessage("Google 翻译暂不支持仅译文模式，请切换到双语对照模式后再试。");
+        sendErrorMessage(t("runtime.googleTranslationOnlyUnsupported"));
         return false;
     }
 

@@ -1,6 +1,7 @@
 import CryptoJS from 'crypto-js'
 import { urls } from './constant'
 import { customModelString, models, services } from './option'
+import { t } from './i18n'
 
 interface FetchModelOptions {
   token?: string
@@ -44,11 +45,11 @@ export const appendCustomModelOption = (items: string[]) => {
 
 export async function fetchProviderModels(service: string, options: FetchModelOptions = {}): Promise<string[]> {
   if (!canFetchProviderModels(service)) {
-    throw new Error('该服务暂不支持自动获取模型列表')
+    throw new Error(t('runtime.modelFetchUnsupported'))
   }
 
   if (!options.token) {
-    throw new Error('请先填写 API Key')
+    throw new Error(t('runtime.apiKeyRequired'))
   }
 
   const request = buildModelListRequest(service, options)
@@ -60,7 +61,7 @@ export async function fetchProviderModels(service: string, options: FetchModelOp
 
   if (!response.ok) {
     const errorBody = await response.text()
-    throw new Error(`获取模型失败: ${response.status} ${response.statusText}${errorBody ? ` ${errorBody}` : ''}`)
+    throw new Error(t('runtime.modelFetchFailed', { status: response.status, statusText: response.statusText, detail: errorBody ? ` ${errorBody}` : '' }))
   }
 
   const payload = await response.json()

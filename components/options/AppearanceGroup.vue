@@ -3,15 +3,15 @@
     <!-- 卡片1：基础模式 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">🎨 基础排版模式</h3>
-        <p class="setting-card-desc">配置网页上翻译结果和原文的交互呈现关系</p>
+        <h3 class="setting-card-title">{{ t('options.appearance.baseTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.appearance.baseDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row">
-          <span class="setting-label">翻译模式</span>
+          <span class="setting-label">{{ t('options.appearance.displayMode') }}</span>
           <div class="setting-control">
-            <el-select v-model="config.display" placeholder="请选择翻译模式">
-              <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select v-model="config.display" :placeholder="t('options.appearance.displayModePlaceholder')">
+              <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="optionLabel(item)" :value="item.value" />
             </el-select>
           </div>
         </div>
@@ -21,13 +21,13 @@
     <!-- 卡片2：样式库 -->
     <div v-if="config.display === 1" class="setting-card setting-card--full">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">✨ 双语排版视觉样式库</h3>
-        <p class="setting-card-desc">选择最契合您个人阅读习惯的双语对照呈现版式</p>
+        <h3 class="setting-card-title">{{ t('options.appearance.styleTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.appearance.styleDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="style-picker">
           <div v-for="group in styleGroups" :key="group.value" class="style-group">
-            <div class="style-group-title">{{ group.label }}</div>
+            <div class="style-group-title">{{ optionLabel(group) }}</div>
             <div class="style-grid">
               <div
                 v-for="item in group.options"
@@ -37,10 +37,10 @@
                 @click="config.style = Number(item.value)"
               >
                 <div class="style-card-preview">
-                  <span class="style-card-original">The quick brown fox</span>
-                  <span :class="item.class" class="style-card-translation">敏捷的棕色狐狸</span>
+                  <span class="style-card-original">{{ t('options.appearance.previewOriginal') }}</span>
+                  <span :class="item.class" class="style-card-translation">{{ t('options.appearance.previewTranslation') }}</span>
                 </div>
-                <div class="style-card-name">{{ item.label }}</div>
+                <div class="style-card-name">{{ optionLabel(item) }}</div>
               </div>
             </div>
           </div>
@@ -54,9 +54,13 @@
 import { computed } from 'vue'
 import { options } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
-import { InfoFilled } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
+const { t } = useI18n()
+
+type OptionLike = { label: string; labelKey?: string }
+const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
 
 const styleGroups = computed(() => {
   const groups = options.styles.filter(item => item.disabled)

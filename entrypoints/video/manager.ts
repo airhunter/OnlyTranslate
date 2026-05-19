@@ -3,6 +3,7 @@ import { detectSubtitleFormat, parseYouTubeXML, parseYouTubeJSON3, parseVTT, typ
 import { SubtitleOverlay } from './overlay'
 import { translateText } from '@/entrypoints/utils/translateApi'
 import { config } from '@/entrypoints/utils/config'
+import { t } from '@/entrypoints/utils/i18n'
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
@@ -203,8 +204,8 @@ function mountQuickButton() {
 
         const btn = document.createElement('button')
         btn.id = QUICK_BTN_ID
-        btn.title = '只译：字幕翻译'
-        btn.setAttribute('aria-label', '字幕翻译')
+        btn.title = t('video.subtitleButton')
+        btn.setAttribute('aria-label', t('video.subtitleTranslation'))
         btn.style.cssText = [
             'background:transparent',
             'border:none',
@@ -222,7 +223,7 @@ function mountQuickButton() {
         btn.addEventListener('click', () => {
             subtitleEnabled = !subtitleEnabled
             btn.replaceChildren(buildBtnSvg(subtitleEnabled))
-            btn.title = subtitleEnabled ? '只译：字幕翻译（开）' : '只译：字幕翻译（关）'
+            btn.title = subtitleEnabled ? t('video.subtitleButtonOn') : t('video.subtitleButtonOff')
             if (subtitleEnabled) {
                 hideNativeSubtitle()
                 overlay.show()

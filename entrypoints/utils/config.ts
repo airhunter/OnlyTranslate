@@ -1,4 +1,5 @@
 import { Config } from "@/entrypoints/utils/model";
+import { setLocale } from "@/entrypoints/utils/i18n";
 
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
@@ -57,10 +58,12 @@ async function loadConfig() {
 
                 // 如果配置有效，合并到当前 config 中
                 Object.assign(config, parsedConfig);
+                setLocale(config.uiLocale || 'auto');
                 return; // 加载成功，直接返回
             }
         }
         // 如果存储中没有配置、配置为空或无效，则将当前带有默认值的 config 对象存入存储
+        setLocale(config.uiLocale || 'auto');
         await storage.setItem('local:config', JSON.stringify(config));
     } catch (error) {
         console.error('Error loading or validating config:', error);
@@ -81,6 +84,7 @@ storage.watch('local:config', (newValue: any, oldValue: any) => {
             if (isConfigObjectValid(parsedConfig)) {
                 // 如果新的配置有效，更新 config
                 Object.assign(config, parsedConfig);
+                setLocale(config.uiLocale || 'auto');
             } else {
                 console.warn('An invalid configuration was detected in storage.watch. Ignoring.');
             }

@@ -5,16 +5,16 @@
       <div class="setting-card-body" style="padding: 24px;">
         <div class="service-intro">
           <div class="service-intro-copy">
-            <div class="service-intro-title">配置翻译引擎</div>
+            <div class="service-intro-title">{{ t('options.service.introTitle') }}</div>
             <div class="service-intro-desc">
-              请下方选定某一引擎作为主力翻译核心。配置后可一键切换体验效果。
+              {{ t('options.service.introDesc') }}
             </div>
             
             <div class="language-settings">
               <div class="dashboard-setting-row">
-                <span class="setting-label">默认目标语言</span>
+                <span class="setting-label">{{ t('options.service.defaultTarget') }}</span>
                 <div class="setting-control">
-                  <el-select v-model="config.to" placeholder="选择目标语言">
+                  <el-select v-model="config.to" :placeholder="t('options.service.targetPlaceholder')">
                     <el-option
                       v-for="item in options.to"
                       :key="item.value"
@@ -27,18 +27,18 @@
               </div>
 
               <div class="dashboard-setting-row">
-                <span class="setting-label">双向互译</span>
+                <span class="setting-label">{{ t('options.service.bidirectional') }}</span>
                 <div class="setting-control bidirectional-toggle">
                   <el-switch v-model="config.bidirectionalTranslation" />
-                  <span class="toggle-status">{{ config.bidirectionalTranslation ? '已开启' : '未开启' }}</span>
+                  <span class="toggle-status">{{ config.bidirectionalTranslation ? t('options.service.enabled') : t('options.service.notEnabled') }}</span>
                 </div>
               </div>
 
               <div v-if="config.bidirectionalTranslation" class="bidirectional-panel">
                 <div class="dashboard-setting-row">
-                  <span class="setting-label">互译语言</span>
+                  <span class="setting-label">{{ t('options.service.bidirectionalTarget') }}</span>
                   <div class="setting-control">
-                    <el-select v-model="config.bidirectionalTarget" placeholder="选择互译语言">
+                    <el-select v-model="config.bidirectionalTarget" :placeholder="t('options.service.targetPlaceholder')">
                       <el-option
                         v-for="item in options.to"
                         :key="item.value"
@@ -55,12 +55,12 @@
           </div>
           
           <div class="current-service-panel">
-            <div class="current-service-panel-title">主引擎状态</div>
+            <div class="current-service-panel-title">{{ t('options.service.currentStatus') }}</div>
             <div class="current-service-panel-name">{{ currentServiceDisplay.title }}</div>
             <div class="current-service-panel-desc">{{ currentServiceDisplay.description }}</div>
             <div class="current-service-panel-meta">
               <span class="provider-badge" :class="currentServiceDisplay.configured ? 'provider-badge--configured' : ''">
-                {{ currentServiceDisplay.configured ? '系统已就绪' : '接口未配置' }}
+                {{ currentServiceDisplay.configured ? t('options.service.ready') : t('options.service.notConfigured') }}
               </span>
               <span v-if="currentServiceDisplay.category" class="provider-badge">{{ currentServiceDisplay.category }}</span>
             </div>
@@ -71,11 +71,11 @@
 
     <section class="provider-section">
       <div class="provider-section-meta">
-        <div class="provider-section-title">我的服务</div>
-        <div class="provider-section-desc">已启用的翻译接口会在这里显示，你可以随时管理它们。</div>
+        <div class="provider-section-title">{{ t('options.service.myServices') }}</div>
+        <div class="provider-section-desc">{{ t('options.service.myServicesDesc') }}</div>
         <div style="margin-top: 16px;">
           <el-button type="primary" size="large" @click="showAddServiceDialog = true" style="width: 100%; font-weight: bold; height: 44px; border-radius: 8px;">
-            + 添加翻译服务
+            + {{ t('options.service.addService') }}
           </el-button>
         </div>
       </div>
@@ -94,10 +94,10 @@
                 <span v-if="config.service === service.id" 
                       class="provider-badge provider-badge--active"
                       :class="{ 'provider-badge--error': !service.isConfigured }">
-                  {{ service.isConfigured ? '当前服务' : '当前服务 (缺少配置)' }}
+                  {{ service.isConfigured ? t('options.service.currentService') : t('options.service.currentServiceMissingConfig') }}
                 </span>
-                <span v-else-if="service.isConfigured" class="provider-badge provider-badge--configured">已配置</span>
-                <span v-else class="provider-badge">未配置</span>
+                <span v-else-if="service.isConfigured" class="provider-badge provider-badge--configured">{{ t('options.service.configured') }}</span>
+                <span v-else class="provider-badge">{{ t('options.service.notConfigured') }}</span>
               </div>
               <div class="provider-panel-hint">{{ service.hint }}</div>
             </div>
@@ -108,7 +108,7 @@
                 plain
                 @click.stop="setAsCurrent(service)"
               >
-                设为当前
+                {{ t('options.service.setCurrent') }}
               </el-button>
               <el-button
                 size="small"
@@ -116,9 +116,9 @@
                 plain
                 @click.stop="removeService(service)"
               >
-                移除
+                {{ t('options.service.remove') }}
               </el-button>
-              <span class="provider-panel-toggle">{{ expandedServices[service.id] ? '收起' : '展开' }}</span>
+              <span class="provider-panel-toggle">{{ expandedServices[service.id] ? t('options.service.collapse') : t('options.service.expand') }}</span>
             </div>
           </button>
 
@@ -128,27 +128,27 @@
             <!-- 如果是自定义服务 -->
             <template v-if="service.isCustom">
               <div class="provider-form-row">
-                <div class="provider-form-label">接口名称</div>
+                <div class="provider-form-label">{{ t('options.service.providerName') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.name" placeholder="例如: 本地 Ollama, 公司网关" />
+                  <el-input v-model="service.provider.name" :placeholder="t('options.service.providerNamePlaceholder')" />
                 </div>
               </div>
               <div class="provider-form-row">
-                <div class="provider-form-label">接口地址</div>
+                <div class="provider-form-label">{{ t('options.service.providerUrl') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.url" placeholder="例如: http://localhost:11434/v1/chat/completions" />
+                  <el-input v-model="service.provider.url" :placeholder="t('options.service.providerUrlPlaceholder')" />
                 </div>
               </div>
               <div class="provider-form-row">
                 <div class="provider-form-label">API Key</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.token" type="password" show-password placeholder="输入 API Key (无需验证可留空)" />
+                  <el-input v-model="service.provider.token" type="password" show-password :placeholder="t('options.service.customApiKeyPlaceholder')" />
                 </div>
               </div>
               <div class="provider-form-row">
-                <div class="provider-form-label">模型名称</div>
+                <div class="provider-form-label">{{ t('options.service.modelName') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.customModel" placeholder="例如: gpt-3.5-turbo 或 translategemma:4b" @input="service.provider.model = '自定义模型'" />
+                  <el-input v-model="service.provider.customModel" :placeholder="t('options.service.modelNamePlaceholder')" @input="service.provider.model = customModelString" />
                 </div>
               </div>
             </template>
@@ -158,27 +158,27 @@
               <div v-if="usesToken(service.id)" class="provider-form-row">
                 <div class="provider-form-label">
                   API Key
-                  <a v-if="apiKeyLinks[service.id]" :href="apiKeyLinks[service.id]" target="_blank" rel="noopener noreferrer" class="apikey-link">获取</a>
+                  <a v-if="apiKeyLinks[service.id]" :href="apiKeyLinks[service.id]" target="_blank" rel="noopener noreferrer" class="apikey-link">{{ t('options.service.getApiKey') }}</a>
                 </div>
                 <div class="provider-form-control">
-                  <el-input v-model="config.token[service.id]" type="password" show-password placeholder="输入 API Key" />
+                  <el-input v-model="config.token[service.id]" type="password" show-password :placeholder="t('options.service.apiKeyPlaceholder')" />
                 </div>
               </div>
 
               <div v-if="usesModel(service.id)" class="provider-form-row">
-                <div class="provider-form-label">模型</div>
+                <div class="provider-form-label">{{ t('options.service.model') }}</div>
                 <div class="provider-form-control">
                   <div class="model-picker">
-                    <el-select v-model="config.model[service.id]" filterable placeholder="选择模型" :loading="loadingModels[service.id]">
+                    <el-select v-model="config.model[service.id]" filterable :placeholder="t('options.service.modelPlaceholder')" :loading="loadingModels[service.id]">
                       <el-option v-for="item in getModelOptions(service.id)" :key="item" class="select-left" :label="item" :value="item" />
                     </el-select>
-                    <el-tooltip :content="canFetchModels(service.id) ? '从厂商接口刷新模型列表' : '该服务暂不支持自动获取模型'" placement="top">
+                    <el-tooltip :content="canFetchModels(service.id) ? t('options.service.refreshModelsTip') : t('options.service.refreshModelsUnsupported')" placement="top">
                       <el-button
                         :icon="Refresh"
                         :loading="loadingModels[service.id]"
                         :disabled="!canFetchModels(service.id)"
                         plain
-                        aria-label="刷新模型列表"
+                        :aria-label="t('options.service.refreshModels')"
                         @click="handleFetchModels(service.id)"
                       />
                     </el-tooltip>
@@ -188,18 +188,18 @@
               </div>
 
               <div v-if="usesModel(service.id) && config.model[service.id] === customModelString" class="provider-form-row">
-                <div class="provider-form-label">自定义模型</div>
+                <div class="provider-form-label">{{ t('options.service.customModel') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="config.customModel[service.id]" placeholder="输入模型名称" />
+                  <el-input v-model="config.customModel[service.id]" :placeholder="t('options.service.customModelPlaceholder')" />
                 </div>
               </div>
 
               <div v-if="usesProxy(service.id)" class="provider-form-row">
-                <div class="provider-form-label">{{ usesModel(service.id) ? '接口 URL' : '代理 URL' }}</div>
+                <div class="provider-form-label">{{ usesModel(service.id) ? t('options.service.apiUrl') : t('options.service.proxyUrl') }}</div>
                 <div class="provider-form-control">
-                  <el-input :model-value="getProxyValue(service.id)" :placeholder="usesModel(service.id) ? '输入接口 URL' : '输入代理 URL'" @update:model-value="setProxyValue(service.id, $event)" />
+                  <el-input :model-value="getProxyValue(service.id)" :placeholder="usesModel(service.id) ? t('options.service.apiUrlPlaceholder') : t('options.service.proxyUrlPlaceholder')" @update:model-value="setProxyValue(service.id, $event)" />
                   <div v-if="isProxyCustomized(service.id)" class="provider-inline-action">
-                    <el-button type="primary" link size="small" @click="resetProxy(service.id)">恢复默认</el-button>
+                    <el-button type="primary" link size="small" @click="resetProxy(service.id)">{{ t('options.service.resetDefault') }}</el-button>
                   </div>
                 </div>
               </div>
@@ -207,10 +207,10 @@
 
             <!-- 统一测试连接按钮 -->
             <div class="provider-form-row">
-              <div class="provider-form-label">连接测试</div>
+              <div class="provider-form-label">{{ t('options.service.connectionTest') }}</div>
               <div class="provider-form-control provider-form-control--inline">
                 <el-button type="primary" size="small" plain :loading="testingService === service.id" @click="handleTestConnection(service.id)">
-                  {{ testingService === service.id ? '测试中...' : '测试连接' }}
+                  {{ testingService === service.id ? t('options.service.testing') : t('options.service.testConnection') }}
                 </el-button>
               </div>
             </div>
@@ -218,26 +218,26 @@
         </article>
         
         <div v-if="myServices.length === 0" class="empty-services-hint">
-          暂无服务，请点击左侧添加。
+          {{ t('options.service.emptyServices') }}
         </div>
       </div>
     </section>
 
     <!-- 服务库弹窗 -->
-    <el-dialog v-model="showAddServiceDialog" title="添加翻译服务" width="600px" custom-class="add-service-dialog">
+    <el-dialog v-model="showAddServiceDialog" :title="t('options.service.addService')" width="600px" custom-class="add-service-dialog">
       <div class="service-gallery">
-        <div class="gallery-category">完全自定义</div>
+        <div class="gallery-category">{{ t('options.service.customCategory') }}</div>
         <div class="gallery-grid">
           <div class="gallery-item gallery-item--custom" @click="addCustomProvider">
             <div class="gallery-item-icon">+</div>
             <div class="gallery-item-info">
-              <div class="gallery-item-title">自定义网关接口</div>
-              <div class="gallery-item-desc">配置 OpenAI 兼容的中转网关或 Ollama 本地模型。</div>
+              <div class="gallery-item-title">{{ t('options.service.customGateway') }}</div>
+              <div class="gallery-item-desc">{{ t('options.service.customGatewayDesc') }}</div>
             </div>
           </div>
         </div>
 
-        <div class="gallery-category" style="margin-top: 24px;">内置 AI 预设</div>
+        <div class="gallery-category" style="margin-top: 24px;">{{ t('options.service.builtinPresets') }}</div>
         <div class="gallery-grid">
           <div 
             v-for="preset in availablePresets" 
@@ -249,7 +249,7 @@
             <div class="gallery-item-info">
               <div class="gallery-item-title">
                 {{ preset.label }}
-                <span v-if="preset.isActive" class="gallery-item-tag">已在列表中</span>
+                <span v-if="preset.isActive" class="gallery-item-tag">{{ t('options.service.alreadyAdded') }}</span>
               </div>
               <div class="gallery-item-desc">{{ preset.hint }}</div>
             </div>
@@ -269,8 +269,10 @@ import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection } from '@/entrypoints/utils/testConnection'
 import { canFetchProviderModels, fetchProviderModels, getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
+import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
+const { t } = useI18n()
 
 const showAddServiceDialog = ref(false)
 
@@ -293,17 +295,17 @@ const modelFetchHints = state.modelFetchHints
 
 // 所有预设的库定义
 const allPresets = [
-  { value: services.openai, label: 'OpenAI', hint: '通用性强，需 API Key' },
-  { value: services.deepseek, label: 'DeepSeek', hint: '性价比高，需 API Key' },
-  { value: services.gemini, label: 'Gemini', hint: 'Google 模型，需 API Key' },
-  { value: services.claude, label: 'Claude', hint: '写作风格好，需 API Key' },
-  { value: services.moonshot, label: 'Kimi', hint: 'Moonshot，需 API Key' },
-  { value: services.zhipu, label: '智谱', hint: 'GLM 系列，需 API Key' },
-  { value: services.minimax, label: 'MiniMax', hint: '需 API Key' },
-  { value: services.jieyue, label: '阶跃星辰', hint: 'Step 系列，需 API Key' },
-  { value: services.siliconCloud, label: 'SiliconCloud', hint: '模型聚合平台，需 API Key' },
-  { value: services.grok, label: 'Grok', hint: 'xAI，需 API Key' },
-  { value: services.deepL, label: 'DeepL', hint: '翻译质量稳定，需 API Key' }
+  { value: services.openai, label: 'OpenAI', hintKey: 'options.service.presetHints.openai' },
+  { value: services.deepseek, label: 'DeepSeek', hintKey: 'options.service.presetHints.deepseek' },
+  { value: services.gemini, label: 'Gemini', hintKey: 'options.service.presetHints.gemini' },
+  { value: services.claude, label: 'Claude', hintKey: 'options.service.presetHints.claude' },
+  { value: services.moonshot, label: 'Kimi', hintKey: 'options.service.presetHints.moonshot' },
+  { value: services.zhipu, label: '智谱', hintKey: 'options.service.presetHints.zhipu' },
+  { value: services.minimax, label: 'MiniMax', hintKey: 'options.service.presetHints.minimax' },
+  { value: services.jieyue, label: '阶跃星辰', hintKey: 'options.service.presetHints.jieyue' },
+  { value: services.siliconCloud, label: 'SiliconCloud', hintKey: 'options.service.presetHints.siliconCloud' },
+  { value: services.grok, label: 'Grok', hintKey: 'options.service.presetHints.grok' },
+  { value: services.deepL, label: 'DeepL', hintKey: 'options.service.presetHints.deepl' }
 ]
 
 // 组合计算出最终的我的服务列表
@@ -319,7 +321,7 @@ const myServices = computed(() => {
           id: preset.value,
           isCustom: false,
           label: preset.label,
-          hint: preset.hint,
+          hint: t(preset.hintKey),
           isConfigured: isConfigured(preset.value)
         })
       }
@@ -332,8 +334,8 @@ const myServices = computed(() => {
       result.push({
         id: provider.id,
         isCustom: true,
-        label: provider.name || '未命名接口',
-        hint: provider.url || '填写标准 OpenAI 格式接口地址',
+        label: provider.name || t('options.service.unnamedProvider'),
+        hint: provider.url || t('options.service.customProviderHint'),
         isConfigured: !!provider.url,
         provider: provider
       })
@@ -349,7 +351,7 @@ const myServices = computed(() => {
             id: preset.value,
             isCustom: false,
             label: preset.label,
-            hint: preset.hint,
+            hint: t(preset.hintKey),
             isConfigured: isConfigured(preset.value)
           });
        }
@@ -363,6 +365,7 @@ const availablePresets = computed(() => {
   return allPresets.map(preset => {
     return {
       ...preset,
+      hint: t(preset.hintKey),
       isActive: !!myServices.value.find(s => s.id === preset.value)
     }
   })
@@ -370,13 +373,13 @@ const availablePresets = computed(() => {
 
 const builtinServiceNotice = computed(() => {
   if (config.value.service === services.microsoft) {
-    return { title: '微软翻译', description: '这是免配置服务，不需要在此页填写参数。可直接在弹窗或通用区域切换使用。' }
+    return { title: 'Microsoft Translator', description: t('options.service.microsoftNotice') }
   }
   if (config.value.service === services.google) {
-    return { title: 'Google 翻译', description: '这是免配置服务，仅在双语对照模式下可用。' }
+    return { title: 'Google Translate', description: t('options.service.googleNotice') }
   }
   if (config.value.service === services.chromeTranslator) {
-    return { title: 'Chrome 内置 AI 翻译', description: '本地模型服务，不需要 API Key。' }
+    return { title: 'Chrome Built-in AI Translator', description: t('options.service.chromeNotice') }
   }
   return null
 })
@@ -388,7 +391,7 @@ const currentServiceDisplay = computed(() => {
       title: builtinServiceNotice.value.title,
       description: builtinServiceNotice.value.description,
       configured: true,
-      category: '内置服务'
+      category: t('options.service.builtInService')
     }
   }
   
@@ -398,11 +401,11 @@ const currentServiceDisplay = computed(() => {
       title: foundInMyServices.label,
       description: foundInMyServices.hint,
       configured: foundInMyServices.isConfigured,
-      category: foundInMyServices.isCustom ? '自定义接口' : 'AI 服务'
+      category: foundInMyServices.isCustom ? t('options.service.customService') : t('options.service.aiService')
     }
   }
 
-  return { title: config.value.service, description: '当前服务', configured, category: '' }
+  return { title: config.value.service, description: t('options.service.currentService'), configured, category: '' }
 })
 
 const getLanguageLabel = (value: string) => {
@@ -414,10 +417,10 @@ const bidirectionalHelpText = computed(() => {
   const bidirectionalTarget = getLanguageLabel(config.value.bidirectionalTarget)
 
   if (config.value.to === config.value.bidirectionalTarget) {
-    return '默认目标语言和互译语言相同，当前会按固定目标语言处理。'
+    return t('options.service.fixedTargetHelp')
   }
 
-  return `当原文是 ${defaultTarget} 时译为 ${bidirectionalTarget}；当原文是 ${bidirectionalTarget} 时译为 ${defaultTarget}；其他语言仍译为 ${defaultTarget}。`
+  return t('options.service.bidirectionalHelp', { from: defaultTarget, to: bidirectionalTarget })
 })
 
 const apiKeyLinks: Record<string, string> = {
@@ -441,18 +444,18 @@ const toggleExpanded = (serviceId: string) => {
 
 const setAsCurrent = (service: any) => {
   if (!service.isConfigured) {
-    ElMessage.warning('未能切换：请先配置接口参数')
+    ElMessage.warning(t('options.service.switchNeedsConfig'))
     expandedServices[service.id] = true
     return
   }
   config.value.service = service.id
   expandedServices[service.id] = true
-  ElMessage.success(`已切换翻译主力引擎为 ${service.label}`)
+  ElMessage.success(t('options.service.switched', { service: service.label }))
 }
 
 const removeService = (service: any) => {
   if (config.value.service === service.id) {
-    ElMessage.warning('无法移除：该接口当前正在作为主力引擎使用')
+    ElMessage.warning(t('options.service.removeCurrentBlocked'))
     return
   }
   if (service.isCustom) {
@@ -465,7 +468,7 @@ const removeService = (service: any) => {
     config.value.token[service.id] = ''
   }
   delete expandedServices[service.id]
-  ElMessage.success('已移除接口')
+  ElMessage.success(t('options.service.removed'))
 }
 
 const addPresetProvider = (presetId: string) => {
@@ -475,7 +478,7 @@ const addPresetProvider = (presetId: string) => {
   }
   showAddServiceDialog.value = false
   expandedServices[presetId] = true
-  ElMessage.success('添加成功，请配置接口参数')
+  ElMessage.success(t('options.service.addedNeedsConfig'))
 }
 
 const addCustomProvider = () => {
@@ -483,15 +486,15 @@ const addCustomProvider = () => {
   const newId = `custom_${Date.now()}`
   config.value.customProviders.push({
     id: newId,
-    name: '新建自定义接口',
+    name: t('options.service.newCustomProvider'),
     url: '',
     token: '',
-    model: '自定义模型',
+    model: customModelString,
     customModel: ''
   })
   showAddServiceDialog.value = false
   expandedServices[newId] = true
-  ElMessage.success('添加成功，请配置自定义接口参数')
+  ElMessage.success(t('options.service.addedCustomNeedsConfig'))
 }
 
 const isConfigured = (service: string) => isServiceConfigured(service, config.value)
@@ -538,10 +541,10 @@ const handleFetchModels = async (service: string) => {
     }
 
     const remoteModelCount = items.filter((item) => item !== customModelString).length
-    modelFetchHints[service] = `已从厂商接口获取 ${remoteModelCount} 个模型`
-    ElMessage.success('模型列表已更新')
+    modelFetchHints[service] = t('options.service.fetchedModels', { count: remoteModelCount })
+    ElMessage.success(t('options.service.modelListUpdated'))
   } catch (error: any) {
-    const message = error?.message || '未知错误'
+    const message = error?.message || t('options.service.unknownError')
     modelFetchHints[service] = message
     ElMessage.error(message)
   } finally {
@@ -566,7 +569,7 @@ const handleTestConnection = async (service: string) => {
     if (result.success) ElMessage.success(result.message)
     else ElMessage.error(result.message)
   } catch (error: any) {
-    ElMessage.error(`连接测试失败: ${error.message || '未知错误'}`)
+    ElMessage.error(t('options.service.testFailed', { message: error.message || t('options.service.unknownError') }))
   } finally {
     testingService.value = ''
   }

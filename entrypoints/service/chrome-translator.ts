@@ -1,4 +1,5 @@
 import { config } from "@/entrypoints/utils/config";
+import { t } from "@/entrypoints/utils/i18n";
 
 /**
  * Chrome 内置翻译 API 服务
@@ -28,7 +29,7 @@ async function waitForOffscreenReady(timeout: number = 5000): Promise<void> {
             if (readyListener) {
                 chrome.runtime.onMessage.removeListener(readyListener);
             }
-            reject(new Error('等待 offscreen 就绪超时'));
+            reject(new Error(t('runtime.offscreenReadyTimeout')));
         }, timeout);
     });
 
@@ -65,14 +66,14 @@ async function translateWithOffscreen(message: any): Promise<any> {
             if (typedResponse.success) {
                 return typedResponse.result;
             } else {
-                throw new Error(typedResponse.error || '翻译失败');
+                throw new Error(typedResponse.error || t('popup.translateFailed'));
             }
         }
 
-        throw new Error('无效的响应格式');
+        throw new Error(t('runtime.invalidResponse'));
     } catch (error) {
         console.error('Offscreen 翻译失败:', error);
-        throw new Error(`Chrome Translation API 不可用：${error instanceof Error ? error.message : '未知错误'}`);
+        throw new Error(t('runtime.chromeApiUnavailable', { message: error instanceof Error ? error.message : t('common.unknownError') }));
     }
 }
 
@@ -105,7 +106,7 @@ async function ensureOffscreenDocument() {
         console.log('Offscreen 文档创建成功并已就绪');
     } catch (error) {
         console.error('创建 offscreen 文档失败:', error);
-        throw new Error('无法创建 offscreen 文档');
+        throw new Error(t('runtime.offscreenCreateFailed'));
     }
 }
 
@@ -117,7 +118,7 @@ export default async function chromeTranslator(message: any): Promise<any> {
     
     if (!text || typeof text !== 'string' || text.trim() === '') {
         // console.error('翻译文本为空或无效:', { text, type: typeof text, message });
-        throw new Error('翻译文本不能为空');
+        throw new Error(t('runtime.emptyText'));
     }
 
     // 检查是否在 background script 环境中
@@ -128,7 +129,7 @@ export default async function chromeTranslator(message: any): Promise<any> {
     }
 
     // 如果在其他环境中，抛出错误
-    throw new Error('Chrome Translation API 只能在 Google Chrome 浏览器 v138 stable 版本以上使用');
+    throw new Error(t('runtime.chromeOnly'));
 }
 
 // ============ 导出的辅助函数 ============

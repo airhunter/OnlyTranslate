@@ -26,8 +26,14 @@ export default defineConfig({
         artifactTemplate: '{{name}}-v{{version}}-{{browser}}.zip',
     },
     manifest: {
+        name: '__MSG_extName__',
+        description: '__MSG_extDescription__',
+        default_locale: 'zh_CN',
         permissions: ['storage', 'contextMenus', 'offscreen'],
         host_permissions: ['<all_urls>'],
+        action: {
+            default_title: '__MSG_extName__',
+        },
         // 直接在 manifest 中声明 MAIN world 脚本，绕开 WXT entrypoint 命名体系。
         // public/video-subtitle-inject.js 会被 WXT 原样复制到扩展根目录。
         // Chrome 加载 manifest content_scripts 时会绕过页面 CSP，不受 YouTube 等限制。

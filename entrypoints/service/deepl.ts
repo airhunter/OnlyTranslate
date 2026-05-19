@@ -1,6 +1,7 @@
 import {method, urls} from "../utils/constant";
 import {services} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
+import {t} from "@/entrypoints/utils/i18n";
 
 async function deepl(message: any) {
     // deepl 不支持 zh-Hans，需要转换为 zh
@@ -30,7 +31,7 @@ async function deepl(message: any) {
         return result.translations[0].text
     } else {
         console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} 请检查 token 是否正确`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: '' }));
     }
 }
 

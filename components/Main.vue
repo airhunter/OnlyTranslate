@@ -9,12 +9,12 @@
           </svg>
         </div>
       </el-tooltip>
-      <span class="header-name">只译</span>
+      <span class="header-name">{{ t('common.appName') }}</span>
       <div class="release-notes-wrap">
         <button
           type="button"
           class="release-notes-trigger"
-          aria-label="查看更新说明"
+          :aria-label="t('common.releaseNotes')"
           @click="toggleReleaseNotes"
         >
           <el-icon><Bell /></el-icon>
@@ -31,17 +31,17 @@
             <ul v-if="currentReleaseNote" class="release-notes-list">
               <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
             </ul>
-            <p v-else class="release-notes-empty">当前版本暂未补充更新说明。</p>
+            <p v-else class="release-notes-empty">{{ t('common.noReleaseNotes') }}</p>
           </div>
 
           <button type="button" class="release-notes-confirm" @click="handleReleaseNotesConfirm">
-            知道了
+            {{ t('common.gotIt') }}
           </button>
         </div>
       </div>
     </div>
     <div class="header-right">
-      <span class="status-text">{{ config.on ? '已启用' : '已禁用' }}</span>
+      <span class="status-text">{{ config.on ? t('common.enabled') : t('common.disabled') }}</span>
       <el-switch v-model="config.on" @change="handlePluginStateChange" />
     </div>
   </div>
@@ -51,7 +51,7 @@
 
     <!-- 插件禁用占位 -->
     <div v-if="!config.on" class="disabled-state">
-      <el-empty description="插件已禁用" :image-size="60" />
+      <el-empty :description="t('popup.disabledDescription')" :image-size="60" />
     </div>
 
     <div v-show="config.on">
@@ -61,15 +61,15 @@
         <svg class="translate-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
         </svg>
-        <span>{{ translating ? '处理中...' : (isTranslated ? '还原原文' : '翻译当前页面') }}</span>
+        <span>{{ translating ? t('common.processing') : (isTranslated ? t('common.restoreOriginal') : t('common.translatePage')) }}</span>
       </button>
 
       <!-- 翻译模式 -->
       <div class="setting-row">
-        <span class="setting-label">翻译模式</span>
+        <span class="setting-label">{{ t('popup.displayMode') }}</span>
         <div class="setting-control">
-          <el-select v-model="config.display" placeholder="请选择翻译模式">
-            <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label" :value="item.value" />
+          <el-select v-model="config.display" :placeholder="t('popup.displayModePlaceholder')">
+            <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="optionLabel(item)" :value="item.value" />
           </el-select>
         </div>
       </div>
@@ -77,13 +77,13 @@
       <!-- 翻译服务 -->
       <div class="setting-row">
         <span class="setting-label">
-          翻译服务
-          <el-tooltip effect="dark" content="机器翻译：快速稳定；AI翻译：更自然流畅" placement="top-start" :show-after="500">
+          {{ t('popup.service') }}
+          <el-tooltip effect="dark" :content="t('popup.serviceTip')" placement="top-start" :show-after="500">
             <el-icon class="info-icon"><ChatDotRound /></el-icon>
           </el-tooltip>
         </span>
         <div class="setting-control">
-          <el-select v-model="config.service" placeholder="请选择翻译服务" class="service-select" @change="handleServiceChange">
+          <el-select v-model="config.service" :placeholder="t('popup.servicePlaceholder')" class="service-select" @change="handleServiceChange">
             <el-option class="select-left" v-for="item in availableServices" :key="item.value"
               :label="item.label" :value="item.value" :disabled="item.disabled"
               :class="{ 'select-divider': item.disabled, 'select-action': item.isAction }" />
@@ -94,8 +94,8 @@
       <!-- 视频字幕翻译 -->
       <div class="setting-row">
         <span class="setting-label">
-          视频字幕
-          <el-tooltip effect="dark" content="在 YouTube 等平台上开启字幕后自动翻译" placement="top-start" :show-after="500">
+          {{ t('popup.videoSubtitle') }}
+          <el-tooltip effect="dark" :content="t('popup.videoSubtitleTip')" placement="top-start" :show-after="500">
             <el-icon class="info-icon"><ChatDotRound /></el-icon>
           </el-tooltip>
         </span>
@@ -106,7 +106,7 @@
 
       <!-- 划词翻译 -->
       <div class="setting-row">
-        <span class="setting-label">划词翻译</span>
+        <span class="setting-label">{{ t('popup.selectionTranslator') }}</span>
         <div class="setting-control setting-control--switch">
           <el-switch
             :model-value="config.selectionTranslatorMode !== 'disabled'"
@@ -117,27 +117,27 @@
 
       <!-- 翻译范围 -->
       <div class="setting-row">
-        <span class="setting-label">翻译范围</span>
+        <span class="setting-label">{{ t('popup.translationScope') }}</span>
         <div class="setting-control">
           <div class="scope-toggle">
-            <el-tooltip effect="dark" content="自动识别正文区域翻译，跳过导航、侧边栏等无关内容" placement="top" :show-after="600">
+            <el-tooltip effect="dark" :content="t('popup.smartScopeTip')" placement="top" :show-after="600">
               <button
                 class="scope-btn"
                 :class="{ 'scope-btn--active': config.translationScope !== 'full' }"
                 :aria-pressed="config.translationScope !== 'full'"
                 @click="config.translationScope = 'smart'"
               >
-                识文
+                {{ t('popup.smartScope') }}
               </button>
             </el-tooltip>
-            <el-tooltip effect="dark" content="翻译整个页面的可见文字" placement="top" :show-after="600">
+            <el-tooltip effect="dark" :content="t('popup.fullScopeTip')" placement="top" :show-after="600">
               <button
                 class="scope-btn"
                 :class="{ 'scope-btn--active': config.translationScope === 'full' }"
                 :aria-pressed="config.translationScope === 'full'"
                 @click="config.translationScope = 'full'"
               >
-                全页
+                {{ t('popup.fullScope') }}
               </button>
             </el-tooltip>
           </div>
@@ -163,7 +163,7 @@
         {{ cacheBtnText }}
       </button>
       <button class="text-link settings-link" @click="openSettingsPage">
-        设置
+        {{ t('common.settings') }}
       </button>
     </div>
   </div>
@@ -172,7 +172,8 @@
 
 <script lang="ts" setup>
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { options, isServiceConfigured } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
 import { useReleaseNotes } from '@/composables/useReleaseNotes'
@@ -180,11 +181,13 @@ import { Bell, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import browser from 'webextension-polyfill';
 import { useTheme } from '@/composables/useTheme';
+import { resolveLocale } from '@/entrypoints/utils/i18n';
 
 
 // Config management
 const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
+const { t, locale } = useI18n()
 const {
   currentReleaseNote,
   hasUnreadReleaseNotes,
@@ -196,13 +199,16 @@ const {
 const appVersion = browser.runtime.getManifest().version;
 const releaseNotesVisible = ref(false);
 
+type OptionLike = { label: string; labelKey?: string }
+const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
+
 // 翻译状态相关变量
 const previousService = ref<string>('');
 const translating = ref(false);
 const isTranslated = ref(false);
 
 const releaseNotesHeading = computed(() => {
-  return currentReleaseNote.value?.title || '当前版本'
+  return currentReleaseNote.value?.title || t('common.currentVersion')
 })
 
 async function handleReleaseNotesConfirm() {
@@ -250,7 +256,7 @@ async function translateCurrentPage() {
     translating.value = true;
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) {
-      ElMessage.error('未找到活动标签页');
+      ElMessage.error(t('popup.noActiveTab'));
       return;
     }
     await browser.tabs.sendMessage(tabs[0].id, {
@@ -261,7 +267,7 @@ async function translateCurrentPage() {
     isTranslated.value = true;
   } catch (error) {
     console.error('翻译失败:', error);
-    ElMessage.error('翻译失败');
+    ElMessage.error(t('popup.translateFailed'));
   } finally {
     translating.value = false;
   }
@@ -272,7 +278,7 @@ async function restoreCurrentPage() {
     translating.value = true;
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) {
-      ElMessage.error('未找到活动标签页');
+      ElMessage.error(t('popup.noActiveTab'));
       return;
     }
     await browser.tabs.sendMessage(tabs[0].id, {
@@ -280,10 +286,10 @@ async function restoreCurrentPage() {
       action: 'restore'
     });
     isTranslated.value = false;
-    ElMessage.success('已还原原文');
+    ElMessage.success(t('popup.restored'));
   } catch (error) {
     console.error('还原失败:', error);
-    ElMessage.error('还原失败');
+    ElMessage.error(t('popup.restoreFailed'));
   } finally {
     translating.value = false;
   }
@@ -291,6 +297,7 @@ async function restoreCurrentPage() {
 
 loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
+  locale.value = resolveLocale(config.value.uiLocale || 'auto')
   // 初始化 previousService
   previousService.value = config.value.service || ''
   // 检查当前服务是否已配置，未配置则回退到默认服务
@@ -300,6 +307,10 @@ loadConfig().then(() => {
   }
   // 查询当前页面翻译状态
   checkTranslationStatus()
+})
+
+watch(() => config.value.uiLocale, (value) => {
+  locale.value = resolveLocale(value || 'auto')
 })
 
 loadReleaseNotesState().catch((error) => {
@@ -339,7 +350,7 @@ const availableServices = computed(() => {
 
   // Add custom providers
   if (config.value.customProviders && config.value.customProviders.length > 0) {
-    result.push({ value: '__custom_header__', label: '自定义网关池', disabled: true });
+    result.push({ value: '__custom_header__', label: t('popup.customProviderGroup'), disabled: true });
     for (const provider of config.value.customProviders) {
       result.push({
         value: provider.id,
@@ -349,7 +360,7 @@ const availableServices = computed(() => {
   }
 
   // Add "添加更多服务..." option at the end
-  result.push({ value: '__add_more__', label: '管理自定义接口...', isAction: true });
+  result.push({ value: '__add_more__', label: t('popup.manageCustomServices'), isAction: true });
 
   return result;
 });
@@ -434,7 +445,7 @@ const shortcuts = computed(() => {
     floatingKey = config.value.customFloatingBallHotkey;
   }
   if (floatingKey && floatingKey !== 'none') {
-    list.push({ key: floatingKey, desc: '全页翻译' });
+    list.push({ key: floatingKey, desc: t('popup.fullPageShortcut') });
   }
   
   // 处理悬浮翻译快捷键
@@ -443,7 +454,7 @@ const shortcuts = computed(() => {
     hoverKey = config.value.customHotkey;
   }
   if (hoverKey && hoverKey !== 'none') {
-    list.push({ key: hoverKey, desc: '划词即时翻译' });
+    list.push({ key: hoverKey, desc: t('popup.selectionShortcut') });
   }
   
   return list;
@@ -451,7 +462,12 @@ const shortcuts = computed(() => {
 
 // ===== Footer: 清除缓存 =====
 const cacheBtnDisabled = ref(false);
-const cacheBtnText = ref('清空缓存');
+const cacheBtnText = computed(() => {
+  if (cacheStatus.value === 'success') return t('common.cleared');
+  if (cacheStatus.value === 'failed') return t('common.failed');
+  if (cacheLoading.value) return t('common.clearing');
+  return t('common.clearCache');
+});
 const cacheLoading = ref(false);
 const cacheStatus = ref<'idle' | 'success' | 'failed'>('idle');
 
@@ -465,7 +481,6 @@ async function clearCache() {
   try {
     cacheBtnDisabled.value = true;
     cacheLoading.value = true;
-    cacheBtnText.value = '清除中...';
     cacheStatus.value = 'idle';
 
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -473,16 +488,13 @@ async function clearCache() {
     await browser.tabs.sendMessage(tabs[0].id, { message: 'clearCache' });
 
     cacheStatus.value = 'success';
-    cacheBtnText.value = '已清除';
   } catch (error) {
     console.error('清除缓存失败:', error);
     cacheStatus.value = 'failed';
-    cacheBtnText.value = '失败';
   } finally {
     cacheLoading.value = false;
     setTimeout(() => {
       cacheBtnDisabled.value = false;
-      cacheBtnText.value = '清空缓存';
       cacheStatus.value = 'idle';
     }, 1500);
   }

@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "OnlyTranslate"
+  },
+  "extDescription": {
+    "message": "A focused browser extension for translation: powerful, restrained, and built to do one thing well."
+  },
+  "settingsTitle": {
+    "message": "OnlyTranslate — Settings"
+  }
+}

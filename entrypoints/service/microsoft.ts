@@ -1,5 +1,6 @@
 import {services} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
+import {t} from "@/entrypoints/utils/i18n";
 
 async function microsoft(message: any) {
     let fromLang = config.from === 'auto' ? '' : config.from;
@@ -21,7 +22,7 @@ async function microsoft(message: any) {
         return result[0].translations[0].text;
     } else {
         console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
     }
 }
 
@@ -34,7 +35,7 @@ async function refreshToken(token: string) {
     // 如果令牌无效或已过期，则尝试获取新令牌
     const resp = await fetch("https://edge.microsoft.com/translate/auth")
     if (resp.ok) return resp.text();
-    else throw new Error(`请求失败: ${resp}`);
+    else throw new Error(t('runtime.requestFailed', { message: String(resp) }));
 }
 
 // 解析 jwt，返回解析后对象

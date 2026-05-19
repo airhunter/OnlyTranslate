@@ -1,7 +1,7 @@
 <template>
   <span class="status-badge" :class="isConfigured ? 'configured' : 'not-configured'">
     <span class="badge-dot"></span>
-    {{ isConfigured ? '已配置' : '未配置' }}
+    {{ isConfigured ? t('options.service.configured') : t('options.service.notConfigured') }}
   </span>
 </template>
 
@@ -9,12 +9,14 @@
 import { computed } from 'vue'
 import { useConfig } from '@/composables/useConfig'
 import { isServiceConfigured } from '@/entrypoints/utils/option'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   service: string
 }>()
 
 const { config } = useConfig()
+const { t } = useI18n()
 
 const isConfigured = computed(() => isServiceConfigured(props.service, config.value))
 </script>

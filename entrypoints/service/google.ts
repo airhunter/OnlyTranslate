@@ -1,5 +1,6 @@
 import {method} from "../utils/constant";
 import {config} from "@/entrypoints/utils/config";
+import {t} from "@/entrypoints/utils/i18n";
 
 async function google(message: any) {
     const targetLang = message.targetLang || config.to;
@@ -20,7 +21,7 @@ async function google(message: any) {
         return sentence;
     } else {
         console.log(resp);
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
     }
 }
 

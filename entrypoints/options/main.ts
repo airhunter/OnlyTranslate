@@ -3,6 +3,7 @@ import './style.css';
 import App from './App.vue';
 import 'element-plus/dist/index.css'
 import { ChatDotRound, Setting, Refresh, Edit, Upload, Download, Star, Loading, Coffee, WarningFilled, Warning, CircleCheckFilled } from '@element-plus/icons-vue'
+import { createAppI18n } from '@/entrypoints/utils/i18n'
 
 import {
   ElRow,
@@ -38,6 +39,8 @@ import {
 } from 'element-plus'
 
 const app = createApp(App);
+const i18n = createAppI18n()
+app.use(i18n)
 
 // 按需注册组件
 const components = [

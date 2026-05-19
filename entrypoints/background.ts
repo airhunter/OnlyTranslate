@@ -3,6 +3,7 @@ import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
 import {services, servicesType} from "@/entrypoints/utils/option";
 import {syncReleaseNotesInstallState} from "@/entrypoints/utils/releaseNotes";
+import {t} from "@/entrypoints/utils/i18n";
 import {
     checkChromeTranslationAvailability,
     preloadChromeTranslationModel
@@ -37,7 +38,7 @@ async function translateWithMicrosoftInBackground(text: string, targetLang: stri
             const result = await response.json();
             return result[0].translations[0].text;
         } else {
-            throw new Error(`微软翻译失败: ${response.status} ${response.statusText}`);
+            throw new Error(`${t('runtime.microsoftTranslateFailed')}: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
         console.error('微软翻译请求失败:', error);
@@ -54,7 +55,7 @@ async function refreshMicrosoftTokenInBackground(): Promise<string> {
         if (response.ok) {
             return await response.text();
         } else {
-            throw new Error(`获取微软翻译令牌失败: ${response.status} ${response.statusText}`);
+            throw new Error(`${t('runtime.microsoftTokenFailed')}: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
         console.error('获取微软翻译令牌失败:', error);
@@ -84,14 +85,14 @@ export default defineBackground({
                 // 创建父菜单
                 browser.contextMenus.create({
                     id: 'onlytranslate-parent',
-                    title: '只译',
+                    title: t('common.appName'),
                     contexts: ['page', 'selection'],
                 });
 
                 // 创建全文翻译子菜单
                 browser.contextMenus.create({
                     id: CONTEXT_MENU_IDS.TRANSLATE_FULL_PAGE,
-                    title: '全文翻译',
+                    title: t('contextMenu.translateFullPage'),
                     parentId: 'onlytranslate-parent',
                     contexts: ['page', 'selection'],
                 });
@@ -99,7 +100,7 @@ export default defineBackground({
                 // 创建撤销翻译子菜单
                 browser.contextMenus.create({
                     id: CONTEXT_MENU_IDS.RESTORE_ORIGINAL,
-                    title: '撤销翻译',
+                    title: t('contextMenu.restoreOriginal'),
                     parentId: 'onlytranslate-parent',
                     contexts: ['page', 'selection'],
                     enabled: false, // 初始状态为禁用
@@ -151,12 +152,16 @@ export default defineBackground({
                 // 更新全文翻译菜单项
                 browser.contextMenus.update(CONTEXT_MENU_IDS.TRANSLATE_FULL_PAGE, {
                     enabled: !isTranslated,
-                    title: isTranslated ? '全文翻译 (已翻译)' : '全文翻译'
+                    title: isTranslated
+                        ? `${t('contextMenu.translateFullPage')} (${t('contextMenu.translated')})`
+                        : t('contextMenu.translateFullPage')
                 });
                 // 更新撤销翻译菜单项
                 browser.contextMenus.update(CONTEXT_MENU_IDS.RESTORE_ORIGINAL, {
                     enabled: isTranslated,
-                    title: isTranslated ? '撤销翻译' : '撤销翻译 (无翻译)'
+                    title: isTranslated
+                        ? t('contextMenu.restoreOriginal')
+                        : `${t('contextMenu.restoreOriginal')} (${t('contextMenu.notTranslated')})`
                 });
             } catch (error) {
                 console.error('Failed to update context menus:', error);

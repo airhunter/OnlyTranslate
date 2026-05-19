@@ -3,6 +3,7 @@ import {method} from "../utils/constant";
 import {services} from "@/entrypoints/utils/option";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
+import {t} from "@/entrypoints/utils/i18n";
 
 async function custom(message: any) {
 
@@ -33,7 +34,7 @@ async function custom(message: any) {
         return  contentPostHandler(result.choices[0].message.content);
     } else {
         console.log("翻译失败：", resp);
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
     }
 }
 

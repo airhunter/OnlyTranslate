@@ -5,29 +5,29 @@
       <span class="onboarding-icon">
         <el-icon><ChatDotRound /></el-icon>
       </span>
-      <h3 class="onboarding-title">欢迎使用「只译」</h3>
+      <h3 class="onboarding-title">{{ t('onboarding.title') }}</h3>
     </div>
     <p class="onboarding-desc">
-      只译是一款专注翻译的浏览器插件。开始使用前，请先选择并配置一个翻译服务。
+      {{ t('onboarding.desc') }}
     </p>
     <div class="onboarding-services">
-      <p class="onboarding-services-label">推荐服务：</p>
+      <p class="onboarding-services-label">{{ t('onboarding.recommendedServices') }}</p>
       <div class="onboarding-service-list">
         <div class="onboarding-service-item" @click="selectService('siliconCloud')">
-          <span class="service-name">硅基流动</span>
-          <span class="service-desc">免费额度，开箱即用</span>
+          <span class="service-name">{{ t('onboarding.siliconCloud') }}</span>
+          <span class="service-desc">{{ t('onboarding.siliconCloudDesc') }}</span>
         </div>
         <div class="onboarding-service-item" @click="selectService('deepseek')">
           <span class="service-name">DeepSeek</span>
-          <span class="service-desc">高性价比 AI 翻译</span>
+          <span class="service-desc">{{ t('onboarding.deepseekDesc') }}</span>
         </div>
         <div class="onboarding-service-item" @click="selectService('chromeTranslator')">
-          <span class="service-name">Chrome 内置 AI</span>
-          <span class="service-desc">无需配置，完全免费</span>
+          <span class="service-name">{{ t('onboarding.chromeTranslator') }}</span>
+          <span class="service-desc">{{ t('onboarding.chromeTranslatorDesc') }}</span>
         </div>
       </div>
     </div>
-    <button class="onboarding-dismiss" @click="dismiss">知道了，不再显示</button>
+    <button class="onboarding-dismiss" @click="dismiss">{{ t('onboarding.dismiss') }}</button>
   </div>
 </template>
 
@@ -35,8 +35,10 @@
 import { ref, onMounted } from 'vue'
 import { storage } from '@wxt-dev/storage'
 import { useConfig } from '@/composables/useConfig'
+import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
+const { t } = useI18n()
 const dismissed = ref(false)
 
 onMounted(async () => {

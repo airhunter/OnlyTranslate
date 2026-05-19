@@ -1,6 +1,6 @@
 <template>
   <div class="options-root">
-    <h1 class="options-title">只译 — 设置</h1>
+    <h1 class="options-title">{{ t('common.settingsTitle') }}</h1>
 
     <div class="options-layout">
       <!-- Sidebar navigation -->
@@ -12,7 +12,7 @@
           :class="{ 'nav-item--active': activePanel === item.key }"
           @click="activePanel = item.key"
         >
-          {{ item.label }}
+          {{ t(item.labelKey) }}
         </button>
       </nav>
 
@@ -33,9 +33,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
+import { resolveLocale } from '@/entrypoints/utils/i18n'
 import OnboardingCard from '@/components/OnboardingCard.vue'
 import ServiceGroup from '@/components/options/ServiceGroup.vue'
 import AppearanceGroup from '@/components/options/AppearanceGroup.vue'
@@ -50,19 +52,25 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 
 const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
+const { t, locale } = useI18n()
 loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
+  locale.value = resolveLocale(config.value.uiLocale || 'auto')
+})
+
+watch(() => config.value.uiLocale, (value) => {
+  locale.value = resolveLocale(value || 'auto')
 })
 
 const activePanel = ref('service')
 
 const navItems = [
-  { key: 'service', label: '翻译服务' },
-  { key: 'appearance', label: '翻译外观' },
-  { key: 'interaction', label: '交互设置' },
-  { key: 'ai', label: 'AI 设置' },
-  { key: 'general', label: '通用' },
-  { key: 'about', label: '关于只译' },
+  { key: 'service', labelKey: 'options.nav.service' },
+  { key: 'appearance', labelKey: 'options.nav.appearance' },
+  { key: 'interaction', labelKey: 'options.nav.interaction' },
+  { key: 'ai', labelKey: 'options.nav.ai' },
+  { key: 'general', labelKey: 'options.nav.general' },
+  { key: 'about', labelKey: 'options.nav.about' },
 ]
 
 const handleNavigate = (panel: string) => {

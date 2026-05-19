@@ -4,40 +4,40 @@
     <div v-if="!isAIService" class="setting-card setting-card--warning">
       <div class="setting-card-body ai-notice-card">
         <el-icon><InfoFilled /></el-icon>
-        <span>当前翻译服务不是 AI 服务，以下提示词设置保存后不会在使用非 AI 接口时生效。</span>
+        <span>{{ t('options.ai.nonAiNotice') }}</span>
       </div>
     </div>
 
     <!-- 高级开发提示词卡片 -->
     <div class="setting-card setting-card--full">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">🧠 核心 Prompt 调试台</h3>
-        <p class="setting-card-desc">自定义调整当前选中 AI 模型的底层角色设定与上下文拼装模板</p>
+        <h3 class="setting-card-title">{{ t('options.ai.promptTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.ai.promptDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <!-- AI system 提示词 -->
         <div class="setting-row setting-row--col">
           <span class="setting-label">
-            System 提示词
-            <el-tooltip effect="dark" content="以系统身份 system 发送的对话，常用于全局指定 AI 要扮演的角色或强制遵循的规则" placement="top-start" :show-after="500">
+            {{ t('options.ai.systemPrompt') }}
+            <el-tooltip effect="dark" :content="t('options.ai.systemPromptTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control setting-control--full">
-            <el-input type="textarea" v-model="config.system_role[config.service]" maxlength="8192" placeholder="填写 system message" :autosize="{ minRows: 4, maxRows: 12 }" />
+            <el-input type="textarea" v-model="config.system_role[config.service]" maxlength="8192" :placeholder="t('options.ai.systemPlaceholder')" :autosize="{ minRows: 4, maxRows: 12 }" />
           </div>
         </div>
 
         <!-- AI user 模板 -->
         <div class="setting-row setting-row--col">
           <span class="setting-label">
-            User 模板
-            <el-tooltip effect="dark" content="以用户身份 user 发送的请求包裹。{{to}}代表目标语言代码，{{origin}}代表具体划词或带查的原文。此二者属于必填动态锚点。" placement="top-start" :show-after="500">
+            {{ t('options.ai.userTemplate') }}
+            <el-tooltip effect="dark" :content="t('options.ai.userTemplateTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control setting-control--full">
-            <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192" placeholder="填写 user message template" :autosize="{ minRows: 4, maxRows: 12 }" />
+            <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192" :placeholder="t('options.ai.userPlaceholder')" :autosize="{ minRows: 4, maxRows: 12 }" />
             <div v-if="userRoleError" class="error-text">{{ userRoleError }}</div>
           </div>
         </div>
@@ -46,7 +46,7 @@
       <div class="setting-card-footer">
         <el-button type="primary" link @click="resetTemplate">
           <el-icon><Refresh /></el-icon>
-          恢复官方推荐模板
+          {{ t('options.ai.resetTemplate') }}
         </el-button>
       </div>
     </div>
@@ -59,8 +59,10 @@ import { useConfig } from '@/composables/useConfig'
 import { defaultOption, servicesType } from '@/entrypoints/utils/option'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
+const { t } = useI18n()
 
 const isAIService = computed(() => servicesType.isAI(config.value.service))
 
@@ -72,7 +74,7 @@ const userRoleError = computed(() => {
   if (!template.includes('{{to}}')) missingVars.push('{{to}}')
   if (!template.includes('{{origin}}')) missingVars.push('{{origin}}')
   if (missingVars.length > 0) {
-    return `模板缺少必要变量：${missingVars.join('、')}，翻译将无法正常工作`
+    return t('options.ai.missingVars', { vars: missingVars.join('、') })
   }
   return null
 })
@@ -80,13 +82,13 @@ const userRoleError = computed(() => {
 // Reset template
 const resetTemplate = () => {
   ElMessageBox.confirm(
-    '确定要恢复默认的 system 和 user 模板吗？此操作将覆盖当前的自定义模板。',
-    '恢复默认模板',
-    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    t('options.ai.resetConfirm'),
+    t('options.ai.resetTitle'),
+    { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'warning' }
   ).then(() => {
     config.value.system_role[config.value.service] = defaultOption.system_role
     config.value.user_role[config.value.service] = defaultOption.user_role
-    ElMessage({ message: '已成功恢复默认翻译模板', type: 'success', duration: 2000 })
+    ElMessage({ message: t('options.ai.resetSuccess'), type: 'success', duration: 2000 })
   }).catch(() => {})
 }
 </script>

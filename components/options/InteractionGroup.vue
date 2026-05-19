@@ -3,30 +3,30 @@
     <!-- 卡片1：网页划词协作 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">🖱️ 网页划词协作</h3>
-        <p class="setting-card-desc">控制选中网页文本后的相关翻译交互行为</p>
+        <h3 class="setting-card-title">{{ t('options.interaction.selectionTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.interaction.selectionDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row">
           <span class="setting-label">
-            划词翻译
-            <el-tooltip effect="dark" content="选中文本后显示蓝点，鼠标移到蓝点上查看翻译结果。可选择关闭、双语显示或只显示译文" placement="top-start" :show-after="500">
+            {{ t('options.interaction.selectionTranslator') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.selectionTranslatorTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control">
-            <el-select v-model="config.selectionTranslatorMode" placeholder="选择模式">
-              <el-option label="关闭" value="disabled" />
-              <el-option label="双语显示" value="bilingual" />
-              <el-option label="只显示译文" value="translation-only" />
+            <el-select v-model="config.selectionTranslatorMode" :placeholder="t('options.interaction.selectMode')">
+              <el-option :label="t('options.interaction.disabled')" value="disabled" />
+              <el-option :label="t('options.interaction.bilingual')" value="bilingual" />
+              <el-option :label="t('options.interaction.translationOnly')" value="translation-only" />
             </el-select>
           </div>
         </div>
 
         <div class="setting-row">
           <span class="setting-label">
-            动画效果
-            <el-tooltip effect="dark" content="动画效果（默认开）：禁用后将关闭加载/悬浮等动画，以节省GPU资源和电量。" placement="top-start" :show-after="500">
+            {{ t('options.interaction.animations') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.animationsTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
@@ -40,28 +40,28 @@
     <!-- 卡片2：输入框增强 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">⌨️ 输入框增强</h3>
-        <p class="setting-card-desc">在任意网页输入框内触发快速打字翻译</p>
+        <h3 class="setting-card-title">{{ t('options.interaction.inputTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.interaction.inputDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row">
           <span class="setting-label">
-            输入框翻译
-            <el-tooltip effect="dark" content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。" placement="top-start" :show-after="500">
+            {{ t('options.interaction.inputTranslation') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.inputTranslationTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control">
-            <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
-              <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select v-model="config.inputBoxTranslationTrigger" :placeholder="t('options.interaction.inputTriggerPlaceholder')">
+              <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" :label="optionLabel(item)" :value="item.value" />
             </el-select>
           </div>
         </div>
 
         <div v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="setting-row">
-          <span class="setting-label">翻译目标语言</span>
+          <span class="setting-label">{{ t('options.interaction.targetLanguage') }}</span>
           <div class="setting-control">
-            <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
+            <el-select v-model="config.inputBoxTranslationTarget" :placeholder="t('options.interaction.targetLanguagePlaceholder')">
               <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </div>
@@ -72,26 +72,26 @@
     <!-- 卡片3：快捷键与指令 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">⚡ 快捷键与指令</h3>
-        <p class="setting-card-desc">使用键盘快捷方式快速触发翻译模块</p>
+        <h3 class="setting-card-title">{{ t('options.interaction.hotkeyTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.interaction.hotkeyDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div class="setting-row" :class="{ 'setting-row--expanded': config.hotkey === 'custom' }">
           <span class="setting-label">
-            鼠标悬浮翻译
-            <el-tooltip effect="dark" content="按住指定快捷键并悬停在文本上进行翻译" placement="top-start" :show-after="500">
+            {{ t('options.interaction.hoverTranslate') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.hoverTranslateTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control" :class="{ 'setting-control--full': config.hotkey === 'custom' }">
             <div class="hotkey-config">
-              <el-select v-model="config.hotkey" placeholder="请选择快捷键" size="small" style="width: 100%" @change="handleMouseHotkeyChange">
-                <el-option v-for="item in options.keys" :key="item.value" :label="item.label" :value="item.value"
+              <el-select v-model="config.hotkey" :placeholder="t('options.interaction.hotkeyPlaceholder')" size="small" style="width: 100%" @change="handleMouseHotkeyChange">
+                <el-option v-for="item in options.keys" :key="item.value" :label="optionLabel(item)" :value="item.value"
                   :disabled="item.disabled" :class="{ 'select-divider': item.disabled }" />
               </el-select>
               <div v-if="config.hotkey === 'custom'" class="custom-hotkey-display">
                 <span class="hotkey-text" v-if="config.customHotkey">{{ getCustomMouseHotkeyDisplayName() }}</span>
-                <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
+                <span class="hotkey-text placeholder-text" v-else>{{ t('options.interaction.setCustomHotkey') }}</span>
                 <el-button size="small" type="text" @click="showCustomMouseHotkeyDialog = true" class="edit-button">
                   <el-icon><Edit /></el-icon>
                 </el-button>
@@ -102,19 +102,19 @@
 
         <div v-if="config.on" class="setting-row" :class="{ 'setting-row--expanded': config.floatingBallHotkey === 'custom' }">
           <span class="setting-label">
-            翻译范围切换
-            <el-tooltip effect="dark" content="（测试版）设置快捷键以便快速切换识文/全页翻译范围，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
+            {{ t('options.interaction.scopeToggle') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.scopeToggleTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
           <div class="setting-control" :class="{ 'setting-control--full': config.floatingBallHotkey === 'custom' }">
             <div class="hotkey-config">
-              <el-select v-model="config.floatingBallHotkey" placeholder="选择快捷键" size="small" style="width: 100%" @change="handleHotkeyChange">
-                <el-option v-for="item in options.floatingBallHotkeys" :key="item.value" :label="item.label" :value="item.value" />
+              <el-select v-model="config.floatingBallHotkey" :placeholder="t('options.interaction.hotkeyPlaceholder')" size="small" style="width: 100%" @change="handleHotkeyChange">
+                <el-option v-for="item in options.floatingBallHotkeys" :key="item.value" :label="optionLabel(item)" :value="item.value" />
               </el-select>
               <div v-if="config.floatingBallHotkey === 'custom'" class="custom-hotkey-display">
                 <span class="hotkey-text" v-if="config.customFloatingBallHotkey">{{ getCustomHotkeyDisplayName() }}</span>
-                <span class="hotkey-text placeholder-text" v-else>点击设置自定义快捷键</span>
+                <span class="hotkey-text placeholder-text" v-else>{{ t('options.interaction.setCustomHotkey') }}</span>
                 <el-button size="small" type="text" @click="showCustomHotkeyDialog = true" class="edit-button">
                   <el-icon><Edit /></el-icon>
                 </el-button>
@@ -128,14 +128,14 @@
     <!-- 卡片4：全文面板组件 -->
     <div class="setting-card">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">📖 全文沉浸面板</h3>
-        <p class="setting-card-desc">配置网页整页翻译时的侧边浮动挂件</p>
+        <h3 class="setting-card-title">{{ t('options.interaction.fullPageTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.interaction.fullPageDesc') }}</p>
       </div>
       <div class="setting-card-body">
         <div v-if="config.on" class="setting-row">
           <span class="setting-label">
-            开启侧边悬浮球
-            <el-tooltip effect="dark" content="（测试版）控制是否显示屏幕边缘的即时翻译悬浮球" placement="top-start" :show-after="500">
+            {{ t('options.interaction.floatingBall') }}
+            <el-tooltip effect="dark" :content="t('options.interaction.floatingBallTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
             </el-tooltip>
           </span>
@@ -171,9 +171,14 @@ import { ElMessage } from 'element-plus'
 import { parseHotkey } from '@/entrypoints/utils/hotkey'
 import browser from 'webextension-polyfill'
 import { InfoFilled, Edit } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 
 const CustomHotkeyInput = defineAsyncComponent(() => import('@/components/CustomHotkeyInput.vue'))
 const { config } = useConfig()
+const { t } = useI18n()
+
+type OptionLike = { label: string; labelKey?: string }
+const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
 
 // Floating ball computed
 const floatingBallEnabled = computed({
@@ -207,7 +212,7 @@ const handleMouseHotkeyChange = (value: string) => {
 const handleCustomMouseHotkeyConfirm = (hotkey: string) => {
   config.value.customHotkey = hotkey
   config.value.hotkey = 'custom'
-  ElMessage({ message: hotkey === 'none' ? '已禁用快捷键' : `快捷键已设置为: ${getCustomMouseHotkeyDisplayName()}`, type: 'success', duration: 2000 })
+  ElMessage({ message: hotkey === 'none' ? t('options.interaction.hotkeyDisabled') : t('options.interaction.hotkeySet', { hotkey: getCustomMouseHotkeyDisplayName() }), type: 'success', duration: 2000 })
 }
 
 const handleCustomMouseHotkeyCancel = () => {
@@ -216,7 +221,7 @@ const handleCustomMouseHotkeyCancel = () => {
 
 const getCustomMouseHotkeyDisplayName = () => {
   if (!config.value.customHotkey) return ''
-  if (config.value.customHotkey === 'none') return '已禁用'
+  if (config.value.customHotkey === 'none') return t('options.interaction.disabledText')
   const parsed = parseHotkey(config.value.customHotkey)
   return parsed.isValid ? parsed.displayName : config.value.customHotkey
 }
@@ -231,7 +236,7 @@ const handleHotkeyChange = (value: string) => {
 const handleCustomHotkeyConfirm = (hotkey: string) => {
   config.value.customFloatingBallHotkey = hotkey
   config.value.floatingBallHotkey = 'custom'
-  ElMessage({ message: hotkey === 'none' ? '已禁用快捷键' : `快捷键已设置为: ${getCustomHotkeyDisplayName()}`, type: 'success', duration: 2000 })
+  ElMessage({ message: hotkey === 'none' ? t('options.interaction.hotkeyDisabled') : t('options.interaction.hotkeySet', { hotkey: getCustomHotkeyDisplayName() }), type: 'success', duration: 2000 })
 }
 
 const handleCustomHotkeyCancel = () => {
@@ -240,7 +245,7 @@ const handleCustomHotkeyCancel = () => {
 
 const getCustomHotkeyDisplayName = () => {
   if (!config.value.customFloatingBallHotkey) return ''
-  if (config.value.customFloatingBallHotkey === 'none') return '已禁用'
+  if (config.value.customFloatingBallHotkey === 'none') return t('options.interaction.disabledText')
   const parsed = parseHotkey(config.value.customFloatingBallHotkey)
   return parsed.isValid ? parsed.displayName : config.value.customFloatingBallHotkey
 }

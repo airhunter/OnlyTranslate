@@ -3,6 +3,7 @@ import {services} from "../utils/option";
 import {commonMsgTemplate} from "../utils/template";
 import CryptoJS from 'crypto-js';
 import {config} from "@/entrypoints/utils/config";
+import {t} from "@/entrypoints/utils/i18n";
 
 
 // 文档参考：https://open.bigmodel.cn/dev/api#nosdk
@@ -13,7 +14,7 @@ async function zhipu(message: any) {
     config.extra[services.zhipu] && ({secret, expiration} = config.extra[services.zhipu]);
     if (!secret || expiration <= Date.now()) {
         secret = generateToken(token);
-        if (!secret) throw new Error('无法生成令牌');
+        if (!secret) throw new Error(t('runtime.tokenGenerateFailed'));
         // 保存 secret 和 expiration
         config.extra[services.zhipu] = {secret, expiration: Date.now() + 3600000 * 24};
         await storage.setItem('local:config', JSON.stringify(config));
@@ -36,7 +37,7 @@ async function zhipu(message: any) {
         return result.choices[0].message.content;
     } else {
         console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
     }
 }
 

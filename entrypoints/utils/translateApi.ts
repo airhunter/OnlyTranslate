@@ -9,6 +9,7 @@ import { config } from './config';
 import { cache } from './cache';
 import { storage } from '@wxt-dev/storage';
 import { resolveTranslationDirection } from './translationDirection';
+import { t } from './i18n';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -92,7 +93,7 @@ export async function translateText(origin: string, context: string = document.t
             targetLang: direction.targetLang,
           }),
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('翻译请求超时')), timeout)
+            setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
           )
         ]);
         const result = normalizeRuntimeTranslationResult(response);

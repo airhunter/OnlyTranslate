@@ -2,24 +2,24 @@
   <div class="about-group">
     <div class="setting-card about-card about-card--overview">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">关于只译</h3>
+        <h3 class="setting-card-title">{{ t('options.about.title') }}</h3>
       </div>
       <div class="setting-card-body">
         <div class="product-summary">
-          <img class="product-logo" :src="logoUrl" alt="只译" />
+          <img class="product-logo" :src="logoUrl" :alt="t('common.appName')" />
           <div>
-            <div class="product-name">只译</div>
-            <p class="product-desc">一款专注翻译的浏览器插件，强大而克制，只做一件事。</p>
+            <div class="product-name">{{ t('common.appName') }}</div>
+            <p class="product-desc">{{ t('options.about.productDesc') }}</p>
           </div>
         </div>
 
         <div class="product-meta">
           <div class="version-meta">
-            <span class="meta-label">当前版本</span>
+            <span class="meta-label">{{ t('common.currentVersion') }}</span>
             <strong>v{{ appVersion }}</strong>
           </div>
           <button type="button" class="project-link" @click="openExternal(GITHUB_URL)">
-            <span>项目主页</span>
+            <span>{{ t('options.about.projectHome') }}</span>
             <el-icon><ArrowRight /></el-icon>
           </button>
         </div>
@@ -28,19 +28,19 @@
 
     <div class="setting-card about-card about-card--release">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">更新说明</h3>
+        <h3 class="setting-card-title">{{ t('options.about.releaseNotes') }}</h3>
       </div>
       <div class="setting-card-body">
         <ul v-if="currentReleaseNote" class="release-list">
           <li v-for="item in currentReleaseNote.items" :key="item">{{ item }}</li>
         </ul>
-        <p v-else class="release-empty">当前版本暂未补充更新说明。</p>
+        <p v-else class="release-empty">{{ t('common.noReleaseNotes') }}</p>
       </div>
     </div>
 
     <div class="setting-card about-card about-card--privacy">
       <div class="setting-card-header">
-        <h3 class="setting-card-title">隐私政策</h3>
+        <h3 class="setting-card-title">{{ t('options.about.privacyPolicy') }}</h3>
       </div>
       <div class="setting-card-body">
         <div class="privacy-doc">
@@ -62,12 +62,14 @@ import { ArrowRight } from '@element-plus/icons-vue'
 import browser from 'webextension-polyfill'
 import { findReleaseNoteByVersion } from '@/entrypoints/utils/releaseNotes'
 import privacyMarkdown from '../../PRIVACY.md?raw'
+import { useI18n } from 'vue-i18n'
 
 const GITHUB_URL = 'https://github.com/airhunter/OnlyTranslate'
 
 const appVersion = browser.runtime.getManifest().version
 const currentReleaseNote = findReleaseNoteByVersion(appVersion)
 const logoUrl = browser.runtime.getURL('/icon/128.png')
+const { t } = useI18n()
 
 const openExternal = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer')

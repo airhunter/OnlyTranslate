@@ -8,6 +8,7 @@ import {
 import { config } from "@/entrypoints/utils/config";
 import { styles } from "@/entrypoints/utils/constant";
 import { services, options } from "./option";
+import { t } from "@/entrypoints/utils/i18n";
 
 const icon = {
   retry: `<svg fill="none" viewBox="0 0 40 40" height="40" width="40" style="display: inline; align-items: center; justify-content: center; width: 1em; height: 1em; margin-left: 1em; pointer-events: none;">
@@ -32,7 +33,7 @@ export function insertFailedTip(
 
   // 创建重试按钮
   const retryBtn = document.createElement("span");
-  retryBtn.innerText = "重试";
+  retryBtn.innerText = t("runtime.retry");
   retryBtn.classList.add("only-translate-retry");
   retryBtn.addEventListener("click", handleRetryClick(node, wrapper));
 
@@ -41,7 +42,7 @@ export function insertFailedTip(
 
   // 创建错误信息提示按钮
   const errorTip = document.createElement("span");
-  errorTip.innerText = "错误原因";
+  errorTip.innerText = t("runtime.errorReason");
   errorTip.classList.add("only-translate-reason");
   errorTip.addEventListener("click", handleErrorClick(errMsg));
 
@@ -86,18 +87,18 @@ function handleErrorClick(errMsg: string) {
 // 根据错误信息返回错误提示
 function getErrorMessage(errMsg: string): string {
   if (errMsg.includes("auth failed") || errMsg.includes("API key")) {
-    return "Token 似乎有点问题，请前往设置页面重新配置后再试。";
+    return t("runtime.tokenInvalid");
   } else if (errMsg.includes("quota") || errMsg.includes("limit")) {
     const service = options.services.find((s: { value: string; label: string }) => s.value === config.service);
-    return "你的请求频率过高，被【" + (service?.label || config.service) + "】拒绝了，请稍后再试吧~";
+    return t("runtime.rateLimited", { service: service?.label || config.service });
   } else if (errMsg.includes("network error")) {
-    return "网络连接好像不稳定，请检查网络后再试。";
+    return t("runtime.networkUnstable");
   } else if (errMsg.includes("model")) {
-    return "模型配置可能有误，请前往设置页面进行检查和调整。";
+    return t("runtime.modelInvalid");
   } else if (errMsg.includes("timeout")) {
-    return "请求超时啦，请稍后再试一次。";
+    return t("runtime.timeout");
   } else {
-    return errMsg || "出现了未知错误，请前往开源社区联系开发者吧~";
+    return errMsg || t("runtime.unknownFailure");
   }
 }
 
