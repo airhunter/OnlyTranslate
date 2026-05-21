@@ -209,6 +209,13 @@
     overflow-wrap: break-word; /* 处理长单词或 URL 的断行，避免溢出 */
 }
 
+.only-translate-asterisk-footnote {
+    font: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+    margin: 0.65em 0 0 !important;
+}
+
 /* 马克笔 */
 .fluent-display-marker {
     background: #ffeb3b;

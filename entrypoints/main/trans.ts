@@ -8,19 +8,21 @@ import {
     getTranslatableHTML,
     getTranslatableText,
     grabNode,
-    grabAllNode,
     type GrabAllNodeOptions,
     LLMStandardHTML,
     smashTruncationStyle
 } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
-import { getMainDomain, replaceCompatFn, supplementalCompatFn } from "@/entrypoints/main/compat";
+import { afterBilingualAppendCompatFn, getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
-import { findMainContent } from '@/entrypoints/utils/contentDetector';
-import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
-import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
+import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
+import {
+    collectDynamicTranslationNodes as collectDynamicTargetNodes,
+    isInTranslationScope as isDynamicInTranslationScope
+} from '@/entrypoints/main/translationTarget/dynamic';
+import { getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
 
 let hoverTimer: any; // 鼠标悬停计时器
 let htmlSet = new Set(); // 防抖
@@ -34,7 +36,6 @@ const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
 const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
-const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
 
 let nodeIdCounter = 0; // 节点ID计数器
 
@@ -55,185 +56,11 @@ export function collectDynamicTranslationNodes(
     scope: string,
     grabOptions: GrabAllNodeOptions = {}
 ): Element[] {
-    if (isManagedTranslationNode(root)) return [];
-    if (!isInTranslationScope(root, contentRoot, scope)) return [];
-    if (isOpenExpandableReadingContainer(root) && isVisibleForTranslation(root) && !root.hasAttribute(TRANSLATED_ATTR)) {
-        return [root];
-    }
-
-    return grabAllNode(root, grabOptions).filter(
-        node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node) && isVisibleForTranslation(node)
-    );
+    return collectDynamicTargetNodes(root, contentRoot, scope, grabOptions);
 }
 
 export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
-    if (scope === 'full') {
-        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
-        return {
-            contentRoot: document.body,
-            nodes: grabAllNode(document.body, grabOptions),
-            grabOptions
-        };
-    }
-
-    const contentRoot = findMainContent();
-    const grabOptions: GrabAllNodeOptions = {
-        contentFilter: getContentFilterDecision,
-        contentUnitClassifier: classifyContentUnit,
-        siteCompatMode: 'smart'
-    };
-    const filteredNodes = mergeTranslationNodes(normalizeTranslationTargets([
-        ...grabAllNode(contentRoot, grabOptions),
-        ...collectSupplementalReadingTargets(document.body)
-    ]));
-
-    if (filteredNodes.length > 0) {
-        return {
-            contentRoot,
-            nodes: filteredNodes,
-            grabOptions
-        };
-    }
-
-    // 智能过滤没有结果时，兜底路径放松站点兼容层，只保留 full 模式下的安全跳过。
-    // 否则部分站点的历史 smart 强规则仍会把正文挡掉，看起来像兜底没有生效。
-    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
-    const unfilteredRootNodes = grabAllNode(contentRoot, fallbackOptions);
-    if (unfilteredRootNodes.length > 0) {
-        return {
-            contentRoot,
-            nodes: unfilteredRootNodes,
-            grabOptions: fallbackOptions
-        };
-    }
-
-    return {
-        contentRoot: document.body,
-        nodes: contentRoot === document.body ? unfilteredRootNodes : grabAllNode(document.body, fallbackOptions),
-        grabOptions: fallbackOptions
-    };
-}
-
-function mergeTranslationNodes(nodes: Element[]): Element[] {
-    const uniqueNodes = Array.from(new Set(nodes));
-    return uniqueNodes.filter(node => {
-        if (uniqueNodes.some(other => node !== other && isGitHubMarkdownListContainer(node) && isGitHubMarkdownListItemOf(other, node))) {
-            return false;
-        }
-
-        return !uniqueNodes.some(other => {
-            if (node === other || !other.contains(node)) return false;
-            return !(isGitHubMarkdownListContainer(other) && isGitHubMarkdownListItemOf(node, other));
-        });
-    });
-}
-
-function normalizeTranslationTargets(nodes: Element[]): Element[] {
-    return nodes.flatMap(node => {
-        const githubMarkdownListItems = getGitHubMarkdownListItems(node, false);
-        return githubMarkdownListItems.length > 0 ? githubMarkdownListItems : [node];
-    });
-}
-
-function collectSupplementalReadingTargets(root: ParentNode): Element[] {
-    const siteTargets = collectSiteSupplementalReadingTargets(root);
-    const genericTargets = collectHighConfidenceReadingUnits(root)
-        .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
-
-    return [
-        ...genericTargets,
-        ...siteTargets
-    ]
-        .flatMap(expandSupplementalReadingUnit)
-        .filter(unit => isVisibleForTranslation(unit));
-}
-
-function collectSiteSupplementalReadingTargets(root: ParentNode): Element[] {
-    const domain = getMainDomain(location.href);
-    const collect = supplementalCompatFn[domain];
-    return collect ? collect(root, { mode: 'smart' }) : [];
-}
-
-function expandSupplementalReadingUnit(unit: Element): Element[] {
-    const githubMarkdownListItems = getGitHubMarkdownListItems(unit);
-    if (githubMarkdownListItems.length > 0) return githubMarkdownListItems;
-
-    if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
-
-    return [unit];
-}
-
-function getGitHubMarkdownListItems(unit: Element, includeDescendantLists = true): Element[] {
-    if (getMainDomain(location.href) !== 'github.com') return [];
-    if (!unit.closest('.markdown-body')) return [];
-    if (unit.closest('pre, code, table.highlight, table.diff-table')) return [];
-
-    const lists = unit.matches('ul, ol')
-        ? [unit]
-        : includeDescendantLists
-            ? Array.from(unit.querySelectorAll<Element>('ul, ol'))
-            : [];
-
-    return lists.flatMap(list => Array.from(list.children))
-        .filter(child => child.tagName.toLowerCase() === 'li')
-        .filter(item => (item.textContent?.replace(/\s+/g, ' ').trim().length ?? 0) >= 20);
-}
-
-function isGitHubMarkdownListContainer(element: Element): boolean {
-    return getMainDomain(location.href) === 'github.com'
-        && element.matches('ul, ol')
-        && Boolean(element.closest('.markdown-body'));
-}
-
-function isGitHubMarkdownListItemOf(item: Element, list: Element): boolean {
-    return item.tagName.toLowerCase() === 'li'
-        && item.parentElement === list
-        && Boolean(item.closest('.markdown-body'));
-}
-
-function isExpandableReadingContainer(element: Element): boolean {
-    return element.hasAttribute('aria-expanded')
-        && element.getAttribute('role')?.toLowerCase() === 'button';
-}
-
-function isOpenExpandableReadingContainer(element: Element): boolean {
-    return isExpandableReadingContainer(element) && element.getAttribute('aria-expanded') === 'true';
-}
-
-function isVisibleForTranslation(element: Element): boolean {
-    let current: Element | null = element;
-
-    while (current) {
-        if (current.hasAttribute('hidden') || current.getAttribute('aria-hidden') === 'true') {
-            return false;
-        }
-
-        try {
-            const style = window.getComputedStyle(current);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') {
-                return false;
-            }
-        } catch (_) {}
-
-        current = current.parentElement;
-    }
-
-    return true;
-}
-
-function isInTranslationScope(root: Element, contentRoot: Element, scope: string): boolean {
-    if (scope === 'full' || contentRoot.contains(root)) return true;
-
-    let current: Element | null = root;
-    while (current && current !== document.body) {
-        const decision = classifyContentUnit(current);
-        if (decision.action === 'allow' && decision.confidence >= SUPPLEMENTAL_READING_CONFIDENCE) {
-            return true;
-        }
-        current = current.parentElement;
-    }
-
-    return false;
+    return resolveAutoTranslationTarget(scope);
 }
 
 // 恢复原文内容
@@ -362,7 +189,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     const scheduleDynamicScan = (root: Element) => {
         if (isManagedTranslationNode(root)) return;
-        if (!isInTranslationScope(root, contentRoot, scope)) return;
+        if (!isDynamicInTranslationScope(root, contentRoot, scope)) return;
 
         pendingDynamicRoots.add(root);
         if (dynamicScanTimer !== null) return;
@@ -599,21 +426,17 @@ function bilingualAppendChild(node: any, text: string) {
     }
     newNode.append(text);
     smashTruncationStyle(node);
-    getBilingualAppendTarget(node).appendChild(newNode);
+    const appendTarget = getBilingualAppendTarget(node);
+    appendTarget.appendChild(newNode);
+
+    const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
+    if (fn) fn(node, newNode, appendTarget);
 }
 
 function getBilingualAppendTarget(node: HTMLElement): HTMLElement {
-    if (!isOpenExpandableReadingContainer(node)) return node;
-
-    const candidates = Array.from(node.querySelectorAll<HTMLElement>(
-        ':scope > *, :scope [class*="detail"], :scope [class*="content"], :scope [class*="body"], :scope p'
-    ));
-    const target = candidates
-        .filter(candidate => isVisibleForTranslation(candidate))
-        .find(candidate => {
-            const text = candidate.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-            return text.length >= 40 && /[.!?。！？]/.test(text);
-        });
-
-    return target ?? node;
+    return getTranslationTargetAppendTarget(node, {
+        mode: config.translationScope === 'full' ? 'full' : 'smart',
+        scope: config.translationScope,
+        contentRoot: document.body
+    });
 }

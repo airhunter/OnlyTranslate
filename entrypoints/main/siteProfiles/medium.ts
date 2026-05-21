@@ -33,7 +33,26 @@ export const mediumProfile: SiteProfile = {
 
         return false;
     },
-    supplemental: (root) => collectMediumSupplementalTargets(root)
+    supplemental: (root) => collectMediumSupplementalTargets(root),
+    allowTarget: (node) => {
+        const relatedRoot = findContainingRelatedArticleRoot(node);
+        if (!relatedRoot || !isRelatedArticleTextTarget(node, relatedRoot)) return false;
+
+        return {
+            target: node,
+            role: node.matches('h1, h2, h3, h4, [class*="title"], [class*="headline"]') ? 'title' : 'summary',
+            reason: 'medium-related-article-content'
+        };
+    },
+    skipTarget: (node) => {
+        if (!shouldHardSkipMediumTarget(node)) return false;
+
+        return {
+            policy: 'hard-skip',
+            role: 'metadata',
+            reason: 'medium-metadata-or-social'
+        };
+    }
 };
 
 const RELATED_ARTICLES_PATTERN = /\b(related articles?|recommended articles?|read next|more from)\b/i;
@@ -92,6 +111,17 @@ function findNearestRelatedArticleRoot(heading: Element): Element | null {
         if (isRelatedArticleRoot(current)) return current;
         current = current.parentElement;
         depth += 1;
+    }
+
+    return null;
+}
+
+function findContainingRelatedArticleRoot(element: Element): Element | null {
+    let current: Element | null = element;
+
+    while (current && current !== document.body) {
+        if (current.matches(RELATED_ROOT_SELECTOR) && isRelatedArticleRoot(current)) return current;
+        current = current.parentElement;
     }
 
     return null;
@@ -158,6 +188,49 @@ function shouldSkipMediumElement(node: Element): boolean {
 
     if (node.tagName?.toLowerCase() === 'pre' || node.tagName?.toLowerCase() === 'code') return true;
     if (node.tagName?.toLowerCase() === 'svg' || node.tagName?.toLowerCase() === 'img') return true;
+
+    return false;
+}
+
+function shouldHardSkipMediumTarget(node: Element): boolean {
+    const text = getNormalizedText(node);
+    if (isMediumMetadataText(text)) return true;
+    if (findContainingRelatedArticleRoot(node)) return false;
+
+    const hardSkipSelectors = [
+        'nav',
+        'footer',
+        'form',
+        'button',
+        '[role="button"]',
+        '.author-social-links',
+        '.share-this-article',
+        '.post-topics',
+        '.tags',
+        '[class*="share"]',
+        '[class*="social"]',
+        '[class*="author-card"]',
+        '[class*="byline"]',
+        '[class*="tag"]',
+        '[class*="topic"]',
+        '[class*="readTime"]',
+        '[class*="readingTime"]',
+        '[data-testid*="author"]',
+        '[data-testid*="share"]'
+    ];
+
+    if (hardSkipSelectors.some(selector => node.closest(selector))) return true;
+
+    if (/^(medium|linkedin|twitter|x|youtube|facebook|written by|share this article)$/i.test(text)) return true;
+    if (/^see all from\s+/i.test(text)) return true;
+
+    return false;
+}
+
+function isMediumMetadataText(text: string): boolean {
+    if (/^\d+\s*min read$/i.test(text)) return true;
+    if (/^\w+\s+\d{1,2},\s+\d{4}(\s*(·|•)\s*\d+\s*min read)?$/i.test(text)) return true;
+    if (/^(data science|pandas|productivity|python|vectorization)(,\s*(data science|pandas|productivity|python|vectorization))*$/i.test(text)) return true;
 
     return false;
 }

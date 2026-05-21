@@ -24,6 +24,27 @@ Rules:
 - Never generate commit messages without a Conventional Commit type prefix.
 - Output only the final commit message when asked to generate a commit message.
 
+## Engineering Workflow
+
+Before implementation:
+
+- State key assumptions when the task touches content detection, translation insertion, DOM mutation, layout behavior, release flow, or user-visible behavior.
+- If a requirement has multiple materially different interpretations, explain the options and ask before implementing.
+- Prefer the simplest change that solves the current problem.
+- Keep edits surgical: only change files required by the task, and do not refactor, reformat, rename, or clean up unrelated code.
+- Match existing project style and local patterns.
+- Do not add new dependencies, configuration, abstractions, or extension points unless they clearly reduce complexity and are approved.
+- If unrelated issues are found, mention them in the response instead of changing them.
+
+For multi-step tasks, briefly define the success criteria and verification plan before editing.
+
+## Testing Expectations
+
+- Run the smallest relevant checks for the changed area.
+- Run broader checks when shared modules, translation detection, DOM insertion, or build configuration are changed.
+- Add or update focused tests for behavior changes.
+- If automated validation is not practical, provide a concise manual verification checklist.
+
 ## Release Workflow
 
 - When working on a release, follow `RELEASE.md` as the source of truth.

@@ -2,9 +2,11 @@
 // 具体站点规则放在 siteProfiles 中，本文件保留旧入口，避免影响调用链。
 
 import {
+    siteProfileAfterBilingualAppendFns,
     siteProfileReplaceFns,
     siteProfileSelectFns,
     siteProfileSupplementalFns,
+    type AfterBilingualAppendCompatFn,
     type ReplaceCompatFn,
     type SelectCompatFn,
     type SiteProfileContext,
@@ -60,3 +62,6 @@ export const selectCompatFn: SelectCompatFn = siteProfileSelectFns;
 
 // 智能范围之外的站点级补充阅读节点
 export const supplementalCompatFn: SupplementalCompatFn = siteProfileSupplementalFns;
+
+// 双语译文插入后的站点级布局修正
+export const afterBilingualAppendCompatFn: AfterBilingualAppendCompatFn = siteProfileAfterBilingualAppendFns;

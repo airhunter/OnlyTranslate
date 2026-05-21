@@ -52,8 +52,37 @@ export const githubProfile: SiteProfile = {
         if (actionLog) return actionLog;
 
         return false;
+    },
+    allowTarget: (node) => {
+        if (!isGitHubMarkdownReadingUnit(node)) return false;
+
+        return {
+            target: node,
+            role: /^h[1-6]$/i.test(node.tagName) ? 'title' : 'paragraph',
+            reason: 'github-markdown-reading-unit'
+        };
+    },
+    skipTarget: (node, context) => {
+        if (!shouldSkipGitHubElement(node, context.mode)) return false;
+
+        return {
+            policy: 'hard-skip',
+            role: 'ui',
+            reason: 'github-profile-skip'
+        };
     }
 };
+
+function isGitHubMarkdownReadingUnit(node: Element): boolean {
+    if (!node.closest('.markdown-body')) return false;
+    if (node.closest('pre, code, table.highlight, table.diff-table')) return false;
+
+    const tag = node.tagName.toLowerCase();
+    if (!['p', 'li', 'blockquote', 'figcaption', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    return text.length >= 8 && /[A-Za-z]/.test(text);
+}
 
 function shouldSkipGitHubElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {
     if (shouldSkipGitHubSafetyElement(node)) return true;

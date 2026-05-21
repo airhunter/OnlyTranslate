@@ -1,3 +1,4 @@
+import { asteriskProfile } from './asterisk';
 import { cnnProfile } from './cnn';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
@@ -5,7 +6,7 @@ import { mediumProfile } from './medium';
 import { redditProfile } from './reddit';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
-import type { ReplaceCompatFn, SelectCompatFn, SiteProfile, SupplementalCompatFn } from './types';
+import type { AfterBilingualAppendCompatFn, ReplaceCompatFn, SelectCompatFn, SiteProfile, SupplementalCompatFn } from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
 
@@ -19,6 +20,11 @@ export type {
     SiteProfileResult,
     SiteProfileSelect,
     SiteProfileSupplemental,
+    SiteProfileAfterBilingualAppend,
+    SiteProfileTargetAllow,
+    SiteProfileTargetSkip,
+    SiteProfileAppendTarget,
+    AfterBilingualAppendCompatFn,
     SupplementalCompatFn
 } from './types';
 
@@ -31,7 +37,8 @@ export const siteProfiles: SiteProfile[] = [
     stackOverflowProfile,
     mediumProfile,
     redditProfile,
-    hackerNewsProfile
+    hackerNewsProfile,
+    asteriskProfile
 ];
 
 export const siteProfileSelectFns: SelectCompatFn = siteProfiles.reduce<SelectCompatFn>((map, profile) => {
@@ -59,6 +66,16 @@ export const siteProfileSupplementalFns: SupplementalCompatFn = siteProfiles.red
 
     for (const domain of profile.domains) {
         map[domain] = profile.supplemental;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileAfterBilingualAppendFns: AfterBilingualAppendCompatFn = siteProfiles.reduce<AfterBilingualAppendCompatFn>((map, profile) => {
+    if (!profile.afterBilingualAppend) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.afterBilingualAppend;
     }
 
     return map;

@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
+import { afterBilingualAppendCompatFn, replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
+
+afterEach(() => {
+  window.dispatchEvent(new Event('resize'))
+  vi.useRealTimers()
+})
 
 describe('site profile registry', () => {
   it('registers migrated select profiles by domain', () => {
@@ -19,6 +24,10 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['towardsdatascience.com']).toBeTypeOf('function')
   })
 
+  it('registers Asterisk bilingual append profile', () => {
+    expect(afterBilingualAppendCompatFn['asteriskmag.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'
@@ -34,6 +43,52 @@ describe('site profile registry', () => {
     element.textContent = 'Repository description text'
 
     expect(selectCompatFn['mvnrepository.com']?.(element, { mode: 'smart' })).toBe(element)
+  })
+
+  it('relayouts Asterisk footnotes after bilingual text is appended', () => {
+    vi.useFakeTimers()
+    const resizeHandler = vi.fn()
+    window.addEventListener('resize', resizeHandler)
+
+    document.body.innerHTML = `
+      <ol class="footnotes-list">
+        <li id="fn-1">For some reason, humans have gastric acid that is more acidic than most other animals.</li>
+      </ol>
+    `
+    const footnote = document.querySelector<HTMLElement>('#fn-1')!
+    const translationNode = document.createElement('span')
+
+    afterBilingualAppendCompatFn['asteriskmag.com']?.(footnote, translationNode, footnote)
+
+    expect(translationNode.classList.contains('only-translate-asterisk-footnote')).toBe(true)
+    vi.advanceTimersByTime(49)
+    expect(resizeHandler).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(resizeHandler).toHaveBeenCalledTimes(1)
+
+    window.removeEventListener('resize', resizeHandler)
+  })
+
+  it('does not relayout Asterisk for non-footnote bilingual text', () => {
+    vi.useFakeTimers()
+    const resizeHandler = vi.fn()
+    window.addEventListener('resize', resizeHandler)
+
+    document.body.innerHTML = `
+      <article>
+        <p id="paragraph">This paragraph belongs to the article body and should not trigger footnote relayout.</p>
+      </article>
+    `
+    const paragraph = document.querySelector<HTMLElement>('#paragraph')!
+    const translationNode = document.createElement('span')
+
+    afterBilingualAppendCompatFn['asteriskmag.com']?.(paragraph, translationNode, paragraph)
+    vi.advanceTimersByTime(60)
+
+    expect(translationNode.classList.contains('only-translate-asterisk-footnote')).toBe(false)
+    expect(resizeHandler).not.toHaveBeenCalled()
+
+    window.removeEventListener('resize', resizeHandler)
   })
 
   it('recognizes common CNN headline and description nodes', () => {
