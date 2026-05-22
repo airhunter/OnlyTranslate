@@ -67,9 +67,9 @@ import { useI18n } from 'vue-i18n'
 const GITHUB_URL = 'https://github.com/airhunter/OnlyTranslate'
 
 const appVersion = browser.runtime.getManifest().version
-const currentReleaseNote = findReleaseNoteByVersion(appVersion)
 const logoUrl = browser.runtime.getURL('/icon/128.png')
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const currentReleaseNote = computed(() => findReleaseNoteByVersion(appVersion, locale.value))
 
 const openExternal = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer')

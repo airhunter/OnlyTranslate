@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, type Ref } from 'vue';
 import { storage } from '@wxt-dev/storage';
 import browser from 'webextension-polyfill';
 import {
@@ -11,9 +11,15 @@ function isTruthyStorageValue(value: unknown): boolean {
   return value === true || value === 'true';
 }
 
-export function useReleaseNotes() {
+type LocaleSource = string | Readonly<Ref<string>>;
+
+function readLocale(localeSource?: LocaleSource): string | undefined {
+  return typeof localeSource === 'string' ? localeSource : localeSource?.value;
+}
+
+export function useReleaseNotes(localeSource?: LocaleSource) {
   const currentVersion = browser.runtime.getManifest().version;
-  const currentReleaseNote = computed(() => findReleaseNoteByVersion(currentVersion));
+  const currentReleaseNote = computed(() => findReleaseNoteByVersion(currentVersion, readLocale(localeSource)));
   const hasUnreadReleaseNotes = ref(false);
 
   const updateUnreadState = (initialized: unknown, lastSeenVersion: unknown) => {

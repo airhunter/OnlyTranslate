@@ -11,7 +11,7 @@ vi.mock('@wxt-dev/storage', () => ({
 vi.mock('webextension-polyfill', () => ({
   default: {
     runtime: {
-      getManifest: () => ({ version: '0.1.0' })
+      getManifest: () => ({ version: '0.5.1' })
     }
   }
 }))
@@ -25,7 +25,7 @@ describe('useReleaseNotes', () => {
     const { storage } = await import('@wxt-dev/storage')
     vi.mocked(storage.getItem).mockImplementation(async (key: string) => {
       if (key === 'local:releaseNotesInitialized') return true
-      if (key === 'local:lastSeenReleaseNotesVersion') return '0.1.0'
+      if (key === 'local:lastSeenReleaseNotesVersion') return '0.5.1'
       return undefined
     })
 
@@ -62,7 +62,20 @@ describe('useReleaseNotes', () => {
     await markCurrentReleaseNotesAsSeen()
 
     expect(storage.setItem).toHaveBeenCalledWith('local:releaseNotesInitialized', true)
-    expect(storage.setItem).toHaveBeenCalledWith('local:lastSeenReleaseNotesVersion', '0.1.0')
+    expect(storage.setItem).toHaveBeenCalledWith('local:lastSeenReleaseNotesVersion', '0.5.1')
     expect(hasUnreadReleaseNotes.value).toBe(false)
+  })
+
+  it('updates current release note when locale changes', async () => {
+    const { ref } = await import('vue')
+    const { useReleaseNotes } = await import('../../composables/useReleaseNotes')
+    const locale = ref('en-US')
+    const { currentReleaseNote } = useReleaseNotes(locale)
+
+    expect(currentReleaseNote.value?.title).toBe('Multilingual Release Notes')
+
+    locale.value = 'ja-JP'
+
+    expect(currentReleaseNote.value?.title).toBe('リリースノートの多言語対応')
   })
 })

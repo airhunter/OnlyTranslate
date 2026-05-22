@@ -193,7 +193,7 @@ const {
   hasUnreadReleaseNotes,
   loadReleaseNotesState,
   markCurrentReleaseNotesAsSeen
-} = useReleaseNotes()
+} = useReleaseNotes(locale)
 
 // 应用版本号
 const appVersion = browser.runtime.getManifest().version;

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
+const requiredReleaseNoteLocales = ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'];
 const args = process.argv.slice(2);
 let versionArg;
 let checkZip = false;
@@ -40,17 +41,24 @@ if (releaseNotes[0]?.version !== version) {
   fail(`${version} 的用户版更新说明必须放在 releaseNotes 数组最前面`);
 }
 
-if (!note.title.trim()) {
-  fail(`${version} 的用户版更新说明缺少 title`);
-}
+for (const locale of requiredReleaseNoteLocales) {
+  const localizedNote = note.notes[locale];
+  if (!localizedNote) {
+    fail(`${version} 的用户版更新说明缺少 ${locale} 文案`);
+  }
 
-if (note.items.length < 3 || note.items.length > 5) {
-  fail(`${version} 的用户版更新说明需要 3-5 条，当前为 ${note.items.length} 条`);
-}
+  if (!localizedNote.title.trim()) {
+    fail(`${version} 的 ${locale} 用户版更新说明缺少 title`);
+  }
 
-for (const [index, item] of note.items.entries()) {
-  if (!item.trim()) {
-    fail(`${version} 的第 ${index + 1} 条用户版更新说明为空`);
+  if (localizedNote.items.length < 3 || localizedNote.items.length > 5) {
+    fail(`${version} 的 ${locale} 用户版更新说明需要 3-5 条，当前为 ${localizedNote.items.length} 条`);
+  }
+
+  for (const [index, item] of localizedNote.items.entries()) {
+    if (!item.trim()) {
+      fail(`${version} 的 ${locale} 第 ${index + 1} 条用户版更新说明为空`);
+    }
   }
 }
 
@@ -111,8 +119,7 @@ function readReleaseNotes(relativePath) {
 
     return {
       version: getStringProperty(element, 'version', index),
-      title: getStringProperty(element, 'title', index),
-      items: getStringArrayProperty(element, 'items', index)
+      notes: getLocalizedNotesProperty(element, index)
     };
   });
 }
@@ -148,6 +155,33 @@ function getStringProperty(node, propertyName, index) {
   return property.initializer.text;
 }
 
+function getLocalizedNotesProperty(node, index) {
+  const property = findProperty(node, 'notes');
+  if (!property || !ts.isObjectLiteralExpression(property.initializer)) {
+    fail(`releaseNotes 第 ${index + 1} 项缺少 notes 对象`);
+  }
+
+  const result = {};
+
+  for (const localeProperty of property.initializer.properties) {
+    if (!ts.isPropertyAssignment(localeProperty) || !ts.isObjectLiteralExpression(localeProperty.initializer)) {
+      fail(`releaseNotes 第 ${index + 1} 项的 notes 中存在无效语言项`);
+    }
+
+    const locale = getPropertyNameText(localeProperty.name);
+    if (!locale) {
+      fail(`releaseNotes 第 ${index + 1} 项的 notes 中存在无效语言键`);
+    }
+
+    result[locale] = {
+      title: getStringProperty(localeProperty.initializer, 'title', index),
+      items: getStringArrayProperty(localeProperty.initializer, 'items', index)
+    };
+  }
+
+  return result;
+}
+
 function getStringArrayProperty(node, propertyName, index) {
   const property = findProperty(node, propertyName);
   if (!property || !ts.isArrayLiteralExpression(property.initializer)) {
@@ -166,12 +200,15 @@ function getStringArrayProperty(node, propertyName, index) {
 function findProperty(node, propertyName) {
   return node.properties.find((property) => {
     if (!ts.isPropertyAssignment(property)) return false;
-    const name = property.name;
-    return (
-      (ts.isIdentifier(name) && name.text === propertyName) ||
-      (ts.isStringLiteralLike(name) && name.text === propertyName)
-    );
+    return getPropertyNameText(property.name) === propertyName;
   });
+}
+
+function getPropertyNameText(name) {
+  if (ts.isIdentifier(name) || ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) {
+    return name.text;
+  }
+  return null;
 }
 
 function findDuplicates(values) {
