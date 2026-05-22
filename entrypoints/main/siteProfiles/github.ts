@@ -6,6 +6,16 @@ export const githubProfile: SiteProfile = {
     id: 'github',
     domains: ['github.com'],
     select: (node, context) => {
+        if (isGitHubRepositorySearchChrome(node)) {
+            return { skip: true };
+        }
+
+        const repositorySearchDescription = findGitHubRepositorySearchDescription(node);
+        if (repositorySearchDescription) return repositorySearchDescription;
+
+        const searchSponsorCopy = findGitHubSearchSponsorCopy(node);
+        if (searchSponsorCopy) return searchSponsorCopy;
+
         if (shouldSkipGitHubElement(node, context.mode)) {
             return { skip: true };
         }
@@ -20,6 +30,9 @@ export const githubProfile: SiteProfile = {
 
         const comment = findMatchingElement(node, 'div.comment-body td.comment-body');
         if (comment) return comment;
+
+        const issueListTitle = findGitHubIssueListTitle(node);
+        if (issueListTitle) return issueListTitle;
 
         const issueTitle = findMatchingElement(node, 'div.js-issue-title');
         if (issueTitle) return issueTitle;
@@ -53,7 +66,34 @@ export const githubProfile: SiteProfile = {
 
         return false;
     },
+    appendTarget: (node) => {
+        return findGitHubSearchSponsorCopy(node);
+    },
     allowTarget: (node) => {
+        if (isGitHubRepositorySearchDescription(node)) {
+            return {
+                target: node,
+                role: 'summary',
+                reason: 'github-repository-search-description'
+            };
+        }
+
+        if (isGitHubSearchSponsorCopy(node)) {
+            return {
+                target: node,
+                role: 'paragraph',
+                reason: 'github-search-sponsor-copy'
+            };
+        }
+
+        if (isGitHubIssueListTitle(node)) {
+            return {
+                target: node,
+                role: 'title',
+                reason: 'github-issue-list-title'
+            };
+        }
+
         if (!isGitHubMarkdownReadingUnit(node)) return false;
 
         return {
@@ -73,6 +113,11 @@ export const githubProfile: SiteProfile = {
     }
 };
 
+const GITHUB_ISSUE_LIST_TITLE_SELECTOR = [
+    'a[href*="/issues/"]',
+    'a[href*="/pull/"]'
+].join(', ');
+
 function isGitHubMarkdownReadingUnit(node: Element): boolean {
     if (!node.closest('.markdown-body')) return false;
     if (node.closest('pre, code, table.highlight, table.diff-table')) return false;
@@ -85,9 +130,185 @@ function isGitHubMarkdownReadingUnit(node: Element): boolean {
 }
 
 function shouldSkipGitHubElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {
+    if (isGitHubRepositorySearchDescription(node)) return false;
+    if (isGitHubSearchSponsorCopy(node)) return false;
+    if (isGitHubIssueListTitle(node)) return false;
+    if (isGitHubRepositorySearchChrome(node)) return true;
     if (shouldSkipGitHubSafetyElement(node)) return true;
     if (mode === 'full') return false;
     return shouldSkipGitHubSmartOnlyElement(node);
+}
+
+function findGitHubRepositorySearchDescription(node: Element): Element | false {
+    let current: Element | null = node;
+    while (current) {
+        if (isGitHubRepositorySearchDescription(current)) return current;
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function isGitHubRepositorySearchDescription(node: Element): boolean {
+    if (!isGitHubRepositorySearchPage()) return false;
+    if (node.matches?.('a, button, summary, nav, header, footer, aside')) return false;
+    if (node.closest('nav, header, footer, aside, button, summary, [role="button"]')) return false;
+    if (node.closest('.topic-tag, .Label, .IssueLabel, [class*="label"], [class*="topic"], [class*="TokenList-module"]')) return false;
+
+    const tag = node.tagName.toLowerCase();
+    if (tag !== 'span') return false;
+    if (!node.closest('[class*="Content-module__Content"]')) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    if (text.length < 8 || !/[A-Za-z]/.test(text)) return false;
+    if (/^(updated|star|stars|fork|forks|sponsor|sort by|filter by)\b/i.test(text)) return false;
+
+    const resultContainer = findGitHubRepositorySearchResultContainer(node);
+    if (!resultContainer) return false;
+
+    const repoLink = findRepositorySearchResultLink(resultContainer);
+    if (!repoLink) return false;
+    if (repoLink.contains(node)) return false;
+
+    const nodeLinks = Array.from(node.querySelectorAll('a'));
+    if (nodeLinks.length > 0) return false;
+
+    return true;
+}
+
+function isGitHubRepositorySearchChrome(node: Element): boolean {
+    if (!isGitHubRepositorySearchPage()) return false;
+    if (isGitHubRepositorySearchDescription(node) || isGitHubSearchSponsorCopy(node)) return false;
+    if (isInsideGitHubRepositorySearchResult(node)) return true;
+
+    if (node.closest('nav, header, footer, form, [data-testid="facets-pane"], [data-testid="filter-groups"], [aria-labelledby="search-filters-title"], [data-testid="search-sub-header"], [data-testid="results-list"]')) return true;
+    if (hasClassKeyword(node, 'sidebar')
+        || hasClosestClassKeyword(node, 'sidebar')
+        || hasClassKeyword(node, 'facets')
+        || hasClosestClassKeyword(node, 'facets')
+        || hasClassKeyword(node, 'minitip')
+        || hasClosestClassKeyword(node, 'minitip')
+        || hasClassKeyword(node, 'secondarysuggestions')
+        || hasClosestClassKeyword(node, 'secondarysuggestions')
+        || hasClassKeyword(node, 'searchsubheader')
+        || hasClosestClassKeyword(node, 'searchsubheader')
+        || hasClassKeyword(node, 'typemobiledropdown')
+        || hasClosestClassKeyword(node, 'typemobiledropdown')) {
+        return true;
+    }
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    if (/^(filter by|filter:|sort by|repositories|code|issues|pull requests|discussions|users|languages|advanced)$/i.test(text)) {
+        return true;
+    }
+    if (/^\d+(\.\d+)?k?\s+results/i.test(text)) return true;
+
+    return false;
+}
+
+function findGitHubSearchSponsorCopy(node: Element): HTMLElement | false {
+    let current: Element | null = node;
+    while (current) {
+        if (isGitHubSearchSponsorCopy(current)) return current as HTMLElement;
+        current = current.parentElement;
+    }
+
+    const candidates = Array.from(node.querySelectorAll?.<HTMLElement>('p, span, div') ?? []);
+    const sponsorCopy = candidates.find(candidate => isGitHubSearchSponsorCopy(candidate));
+    if (sponsorCopy) return sponsorCopy;
+
+    return false;
+}
+
+function isGitHubSearchSponsorCopy(node: Element): boolean {
+    if (!isGitHubRepositorySearchPage()) return false;
+    if (!['p', 'span', 'div'].includes(node.tagName.toLowerCase())) return false;
+    if (!hasClassKeyword(node, 'marketingsuggestion-module__description') && !node.closest('[class*="MarketingSuggestion-module__container"]')) return false;
+    if (!findGitHubSearchSponsorCard(node)) return false;
+    if (node.querySelector('h1, h2, h3, a, button')) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    return text.length >= 40
+        && /open source/i.test(text)
+        && /contributors|recognition|everyone/i.test(text);
+}
+
+function findGitHubSearchSponsorCard(node: Element): Element | false {
+    let current: Element | null = node;
+    while (current && current !== document.body) {
+        if (!hasClassKeyword(current, 'marketingsuggestion-module__container')) {
+            current = current.parentElement;
+            continue;
+        }
+
+        const heading = current.querySelector?.('h2, h3');
+        const headingText = heading?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+        if (/sponsor open source projects/i.test(headingText)) return current;
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function isGitHubRepositorySearchPage(): boolean {
+    try {
+        const url = new URL(location.href);
+        return url.hostname === 'github.com'
+            && url.pathname === '/search'
+            && url.searchParams.get('type') === 'repositories';
+    } catch (_) {
+        return false;
+    }
+}
+
+function findGitHubRepositorySearchResultContainer(node: Element): Element | false {
+    return node.closest('[class*="Result-module__Result"], [class*="Repositories-module__resultRow"]') ?? false;
+}
+
+function isInsideGitHubRepositorySearchResult(node: Element): boolean {
+    return Boolean(findGitHubRepositorySearchResultContainer(node));
+}
+
+function findRepositorySearchResultLink(container: Element): HTMLAnchorElement | undefined {
+    return Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href]'))
+        .find(link => isRepositorySearchResultHref(link.getAttribute('href') ?? ''));
+}
+
+function isRepositorySearchResultHref(href: string): boolean {
+    return /^\/[^/\s]+\/[^/\s]+$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+$/.test(href);
+}
+
+function hasClassKeyword(node: Element, keyword: string): boolean {
+    return typeof node.className === 'string'
+        && node.className.toLowerCase().includes(keyword);
+}
+
+function hasClosestClassKeyword(node: Element, keyword: string): boolean {
+    let current = node.parentElement;
+    while (current) {
+        if (hasClassKeyword(current, keyword)) return true;
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function findGitHubIssueListTitle(node: Element): Element | false {
+    const candidate = findMatchingElement(node, GITHUB_ISSUE_LIST_TITLE_SELECTOR);
+    return candidate && isGitHubIssueListTitle(candidate) ? candidate : false;
+}
+
+function isGitHubIssueListTitle(node: Element): boolean {
+    if (!node.matches?.(GITHUB_ISSUE_LIST_TITLE_SELECTOR)) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    if (text.length < 8 || !/[A-Za-z]/.test(text)) return false;
+    if (node.closest('nav, header, footer, aside, form, button, summary')) return false;
+
+    const href = node.getAttribute('href') ?? '';
+    return /^\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+([/?#].*)?$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+([/?#].*)?$/.test(href);
 }
 
 function shouldSkipGitHubSafetyElement(node: Element): boolean {

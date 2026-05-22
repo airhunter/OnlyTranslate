@@ -24,6 +24,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { collectDynamicTranslationNodes, handleBilingualTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { translateText } from '@/entrypoints/utils/translateApi'
 
 describe('resolveAutoTranslateTarget', () => {
@@ -315,6 +316,229 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('news-2')
     expect(ids).toContain('news-3')
     expect(ids).not.toContain('news-list')
+  })
+
+  it('keeps GitHub issue list titles while skipping list metadata', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/alchaincyf/huashu-design/issues'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="js-check-all-container">
+          <div class="js-issue-row Box-row Box-row--focus-gray p-0">
+            <div class="d-flex Box-row--drag-hide position-relative">
+              <div class="flex-auto min-width-0 p-2 pr-3 pr-md-2">
+                <a id="issue-title-1" class="Link--primary v-align-middle no-underline h4 js-navigation-open markdown-title" href="/alchaincyf/huashu-design/issues/12">
+                  Refine token panel spacing on narrow screens
+                </a>
+                <span id="issue-label" class="IssueLabel color-bg-accent-emphasis">enhancement</span>
+                <div class="opened-by">
+                  #12 opened 2 days ago by alchaincyf
+                </div>
+              </div>
+            </div>
+          </div>
+          <li>
+            <h3>
+              <a id="issue-title-2" href="/alchaincyf/huashu-design/issues/24">
+                [SUGGESTION] Add Community Translation Links Section in README
+              </a>
+            </h3>
+            <p>Status: Open.</p>
+          </li>
+          <li>
+            <h3>
+              <a id="issue-title-3" href="https://github.com/alchaincyf/huashu-design/issues/23">
+                deck_index.html: arrow keys break after clicking inside iframe
+              </a>
+            </h3>
+            <p>
+              #23 opened on May 7, 2026 by jaluova
+            </p>
+          </li>
+          <nav aria-label="Repository">
+            <a id="repo-issues-tab" href="/alchaincyf/huashu-design/issues">
+              Issues 3
+            </a>
+          </nav>
+          <div>
+            <div>
+              <a id="bare-issues-link" href="/alchaincyf/huashu-design/issues">
+                Issues
+              </a>
+            </div>
+          </div>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('issue-title-1')
+    expect(ids).toContain('issue-title-2')
+    expect(ids).toContain('issue-title-3')
+    expect(ids).not.toContain('issue-label')
+    expect(ids).not.toContain('repo-issues-tab')
+    expect(ids).not.toContain('bare-issues-link')
+    expect(target.grabOptions?.siteCompatMode).toBe('smart')
+  })
+
+  it('keeps GitHub repository search result descriptions in smart mode', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/search?q=openclaw&type=repositories'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div data-testid="facets-pane">
+          <ul data-testid="filter-groups">
+            <li>
+              <a id="repositories-filter" href="https://github.com/search?q=openclaw&amp;type=repositories" data-testid="nav-item-repositories">
+                <span>Repositories</span>
+                <span>63.5k</span>
+              </a>
+            </li>
+            <li>
+              <a id="issues-filter" href="https://github.com/search?q=openclaw&amp;type=issues" data-testid="nav-item-issues">
+                <span>Issues</span>
+                <span>107k</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div data-testid="search-sub-header">
+          <span id="result-count">63.5k results</span>
+          <button id="sort">Sort by: Best match</button>
+        </div>
+        <div data-testid="results-list" class="List-module__List__fNMbL">
+          <div class="Result-module__Result__Up5vk">
+            <div class="Repositories-module__resultRow__OxgKG">
+              <div class="Repositories-module__resultContent___BS2W">
+                <h3>
+                  <div class="search-title Header-module__title__QUX7e">
+                    <a href="/openclaw/openclaw">openclaw/openclaw</a>
+                  </div>
+                </h3>
+                <div class="Content-module__Content__mHmep">
+                  <span id="repo-description-1" class="search-match SearchMatchText-module__searchMatchText__n6aQc">
+                    Your own personal AI assistant. Any OS. Any Platform. The lobster way.
+                  </span>
+                </div>
+                <div class="TokenList-module__tokenList__zbitn">
+                  <a id="topic" class="TopicLabel-module__topicLabel__QbTaK" href="/topics/assistant">assistant</a>
+                </div>
+                <span id="stars">374k</span>
+              </div>
+              <div class="Repositories-module__actionsColumn__LdieL">
+                <a>Star</a>
+              </div>
+            </div>
+          </div>
+          <div class="Result-module__Result__Up5vk">
+            <div class="Repositories-module__resultRow__OxgKG">
+              <div class="Repositories-module__resultContent___BS2W">
+                <h3>
+                  <div class="search-title Header-module__title__QUX7e">
+                    <a href="/VoltAgent/awesome-openclaw-skills">VoltAgent/awesome-openclaw-skills</a>
+                  </div>
+                </h3>
+                <div class="Content-module__Content__mHmep">
+                  <span id="repo-description-2" class="search-match SearchMatchText-module__searchMatchText__n6aQc">
+                    The awesome collection of OpenClaw skills. 5,400+ skills filtered and categorized from the official OpenClaw Skills Registry.
+                  </span>
+                </div>
+              </div>
+              <div class="Repositories-module__actionsColumn__LdieL">
+                <a>Star</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('repo-description-1')
+    expect(ids).toContain('repo-description-2')
+    expect(ids).not.toContain('topic')
+    expect(ids).not.toContain('stars')
+    expect(ids).not.toContain('repositories-filter')
+    expect(ids).not.toContain('issues-filter')
+    expect(ids).not.toContain('result-count')
+    expect(ids).not.toContain('sort')
+    expect(target.grabOptions?.siteCompatMode).toBe('smart')
+  })
+
+  it('appends GitHub search sponsor translations beside the sponsor paragraph', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/search?q=openclaw&type=repositories'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div class="Search-module__rightSidebar__S4cSw">
+        <div id="sponsor-card" class="MarketingSuggestion-module__container__vEhi4">
+          <h2 class="MarketingSuggestion-module__heading__R5sp4">Sponsor open source projects you depend on</h2>
+          <span id="sponsor-copy" class="MarketingSuggestion-module__description__X3VPv">
+            Contributors are working behind the scenes to make open source better for everyone--give them the help and recognition they deserve.
+          </span>
+          <a href="/sponsors/explore">Explore sponsorable projects</a>
+        </div>
+      </div>
+    `
+
+    const card = document.querySelector<HTMLElement>('#sponsor-card')!
+    const paragraph = document.querySelector<HTMLElement>('#sponsor-copy')!
+    const appendTarget = getBilingualAppendTarget(card, {
+      mode: 'smart',
+      scope: 'smart',
+      contentRoot: document.body
+    })
+
+    expect(appendTarget).toBe(paragraph)
+  })
+
+  it('keeps GitHub search sidebar translations attached to the sponsor copy', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/search?q=openclaw&type=repositories'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div id="right-column" class="Search-module__rightSidebar__S4cSw">
+        <div class="SecondarySuggestions-module__container__SiYxU">
+          <div class="MarketingSuggestion-module__container__vEhi4">
+            <h2 class="MarketingSuggestion-module__heading__R5sp4">Sponsor open source projects you depend on</h2>
+            <span id="sponsor-copy" class="MarketingSuggestion-module__description__X3VPv">
+            Contributors are working behind the scenes to make open source better for everyone--give them the help and recognition they deserve.
+            </span>
+            <a href="/sponsors/explore">Explore sponsorable projects</a>
+          </div>
+          <div id="protip" class="MiniTip-module__container__VcJrj">
+            ProTip! Press the / key to activate the search input again and adjust your query.
+          </div>
+        </div>
+      </div>
+    `
+
+    const sidebar = document.querySelector<HTMLElement>('#right-column')!
+    const copy = document.querySelector<HTMLElement>('#sponsor-copy')!
+    const appendTarget = getBilingualAppendTarget(sidebar, {
+      mode: 'smart',
+      scope: 'smart',
+      contentRoot: document.body
+    })
+
+    expect(appendTarget).toBe(copy)
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('sponsor-copy')
+    expect(ids).not.toContain('right-column')
+    expect(ids).not.toContain('protip')
   })
 
   it('supplements TDS related article card titles and descriptions outside the article root', () => {
