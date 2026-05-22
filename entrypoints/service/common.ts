@@ -26,13 +26,11 @@ async function common(message: any) {
         let url = config.proxy[config.service] || urls[config.service];
         
         // 从 customProviders 动态获取
-        if (config.service.startsWith('custom_') || config.service === 'custom') {
+        if (config.service.startsWith('custom_')) {
             const provider = config.customProviders?.find(p => p.id === config.service);
             if (provider) {
                 token = provider.token || "";
                 url = provider.url;
-            } else if (config.service === 'custom') {
-                url = config.custom;
             }
             url = normalizeOpenAICompatibleUrl(url);
         }

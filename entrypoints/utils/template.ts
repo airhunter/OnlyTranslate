@@ -8,7 +8,7 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
     let model = config.model[config.service];
     let customModel = config.customModel[config.service];
     
-    if (config.service.startsWith('custom_') || config.service === 'custom') {
+    if (config.service.startsWith('custom_')) {
         const provider = config.customProviders?.find(p => p.id === config.service);
         if (provider) {
             model = provider.model;

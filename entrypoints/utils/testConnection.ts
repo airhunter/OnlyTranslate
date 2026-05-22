@@ -93,19 +93,17 @@ async function testAI(
         }
     }
 
-    if (service.startsWith('custom_') || service === 'custom') {
+    if (service.startsWith('custom_')) {
         const provider = config.customProviders?.find(p => p.id === service);
         if (provider) {
             token = provider.token || "";
             url = provider.url;
             currentModel = provider.model === "自定义模型" ? provider.customModel : provider.model;
-        } else if (service === 'custom') {
-            url = config.proxy[service];
         }
     }
 
     // 除了 custom 以外，一般需要 token
-    if (!token && !service.startsWith('custom_') && service !== services.custom && service !== services.newapi) {
+    if (!token && !service.startsWith('custom_') && service !== services.newapi) {
       return { success: false, message: "请先配置访问令牌" };
     }
 

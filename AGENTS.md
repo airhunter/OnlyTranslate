@@ -61,6 +61,7 @@ Before changing these rules:
 
 - Discuss the proposed approach with the user first.
 - Explain the expected matching path, affected pages, fallback behavior, and regression risks.
+- Do not guess a website's DOM structure; if the structure is unclear, ask the user for the relevant DOM or page details first.
 - Do not change generic detection/filtering rules just to fix one site-specific issue.
 - Prefer site profiles for clearly site-specific DOM behavior.
 - Add focused tests that distinguish generic structures from site-specific structures.

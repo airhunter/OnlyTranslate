@@ -21,19 +21,6 @@ async function loadConfig() {
         if (typeof value === 'string' && value.trim().length > 0) {
             const parsedConfig = JSON.parse(value);
             if (isConfigObjectValid(parsedConfig)) {
-                // 兼容老版本无缝升级：如果存在旧的 custom 且 customProviders 未设置或为空
-                if (parsedConfig.custom && (!parsedConfig.customProviders || parsedConfig.customProviders.length === 0)) {
-                    parsedConfig.customProviders = [{
-                        id: 'custom',
-                        name: '默认自定义',
-                        url: parsedConfig.custom,
-                        token: (parsedConfig.token && parsedConfig.token['custom']) || '',
-                        model: (parsedConfig.model && parsedConfig.model['custom']) || 'gpt-3.5-turbo',
-                        customModel: (parsedConfig.customModel && parsedConfig.customModel['custom']) || ''
-                    }];
-                    // 标记已经迁移过，防止重复添加，同时也可以把旧的 custom 留着作向下兼容
-                }
-                
                 // 兼容动态面板升级：找出所有配置过的服务，初始化 activeBuiltinProviders
                 if (!parsedConfig.activeBuiltinProviders || parsedConfig.activeBuiltinProviders.length === 0) {
                     const activeSet = new Set<string>();

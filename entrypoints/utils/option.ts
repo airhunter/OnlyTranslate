@@ -33,7 +33,6 @@ export const servicesType = {
         services.zhipu,
         services.moonshot,
         services.claude,
-        services.custom,
         services.deepseek,
         services.minimax,
         services.jieyue,
@@ -52,7 +51,6 @@ export const servicesType = {
         services.deepseek,
         services.minimax,
         services.jieyue,
-        services.custom,
         services.siliconCloud,
         services.openrouter,
         services.grok,
@@ -64,7 +62,6 @@ export const servicesType = {
         services.zhipu,
         services.moonshot,
         services.claude,
-        services.custom,
         services.deepseek,
         services.minimax,
         services.jieyue,
@@ -88,16 +85,15 @@ export const servicesType = {
         services.grok,
     ]),
     useCustomUrl: new Set<string>([
-        services.custom,
         services.newapi,
     ]),
 
     isMachine: (service: string) => servicesType.machine.has(service),
-    isAI: (service: string) => servicesType.AI.has(service) || service.startsWith('custom_') || service === 'custom',
-    isUseToken: (service: string) => servicesType.useToken.has(service) || service.startsWith('custom_') || service === 'custom',
+    isAI: (service: string) => servicesType.AI.has(service) || service.startsWith('custom_'),
+    isUseToken: (service: string) => servicesType.useToken.has(service) || service.startsWith('custom_'),
     isUseProxy: (service: string) => servicesType.useProxy.has(service),
-    isUseModel: (service: string) => servicesType.useModel.has(service) || service.startsWith('custom_') || service === 'custom',
-    isCustom: (service: string) => service === services.custom || service.startsWith('custom_'),
+    isUseModel: (service: string) => servicesType.useModel.has(service) || service.startsWith('custom_'),
+    isCustom: (service: string) => service.startsWith('custom_'),
     isNewApi: (service: string) => service === services.newapi,
     isUseCustomUrl: (service: string) => servicesType.useCustomUrl.has(service) || service.startsWith('custom_'),
 };
@@ -110,7 +106,6 @@ export const models = new Map<string, Array<string>>([
     [services.zhipu, ["glm-4.5", "GLM-4-Flash", "glm-4-plus", "glm-4", "glm-4v", customModelString]],
     [services.moonshot, ["kimi-k2-0711-preview", "kimi-k2-turbo-preview", "moonshot-v1-auto", "moonshot-v1-8k", "moonshot-v1-32k", customModelString]],
     [services.claude, ["claude-sonnet-4-0", "claude-opus-4-1", "claude-3-5-haiku-latest"]],
-    [services.custom, ["gpt-5-nano", "gpt-5-mini", "gpt5", "gpt-4o", "gemma:7b", "llama2:7b", "mistral:7b", customModelString]],
     [services.deepseek, ["deepseek-chat", "deepseek-reasoner", customModelString]],
     [services.minimax, ["chatcompletion_v2"]],
     [services.jieyue, ["step-1-8k", customModelString]],
@@ -173,7 +168,7 @@ export const options = {
         {value: "custom", label: "自定义快捷键", labelKey: "option.hotkeys.custom"},
     ],
     services: [
-        {value: "recommended", label: "推荐", disabled: true},
+        {value: "builtin", label: "内置服务", disabled: true},
         {value: services.microsoft, label: "微软翻译", hint: "免配置，开箱即用"},
         {value: services.google, label: "Google 翻译", hint: "免配置，适合双语对照"},
         {value: services.chromeTranslator, label: "Chrome 内置 AI 翻译", hint: "本地模型，无需 API Key"},
@@ -190,7 +185,6 @@ export const options = {
         {value: services.siliconCloud, label: "SiliconCloud", hint: "模型聚合平台，需 API Key"},
         {value: services.grok, label: "Grok", hint: "xAI，需 API Key"},
         {value: "advanced", label: "高级接入", disabled: true},
-        {value: services.custom, label: "自定义接口 (兼发配下网关)", hint: "兼容 OpenAI 格式接口"},
     ],
     display: [
         {value: 0, label: "仅译文", labelKey: "option.display.translationOnly"},
@@ -315,7 +309,7 @@ export function isServiceConfigured(service: string, config: Config): boolean {
         if (customProvider) {
             return !!customProvider.url; // 只要有 URL 就算配置好了
         }
-        return !!config.custom; // 回退判断
+        return false;
     }
 
     if (servicesType.isUseToken(service)) {

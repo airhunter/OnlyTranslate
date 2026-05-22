@@ -46,13 +46,13 @@ export function mountNewApiComponent() {
          else finalUrl += '/v1/chat/completions';
     }
 
-    config.custom = finalUrl;
-    config.token[services.custom] = apiKey;
-    config.service = services.custom;
+    config.newApiUrl = finalUrl;
+    config.token[services.newapi] = apiKey;
+    config.service = services.newapi;
     
     if (model && model !== '') {
-      config.model[services.custom] = customModelString;
-      config.customModel[services.custom] = model;
+      config.model[services.newapi] = customModelString;
+      config.customModel[services.newapi] = model;
     }
 
 

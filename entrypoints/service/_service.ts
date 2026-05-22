@@ -1,7 +1,6 @@
 import {services} from "../utils/option";
 import microsoft from "./microsoft";
 import deepl from "./deepl";
-import custom from "./custom";
 import zhipu from "./zhipu";
 import gemini from "./gemini";
 import google from "./google";
@@ -21,7 +20,6 @@ export const _service: ServiceMap = {
     [services.google]: google,
     [services.chromeTranslator]: chromeTranslator,
 
-    [services.custom]: custom,
     [services.zhipu]: zhipu,
     [services.gemini]: gemini,
     [services.claude]: claude,

@@ -343,7 +343,7 @@ const myServices = computed(() => {
   }
 
   // 如果当前选中的服务不在列表里，把它也拉进来（容错）
-  if (config.value.service && !config.value.service.startsWith('custom_') && config.value.service !== services.custom) {
+  if (config.value.service && !config.value.service.startsWith('custom_')) {
     if (!result.find(r => r.id === config.value.service)) {
        const preset = allPresets.find(p => p.value === config.value.service);
        if (preset) {
@@ -562,7 +562,6 @@ const handleTestConnection = async (service: string) => {
       customProviders: config.value.customProviders,
       proxy: {
         ...config.value.proxy,
-        [services.custom]: config.value.custom,
         [services.newapi]: config.value.newApiUrl,
       }
     })
