@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/airhunter/OnlyTranslate/compare/v0.5.0...v0.5.1) (2026-05-22)
+
+
+### Features
+
+* **release:** 支持更新说明多语言 ([6a87123](https://github.com/airhunter/OnlyTranslate/commit/6a871234d4dc93f9076fa891a7442658ff660924))
+
 # [0.5.0](https://github.com/airhunter/OnlyTranslate/compare/v0.4.0...v0.5.0) (2026-05-22)
 
 
