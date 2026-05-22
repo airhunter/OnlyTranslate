@@ -11,6 +11,17 @@ export const RELEASE_NOTES_INIT_KEY = 'local:releaseNotesInitialized';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.0',
+    title: 'GitHub 页面翻译与服务选择优化',
+    items: [
+      '修复 GitHub 搜索结果页仓库描述漏翻，同时避免筛选栏、排序按钮和结果元信息被误翻译。',
+      '修复 GitHub Issue 和 Pull Request 列表标题漏翻，列表标签和元信息会继续保持原样。',
+      '优化 GitHub 搜索页右侧赞助提示的译文位置，避免译文出现在 ProTip 等无关区域。',
+      '精简 Popup 翻译服务列表，移除旧的固定自定义接口入口，并将分组文案改得更清晰。',
+      '修正 New API 一键填充逻辑，配置会直接写入 New API 服务，不再走旧自定义接口。'
+    ]
+  },
+  {
     version: '0.4.0',
     title: '识文内容结构优化',
     items: [
