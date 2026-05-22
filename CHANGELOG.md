@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.5.0](https://github.com/airhunter/OnlyTranslate/compare/v0.4.0...v0.5.0) (2026-05-22)
+
+
+### Bug Fixes
+
+* **content:** 修复 CNN 标题误判广告 ([b4aece5](https://github.com/airhunter/OnlyTranslate/commit/b4aece5442b7b01f1131bceb6480eb2919788e2c))
+* **github:** 修复搜索页翻译目标定位 ([568e31b](https://github.com/airhunter/OnlyTranslate/commit/568e31b7b8fb497f7ee77dbfb4138040b243597a))
+
+
+### Features
+
+* **content:** 引入翻译目标决策层 ([dd4a69a](https://github.com/airhunter/OnlyTranslate/commit/dd4a69a4946986735818eef004abc6687a5d0bcf))
+* **ui:** 支持界面国际化 ([10d1d47](https://github.com/airhunter/OnlyTranslate/commit/10d1d470802092e3523237df4e435a758141b2c0))
+
 # [0.4.0](https://github.com/airhunter/OnlyTranslate/compare/v0.3.1...v0.4.0) (2026-05-19)
 
 
