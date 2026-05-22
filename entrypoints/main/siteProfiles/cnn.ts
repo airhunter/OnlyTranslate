@@ -63,11 +63,20 @@ export const cnnProfile: SiteProfile = {
 
         return false;
     },
+    supplemental: (root, context) => {
+        if (context.mode !== 'smart') return [];
+
+        return Array.from(root.querySelectorAll<Element>(CNN_ARTICLE_SUPPLEMENTAL_SELECTOR))
+            .map(getPreferredCnnTitleTarget)
+            .filter((node, index, list) => list.indexOf(node) === index)
+            .filter(node => hasReadableCnnText(node) && !shouldSkipCnnTarget(node));
+    },
     allowTarget: (node) => {
         const title = findMatchingElement(node, CNN_TITLE_SELECTOR);
-        if (title && hasReadableCnnText(title)) {
+        const titleTarget = title ? getPreferredCnnTitleTarget(title) : false;
+        if (titleTarget && hasReadableCnnText(titleTarget)) {
             return {
-                target: title,
+                target: titleTarget,
                 role: 'title',
                 reason: 'cnn-title-or-headline'
             };
@@ -98,13 +107,18 @@ export const cnnProfile: SiteProfile = {
 const CNN_TITLE_SELECTOR = [
     '.headline_live-story__text',
     '.live-story-post__headline',
+    'main h1',
+    '[role="main"] h1',
+    'article h1',
     'h1.headline__text',
     'h2.headline__text',
     '.headline__text',
-    '.container__headline',
     '.container__headline-text',
-    '.card__headline',
     '.card__headline-text',
+    '[data-editable="headline"]',
+    '.container__title_url-text[data-editable="title"]',
+    '.container__headline',
+    '.card__headline',
     '[class*="container_"][class*="headline"]',
     '[class*="card_"][class*="headline"]',
     '[data-component-name*="headline"]',
@@ -115,8 +129,33 @@ const CNN_TITLE_SELECTOR = [
     '.zone__headline',
     '[class*="hero"] [class*="headline"]',
     '[class*="lead"] [class*="headline"]',
-    '.container__title_url-text[data-editable="title"]',
     '[class*="container_"][class*="title_url-text"][data-editable="title"]',
+    '[data-component-name="headline"]'
+].join(', ');
+
+const CNN_TITLE_TEXT_SELECTOR = [
+    '.headline_live-story__text',
+    '.live-story-post__headline',
+    'main h1',
+    '[role="main"] h1',
+    'article h1',
+    'h1.headline__text',
+    'h2.headline__text',
+    '.headline__text',
+    '.container__headline-text',
+    '.card__headline-text',
+    '[data-editable="headline"]',
+    '.container__title_url-text[data-editable="title"]'
+].join(', ');
+
+const CNN_ARTICLE_SUPPLEMENTAL_SELECTOR = [
+    '.headline_live-story__text',
+    '.live-story-post__headline',
+    'main h1',
+    '[role="main"] h1',
+    'article h1',
+    'h1.headline__text',
+    '.headline__text',
     '[data-editable="headline"]',
     '[data-component-name="headline"]'
 ].join(', ');
@@ -135,11 +174,63 @@ const CNN_SUMMARY_SELECTOR = [
 
 function shouldSkipCnnTarget(node: Element): boolean {
     if (node.closest('nav, header, footer, form, button, [role="navigation"], [role="toolbar"]')) return true;
-    if (node.closest('[class*="ad"], [id*="ad"], [data-component-name*="ad"], .card__label-container')) return true;
+    if (isCnnAdElement(node) || node.closest('.card__label-container')) return true;
     if (node.matches('.card__label, .card__label *, .container__video-duration, .container__text-label, .image__credit')) return true;
 
     const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     return /^(ad|advertisement|video|show all|\d+:\d+|watch|listen|sign in)$/i.test(text);
+}
+
+function getPreferredCnnTitleTarget(node: Element): Element {
+    if (node.matches(CNN_TITLE_TEXT_SELECTOR)) return node;
+
+    const textNode = node.querySelector<Element>(CNN_TITLE_TEXT_SELECTOR);
+    return textNode ?? node;
+}
+
+function isCnnAdElement(node: Element): boolean {
+    return hasCnnAdDataAttribute(node)
+        || hasCnnAdAncestorToken(node);
+}
+
+function hasCnnAdDataAttribute(node: Element): boolean {
+    let current: Element | null = node;
+    while (current) {
+        if (
+            current.hasAttribute('data-ad')
+            || current.hasAttribute('data-ad-slot')
+            || current.hasAttribute('data-ad-id')
+            || hasCnnAdTokenValue(current.getAttribute('data-component-name') ?? '')
+        ) {
+            return true;
+        }
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function hasCnnAdAncestorToken(node: Element): boolean {
+    let current: Element | null = node;
+    while (current) {
+        if (hasCnnAdToken(current)) return true;
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function hasCnnAdToken(node: Element): boolean {
+    const tokens = [
+        typeof node.className === 'string' ? node.className : '',
+        node.id
+    ].join(' ');
+
+    return hasCnnAdTokenValue(tokens);
+}
+
+function hasCnnAdTokenValue(value: string): boolean {
+    return /(?:^|[\s_-])(ad|ads|advert|advertisement|advertising|sponsor|sponsored)(?:$|[\s_-])/i.test(value);
 }
 
 function hasReadableCnnText(node: Element): boolean {

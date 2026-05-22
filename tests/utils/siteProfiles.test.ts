@@ -24,6 +24,10 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['towardsdatascience.com']).toBeTypeOf('function')
   })
 
+  it('registers CNN supplemental profile', () => {
+    expect(supplementalCompatFn['cnn.com']).toBeTypeOf('function')
+  })
+
   it('registers Asterisk bilingual append profile', () => {
     expect(afterBilingualAppendCompatFn['asteriskmag.com']).toBeTypeOf('function')
   })
@@ -166,5 +170,29 @@ describe('site profile registry', () => {
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#live-headline')!, { mode: 'smart' })).toBe(document.querySelector('#live-headline'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#live-paragraph')!, { mode: 'smart' })).toBe(document.querySelector('#live-paragraph'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#left-rail')!, { mode: 'smart' })).toEqual({ skip: true })
+  })
+
+  it('supplements CNN article page headlines that sit outside the selected article body', () => {
+    document.body.innerHTML = `
+      <main>
+        <section class="article-header">
+          <h1 id="article-title" class="headline__text">
+            Iran's military is rebuilding much faster than expected
+          </h1>
+        </section>
+        <article id="article-body">
+          <p>Iran has moved quickly to restore parts of its military network after weeks of strikes.</p>
+          <p>Officials say the pace of rebuilding has surprised analysts and regional allies.</p>
+        </article>
+        <div id="ad-wrapper" class="container__ads">
+          <h1 id="ad-title">Advertisement</h1>
+        </div>
+      </main>
+    `
+
+    const targets = supplementalCompatFn['cnn.com']?.(document.body, { mode: 'smart' }) ?? []
+
+    expect(targets).toContain(document.querySelector('#article-title'))
+    expect(targets).not.toContain(document.querySelector('#ad-title'))
   })
 })
