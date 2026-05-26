@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.2',
+    notes: {
+      'zh-CN': {
+        title: '页面翻译识别与排版修复',
+        items: [
+          '修复部分文章正文段落被误判为作者信息而漏翻的问题，包含链接的长段落也能正常进入翻译范围。',
+          '优化代码、键盘按键和终端示例等内联格式，双语显示时会尽量保留原页面样式。',
+          '改进 Claude 学习页等文档页面的侧栏内容识别，比较卡片和详情区不再容易漏翻。',
+          '修复划词翻译在服务可用时仍提示访问令牌未配置的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'Page Translation Detection and Layout Fixes',
+        items: [
+          'Fixed article paragraphs being mistaken for author metadata, so long linked paragraphs are included in translation again.',
+          'Improved inline formatting preservation for code, keyboard keys, and terminal examples in bilingual output.',
+          'Improved document-page side content detection, including comparison cards and detail sections on Claude learning pages.',
+          'Fixed selection translation showing an access-token warning even when the active translation service was usable.'
+        ]
+      },
+      'zh-TW': {
+        title: '頁面翻譯識別與排版修復',
+        items: [
+          '修復部分文章正文段落被誤判為作者資訊而漏翻的問題，包含連結的長段落也能正常進入翻譯範圍。',
+          '優化程式碼、鍵盤按鍵和終端範例等內嵌格式，雙語顯示時會盡量保留原頁面樣式。',
+          '改進 Claude 學習頁等文件頁面的側欄內容識別，比較卡片和詳細資訊區不再容易漏翻。',
+          '修復劃詞翻譯在服務可用時仍提示存取權杖未設定的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'ページ翻訳の検出とレイアウト修正',
+        items: [
+          '記事本文の段落が著者情報として誤判定され、一部翻訳されない問題を修正しました。リンクを含む長い段落も翻訳対象になります。',
+          'コード、キーボード入力、端末例などのインライン形式を改善し、バイリンガル表示でも元の見た目をできるだけ維持します。',
+          'Claude 学習ページなどのドキュメントページで、比較カードや詳細セクションの検出を改善しました。',
+          '利用可能な翻訳サービスがある場合でも、選択翻訳でアクセストークン未設定の警告が出る問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.1',
     notes: {
       'zh-CN': {
