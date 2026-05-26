@@ -1,6 +1,7 @@
 import { asteriskProfile } from './asterisk';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { cnnProfile } from './cnn';
+import { decryptProfile } from './decrypt';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { mediumProfile } from './medium';
@@ -40,7 +41,8 @@ export const siteProfiles: SiteProfile[] = [
     redditProfile,
     hackerNewsProfile,
     asteriskProfile,
-    claudeNagdyProfile
+    claudeNagdyProfile,
+    decryptProfile
 ];
 
 export const siteProfileSelectFns: SelectCompatFn = siteProfiles.reduce<SelectCompatFn>((map, profile) => {

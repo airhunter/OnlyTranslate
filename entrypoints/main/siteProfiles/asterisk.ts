@@ -7,6 +7,15 @@ let footnoteRelayoutTimer: number | undefined;
 export const asteriskProfile: SiteProfile = {
     id: 'asterisk',
     domains: ['asteriskmag.com'],
+    skipTarget: (node) => {
+        if (!isAsteriskProgressNavigation(node)) return false;
+
+        return {
+            policy: 'hard-skip',
+            role: 'navigation',
+            reason: 'asterisk-progress-navigation'
+        };
+    },
     afterBilingualAppend: (_node, translationNode, appendTarget) => {
         if (!appendTarget.closest('.footnotes-list li')) return;
 
@@ -14,6 +23,10 @@ export const asteriskProfile: SiteProfile = {
         scheduleFootnoteRelayout();
     }
 };
+
+function isAsteriskProgressNavigation(node: Element): boolean {
+    return Boolean(node.closest('#progress, .progress-bookmark, .chapter-indicators, .markers'));
+}
 
 function scheduleFootnoteRelayout() {
     if (footnoteRelayoutTimer) window.clearTimeout(footnoteRelayoutTimer);
