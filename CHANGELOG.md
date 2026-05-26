@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/airhunter/OnlyTranslate/compare/v0.5.1...v0.5.2) (2026-05-26)
+
+
+### Bug Fixes
+
+* **content:** 优化页面正文翻译目标识别 ([a0be666](https://github.com/airhunter/OnlyTranslate/commit/a0be666009919adaddfda8fdb1e8d3577b981d4c))
+
 ## [0.5.1](https://github.com/airhunter/OnlyTranslate/compare/v0.5.0...v0.5.1) (2026-05-22)
 
 
