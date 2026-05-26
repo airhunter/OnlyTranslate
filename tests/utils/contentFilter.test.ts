@@ -111,6 +111,35 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps readable article paragraphs that mention a popular linked subject', () => {
+    const element = renderElement(`
+      <p>
+        Expansion artifacts get genuinely dangerous when they compound, when one AI generation becomes the input to another.
+        In February, an autonomous openclaw agent
+        <a href="https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me/">published a hit piece on Scott Shambaugh</a>,
+        a maintainer of the popular matplotlib Python library, for rejecting its code. Benj Edwards then reported the story
+        for Ars Technica; unsurprisingly,
+        <a href="https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me-part-2/">his article contained hallucinated quotes</a>.
+      </p>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
+  it('still skips structurally marked popular article modules', () => {
+    const element = renderElement(`
+      <section class="popular-articles">
+        <h2>Popular articles</h2>
+        <a href="/writing/design-from-the-inside/">Design from the inside</a>
+        <a href="/writing/decentralizing-quality/">Decentralizing quality</a>
+      </section>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(true)
+    expect(getContentFilterDecision(element)).toBe('skip-self')
+  })
+
   it('keeps GitHub README-like documentation content', () => {
     const element = renderElement(`
       <article class="markdown-body">

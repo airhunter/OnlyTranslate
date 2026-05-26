@@ -764,6 +764,47 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('satya-paragraph')
   })
 
+  it('keeps Matt Strom-Awn article paragraphs that mention popular linked subjects', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://mattstromawn.com/writing/expansion-artifacts/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main class="l--grid">
+        <header class="l--grid-narrow">
+          <h1 id="title">Expansion artifacts</h1>
+          <p>Apr 20, 2026 · 8 min read</p>
+        </header>
+        <article class="post l--grid-narrow">
+          <p id="intro">The information age has been defined by bandwidth. The internet is limited by how much data we can squeeze into narrow pipes.</p>
+        </article>
+        <div class="gallery gallery--wide">
+          <figure>
+            <img src="/images/expansion-1.jpg" alt="A photo montage before any compression cycles.">
+            <figcaption>Before compression: PSNR of infinity.</figcaption>
+          </figure>
+        </div>
+        <article class="l--grid-narrow post">
+          <p id="aesthetic-choice">Expansion artifacts will become aesthetic choices, too. <a href="https://www.trend-mill.com/p/shrimp-jesus-is-the-future-of-social">Shrimp Jesus</a> is my favorite, the kind of insane imagery that only an LLM would create. Power users of AI website generators already know how to recognize the tool marks. But as more and more non-designers use tools like Claude Design to prompt their way to fully-functional software products, I expect to see a <em>preference</em> for the aesthetic convergence endemic to the current crop of AI models.</p>
+          <div class="eleventy-plugin-embed-twitter">
+            <blockquote class="twitter-tweet">
+              <p lang="en" dir="ltr">I'd like to formally apologize for making every button in Tailwind UI five years ago, leading to every AI generated UI on earth also being indigo.</p>
+              <a href="https://twitter.com/adamwathan/status/1953510802159219096">August 7, 2025</a>
+            </blockquote>
+          </div>
+          <p id="compound-danger">Expansion artifacts get genuinely dangerous when they compound, when one AI generation becomes the input to another, and another, and another. In February, an autonomous openclaw agent <a href="https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me/">published a hit piece on Scott Shambaugh</a>, a maintainer of the popular matplotlib Python library, for rejecting its code. Benj Edwards then reported the story for Ars Technica, but used AI to help him write; unsurprisingly, <a href="https://theshamblog.com/an-ai-agent-published-a-hit-piece-on-me-part-2/">his article contained hallucinated quotes</a>.</p>
+          <p id="after">This kind of Gell-Mann Amnesia for expansion artifacts leads to runaway feedback loops:</p>
+        </article>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('aesthetic-choice')
+    expect(ids).toContain('compound-danger')
+  })
+
   it('keeps Decrypt article title, brief bullets, and short body paragraphs while skipping the reading rail', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review'),

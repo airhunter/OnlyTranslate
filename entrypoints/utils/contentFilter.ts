@@ -5,7 +5,8 @@ const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x pl
 const SOCIAL_LINK_PATTERN = /\b(facebook\.com|linkedin\.com|twitter\.com|x\.com|medium\.com|youtube\.com|youtu\.be|instagram\.com|threads\.net|mastodon\.social|bsky\.app|github\.com)\b/i;
 const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|chip)\b/i;
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
-const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next|popular|trending)\b/i;
+const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;
+const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
 
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
@@ -32,13 +33,14 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
     const metrics = getBlockMetrics(element);
     if (metrics.textLength === 0) return 'keep';
 
+    const structuralHint = getElementStructuralSignalText(element);
     const hint = getElementSignalText(element, metrics.text);
 
     if (isShareBlock(hint, metrics)) return 'skip-self';
     if (isTagCluster(hint, metrics)) return 'skip-self';
     if (isAuthorOrBylineBlock(hint, metrics)) return 'skip-self';
     if (isPromoOrCtaBlock(hint, metrics)) return 'skip-self';
-    if (isRelatedBlock(hint, metrics)) return 'skip-self';
+    if (isRelatedBlock(element, hint, structuralHint, metrics)) return 'skip-self';
 
     return 'keep';
 }
@@ -87,11 +89,27 @@ function isAuthorOrBylineBlock(hint: string, metrics: BlockMetrics): boolean {
         || metrics.shortInteractiveCount > 0;
 }
 
-function isRelatedBlock(hint: string, metrics: BlockMetrics): boolean {
-    if (!RELATED_PATTERN.test(hint)) return false;
+function isRelatedBlock(element: Element, hint: string, structuralHint: string, metrics: BlockMetrics): boolean {
+    const hasStrongRelatedSignal = RELATED_PATTERN.test(hint);
+    const hasWeakRelatedSignal = WEAK_RELATED_PATTERN.test(hint);
+    if (!hasStrongRelatedSignal && !hasWeakRelatedSignal) return false;
+    if (
+        hasWeakRelatedSignal
+        && !hasStrongRelatedSignal
+        && !WEAK_RELATED_PATTERN.test(structuralHint)
+        && isReadableParagraphLeaf(element, metrics)
+    ) {
+        return false;
+    }
     if (metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.45) return false;
 
     return metrics.linkCount > 0 || metrics.shortInteractiveCount > 0;
+}
+
+function isReadableParagraphLeaf(element: Element, metrics: BlockMetrics): boolean {
+    return element.matches('p, blockquote, figcaption')
+        && metrics.textLength >= 80
+        && metrics.linkDensity < 0.45;
 }
 
 function getBlockMetrics(element: Element): BlockMetrics {
@@ -128,6 +146,10 @@ function getBlockMetrics(element: Element): BlockMetrics {
 }
 
 function getElementSignalText(element: Element, text: string): string {
+    return `${getElementStructuralSignalText(element)} ${text}`;
+}
+
+function getElementStructuralSignalText(element: Element): string {
     const attrs = [
         element.id,
         typeof element.className === 'string' ? element.className : '',
@@ -140,7 +162,7 @@ function getElementSignalText(element: Element, text: string): string {
         .map((link) => link.getAttribute('href') ?? '')
         .join(' ');
 
-    return `${attrs.join(' ')} ${text} ${hrefs}`;
+    return `${attrs.join(' ')} ${hrefs}`;
 }
 
 function getNormalizedText(element: Element): string {
