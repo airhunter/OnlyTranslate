@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.3',
+    notes: {
+      'zh-CN': {
+        title: '站点翻译排版修复',
+        items: [
+          '修复 Decrypt 文章页标题和部分正文段落漏翻的问题。',
+          '修复 GitHub Pull Request 评论翻译挤在一起的问题，段落和列表会按原结构显示译文。',
+          '修复 Asterisk 文章页顶部章节导航被误翻译的问题。',
+          '继续减少阅读模式下侧栏、目录和页面控件对正文翻译的干扰。'
+        ]
+      },
+      'en-US': {
+        title: 'Site Translation Layout Fixes',
+        items: [
+          'Fixed missing title and article paragraph translations on Decrypt article pages.',
+          'Fixed GitHub Pull Request comment translations being grouped at the bottom instead of following each paragraph and list item.',
+          'Fixed Asterisk article progress navigation being translated as extra page content.',
+          'Reduced sidebar, table-of-contents, and page-control noise in article translation targets.'
+        ]
+      },
+      'zh-TW': {
+        title: '站點翻譯排版修復',
+        items: [
+          '修復 Decrypt 文章頁標題和部分正文段落漏翻的問題。',
+          '修復 GitHub Pull Request 留言譯文擠在一起的問題，段落和列表會依照原結構顯示譯文。',
+          '修復 Asterisk 文章頁頂部章節導覽被誤翻譯的問題。',
+          '持續減少閱讀模式下側欄、目錄和頁面控制項對正文翻譯的干擾。'
+        ]
+      },
+      'ja-JP': {
+        title: 'サイト翻訳レイアウトの修正',
+        items: [
+          'Decrypt の記事ページでタイトルや一部本文段落が翻訳されない問題を修正しました。',
+          'GitHub Pull Request コメントの翻訳が末尾にまとまって表示される問題を修正し、段落やリスト項目ごとに表示されるようにしました。',
+          'Asterisk の記事ページで上部の章ナビゲーションが余分な本文として翻訳される問題を修正しました。',
+          '記事翻訳時にサイドバー、目次、ページ操作部品が本文翻訳に混ざるケースを減らしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.2',
     notes: {
       'zh-CN': {
