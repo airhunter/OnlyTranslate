@@ -36,6 +36,10 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['nagdy.me']).toBeTypeOf('function')
   })
 
+  it('registers Decrypt article supplemental profile', () => {
+    expect(supplementalCompatFn['decrypt.co']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

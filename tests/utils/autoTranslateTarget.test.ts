@@ -318,6 +318,53 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).not.toContain('news-list')
   })
 
+  it('keeps GitHub pull request comment translations on markdown blocks', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot/pull/4005'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div id="issuecomment-1" class="js-comment">
+          <div id="comment-body" class="comment-body markdown-body js-comment-body">
+            <p id="intro">Hi! This PR proposes <strong>GitAgent Protocol (GAP)</strong> support for nanobot -- a small, open standard for portable, discoverable AI agents (<a href="https://gitagent.sh">https://gitagent.sh</a>).</p>
+            <p id="fit"><strong>nanobot is a perfect fit for the protocol:</strong> it's lightweight, open-source, multi-provider, and already beloved by developers who want a minimal agent harness.</p>
+            <p id="adds-heading"><strong>What this adds -- nothing else changes:</strong></p>
+            <ul id="adds-list">
+              <li id="agent-yaml"><code>agent.yaml</code> -- a standard manifest capturing nanobot's name, version, model preferences, runtime entrypoint, full skill inventory, license, and supervision policy</li>
+              <li id="soul-md"><code>SOUL.md</code> -- nanobot's persona and behavioural contract in the standard soul-file format, faithfully distilled from your existing <code>CLAUDE.md</code> and architecture docs</li>
+            </ul>
+            <p id="why-heading"><strong>Why this is useful for nanobot:</strong></p>
+            <ul id="why-list">
+              <li id="why-one">Any GAP-compatible harness can discover and run nanobot without extra config</li>
+              <li id="why-two">The agent becomes listable in <a href="https://registry.gitagent.sh">https://registry.gitagent.sh</a> alongside other community agents</li>
+            </ul>
+            <p id="closing">This is entirely opt-in -- feel free to tweak the files, request changes, or close if this isn't a direction you want to go.</p>
+            <hr>
+            <p id="signature"><em>Proposed by the <a href="https://gitagent.sh">GAP Promoter</a> - GitAgent Protocol v0.1.0</em></p>
+          </div>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('intro')
+    expect(ids).toContain('fit')
+    expect(ids).toContain('adds-heading')
+    expect(ids).toContain('agent-yaml')
+    expect(ids).toContain('soul-md')
+    expect(ids).toContain('why-heading')
+    expect(ids).toContain('why-one')
+    expect(ids).toContain('why-two')
+    expect(ids).toContain('closing')
+    expect(ids).toContain('signature')
+    expect(ids).not.toContain('comment-body')
+    expect(ids).not.toContain('adds-list')
+    expect(ids).not.toContain('why-list')
+  })
+
   it('keeps GitHub issue list titles while skipping list metadata', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://github.com/alchaincyf/huashu-design/issues'),
@@ -717,6 +764,163 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('satya-paragraph')
   })
 
+  it('keeps Decrypt article title, brief bullets, and short body paragraphs while skipping the reading rail', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="sticky top-24 max-w-[12.75rem] mx-auto">
+          <div class="mb-4">
+            <p id="reading-label" class="inline-flex font-akzidenz-grotesk font-bold mb-4">Reading</p>
+            <p id="reading-title">OpenAI GPT Image 2 vs Google Nano Banana 2: Which AI Image Generator Is Best?</p>
+          </div>
+        </div>
+        <div class="z-2 flex-1 min-w-0">
+          <div>
+            <h1 id="decrypt-title" class="font-canela font-black">OpenAI GPT Image 2 vs Google Nano Banana 2: Which AI Image Generator Is Best?</h1>
+            <h2 id="decrypt-subtitle" class="font-akzidenz-grotesk">Which state-of-the-art AI image generator is most effective at producing A+ results? We put GPT Image 2 and Nano Banana 2 to the test.</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-8 unreset post-content md:pb-20">
+            <div id="brief-wrapper" class="pt-8 pb-10 border-t border-b border-decryptGridline">
+              <h4 id="brief-title">In brief</h4>
+              <ul>
+                <li id="brief-one">GPT Image 2 launched in late April with native reasoning and extremely good text accuracy in any script.</li>
+                <li id="brief-two">Nano Banana 2 wins on anime illustration, aerial spatial composition, and structured information design.</li>
+                <li id="brief-three">GPT Image 2 dominates on photorealism, typography, and signature calligraphy.</li>
+              </ul>
+            </div>
+            <p id="body-before">GPT Image 2--model identifier gpt-image-2, running on the GPT-5.4 backbone--is OpenAI's first image model with native reasoning built into the architecture.</p>
+            <div class="post-content-w-full my-10 hidden xl:flex items-center justify-center"></div>
+            <p id="retired">OpenAI also retired DALL-E 3 and GPT Image 1.5, which are both being shut down on May 12. This isn't an update--it's a replacement.</p>
+            <p id="solved">GPT Image 2 appears to have largely solved it.</p>
+            <p id="again">Again, in this art, the oversharpening and artifacts are apparent, and the image is not visually pleasing.</p>
+            <h3 id="timeline-heading">Agentic research: The Bitcoin timeline</h3>
+            <p id="prompt">The prompt asked for a widescreen <a href="/resources/bitcoin">Bitcoin</a> history timeline in kids-drawing style, with a strict quality bar on information accuracy.</p>
+          </div>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('decrypt-title')
+    expect(ids).toContain('decrypt-subtitle')
+    expect(ids).toContain('brief-title')
+    expect(ids).toContain('brief-one')
+    expect(ids).toContain('brief-two')
+    expect(ids).toContain('brief-three')
+    expect(ids).toContain('retired')
+    expect(ids).toContain('solved')
+    expect(ids).toContain('again')
+    expect(ids).toContain('prompt')
+    expect(ids).not.toContain('reading-label')
+    expect(ids).not.toContain('reading-title')
+    expect(ids).not.toContain('brief-wrapper')
+    expect(target.nodes.every(node => node instanceof Element)).toBe(true)
+    expect(target.nodes.map(node => node.textContent).join(' ')).not.toContain('ReadingOpenAI')
+  })
+
+  it('applies the Decrypt article profile when full-page scope is selected', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="sticky top-24 max-w-[12.75rem] mx-auto">
+          <div class="mb-4">
+            <p id="reading-label">Reading</p>
+            <p id="reading-title">OpenAI GPT Image 2 vs Google Nano Banana 2: Which AI Image Generator Is Best?</p>
+          </div>
+        </div>
+        <div>
+          <h1 id="decrypt-title">OpenAI GPT Image 2 vs Google Nano Banana 2: Which AI Image Generator Is Best?</h1>
+          <h2 id="decrypt-subtitle">Which state-of-the-art AI image generator is most effective at producing A+ results?</h2>
+          <div class="post-content">
+            <div id="brief-wrapper">
+              <h4 id="brief-title">In brief</h4>
+              <ul>
+                <li id="brief-one">GPT Image 2 launched in late April with native reasoning and extremely good text accuracy in any script.</li>
+                <li id="brief-two">Nano Banana 2 wins on anime illustration, aerial spatial composition, and structured information design.</li>
+              </ul>
+            </div>
+            <p id="retired">OpenAI also retired DALL-E 3 and GPT Image 1.5, which are both being shut down on May 12.</p>
+          </div>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('full')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('decrypt-title')
+    expect(ids).toContain('decrypt-subtitle')
+    expect(ids).toContain('brief-title')
+    expect(ids).toContain('brief-one')
+    expect(ids).toContain('brief-two')
+    expect(ids).toContain('retired')
+    expect(ids).not.toContain('reading-label')
+    expect(ids).not.toContain('reading-title')
+    expect(ids).not.toContain('brief-wrapper')
+    expect(target.nodes.every(node => node instanceof Element)).toBe(true)
+    expect(target.nodes.map(node => node.textContent).join(' ')).not.toContain('ReadingOpenAI')
+  })
+
+  it('keeps Decrypt article headings and post paragraphs when the page has no main element', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <article class="relative overflow-hidden">
+        <h2 id="coin-prices" class="sr-only">Coin Prices</h2>
+        <div class="sticky top-24 max-w-[12.75rem] mx-auto">
+          <p id="reading-label">Reading</p>
+          <p id="reading-title">Claude Opus 4.7 Is Here: Anthropic's Latest Model Delivers</p>
+        </div>
+        <div class="z-2 flex-1 min-w-0">
+          <div class="mb-8">
+            <h1 id="decrypt-title">Claude Opus 4.7 Is Here: Anthropic's Latest Model Delivers, But It's a Token Eating Machine</h1>
+            <h2 id="decrypt-subtitle">Anthropic's new flagship model beat every benchmark we threw at it, eats tokens like a hungry teenager, and showed its reasoning out loud.</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-8 unreset post-content md:pb-20">
+            <div id="brief-wrapper">
+              <h4 id="brief-title">In brief</h4>
+              <ul>
+                <li id="brief-one">Anthropic just released its most capable Opus model yet, Claude Opus 4.7.</li>
+              </ul>
+            </div>
+            <p id="first-body">Anthropic shipped <a href="https://www.anthropic.com/news/claude-opus-4-7">Claude Opus 4.7</a> today, calling it the company's most capable Opus model yet. We tested it, and the marketing lines up with the results.</p>
+            <p><iframe src="about:blank"></iframe></p>
+            <blockquote class="twitter-tweet">
+              <p lang="en" dir="ltr">Welcome back opus 4.6 <a href="https://t.co/hpwNkrq1tD">pic.twitter.com/hpwNkrq1tD</a></p>
+            </blockquote>
+            <p id="benchmarks">Benchmarks back up Anthropic's claims. On SWE-bench Multilingual, a benchmark that measures coding skills, Opus 4.7 scored 80.5% against 4.6's 77.8%.</p>
+            <p id="gdpval">On GDPVal-AA, a third-party evaluation of economically valuable knowledge work across finance and legal domains, 4.7 scored 1,753 Elo against GPT-5.4's 1,674--a clear margin over the closest competitor.</p>
+          </div>
+        </div>
+      </article>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('decrypt-title')
+    expect(ids).toContain('decrypt-subtitle')
+    expect(ids).toContain('brief-title')
+    expect(ids).toContain('brief-one')
+    expect(ids).toContain('first-body')
+    expect(ids).toContain('benchmarks')
+    expect(ids).toContain('gdpval')
+    expect(ids).not.toContain('coin-prices')
+    expect(ids).not.toContain('reading-label')
+    expect(ids).not.toContain('reading-title')
+    expect(ids).not.toContain('brief-wrapper')
+  })
+
   it('keeps forum-like topic titles while skipping list metadata', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ziggit.dev/'),
@@ -747,6 +951,60 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).not.toContain('replies')
     expect(ids).not.toContain('views')
     expect(ids).not.toContain('activity')
+  })
+
+  it('skips Asterisk dynamic progress chapter navigation while keeping article headings', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="article-root" class="post essay">
+        <div id="progress">
+          <div class="chapter-indicators">
+            <a id="chapter-link" class="progress-bookmark chaptermark" href="#how-does-ibuprofen-work">
+              <div class="dot"></div>
+              <div class="text"><span id="chapter-span">How does ibuprofen work?</span></div>
+            </a>
+          </div>
+          <div class="markers"></div>
+        </div>
+        <section class="opener">
+          <h1 id="title">The Mystery in the Medicine Cabinet</h1>
+          <h2 id="author">Dynomight</h2>
+        </section>
+        <section class="content" id="rangyscope">
+          <div class="intro">
+            <p id="subtitle">Acetaminophen, ibuprofen, and what doctors probably want you to know.</p>
+          </div>
+          <div class="content-blocks">
+            <div class="heading">
+              <h2 id="how-does-ibuprofen-work">How does ibuprofen work?</h2>
+            </div>
+            <div class="text">
+              <p id="paragraph">Ibuprofen inhibits the Cyclooxygenase enzyme, which leads to less physical inflammation and thus less pain.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('title')
+    expect(ids).toContain('rangyscope')
+    expect(ids).not.toContain('chapter-link')
+    expect(ids).not.toContain('chapter-span')
+
+    const dynamicNodes = collectDynamicTranslationNodes(
+      document.querySelector('#chapter-link')!,
+      document.querySelector('#article-root')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(dynamicNodes).toEqual([])
   })
 
   it('collects newly revealed nodes from dynamic content regions', () => {

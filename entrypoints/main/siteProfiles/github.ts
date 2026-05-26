@@ -25,6 +25,11 @@ export const githubProfile: SiteProfile = {
             return { skip: true };
         }
 
+        const markdownUnit = findGitHubMarkdownReadingUnit(node);
+        if (markdownUnit) return markdownUnit;
+
+        if (isInsideGitHubMarkdownBody(node)) return false;
+
         const issueBody = findMatchingElement(node, 'div.comment-body');
         if (issueBody) return issueBody;
 
@@ -127,6 +132,22 @@ function isGitHubMarkdownReadingUnit(node: Element): boolean {
 
     const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     return text.length >= 8 && /[A-Za-z]/.test(text);
+}
+
+function findGitHubMarkdownReadingUnit(node: Element): Element | false {
+    let current: Element | null = node;
+
+    while (current && current !== document.body) {
+        if (isGitHubMarkdownReadingUnit(current)) return current;
+        if (current.matches('.markdown-body')) return false;
+        current = current.parentElement;
+    }
+
+    return false;
+}
+
+function isInsideGitHubMarkdownBody(node: Element): boolean {
+    return Boolean(node.closest('.markdown-body'));
 }
 
 function shouldSkipGitHubElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {
