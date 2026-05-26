@@ -107,9 +107,12 @@ function getBlockMetrics(element: Element): BlockMetrics {
         return itemText.length > 0 && itemText.length <= 32;
     }).length;
 
-    const longParagraphCount = Array.from(
-        element.querySelectorAll('p, blockquote, figcaption')
-    ).filter((item) => getNormalizedText(item).length >= 80).length;
+    const paragraphLikeBlocks = [
+        ...(element.matches('p, blockquote, figcaption') ? [element] : []),
+        ...Array.from(element.querySelectorAll('p, blockquote, figcaption'))
+    ];
+    const longParagraphCount = paragraphLikeBlocks
+        .filter((item) => getNormalizedText(item).length >= 80).length;
 
     return {
         text,

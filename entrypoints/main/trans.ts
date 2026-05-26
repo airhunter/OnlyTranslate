@@ -7,7 +7,9 @@ import {
     beautyHTML,
     getTranslatableHTML,
     getTranslatableText,
+    getTranslatableTextWithProtectedInline,
     grabNode,
+    renderTextWithProtectedInline,
     type GrabAllNodeOptions,
     LLMStandardHTML,
     smashTruncationStyle
@@ -340,17 +342,28 @@ export function handleSingleTranslation(node: any, slide: boolean) {
 
 
 function bilingualTranslate(node: any, nodeOuterHTML: any) {
-    const origin = getTranslatableText(node);
-    if (!shouldTranslateText(origin)) return;
+    const plainOrigin = getTranslatableText(node);
+    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
+    const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
+    if (!shouldTranslateText(plainOrigin)) return;
 
     if (!origin?.trim()) return;
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
     translateText(origin, document.title)
-        .then((text: string) => {
+        .then(async (text: string) => {
             spinner.remove();
             htmlSet.delete(nodeOuterHTML);
+            const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
+            if (content) {
+                bilingualAppendChild(node, content);
+                return;
+            }
+
+            if (protectedInlineOrigin.protectedInlines.length) {
+                text = await translateText(plainOrigin, document.title);
+            }
             bilingualAppendChild(node, text);
         })
         .catch((error: Error) => {
@@ -413,7 +426,7 @@ export const handleBtnTranslation = throttle((node: any) => {
 }, 250)
 
 
-function bilingualAppendChild(node: any, text: string) {
+function bilingualAppendChild(node: any, text: string | Node) {
     if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return;
 
     node.classList.add("only-translate-bilingual");

@@ -1,4 +1,4 @@
-import { customModelString, services, servicesType } from "./option";
+import { customModelString, isServiceConfigured, services, servicesType } from "./option";
 import { sendErrorMessage } from "./tip";
 import { config } from "@/entrypoints/utils/config";
 import { t } from "@/entrypoints/utils/i18n";
@@ -6,14 +6,13 @@ import { t } from "@/entrypoints/utils/i18n";
 export function checkConfig(): boolean {
     if (!config.on) return false;
 
-    if (servicesType.isUseToken(config.service) && !config.token[config.service]) {
+    if (!isServiceConfigured(config.service, config)) {
         sendErrorMessage(t("runtime.serviceNotConfigured"));
         return false;
     }
 
     if (servicesType.isAI(config.service)) {
-        const model = config.model[config.service];
-        const customModel = config.customModel[config.service];
+        const { model, customModel } = getConfiguredModel();
         if (!model || (model === customModelString && !customModel)) {
             sendErrorMessage(t("runtime.modelNotConfigured"));
             return false;
@@ -26,6 +25,21 @@ export function checkConfig(): boolean {
     }
 
     return true;
+}
+
+function getConfiguredModel() {
+    let model = config.model[config.service];
+    let customModel = config.customModel[config.service];
+
+    if (servicesType.isCustom(config.service)) {
+        const provider = config.customProviders?.find(p => p.id === config.service);
+        if (provider) {
+            model = provider.model;
+            customModel = provider.customModel;
+        }
+    }
+
+    return { model, customModel };
 }
 
 export function skipNode(node: Node): boolean {

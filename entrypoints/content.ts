@@ -10,6 +10,7 @@ import { cancelAllTranslations, translateText } from "@/entrypoints/utils/transl
 import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
 import { initVideoSubtitle } from "@/entrypoints/video/manager";
 import { t } from "@/entrypoints/utils/i18n";
+import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -144,6 +145,12 @@ export default defineContentScript({
 function setupManualTranslationTriggers() {
     const screen = { mouseX: 0, mouseY: 0, hotkeyPressed: false, otherKeyPressed: false, hasSlideTranslation: false };
     let mouseHotkeysPressed = new Set<string>();
+
+    const shouldDeferToSelectionTranslator = () => {
+        return config.disableSelectionTranslator !== true
+            && config.selectionTranslatorMode !== 'disabled'
+            && hasActiveTextSelection();
+    };
     
     // 获取当前配置的鼠标悬浮快捷键
     const getConfiguredMouseHotkeyParts = () => {
@@ -306,7 +313,7 @@ function setupManualTranslationTriggers() {
         // 如果当前按键集合为空，且之前激活了快捷键，且配置的快捷键不包含当前释放的键，则触发翻译
         if (screen.hotkeyPressed && mouseHotkeysPressed.size === 0 && !screen.otherKeyPressed && !screen.hasSlideTranslation) {
             // 检查插件是否开启
-            if (config.on) {
+            if (config.on && !shouldDeferToSelectionTranslator()) {
                 handleTranslation(screen.mouseX, screen.mouseY);
             }
         }
@@ -323,7 +330,7 @@ function setupManualTranslationTriggers() {
     document.body.addEventListener('mousemove', event => {
         screen.mouseX = event.clientX;
         screen.mouseY = event.clientY;
-        if (screen.hotkeyPressed && config.on) {
+        if (screen.hotkeyPressed && config.on && !shouldDeferToSelectionTranslator()) {
             screen.hasSlideTranslation = true;
             handleTranslation(screen.mouseX, screen.mouseY, 50)
         }
@@ -354,7 +361,7 @@ function setupManualTranslationTriggers() {
 
     // 6、双击鼠标翻译事件
     document.body.addEventListener('dblclick', event => {
-        if (config.hotkey == constants.DoubleClick && config.on) {
+        if (config.hotkey == constants.DoubleClick && config.on && !shouldDeferToSelectionTranslator()) {
             // 通过双击事件获取鼠标位置
             let mouseX = event.clientX;
             let mouseY = event.clientY;
@@ -373,7 +380,7 @@ function setupManualTranslationTriggers() {
             startPos.x = event.clientX; // 记录鼠标按下时的初始位置
             startPos.y = event.clientY;
             timer = setTimeout(() => {
-                if (config.on) {
+                if (config.on && !shouldDeferToSelectionTranslator()) {
                     let mouseX = event.clientX;
                     let mouseY = event.clientY;
                     handleTranslation(mouseX, mouseY);
@@ -398,7 +405,7 @@ function setupManualTranslationTriggers() {
 
     // 8、鼠标中键翻译事件
     document.body.addEventListener('mousedown', event => {
-        if (config.hotkey === constants.MiddleClick && config.on) {
+        if (config.hotkey === constants.MiddleClick && config.on && !shouldDeferToSelectionTranslator()) {
             if (event.button === 1) {
                 let mouseX = event.clientX;
                 let mouseY = event.clientY;

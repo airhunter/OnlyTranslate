@@ -618,6 +618,105 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).not.toContain('news-list')
   })
 
+  it('includes Claude learning right-rail comparison cards in smart mode without opening generic asides', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://claude.nagdy.me/learn/getting-started/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="main-content">
+        <div class="lg:grid lg:grid-cols-[3fr_2fr]">
+          <article>
+            <h2 id="prerequisites">Prerequisites</h2>
+            <p id="body-paragraph">Claude Code runs on macOS, Ubuntu, and Windows with an active internet connection. This paragraph is long enough to be recognized as the main learning article body instead of the surrounding page layout.</p>
+            <p id="body-paragraph-two">Before installing the CLI, confirm your terminal, editor, and account access are ready for a guided setup session.</p>
+          </article>
+          <aside>
+            <div class="p-5">
+              <section>
+                <h3 id="compare-title">Compare</h3>
+                <div class="grid grid-cols-2 gap-6" role="region">
+                  <div class="rounded-lg">
+                    <div><h3 id="cli-title">CLI Terminal</h3></div>
+                    <ul>
+                      <li id="cli-feature"><strong>Full feature set</strong> — Every slash command, MCP server, hook, and plugin works in the terminal</li>
+                    </ul>
+                  </div>
+                  <div class="rounded-lg">
+                    <div><h3 id="ide-title">IDE Extensions</h3></div>
+                    <ul>
+                      <li id="ide-feature"><strong>Inline editing</strong> — See changes directly in your editor with visual diffs</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+              <section>
+                <h3 id="quiz-title">Check Your Understanding</h3>
+                <div role="radiogroup">
+                  <button id="quiz-option" role="radio">The native installer via curl or PowerShell</button>
+                </div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </main>
+      <aside id="outside-aside">
+        <p id="outside-aside-text">This generic sidebar paragraph should not be picked up by the Claude profile.</p>
+      </aside>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('body-paragraph')
+    expect(ids).toContain('compare-title')
+    expect(ids).toContain('cli-title')
+    expect(ids).toContain('cli-feature')
+    expect(ids).toContain('ide-title')
+    expect(ids).toContain('ide-feature')
+    expect(ids).toContain('quiz-title')
+    expect(ids).not.toContain('quiz-option')
+    expect(ids).not.toContain('outside-aside-text')
+  })
+
+  it('keeps Mario Zechner article paragraphs that contain inline links', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <header>
+        <nav><a href="/">Home</a><a href="/archive">Archive</a></nav>
+      </header>
+      <main>
+        <article>
+          <h1 id="title">Thoughts on slowing the fuck down</h1>
+          <p id="lead">I have been thinking about the pace of software development and the pressure to automate every part of it.</p>
+          <p id="previous-with-links">
+            We don't have access to the internals of companies. But every now and then something slips through to some news reporter.
+            Like this supposed <a href="https://www.ft.com/content/00c282de-ed14-4acd-a948-bc8d6bdb339d">AI caused outage at AWS</a>.
+            Which AWS immediately <a href="https://www.aboutamazon.com/news/aws/aws-service-outage-ai-bot-kiro">"corrected"</a>.
+            Only to then follow up internally with a <a href="https://www.businessinsider.com/amazon-tightens-code-controls-after-outages-including-one-ai-2026-3">90-day reset</a>.
+          </p>
+          <p id="satya-paragraph">
+            Satya Nadella, the CEO of Microsoft, has been going on about
+            <a href="https://techcrunch.com/2025/04/29/microsoft-ceo-says-up-to-30-of-the-companys-code-was-written-by-ai/">how much code is now being written by AI</a>
+            at Microsoft. While we don't have direct evidence, there sure is a feeling that Windows is going down the shitter.
+            Microsoft itself seems to agree, based on this fine
+            <a href="https://blogs.windows.com/windowsexperience/2026/03/24/improving-the-windows-11-experience/">blog post</a>.
+          </p>
+          <p id="after">That post is not quite an admission, but it gives the impression that the product is struggling under its own weight.</p>
+        </article>
+      </main>
+      <footer><a href="/rss">RSS</a></footer>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('satya-paragraph')
+  })
+
   it('keeps forum-like topic titles while skipping list metadata', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ziggit.dev/'),
