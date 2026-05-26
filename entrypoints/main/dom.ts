@@ -10,6 +10,114 @@ const directSet = new Set([
     'figcaption'                         // 图片说明
 ]);
 
+const protectedInlineSet = new Set(['code', 'kbd', 'samp']);
+
+export interface ProtectedInlinePlaceholder {
+    placeholder: string;
+    node: Element;
+}
+
+export interface TranslatableTextWithProtectedInline {
+    text: string;
+    protectedInlines: ProtectedInlinePlaceholder[];
+}
+
+export function getTranslatableTextWithProtectedInline(node: Node): TranslatableTextWithProtectedInline {
+    const protectedInlines: ProtectedInlinePlaceholder[] = [];
+
+    const collect = (current: Node): string => {
+        if (current instanceof Text) {
+            return isInsideNonTranslatableContent(current) ? '' : current.nodeValue ?? '';
+        }
+
+        if (!(current instanceof Element)) return current.textContent ?? '';
+        if (isNonTranslatableContentElement(current)) return '';
+
+        const tag = current.tagName.toLowerCase();
+        if (protectedInlineSet.has(tag)) {
+            const placeholder = buildProtectedInlinePlaceholder(current, protectedInlines.length);
+            protectedInlines.push({
+                placeholder,
+                node: current.cloneNode(true) as Element
+            });
+            return placeholder;
+        }
+
+        let text = '';
+        current.childNodes.forEach(child => {
+            text += collect(child);
+        });
+        return text;
+    };
+
+    return {
+        text: collect(node),
+        protectedInlines
+    };
+}
+
+export function renderTextWithProtectedInline(
+    text: string,
+    protectedInlines: ProtectedInlinePlaceholder[]
+): DocumentFragment | null {
+    if (!protectedInlines.length) {
+        const fragment = document.createDocumentFragment();
+        fragment.append(text);
+        return fragment;
+    }
+
+    const placeholderMap = new Map(protectedInlines.map(item => [item.placeholder, item.node]));
+    const counts = new Map(protectedInlines.map(item => [item.placeholder, 0]));
+    const pattern = new RegExp(protectedInlines.map(item => escapeRegExp(item.placeholder)).join('|'), 'g');
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(text)) !== null) {
+        const placeholder = match[0];
+        counts.set(placeholder, (counts.get(placeholder) ?? 0) + 1);
+    }
+
+    if (protectedInlines.some(item => counts.get(item.placeholder) !== 1)) {
+        return null;
+    }
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    pattern.lastIndex = 0;
+
+    while ((match = pattern.exec(text)) !== null) {
+        const placeholder = match[0];
+        if (match.index > cursor) {
+            fragment.append(text.slice(cursor, match.index));
+        }
+        const protectedNode = placeholderMap.get(placeholder);
+        if (!protectedNode) return null;
+        fragment.append(protectedNode.cloneNode(true));
+        cursor = match.index + placeholder.length;
+    }
+
+    if (cursor < text.length) {
+        fragment.append(text.slice(cursor));
+    }
+
+    return fragment;
+}
+
+function buildProtectedInlinePlaceholder(node: Element, index: number): string {
+    return `__ONLY_TRANSLATE_INLINE_${index}_${hashString(node.outerHTML)}__`;
+}
+
+function hashString(value: string): string {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+        hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash).toString(36);
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // 需要跳过的标签
 const skipSet = new Set([
     'html', 'body', 'script', 'style', 'noscript', 'iframe',

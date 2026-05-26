@@ -32,6 +32,10 @@ describe('site profile registry', () => {
     expect(afterBilingualAppendCompatFn['asteriskmag.com']).toBeTypeOf('function')
   })
 
+  it('registers Claude learning supplemental profile', () => {
+    expect(supplementalCompatFn['nagdy.me']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

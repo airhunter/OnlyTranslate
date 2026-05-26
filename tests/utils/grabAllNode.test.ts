@@ -4,7 +4,14 @@ vi.mock('@/entrypoints/main/trans', () => ({
   handleBtnTranslation: vi.fn()
 }))
 
-import { getTranslatableHTML, getTranslatableText, grabAllNode, LLMStandardHTML } from '@/entrypoints/main/dom'
+import {
+  getTranslatableHTML,
+  getTranslatableText,
+  getTranslatableTextWithProtectedInline,
+  grabAllNode,
+  LLMStandardHTML,
+  renderTextWithProtectedInline
+} from '@/entrypoints/main/dom'
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter'
 
 describe('grabAllNode', () => {
@@ -58,6 +65,36 @@ describe('grabAllNode', () => {
     expect(LLMStandardHTML(node)).toBe('1989 - 2026')
   })
 
+  it('preserves protected inline code when rendering translated text', () => {
+    document.body.innerHTML = `
+      <p id="intro"><strong>VS Code</strong> is mature. Run <code>code --install-extension Anthropic.claude-code</code>.</p>
+    `
+
+    const node = document.querySelector('#intro') as HTMLElement
+    const result = getTranslatableTextWithProtectedInline(node)
+    const placeholder = result.protectedInlines[0].placeholder
+
+    expect(result.text).toBe(`VS Code is mature. Run ${placeholder}.`)
+    expect(result.text).not.toContain('code --install-extension')
+
+    const fragment = renderTextWithProtectedInline(`VS Code 已成熟。运行 ${placeholder}。`, result.protectedInlines)
+    const host = document.createElement('span')
+    host.append(fragment as DocumentFragment)
+
+    expect(host.innerHTML).toBe('VS Code 已成熟。运行 <code>code --install-extension Anthropic.claude-code</code>。')
+  })
+
+  it('returns null when protected inline placeholders are missing', () => {
+    document.body.innerHTML = `
+      <p id="intro">Run <code>npm install</code>.</p>
+    `
+
+    const node = document.querySelector('#intro') as HTMLElement
+    const result = getTranslatableTextWithProtectedInline(node)
+
+    expect(renderTextWithProtectedInline('运行 npm install。', result.protectedInlines)).toBeNull()
+  })
+
   it('does not select date-only nodes because of script source text', () => {
     document.body.innerHTML = `
       <article>
@@ -70,6 +107,32 @@ describe('grabAllNode', () => {
 
     expect(ids).not.toContain('year')
     expect(ids).toContain('intro')
+  })
+
+  it('continues after a selected paragraph that contains multiple inline links', () => {
+    document.body.innerHTML = `
+      <article>
+        <p id="previous">
+          We do not have access to the internals of companies.
+          Like this supposed <a href="/aws-outage">AI caused outage at AWS</a>.
+          Which AWS immediately <a href="/corrected">corrected</a>.
+          Only to then follow up internally with a <a href="/reset">90-day reset</a>.
+        </p>
+        <p id="middle">
+          Satya Nadella, the CEO of Microsoft, has been going on about
+          <a href="/ai-code">how much code is now being written by AI</a>
+          at Microsoft. While we do not have direct evidence, there sure is a feeling that Windows is struggling.
+          Microsoft itself seems to agree, based on this fine <a href="/blog-post">blog post</a>.
+        </p>
+        <p id="after">Companies claiming that all product code is written by AI keep shipping rough software.</p>
+      </article>
+    `
+
+    const ids = grabAllNode(document.body).map((node) => node.id)
+
+    expect(ids).toContain('previous')
+    expect(ids).toContain('middle')
+    expect(ids).toContain('after')
   })
 
   it('does not leak generic descendants from skip-self blocks', () => {

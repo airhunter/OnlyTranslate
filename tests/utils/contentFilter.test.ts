@@ -97,6 +97,20 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps article paragraphs that mention code being written by AI', () => {
+    const element = renderElement(`
+      <p>
+        Satya Nadella, the CEO of Microsoft, has been going on about
+        <a href="https://techcrunch.com/2025/04/29/microsoft-ceo-says-up-to-30-of-the-companys-code-was-written-by-ai/">how much code is now being written by AI</a>
+        at Microsoft. While we do not have direct evidence, there sure is a feeling that Windows is struggling.
+        Microsoft itself seems to agree, based on this fine <a href="https://blogs.windows.com/windowsexperience/2026/03/24/improving-the-windows-11-experience/">blog post</a>.
+      </p>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
   it('keeps GitHub README-like documentation content', () => {
     const element = renderElement(`
       <article class="markdown-body">
