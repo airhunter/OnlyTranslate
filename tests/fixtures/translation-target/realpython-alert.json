@@ -1,0 +1,8 @@
+{
+  "name": "Real Python keeps alert translations on the paragraph instead of the wrapper",
+  "url": "https://realpython.com/claude-api-python/",
+  "scope": "smart",
+  "html": "realpython-alert.html",
+  "include": ["note-paragraph"],
+  "exclude": ["note-alert"]
+}

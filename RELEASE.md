@@ -36,10 +36,23 @@ pnpm release:check 0.5.1
 
 校验会检查目标版本的扩展内更新说明是否位于数组最前面、是否补齐四种语言、每种语言是否有 `3-5` 条说明，以及 release-it 产物配置是否正确。
 
-4. 运行测试和打包验证。
+4. 运行发布前基础验证。
 
 ```bash
-pnpm test
+pnpm verify
+```
+
+`pnpm verify` 会运行类型检查和完整测试集。完整测试集包含 `tests/fixtures/translation-target` 下的内容识别 fixture 回归样本，用于防止 smart/full 识文规则、站点 profile 和 DOM 目标选择出现跷跷板回归。
+
+如果本次发布包含内容识别、翻译目标选择、站点 profile 或 DOM 插入相关改动，建议先单独运行聚焦检查：
+
+```bash
+pnpm test:content
+```
+
+5. 打包并校验发布产物。
+
+```bash
 pnpm zip
 pnpm release:check <version> --check-zip
 ```

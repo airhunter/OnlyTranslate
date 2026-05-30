@@ -1,0 +1,7 @@
+{
+  "name": "smart mode does not translate hidden expandable card detail text",
+  "url": "https://ynarwal.github.io/how-llms-work/",
+  "scope": "smart",
+  "html": "hidden-expandable-card.html",
+  "exclude": ["late-card", "late-title", "late-sub", "late-detail"]
+}

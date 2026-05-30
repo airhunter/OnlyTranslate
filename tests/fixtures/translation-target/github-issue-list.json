@@ -1,0 +1,11 @@
+{
+  "name": "GitHub issue lists keep titles and skip metadata",
+  "url": "https://github.com/alchaincyf/huashu-design/issues",
+  "scope": "smart",
+  "html": "github-issue-list.html",
+  "include": ["issue-title-1", "issue-title-2", "issue-title-3"],
+  "exclude": ["issue-label", "repo-issues-tab", "bare-issues-link"],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

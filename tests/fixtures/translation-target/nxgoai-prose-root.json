@@ -1,0 +1,8 @@
+{
+  "name": "NXGOAI profile keeps prose paragraphs when the prose container is the content root",
+  "url": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+  "scope": "smart",
+  "html": "nxgoai-prose-root.html",
+  "include": ["missed-world-models"],
+  "textIncludes": ["The adoption of world models in AI could accelerate"]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "generic article keeps Matt Strom-Awn paragraphs with popular linked subjects",
+  "url": "https://mattstromawn.com/writing/expansion-artifacts/",
+  "scope": "smart",
+  "html": "mattstromawn-inline-links.html",
+  "include": ["aesthetic-choice", "compound-danger"]
+}

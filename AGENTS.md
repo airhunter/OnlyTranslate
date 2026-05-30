@@ -42,7 +42,11 @@ For multi-step tasks, briefly define the success criteria and verification plan 
 
 - Run the smallest relevant checks for the changed area.
 - Run broader checks when shared modules, translation detection, DOM insertion, or build configuration are changed.
+- Use `pnpm test:content` for changes around content detection, smart/full translation scope, translation target selection, site profiles, dynamic DOM collection, or bilingual append targets.
+- Use `pnpm verify` before release-oriented changes are considered ready; it runs type checking and the full test suite.
 - Add or update focused tests for behavior changes.
+- Prefer fixture-driven regression tests under `tests/fixtures/translation-target` for static webpage structure and target-selection behavior.
+- Keep dynamic DOM, MutationObserver, append-target, and translation insertion behavior in code tests under `tests/utils`.
 - If automated validation is not practical, provide a concise manual verification checklist.
 
 ## Release Workflow
@@ -51,7 +55,7 @@ For multi-step tasks, briefly define the success criteria and verification plan 
 - Keep `release-it` as the version, tag, changelog, and GitHub Release workflow.
 - When preparing a release, update `entrypoints/utils/releaseNotes.ts` for the user-facing update notes.
 - User-facing release notes should usually contain `3-5` concise items focused on visible features, improvements, and fixes.
-- Before publishing, run the release readiness checks described in `RELEASE.md`.
+- Before publishing, run `pnpm verify`, then build the zip and run the release readiness check described in `RELEASE.md`.
 
 ## Content Detection Rule Changes
 
@@ -64,5 +68,7 @@ Before changing these rules:
 - Do not guess a website's DOM structure; if the structure is unclear, ask the user for the relevant DOM or page details first.
 - Do not change generic detection/filtering rules just to fix one site-specific issue.
 - Prefer site profiles for clearly site-specific DOM behavior.
-- Add focused tests that distinguish generic structures from site-specific structures.
+- Add or update fixture-driven regression tests in `tests/fixtures/translation-target` for static page structures. Each new fixture should include the minimal HTML sample and JSON expectations for included/excluded translation targets, content root, or relevant text assertions.
+- Add focused code tests when the behavior involves dynamic DOM updates, MutationObserver scans, append targets, or actual translation insertion.
+- Run `pnpm test:content` after content detection or site profile changes.
 - For complex dynamic pages such as live news pages, treat them as a separate design topic before implementing.

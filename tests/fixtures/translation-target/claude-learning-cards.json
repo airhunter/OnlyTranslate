@@ -1,0 +1,8 @@
+{
+  "name": "Claude learning profile includes right-rail comparison cards without generic asides",
+  "url": "https://claude.nagdy.me/learn/getting-started/",
+  "scope": "smart",
+  "html": "claude-learning-cards.html",
+  "include": ["body-paragraph", "compare-title", "cli-title", "cli-feature", "ide-title", "ide-feature", "quiz-title"],
+  "exclude": ["quiz-option", "outside-aside-text"]
+}

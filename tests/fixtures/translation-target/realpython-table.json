@@ -1,0 +1,8 @@
+{
+  "name": "Real Python keeps article table cells as individual targets",
+  "url": "https://realpython.com/claude-api-python/",
+  "scope": "smart",
+  "html": "realpython-table.html",
+  "include": ["parameter-heading", "control-heading", "messages-name", "messages-description"],
+  "exclude": ["table-shell", "parameter-table", "messages-row"]
+}

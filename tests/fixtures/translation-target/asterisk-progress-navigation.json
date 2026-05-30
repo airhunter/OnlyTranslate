@@ -1,0 +1,8 @@
+{
+  "name": "Asterisk profile skips dynamic progress chapter navigation while keeping article headings",
+  "url": "https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet",
+  "scope": "smart",
+  "html": "asterisk-progress-navigation.html",
+  "include": ["title", "nsaid-paragraph"],
+  "exclude": ["chapter-link", "chapter-span"]
+}

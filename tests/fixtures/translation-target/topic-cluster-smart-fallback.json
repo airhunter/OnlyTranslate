@@ -1,0 +1,10 @@
+{
+  "name": "smart mode falls back when filtering removes every node",
+  "url": "https://example.com/topics",
+  "scope": "smart",
+  "html": "topic-cluster-only.html",
+  "textIncludes": ["Global markets move", "Business leaders respond", "Technology companies prepare"],
+  "grabOptions": {
+    "siteCompatMode": "full"
+  }
+}

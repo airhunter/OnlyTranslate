@@ -1,0 +1,9 @@
+{
+  "name": "Decrypt article keeps article content and skips reading rail",
+  "url": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+  "scope": "smart",
+  "html": "decrypt-article.html",
+  "contentRoot": "main",
+  "include": ["decrypt-title", "decrypt-subtitle", "brief-title", "brief-one", "brief-two", "body-before", "retired"],
+  "exclude": ["reading-label", "reading-title", "brief-wrapper"]
+}

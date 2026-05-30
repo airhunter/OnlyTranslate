@@ -1,0 +1,9 @@
+{
+  "name": "generic article keeps leading title when title and body are siblings",
+  "url": "https://example.com/story",
+  "scope": "smart",
+  "html": "article-sibling-title.html",
+  "contentRoot": "#article-shell",
+  "include": ["headline", "paragraph", "paragraph-2"],
+  "exclude": ["rail"]
+}

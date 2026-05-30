@@ -1,0 +1,8 @@
+{
+  "name": "Simon Willison profile keeps article list items with inline links",
+  "url": "https://simonwillison.net/2026/May/21/datasette-agent/",
+  "scope": "smart",
+  "html": "simon-willison-list.html",
+  "include": ["charts-plugin", "image-plugin", "sprites-plugin", "after"],
+  "exclude": ["plugins-list", "date", "sponsor-link"]
+}

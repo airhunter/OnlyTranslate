@@ -1,0 +1,8 @@
+{
+  "name": "Decrypt article profile keeps headings and paragraphs when the page has no main element",
+  "url": "https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test",
+  "scope": "smart",
+  "html": "decrypt-no-main.html",
+  "include": ["decrypt-title", "decrypt-subtitle", "brief-title", "brief-one", "first-body", "benchmarks", "gdpval"],
+  "exclude": ["coin-prices", "reading-label", "reading-title", "brief-wrapper"]
+}

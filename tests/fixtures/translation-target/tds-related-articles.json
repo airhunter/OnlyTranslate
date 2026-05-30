@@ -1,0 +1,10 @@
+{
+  "name": "TDS supplements related article cards outside the article root",
+  "url": "https://towardsdatascience.com/i-reduced-my-pandas-runtime-by-95-heres-what-i-was-doing-wrong/",
+  "scope": "smart",
+  "html": "tds-related-articles.html",
+  "contentRootContains": ["#body-paragraph"],
+  "contentRootExcludes": ["#related"],
+  "include": ["body-paragraph", "related-title-1", "related-description-1", "related-title-2", "related-description-2"],
+  "exclude": ["related", "social-medium", "social-youtube"]
+}

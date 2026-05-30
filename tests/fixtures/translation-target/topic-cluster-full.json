@@ -1,0 +1,10 @@
+{
+  "name": "full mode does not enable smart filtering",
+  "url": "https://example.com/topics",
+  "scope": "full",
+  "html": "topic-cluster-only.html",
+  "textIncludes": ["Global markets move", "Business leaders respond", "Technology companies prepare"],
+  "grabOptions": {
+    "siteCompatMode": "full"
+  }
+}

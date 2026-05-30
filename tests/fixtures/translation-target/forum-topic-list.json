@@ -1,0 +1,8 @@
+{
+  "name": "forum-like topic lists keep titles and excerpts while skipping metadata",
+  "url": "https://ziggit.dev/",
+  "scope": "smart",
+  "html": "forum-topic-list.html",
+  "include": ["topic-title", "topic-excerpt"],
+  "exclude": ["category", "replies", "views", "activity"]
+}

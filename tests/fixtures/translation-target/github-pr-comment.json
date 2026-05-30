@@ -1,0 +1,8 @@
+{
+  "name": "GitHub PR comments keep markdown blocks as individual targets",
+  "url": "https://github.com/HKUDS/nanobot/pull/4005",
+  "scope": "smart",
+  "html": "github-pr-comment.html",
+  "include": ["intro", "fit", "adds-heading", "agent-yaml", "soul-md", "why-heading", "why-one", "why-two", "closing", "signature"],
+  "exclude": ["comment-body", "adds-list", "why-list"]
+}

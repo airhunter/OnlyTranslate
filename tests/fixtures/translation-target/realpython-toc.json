@@ -1,0 +1,8 @@
+{
+  "name": "Real Python keeps table-of-contents links as individual targets",
+  "url": "https://realpython.com/claude-api-python/",
+  "scope": "smart",
+  "html": "realpython-toc.html",
+  "include": ["toc-prerequisites", "toc-step-1", "toc-api-key", "toc-first-prompt", "toc-faq"],
+  "exclude": ["toc-li-step-1", "toc-li-api-key"]
+}

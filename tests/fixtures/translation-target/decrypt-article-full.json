@@ -1,0 +1,10 @@
+{
+  "name": "Decrypt article profile applies in full-page scope",
+  "url": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+  "scope": "full",
+  "html": "decrypt-article.html",
+  "include": ["decrypt-title", "decrypt-subtitle", "brief-title", "brief-one", "brief-two", "retired"],
+  "exclude": ["reading-label", "reading-title", "brief-wrapper"],
+  "textExcludes": ["ReadingOpenAI"],
+  "nodesEveryElement": true
+}

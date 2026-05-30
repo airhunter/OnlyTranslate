@@ -1,0 +1,8 @@
+{
+  "name": "Ars Technica profile keeps article header title targets",
+  "url": "https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/",
+  "scope": "smart",
+  "html": "arstechnica-header.html",
+  "include": ["article-title", "deck", "upper-deck"],
+  "exclude": ["author", "timestamp", "comments", "caption"]
+}

@@ -1,0 +1,21 @@
+<style>
+  .pipeline-node:not(.active) .pn-detail { display: none; }
+</style>
+<main id="lesson">
+  <article id="lesson-body">
+    <h1>Downloading the Internet</h1>
+    <p id="body-paragraph">The first step is collecting an enormous amount of text from public web pages.</p>
+    <p id="body-paragraph-2">The goal is a large quantity of high quality, diverse documents for training.</p>
+  </article>
+  <aside>
+    <section class="section" aria-label="Data Collection">
+      <div class="data-flow" role="list" aria-label="Data processing pipeline stages">
+        <div id="late-card" class="pipeline-node" data-stage="2" role="button" aria-expanded="false" aria-label="Text Extraction - click to expand">
+          <div id="late-title" class="pn-title">Text Extraction</div>
+          <div id="late-sub" class="pn-sub">HTML to clean text - Remove navigation and CSS</div>
+          <div id="late-detail" class="pn-detail">Raw HTML contains div tags, CSS, JavaScript, navigation menus, and ads. Parsers extract just the meaningful text content.</div>
+        </div>
+      </div>
+    </section>
+  </aside>
+</main>

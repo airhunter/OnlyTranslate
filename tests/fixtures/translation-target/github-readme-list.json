@@ -1,0 +1,9 @@
+{
+  "name": "GitHub README markdown lists translate each list item",
+  "url": "https://github.com/HKUDS/nanobot",
+  "scope": "smart",
+  "html": "github-readme-list.html",
+  "contentRoot": "main",
+  "include": ["news-1", "news-2", "news-3"],
+  "exclude": ["news-list"]
+}

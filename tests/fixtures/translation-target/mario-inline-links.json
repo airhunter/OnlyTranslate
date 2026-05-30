@@ -1,0 +1,7 @@
+{
+  "name": "generic article keeps paragraphs that contain multiple inline links",
+  "url": "https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/",
+  "scope": "smart",
+  "html": "mario-inline-links.html",
+  "include": ["satya-paragraph"]
+}

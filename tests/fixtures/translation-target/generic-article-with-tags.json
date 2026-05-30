@@ -1,0 +1,9 @@
+{
+  "name": "generic article keeps body and skips tag cluster",
+  "url": "https://example.com/story",
+  "scope": "smart",
+  "html": "generic-article-with-tags.html",
+  "contentRoot": "main",
+  "include": ["title", "paragraph", "paragraph-2"],
+  "exclude": ["topic-1", "topic-2", "topic-3"]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Reddit smart mode keeps post and comment bodies",
+  "url": "https://www.reddit.com/r/digitalnomad/comments/1t3d0e0/china/",
+  "scope": "smart",
+  "html": "reddit-post-comment.html",
+  "include": ["post-title", "post-body", "comment-body"],
+  "exclude": ["post-share", "comment-share"]
+}

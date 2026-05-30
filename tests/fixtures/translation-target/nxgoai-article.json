@@ -1,0 +1,8 @@
+{
+  "name": "NXGOAI profile keeps prose article paragraphs as individual targets",
+  "url": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+  "scope": "smart",
+  "html": "nxgoai-article.html",
+  "include": ["regional-context", "world-model-adoption", "industry-context", "industry-body"],
+  "exclude": ["telegram-title", "home-link", "tag-ai", "read-time"]
+}

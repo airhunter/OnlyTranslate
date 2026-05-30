@@ -1,0 +1,7 @@
+{
+  "name": "smart mode supplements content cards outside the primary article root",
+  "url": "https://ynarwal.github.io/how-llms-work/",
+  "scope": "smart",
+  "html": "supplemental-content-card.html",
+  "include": ["body-paragraph", "pipeline-card"]
+}
