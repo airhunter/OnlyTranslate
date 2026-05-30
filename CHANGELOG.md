@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.4](https://github.com/airhunter/OnlyTranslate/compare/v0.5.3...v0.5.4) (2026-05-30)
+
+
+### Bug Fixes
+
+* **content:** 收窄热门内容过滤误判 ([3e0e4e5](https://github.com/airhunter/OnlyTranslate/commit/3e0e4e55760de364164b4cf493d57ee50c14d03c))
+* **content:** 修复 Real Python 正文目标漏译 ([c313451](https://github.com/airhunter/OnlyTranslate/commit/c313451595d22737631358bf3dac6aab57c09e64))
+* **content:** 修复多站点正文目标漏译 ([1ba481b](https://github.com/airhunter/OnlyTranslate/commit/1ba481b5bf30eb72abe3bf21beb4fa1a119e1462))
+
+
+### Performance Improvements
+
+* **content:** 优化 Heavy 页面识文性能 ([42932e2](https://github.com/airhunter/OnlyTranslate/commit/42932e299f084d37cda7d498036a9904a40eea0f))
+
 ## [0.5.3](https://github.com/airhunter/OnlyTranslate/compare/v0.5.2...v0.5.3) (2026-05-26)
 
 
