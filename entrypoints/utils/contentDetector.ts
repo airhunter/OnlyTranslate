@@ -1,6 +1,12 @@
 // 自底向上打分找主内容区，思路借鉴 Readability.js
 
 // class/id 正向关键词（乘以加分系数）
+import {
+    getCachedNormalizedText,
+    markScannedElement,
+    type ScanContext
+} from '@/entrypoints/main/translationTarget/scanContext';
+
 const POSITIVE_PATTERN = /\b(content|article|post|body|entry|text|story|blog|prose|readme|markdown|main)\b/i;
 // class/id 负向关键词（乘以惩罚系数）
 const NEGATIVE_PATTERN = /\b(nav|sidebar|footer|widget|menu|comment|banner|ad|promo|related|share|social|toc)\b/i;
@@ -12,24 +18,24 @@ const CONTENT_LEAF_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, blockquote, pre, td';
 const MIN_TEXT_LENGTH = 100;
 const MAX_PROMOTION_DEPTH = 4;
 
-export function findMainContent(): Element {
+export function findMainContent(scanContext?: ScanContext): Element {
     // 第一步：语义标签快速命中（只认非常明确的单个 article，不认 main）
-    const semantic = findSemanticRoot();
+    const semantic = findSemanticRoot(scanContext);
     if (semantic) return semantic;
 
     // 第二步：可信的唯一 main。很多新闻 live page 没有唯一 article，
     // 但有明确 main，先命中它能避免在大型页面上做昂贵的全页打分。
-    const main = findMainRoot();
+    const main = findMainRoot(scanContext);
     if (main) return main;
 
     // 第三步：自底向上文本密度评分
-    const scored = findByBottomUpScore();
+    const scored = findByBottomUpScore(scanContext);
     if (scored) {
-        const promoted = promoteToContentShell(scored);
+        const promoted = promoteToContentShell(scored, scanContext);
 
         // 兜底校验：选中的区域文字量需达到 body 的 15%，否则说明没找对，回落到 body
-        const bodyLen = document.body.textContent?.trim().length ?? 0;
-        const promotedLen = getTextLength(promoted);
+        const bodyLen = getCachedNormalizedText(scanContext, document.body).length;
+        const promotedLen = getTextLength(promoted, scanContext);
         if (bodyLen === 0 || promotedLen / bodyLen >= 0.15) return promoted;
     }
 
@@ -37,7 +43,7 @@ export function findMainContent(): Element {
 }
 
 // 只接受高置信度的语义根节点，避免把过宽的 <main> 当成内容区
-function findSemanticRoot(): Element | null {
+function findSemanticRoot(scanContext?: ScanContext): Element | null {
     const articles = Array.from(
         document.querySelectorAll<Element>('article, [role="article"]')
     );
@@ -47,16 +53,16 @@ function findSemanticRoot(): Element | null {
 
     const art = articles[0];
     if (
-        getTextLength(art) >= MIN_TEXT_LENGTH
-        && getLinkDensity(art) <= 0.45
+        getTextLength(art, scanContext) >= MIN_TEXT_LENGTH
+        && getLinkDensity(art, scanContext) <= 0.45
         && !isLikelyNoise(art)
     ) {
-        return promoteToContentShell(art);
+        return promoteToContentShell(art, scanContext);
     }
     return null;
 }
 
-function findMainRoot(): Element | null {
+function findMainRoot(scanContext?: ScanContext): Element | null {
     const mains = Array.from(
         document.querySelectorAll<Element>('main, [role="main"]')
     );
@@ -65,8 +71,8 @@ function findMainRoot(): Element | null {
 
     const main = mains[0];
     if (
-        getTextLength(main) >= MIN_TEXT_LENGTH * 2
-        && getLinkDensity(main) <= 0.5
+        getTextLength(main, scanContext) >= MIN_TEXT_LENGTH * 2
+        && getLinkDensity(main, scanContext) <= 0.5
         && hasPrimaryHeading(main)
         && !isLikelyNoise(main)
     ) {
@@ -76,14 +82,15 @@ function findMainRoot(): Element | null {
     return null;
 }
 
-function findByBottomUpScore(): Element | null {
+function findByBottomUpScore(scanContext?: ScanContext): Element | null {
     // 用 Map 累积每个候选容器的原始分
     const scores = new Map<Element, number>();
 
     const leaves = document.querySelectorAll<Element>(CONTENT_LEAF_SELECTOR);
 
     for (const leaf of leaves) {
-        const text = leaf.textContent?.trim() ?? '';
+        markScannedElement(scanContext);
+        const text = getCachedNormalizedText(scanContext, leaf);
         if (text.length < 10) continue;
 
         // 叶子节点的内容分：文本量 + 逗号数（逗号多 → 自然语言散文）
@@ -111,9 +118,9 @@ function findByBottomUpScore(): Element | null {
     let bestScore = 0;
 
     for (const [el, raw] of scores) {
-        if (getTextLength(el) < MIN_TEXT_LENGTH || isLikelyNoise(el)) continue;
+        if (getTextLength(el, scanContext) < MIN_TEXT_LENGTH || isLikelyNoise(el)) continue;
 
-        const linkDensity = getLinkDensity(el);
+        const linkDensity = getLinkDensity(el, scanContext);
 
         // 链接密度越高，得分衰减越狠（导航区链接密度往往 > 0.5）
         let score = raw * Math.max(0.05, 1 - linkDensity * 2);
@@ -133,8 +140,8 @@ function findByBottomUpScore(): Element | null {
 
 // 评分最高的节点常常只是正文段落容器。这里保守地向上提升到包含标题的文章外壳，
 // 让标题、导语和正文一起被翻译，同时避免把导航、侧栏、推荐区带进来。
-function promoteToContentShell(base: Element): Element {
-    const baseLen = getTextLength(base);
+function promoteToContentShell(base: Element, scanContext?: ScanContext): Element {
+    const baseLen = getTextLength(base, scanContext);
     let best = base;
     let bestScore = 0;
     let current = base.parentElement;
@@ -143,7 +150,7 @@ function promoteToContentShell(base: Element): Element {
     while (current && current !== document.body && depth < MAX_PROMOTION_DEPTH) {
         depth += 1;
 
-        const score = getPromotionScore(current, base, baseLen, depth);
+        const score = getPromotionScore(current, base, baseLen, depth, scanContext);
         if (score > bestScore) {
             best = current;
             bestScore = score;
@@ -155,19 +162,19 @@ function promoteToContentShell(base: Element): Element {
     return best;
 }
 
-function getPromotionScore(candidate: Element, base: Element, baseLen: number, depth: number): number {
+function getPromotionScore(candidate: Element, base: Element, baseLen: number, depth: number, scanContext?: ScanContext): number {
     if (!candidate.contains(base)) return 0;
     if (isLikelyNoise(candidate)) return 0;
 
-    const candidateLen = getTextLength(candidate);
+    const candidateLen = getTextLength(candidate, scanContext);
     if (candidateLen < baseLen) return 0;
 
     const extraText = candidateLen - baseLen;
     const textRatio = baseLen > 0 ? candidateLen / baseLen : Infinity;
-    const linkDensity = getLinkDensity(candidate);
+    const linkDensity = getLinkDensity(candidate, scanContext);
     const hasHeading = hasPrimaryHeading(candidate);
     const hasHeadingOutsideBase = hasPrimaryHeadingOutsideBase(candidate, base);
-    const hasArticleLeadHeading = hasHeadingOutsideBase && looksLikeArticleShellWithLeadingHeading(candidate, base);
+    const hasArticleLeadHeading = hasHeadingOutsideBase && looksLikeArticleShellWithLeadingHeading(candidate, base, scanContext);
 
     // 候选外壳只允许比正文容器略宽。超出的文字太多，通常意味着带进了侧栏/推荐/评论。
     if (!hasArticleLeadHeading && textRatio > 2.4 && extraText > 600) return 0;
@@ -216,14 +223,14 @@ function hasPrimaryHeadingOutsideBase(candidate: Element, base: Element): boolea
     });
 }
 
-function looksLikeArticleShellWithLeadingHeading(candidate: Element, base: Element): boolean {
+function looksLikeArticleShellWithLeadingHeading(candidate: Element, base: Element, scanContext?: ScanContext): boolean {
     const heading = findLeadingPrimaryHeading(candidate, base);
     if (!heading) return false;
 
-    const candidateLen = getTextLength(candidate);
-    const baseLen = getTextLength(base);
+    const candidateLen = getTextLength(candidate, scanContext);
+    const baseLen = getTextLength(base, scanContext);
     const extraText = candidateLen - baseLen;
-    const linkDensity = getLinkDensity(candidate);
+    const linkDensity = getLinkDensity(candidate, scanContext);
 
     // 新闻/博客文章常把标题区和正文区做成同级模块。
     // 允许这种内容壳比正文更宽，但仍限制链接密度和额外文本，避免把整页布局带进来。
@@ -246,16 +253,16 @@ function findLeadingPrimaryHeading(candidate: Element, base: Element): Element |
     }) ?? null;
 }
 
-function getTextLength(el: Element): number {
-    return el.textContent?.replace(/\s+/g, ' ').trim().length ?? 0;
+function getTextLength(el: Element, scanContext?: ScanContext): number {
+    return getCachedNormalizedText(scanContext, el).length;
 }
 
-function getLinkDensity(el: Element): number {
-    const textLen = getTextLength(el);
+function getLinkDensity(el: Element, scanContext?: ScanContext): number {
+    const textLen = getTextLength(el, scanContext);
     if (textLen === 0) return 0;
 
     const linkLen = Array.from(el.querySelectorAll('a'))
-        .reduce((sum, a) => sum + getTextLength(a), 0);
+        .reduce((sum, a) => sum + getTextLength(a, scanContext), 0);
     return linkLen / textLen;
 }
 

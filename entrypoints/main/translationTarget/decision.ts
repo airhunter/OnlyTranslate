@@ -3,6 +3,12 @@ import { getTranslatableText } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
+import {
+    getCachedContentFilterDecision,
+    getCachedContentUnitDecision,
+    getCachedNormalizedText,
+    getCachedVisibility
+} from './scanContext';
 import type {
     TranslationTargetCandidate,
     TranslationTargetContext,
@@ -55,7 +61,7 @@ export function decideTranslationTarget(
         return skipDecision(node, profileSkip, candidate, context);
     }
 
-    const hardSkipReason = getGenericHardSkipReason(node);
+    const hardSkipReason = getGenericHardSkipReason(node, context);
     if (hardSkipReason) {
         return {
             node,
@@ -67,7 +73,7 @@ export function decideTranslationTarget(
         };
     }
 
-    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node) : undefined;
+    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
     if (filterSkip?.policy === 'hard-skip') {
         return skipDecision(node, filterSkip, candidate, context);
     }
@@ -77,7 +83,7 @@ export function decideTranslationTarget(
         return allowDecision(node, profileAllow, candidate, context);
     }
 
-    const contentUnitDecision = classifyContentUnit(node);
+    const contentUnitDecision = getCachedContentUnitDecision(context.grabOptions?.scanContext, node, classifyContentUnit);
     if (contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
         return {
             node,
@@ -138,16 +144,20 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
         ':scope > *, :scope [class*="detail"], :scope [class*="content"], :scope [class*="body"], :scope p'
     ));
     const target = candidates
-        .filter(candidate => isVisibleForTranslation(candidate))
+        .filter(candidate => isVisibleForTranslation(candidate, context))
         .find(candidate => {
-            const text = candidate.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+            const text = getCachedNormalizedText(context.grabOptions?.scanContext, candidate);
             return text.length >= 40 && /[.!?。！？]/.test(text);
         });
 
     return target ?? node;
 }
 
-export function isVisibleForTranslation(element: Element): boolean {
+export function isVisibleForTranslation(element: Element, context?: TranslationTargetContext): boolean {
+    return getCachedVisibility(context?.grabOptions?.scanContext, element, computeVisibleForTranslation);
+}
+
+function computeVisibleForTranslation(element: Element): boolean {
     let current: Element | null = element;
 
     while (current) {
@@ -211,11 +221,11 @@ function skipDecision(
     };
 }
 
-function getContentFilterSkip(element: Element): TranslationTargetSkip | undefined {
+function getContentFilterSkip(element: Element, context: TranslationTargetContext): TranslationTargetSkip | undefined {
     let current: Element | null = element;
 
     while (current) {
-        const decision = getContentFilterDecision(current);
+        const decision = getCachedContentFilterDecision(context.grabOptions?.scanContext, current, getContentFilterDecision);
         if (decision === 'skip-subtree') {
             const tag = current.tagName.toLowerCase();
             const role = current.getAttribute('role')?.toLowerCase();
@@ -233,16 +243,16 @@ function getContentFilterSkip(element: Element): TranslationTargetSkip | undefin
     return undefined;
 }
 
-function getGenericHardSkipReason(element: Element): string | undefined {
+function getGenericHardSkipReason(element: Element, context: TranslationTargetContext): string | undefined {
     if (element.matches(HARD_SKIP_SELECTOR) || element.closest(HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
-    if (!isVisibleForTranslation(element)) return 'not-visible';
+    if (!isVisibleForTranslation(element, context)) return 'not-visible';
     if (element instanceof HTMLElement && element.isContentEditable) return 'contenteditable';
 
     const role = element.getAttribute('role')?.toLowerCase();
     if (role && HARD_SKIP_ROLES.has(role)) return `hard-skip-role:${role}`;
     if (role === 'button' && !isExpandableReadingContainer(element)) return 'hard-skip-role:button';
 
-    const text = getTranslatableText(element).replace(/\s+/g, ' ').trim();
+    const text = getCachedNormalizedText(context.grabOptions?.scanContext, element) || getTranslatableText(element).replace(/\s+/g, ' ').trim();
     if (text.length < 3) return 'too-short';
     if (text.length > 3072 || element.outerHTML.length > 4096) return 'too-long';
 

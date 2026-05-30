@@ -1,9 +1,16 @@
 import { getMainDomain, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
+import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { grabAllNode, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';
 import { decideTranslationTarget, isExpandableReadingContainer, isOpenExpandableReadingContainer, isVisibleForTranslation } from './decision';
+import {
+    cloneScanStats,
+    createScanContext,
+    hasEnoughProfileTargets,
+    type TranslationTargetStats
+} from './scanContext';
 import { collectDomTextUnits } from './unitizer';
 import type { TranslationTargetCandidate, TranslationTargetContext, TranslationTargetDecision } from './types';
 
@@ -12,11 +19,14 @@ export interface AutoTranslationTargetResult {
     nodes: Element[];
     decisions: TranslationTargetDecision[];
     grabOptions?: GrabAllNodeOptions;
+    stats?: TranslationTargetStats;
 }
 
 export function resolveAutoTranslationTarget(scope: string): AutoTranslationTargetResult {
+    const scanContext = createScanContext();
+
     if (scope === 'full') {
-        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
+        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full', scanContext };
         const context: TranslationTargetContext = {
             mode: 'full',
             scope,
@@ -28,15 +38,17 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
             contentRoot: document.body,
             nodes: decisions.map(decision => decision.target),
             decisions,
-            grabOptions
+            grabOptions,
+            stats: cloneScanStats(scanContext)
         };
     }
 
-    const contentRoot = findMainContent();
+    const contentRoot = findMainContent(scanContext);
     const grabOptions: GrabAllNodeOptions = {
         contentFilter: getContentFilterDecision,
         contentUnitClassifier: classifyContentUnit,
-        siteCompatMode: 'smart'
+        siteCompatMode: 'smart',
+        scanContext
     };
     const context: TranslationTargetContext = {
         mode: 'smart',
@@ -51,11 +63,12 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
             contentRoot,
             nodes: decisions.map(decision => decision.target),
             decisions,
-            grabOptions
+            grabOptions,
+            stats: cloneScanStats(scanContext)
         };
     }
 
-    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'full' };
+    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'full', scanContext };
     const fallbackContext: TranslationTargetContext = {
         mode: 'full',
         scope,
@@ -71,7 +84,8 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
             contentRoot,
             nodes: fallbackDecisions.map(decision => decision.target),
             decisions: fallbackDecisions,
-            grabOptions: fallbackOptions
+            grabOptions: fallbackOptions,
+            stats: cloneScanStats(scanContext)
         };
     }
 
@@ -90,7 +104,8 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
         contentRoot: document.body,
         nodes: bodyDecisions.map(decision => decision.target),
         decisions: bodyDecisions,
-        grabOptions: fallbackOptions
+        grabOptions: fallbackOptions,
+        stats: cloneScanStats(scanContext)
     };
 }
 
@@ -103,7 +118,7 @@ export function collectTranslationTargets(
     const decisions = candidates
         .map(candidate => decideTranslationTarget(candidate, context))
         .filter(decision => decision.policy === 'allow')
-        .filter(decision => isVisibleForTranslation(decision.target));
+        .filter(decision => isVisibleForTranslation(decision.target, context));
 
     return mergeTranslationDecisions(decisions);
 }
@@ -114,6 +129,9 @@ function collectTranslationCandidates(
     options: { includeSupplemental?: boolean; fallback?: boolean }
 ): TranslationTargetCandidate[] {
     const candidates: TranslationTargetCandidate[] = [];
+    const siteProfileSelectedTargets = options.fallback
+        ? []
+        : collectSiteProfileSelectedTargets(root, context);
 
     for (const node of grabAllNode(root, context.grabOptions)) {
         candidates.push({
@@ -123,18 +141,16 @@ function collectTranslationCandidates(
         });
     }
 
-    if (!options.fallback) {
-        for (const node of collectSiteProfileSelectedTargets(root, context)) {
-            candidates.push({
-                node,
-                source: 'site-profile',
-                reasons: ['site-profile-select']
-            });
-        }
+    for (const node of siteProfileSelectedTargets) {
+        candidates.push({
+            node,
+            source: 'site-profile',
+            reasons: ['site-profile-select']
+        });
     }
 
     if (options.includeSupplemental) {
-        for (const node of collectSupplementalReadingTargets(document.body, context)) {
+        for (const node of collectSupplementalReadingTargets(document.body, context, siteProfileSelectedTargets)) {
             candidates.push({
                 node,
                 source: 'supplemental',
@@ -172,17 +188,47 @@ function collectSiteProfileSelectedTargets(root: ParentNode, context: Translatio
     return Array.from(new Set(result));
 }
 
-function collectSupplementalReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
+function collectSupplementalReadingTargets(
+    root: ParentNode,
+    context: TranslationTargetContext,
+    profileSelectedTargets: Element[]
+): Element[] {
     const siteTargets = collectSiteSupplementalReadingTargets(root, context);
-    const genericTargets = collectHighConfidenceReadingUnits(root)
-        .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+    const profileTargets = Array.from(new Set([...profileSelectedTargets, ...siteTargets]));
+    const genericTargets = shouldUseProfileFastPath(profileTargets, context)
+        ? []
+        : collectGenericSupplementalReadingTargets(root, context, siteTargets);
 
     return [
         ...genericTargets,
         ...siteTargets
     ]
-        .flatMap(expandSupplementalReadingUnit)
-        .filter(unit => isVisibleForTranslation(unit));
+        .flatMap(unit => expandSupplementalReadingUnit(unit, context))
+        .filter(unit => isVisibleForTranslation(unit, context));
+}
+
+function collectGenericSupplementalReadingTargets(
+    root: ParentNode,
+    context: TranslationTargetContext,
+    siteTargets: Element[]
+): Element[] {
+    return collectHighConfidenceReadingUnits(root, {
+        scanContext: context.grabOptions?.scanContext,
+        scanBudget: 'supplemental',
+        candidateOnly: true,
+        pruneUiSubtrees: true
+    })
+        .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+function shouldUseProfileFastPath(profileTargets: Element[], context: TranslationTargetContext): boolean {
+    const profile = getCurrentSiteProfile();
+    if (context.mode !== 'smart' || profile?.targetStrategy !== 'profile-first') return false;
+    if (!hasEnoughProfileTargets(profileTargets, context.grabOptions?.scanContext)) return false;
+
+    const scanContext = context.grabOptions?.scanContext;
+    if (scanContext) scanContext.stats.profileFastPathUsed = true;
+    return true;
 }
 
 function collectSiteSupplementalReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
@@ -191,14 +237,24 @@ function collectSiteSupplementalReadingTargets(root: ParentNode, context: Transl
     return collect ? collect(root, { mode: context.mode }) : [];
 }
 
-function expandSupplementalReadingUnit(unit: Element): Element[] {
+function getCurrentSiteProfile() {
+    const domain = getMainDomain(location.href);
+    return siteProfiles.find(profile => profile.domains.includes(domain));
+}
+
+function expandSupplementalReadingUnit(unit: Element, context: TranslationTargetContext): Element[] {
     const githubMarkdownListItems = getGitHubMarkdownListItems(unit);
     if (githubMarkdownListItems.length > 0) return githubMarkdownListItems;
 
     if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
-    if (looksLikeSupplementalWrapper(unit)) {
-        const childUnits = collectHighConfidenceReadingUnits(unit).filter(child => child !== unit);
-        if (childUnits.length > 0) return childUnits.flatMap(expandSupplementalReadingUnit);
+    if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit)) {
+        const childUnits = collectHighConfidenceReadingUnits(unit, {
+            scanContext: context.grabOptions?.scanContext,
+            candidateOnly: true,
+            pruneUiSubtrees: true,
+            includeRoot: false
+        }).filter(child => child !== unit);
+        if (childUnits.length > 0) return childUnits.flatMap(child => expandSupplementalReadingUnit(child, context));
     }
 
     return [unit];
@@ -212,6 +268,21 @@ function looksLikeSupplementalWrapper(unit: Element): boolean {
     }
 
     return false;
+}
+
+function looksLikeMultiBlockReadingWrapper(unit: Element): boolean {
+    const tag = unit.tagName.toLowerCase();
+    if (!['main', 'article', 'section', 'div'].includes(tag)) return false;
+    if (isExpandableReadingContainer(unit)) return false;
+
+    const readableDescendants = unit.querySelectorAll('h1, h2, h3, h4, p, li, blockquote, figcaption');
+    if (readableDescendants.length < 2) return false;
+
+    return Array.from(unit.children).some(child => {
+        const childTag = child.tagName.toLowerCase();
+        return ['article', 'section', 'div'].includes(childTag)
+            && child.querySelector('h1, h2, h3, h4, p, li, blockquote, figcaption') !== null;
+    });
 }
 
 function collectDomUnitTargets(root: ParentNode): Element[] {

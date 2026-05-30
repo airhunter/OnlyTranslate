@@ -15,6 +15,7 @@ let footnoteRelayoutTimer: number | undefined;
 export const asteriskProfile: SiteProfile = {
     id: 'asterisk',
     domains: ['asteriskmag.com'],
+    targetStrategy: 'profile-first',
     select: (node) => {
         const target = getAsteriskArticleTarget(node);
         return target ?? false;

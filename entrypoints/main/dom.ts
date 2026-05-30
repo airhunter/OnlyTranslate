@@ -2,6 +2,15 @@ import { getMainDomain, selectCompatFn, type SelectCompatContext } from "@/entry
 import { html } from 'js-beautify';
 import { handleBtnTranslation } from "@/entrypoints/main/trans";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
+import {
+    getCachedContentFilterDecision,
+    getCachedContentUnitDecision,
+    markScannedElement,
+    markSkippedSubtree,
+    tryUseScanBudget,
+    type ScanBudgetKind,
+    type ScanContext
+} from "@/entrypoints/main/translationTarget/scanContext";
 
 // 直接翻译的标签集合（块级元素）
 const directSet = new Set([
@@ -142,6 +151,8 @@ export interface GrabAllNodeOptions {
     contentUnitClassifier?: (element: Element) => ContentUnitDecision;
     shouldSkipSubtree?: (element: Element) => boolean;
     siteCompatMode?: SelectCompatContext['mode'];
+    scanContext?: ScanContext;
+    scanBudget?: ScanBudgetKind;
 }
 
 // 内联元素集合（可以包含在其他元素内的元素）
@@ -166,10 +177,15 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
 
                 if (!(node instanceof Element)) return NodeFilter.FILTER_SKIP;
 
+                markScannedElement(options.scanContext);
+
                 const tag = node.tagName.toLowerCase();
 
-                const contentFilterDecision = options.contentFilter?.(node);
+                const contentFilterDecision = options.contentFilter
+                    ? getCachedContentFilterDecision(options.scanContext, node, options.contentFilter)
+                    : undefined;
                 if (contentFilterDecision === 'skip-subtree') {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
                 if (contentFilterDecision === 'skip-self') {
@@ -177,6 +193,7 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 }
 
                 if (options.shouldSkipSubtree?.(node)) {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
 
@@ -189,18 +206,22 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                     node.classList?.contains('sr-only') ||
                     node.classList?.contains('notranslate') ||
                     skipAriaRoles.has(role)) {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
 
                 // 跳过隐藏元素（hidden 属性、aria-hidden 或 CSS display:none）
                 if (node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true') {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
                 if (node.getAttribute('translate') === 'no') {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
                 try {
                     if (window.getComputedStyle(node).display === 'none') {
+                        markSkippedSubtree(options.scanContext);
                         return NodeFilter.FILTER_REJECT;
                     }
                 } catch (_) {}
@@ -208,15 +229,24 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 // 在初始全局翻译时 跳过页面级 header 与 footer
                 // 跳过页面级 footer
                 if (tag === 'footer') {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
                 // 跳过包含导航元素的 header（页面导航栏），但保留不含导航的 header（文章标题区）
                 if (tag === 'header' && node.querySelector('nav, [role="navigation"]')) {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
 
-                const contentUnitDecision = options.contentUnitClassifier?.(node);
+                if (!tryUseScanBudget(options.scanContext, options.scanBudget)) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+
+                const contentUnitDecision = options.contentUnitClassifier
+                    ? getCachedContentUnitDecision(options.scanContext, node, options.contentUnitClassifier)
+                    : undefined;
                 if (contentUnitDecision?.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
+                    markSkippedSubtree(options.scanContext);
                     return NodeFilter.FILTER_REJECT;
                 }
 
@@ -309,7 +339,11 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
 
     if (hasContentFilterSkipSelfAncestor(node, options)) return false;
 
-    const contentUnitDecision = options.contentUnitClassifier?.(node);
+    if (!tryUseScanBudget(options.scanContext, options.scanBudget)) return false;
+
+    const contentUnitDecision = options.contentUnitClassifier
+        ? getCachedContentUnitDecision(options.scanContext, node, options.contentUnitClassifier)
+        : undefined;
     if (contentUnitDecision?.action === 'skip' && contentUnitDecision.confidence >= 0.85) return false;
     if (contentUnitDecision?.action === 'allow' && contentUnitDecision.confidence >= 0.7) return node;
 
@@ -340,7 +374,7 @@ function hasContentFilterSkipSelfAncestor(node: Element, options: GrabAllNodeOpt
 
     let parent = node.parentElement;
     while (parent) {
-        if (options.contentFilter(parent) === 'skip-self') return true;
+        if (getCachedContentFilterDecision(options.scanContext, parent, options.contentFilter) === 'skip-self') return true;
         parent = parent.parentElement;
     }
 

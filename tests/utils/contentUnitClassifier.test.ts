@@ -125,23 +125,31 @@ describe('contentUnitClassifier', () => {
 
   it('allows forum topic titles and excerpts but skips stats metadata', () => {
     document.body.innerHTML = `
-      <main>
-        <ul class="topic-list">
-          <li class="topic-list-item">
-            <a id="topic-title" class="raw-topic-link" href="/t/ai-policy">AI/LLM Policy Updates</a>
-            <p id="topic-excerpt" class="topic-excerpt">Hey all! The moderation team want to thank you for your input regarding AI showcases.</p>
-            <span id="category" class="badge-category">Site Feedback</span>
-            <span id="replies" class="replies">23</span>
-            <span id="views" class="views">486</span>
-            <span id="activity" class="activity">3h</span>
-          </li>
-        </ul>
-      </main>
+      <div id="main-outlet" role="main">
+        <table class="topic-list">
+          <tbody>
+            <tr class="topic-list-item">
+              <td class="main-link" itemprop="itemListElement">
+                <span class="link-top-line">
+                  <a id="topic-title" class="title raw-link raw-topic-link" itemprop="url" href="/t/ai-policy">AI/LLM Policy Updates</a>
+                </span>
+                <p id="topic-excerpt" class="topic-excerpt">Hey all! The moderation team want to thank you for your input regarding AI showcases.</p>
+                <a id="category" class="badge-category">Site Feedback</a>
+                <a id="tag" class="discourse-tag">language</a>
+              </td>
+              <td id="replies" class="replies"><span class="posts">23</span></td>
+              <td id="views" class="views">486</td>
+              <td id="activity" class="activity">May 30, 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     `
 
     expect(classifyContentUnit(document.querySelector('#topic-title')!).kind).toBe('forum-topic')
     expect(classifyContentUnit(document.querySelector('#topic-excerpt')!).kind).toBe('forum-excerpt')
     expect(classifyContentUnit(document.querySelector('#category')!).action).toBe('skip')
+    expect(classifyContentUnit(document.querySelector('#tag')!).action).toBe('skip')
     expect(classifyContentUnit(document.querySelector('#replies')!).action).toBe('skip')
     expect(classifyContentUnit(document.querySelector('#activity')!).action).toBe('skip')
   })

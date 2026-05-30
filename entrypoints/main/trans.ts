@@ -20,8 +20,10 @@ import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
+import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
 import {
     collectDynamicTranslationNodes as collectDynamicTargetNodes,
+    getDynamicTranslationScanRoot,
     isInTranslationScope as isDynamicInTranslationScope
 } from '@/entrypoints/main/translationTarget/dynamic';
 import { getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
@@ -137,6 +139,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
     const scope = scopeOverride ?? config.translationScope;
     const { contentRoot, nodes, grabOptions } = resolveAutoTranslateTarget(scope);
+    const activeGrabOptions = grabOptions ?? {};
 
     if (!nodes.length) return;
 
@@ -190,10 +193,13 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     let dynamicScanTimer: number | null = null;
 
     const scheduleDynamicScan = (root: Element) => {
+        invalidateScanCache(activeGrabOptions.scanContext, root);
         if (isManagedTranslationNode(root)) return;
-        if (!isDynamicInTranslationScope(root, contentRoot, scope)) return;
+        const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
+        if (!scanRoot) return;
+        if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
 
-        pendingDynamicRoots.add(root);
+        pendingDynamicRoots.add(scanRoot);
         if (dynamicScanTimer !== null) return;
 
         dynamicScanTimer = window.setTimeout(() => {
@@ -203,10 +209,10 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
             roots.forEach(scanRoot => {
                 observeTranslationNodes(
-                    collectDynamicTranslationNodes(scanRoot, contentRoot, scope, grabOptions)
+                    collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
                 );
             });
-        }, 80);
+        }, 120);
     };
 
     // 创建 MutationObserver 监听 DOM 变化

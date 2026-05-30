@@ -42,6 +42,11 @@ interface TranslationTargetFixture {
   grabOptions?: {
     siteCompatMode?: 'smart' | 'full'
   }
+  stats?: {
+    classifiedElementsMax?: number
+    profileFastPathUsed?: boolean
+    budgetExceeded?: boolean
+  }
   nodesEveryElement?: boolean
 }
 
@@ -101,6 +106,15 @@ describe('translation target fixtures', () => {
       }
       if (fixture.grabOptions?.siteCompatMode) {
         expect(target.grabOptions?.siteCompatMode).toBe(fixture.grabOptions.siteCompatMode)
+      }
+      if (fixture.stats?.classifiedElementsMax !== undefined) {
+        expect(target.stats?.classifiedElements).toBeLessThanOrEqual(fixture.stats.classifiedElementsMax)
+      }
+      if (fixture.stats?.profileFastPathUsed !== undefined) {
+        expect(target.stats?.profileFastPathUsed).toBe(fixture.stats.profileFastPathUsed)
+      }
+      if (fixture.stats?.budgetExceeded !== undefined) {
+        expect(target.stats?.budgetExceeded).toBe(fixture.stats.budgetExceeded)
       }
       if (fixture.nodesEveryElement) {
         expect(target.nodes.every(node => node instanceof Element)).toBe(true)

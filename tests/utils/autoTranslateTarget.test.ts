@@ -25,6 +25,8 @@ vi.mock('element-plus', () => ({
 
 import { collectDynamicTranslationNodes, handleBilingualTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
+import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
+import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
 import { translateText } from '@/entrypoints/utils/translateApi'
 
 describe('resolveAutoTranslateTarget behavior', () => {
@@ -316,5 +318,61 @@ describe('resolveAutoTranslateTarget behavior', () => {
     )
 
     expect(nodes).toHaveLength(0)
+  })
+
+  it('drops batched dynamic UI outside the smart content root before deep scanning', () => {
+    const scanContext = createScanContext()
+    document.body.innerHTML = `
+      <main id="content-root">
+        <article>
+          <p id="inside">Readable article paragraph with enough detail to remain the main translation target.</p>
+        </article>
+      </main>
+      <aside id="ui-batch" class="sidebar toolbar related recommended">
+        ${Array.from({ length: 120 }, (_, index) => `<button id="ui-${index}">Open</button>`).join('')}
+      </aside>
+    `
+
+    const uiBatch = document.querySelector('#ui-batch')!
+    const scanRoot = getDynamicTranslationScanRoot(
+      uiBatch,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart', scanContext }
+    )
+    const nodes = collectDynamicTranslationNodes(
+      uiBatch,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart', scanContext }
+    )
+
+    expect(scanRoot).toBeNull()
+    expect(nodes).toHaveLength(0)
+    expect(scanContext.stats.classifiedElements).toBeLessThanOrEqual(1)
+  })
+
+  it('keeps dynamic readable paragraphs inside heavy content roots within the dynamic budget', () => {
+    const scanContext = createScanContext()
+    document.body.innerHTML = `
+      <main id="content-root">
+        <article id="live-story">
+          <div id="dynamic-batch">
+            ${Array.from({ length: 120 }, (_, index) => `<span class="badge">Badge ${index}</span>`).join('')}
+            <p id="dynamic-readable">This newly inserted live update contains enough context to be translated after the heavy page batches DOM mutations.</p>
+          </div>
+        </article>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#dynamic-batch')!,
+      document.querySelector('#content-root')!,
+      'smart',
+      { siteCompatMode: 'smart', scanContext }
+    )
+
+    expect(nodes.map(node => node.id)).toContain('dynamic-readable')
+    expect(scanContext.stats.classifiedElements).toBeLessThanOrEqual(800)
   })
 })

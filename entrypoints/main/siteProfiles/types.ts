@@ -23,6 +23,7 @@ export type SiteProfileAppendTarget = (node: HTMLElement, context: TranslationTa
 export interface SiteProfile {
     id: string;
     domains: string[];
+    targetStrategy?: 'profile-first';
     select?: SiteProfileSelect;
     replace?: SiteProfileReplace;
     supplemental?: SiteProfileSupplemental;

@@ -1,0 +1,11 @@
+{
+  "name": "generic heavy UI article keeps the story and skips interface noise",
+  "url": "https://example.com/heavy-news-page",
+  "scope": "smart",
+  "html": "generic-heavy-ui-article.html",
+  "include": ["heavy-title", "heavy-lead", "heavy-body"],
+  "exclude": ["nav-home", "top-controls", "top-ad", "right-rail", "promo-grid"],
+  "stats": {
+    "classifiedElementsMax": 2500
+  }
+}

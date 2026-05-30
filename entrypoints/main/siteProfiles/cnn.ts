@@ -4,6 +4,7 @@ import type { SiteProfile } from './types';
 export const cnnProfile: SiteProfile = {
     id: 'cnn',
     domains: ['cnn.com'],
+    targetStrategy: 'profile-first',
     select: (node, context) => {
         if (
             context.mode === 'smart'

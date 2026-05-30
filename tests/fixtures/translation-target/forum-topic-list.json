@@ -3,6 +3,6 @@
   "url": "https://ziggit.dev/",
   "scope": "smart",
   "html": "forum-topic-list.html",
-  "include": ["topic-title", "topic-excerpt"],
-  "exclude": ["category", "replies", "views", "activity"]
+  "include": ["topic-title", "second-topic-title"],
+  "exclude": ["category", "tag", "posters", "replies", "views", "activity", "next-page"]
 }

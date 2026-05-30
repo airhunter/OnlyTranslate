@@ -1,0 +1,11 @@
+{
+  "name": "heavy live-like page keeps live story content and skips interface rails",
+  "url": "https://example.com/live/weather-updates",
+  "scope": "smart",
+  "html": "heavy-live-like-page.html",
+  "include": ["live-title", "live-summary", "live-update-title", "live-update-copy"],
+  "exclude": ["live-left-rail", "live-right-rail"],
+  "stats": {
+    "classifiedElementsMax": 2500
+  }
+}

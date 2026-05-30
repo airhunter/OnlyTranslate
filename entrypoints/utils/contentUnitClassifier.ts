@@ -1,3 +1,14 @@
+import {
+    getCachedContentUnitDecision,
+    isLikelyReadingCandidate,
+    isObviousUiSubtree,
+    markScannedElement,
+    markSkippedSubtree,
+    tryUseScanBudget,
+    type ScanBudgetKind,
+    type ScanContext
+} from '@/entrypoints/main/translationTarget/scanContext';
+
 export type ContentUnitKind =
     | 'title'
     | 'subtitle'
@@ -25,6 +36,14 @@ interface UnitMetrics {
     buttonCount: number;
     childTextBlockCount: number;
     hasReadableSentence: boolean;
+}
+
+interface CollectReadingUnitsOptions {
+    scanContext?: ScanContext;
+    scanBudget?: ScanBudgetKind;
+    candidateOnly?: boolean;
+    pruneUiSubtrees?: boolean;
+    includeRoot?: boolean;
 }
 
 const READABLE_CONTAINER_PATTERN = /\b(article|content|story|post|body|entry|main|prose|markdown|readme|docs?|document)\b/i;
@@ -75,17 +94,18 @@ export function classifyContentUnit(element: Element): ContentUnitDecision {
     return neutral('no-strong-signal');
 }
 
-export function collectHighConfidenceReadingUnits(root: ParentNode = document.body): Element[] {
-    const elements = root instanceof Element
-        ? [root, ...Array.from(root.querySelectorAll<Element>('*'))]
-        : Array.from(root.querySelectorAll<Element>('*'));
-
+export function collectHighConfidenceReadingUnits(
+    root: ParentNode = document.body,
+    options: CollectReadingUnitsOptions = {}
+): Element[] {
     const result: Element[] = [];
 
-    for (const element of elements) {
+    for (const element of iterateReadingUnitCandidates(root, options)) {
         if (result.some(parent => parent.contains(element))) continue;
 
-        const decision = classifyContentUnit(element);
+        if (!tryUseScanBudget(options.scanContext, options.scanBudget)) break;
+
+        const decision = getCachedContentUnitDecision(options.scanContext, element, classifyContentUnit);
         if (decision.action === 'skip') continue;
         if (decision.action !== 'allow' || decision.confidence < 0.72) continue;
 
@@ -93,6 +113,45 @@ export function collectHighConfidenceReadingUnits(root: ParentNode = document.bo
     }
 
     return result;
+}
+
+function* iterateReadingUnitCandidates(
+    root: ParentNode,
+    options: CollectReadingUnitsOptions
+): Generator<Element> {
+    if (options.includeRoot !== false && root instanceof Element && shouldVisitReadingCandidate(root, options)) {
+        yield root;
+    }
+
+    const walker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_ELEMENT,
+        {
+            acceptNode: (node) => {
+                if (!(node instanceof Element)) return NodeFilter.FILTER_SKIP;
+                markScannedElement(options.scanContext);
+
+                if (options.pruneUiSubtrees && isObviousUiSubtree(options.scanContext, node)) {
+                    markSkippedSubtree(options.scanContext);
+                    return NodeFilter.FILTER_REJECT;
+                }
+
+                return shouldVisitReadingCandidate(node, options)
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_SKIP;
+            }
+        }
+    );
+
+    let current: Node | null;
+    while (current = walker.nextNode()) {
+        if (current instanceof Element) yield current;
+    }
+}
+
+function shouldVisitReadingCandidate(element: Element, options: CollectReadingUnitsOptions): boolean {
+    if (!options.candidateOnly) return true;
+    return isLikelyReadingCandidate(element);
 }
 
 function scoreTitle(element: Element, metrics: UnitMetrics): number {
@@ -178,10 +237,12 @@ function scoreForumTopic(element: Element, metrics: UnitMetrics): number {
     const row = element.closest('li, tr, article, [role="row"], .topic-list-item, .topic-row, .discussion, .thread, .post');
     const rowHint = row ? getElementHint(row) : '';
     const rowText = row ? getNormalizedText(row) : '';
+    const hasForumStats = Boolean(row?.querySelector('.replies, .views, .activity, .posts, .posters, [class*="reply"], [class*="view"], [class*="activity"]'));
 
     let score = 0;
     if (FORUM_TOPIC_PATTERN.test(`${hint} ${rowHint}`)) score += 3;
     if (row && /(replies|views|activity|comments|last post|latest|\d+\s*(replies|views|comments)|\d+[hmwd]\b)/i.test(rowText)) score += 2;
+    if (hasForumStats) score += 2;
     if (tag === 'a' && element.getAttribute('href')) score += 1.5;
     if (metrics.linkDensity <= 1) score += 1;
     if (row && row.querySelector('.topic-excerpt, .excerpt, [class*="excerpt"]')) score += 1;
