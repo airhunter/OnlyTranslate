@@ -873,6 +873,173 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).not.toContain('messages-row')
   })
 
+  it('keeps Simon Willison article list items that contain inline links', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://simonwillison.net/2026/May/21/datasette-agent/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div id="sponsored-banner">
+        <strong>Sponsored by:</strong> The AI App and Agent Factory
+        <a id="sponsor-link" href="https://example.com">Try Foundry</a>
+      </div>
+      <div id="wrapper">
+        <div id="primary">
+          <div class="entry entryPage">
+            <div data-permalink-context="/2026/May/21/datasette-agent/">
+              <h2 id="title">Datasette Agent</h2>
+              <p class="mobile-date" id="date">21st May 2026</p>
+              <p id="intro">My favorite feature of Datasette Agent is that, like the rest of Datasette, it is extensible using plugins.</p>
+              <p id="lead">We have shipped three plugins so far:</p>
+              <ul id="plugins-list">
+                <li id="charts-plugin">
+                  <a href="https://github.com/datasette/datasette-agent-charts">datasette-agent-charts</a>, shown in the video, adds charts to Datasette Agent, powered by <a href="https://observablehq.com/plot/">Observable Plot</a>.
+                </li>
+                <li id="image-plugin">
+                  <a href="https://github.com/datasette/datasette-agent-openai-imagegen">datasette-agent-openai-imagegen</a> adds an image generation tool to Datasette Agent using <a href="https://openai.com/index/introducing-chatgpt-images-2-0/">ChatGPT Images 2.0</a>.
+                </li>
+                <li id="sprites-plugin">
+                  <a href="https://github.com/datasette/datasette-agent-sprites">datasette-agent-sprites</a> provides tools for executing code in a <a href="https://sprites.dev/">Fly Sprites</a> persistent sandbox.
+                </li>
+              </ul>
+              <p id="after">Building plugins is <em>really fun</em>. I have a bunch more prototypes that are not quite alpha-quality yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('charts-plugin')
+    expect(ids).toContain('image-plugin')
+    expect(ids).toContain('sprites-plugin')
+    expect(ids).toContain('after')
+    expect(ids).not.toContain('plugins-list')
+    expect(ids).not.toContain('date')
+    expect(ids).not.toContain('sponsor-link')
+  })
+
+  it('keeps NXGOAI prose article paragraphs as individual targets', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article class="py-16 px-6">
+          <div class="max-w-3xl mx-auto">
+            <div id="breadcrumbs">
+              <a id="home-link" href="/">Home</a>
+              <a id="blog-link" href="/blog">Blog</a>
+            </div>
+            <div id="tags">
+              <span id="tag-ai">AI</span>
+              <span id="tag-world-models">world models</span>
+            </div>
+            <h1 id="article-title">Roundtables: Can AI Learn to Understand the World?</h1>
+            <div id="metadata">
+              <span id="read-time">3 min read</span>
+              <span id="date">May 22, 2026</span>
+            </div>
+            <div class="prose prose-invert prose-orange max-w-none">
+              <p id="regional-context">While the global AI landscape is abuzz with these developments, the implications for specific regions, such as the Middle East, are particularly noteworthy.</p>
+              <p id="world-model-adoption">The adoption of world models in AI could accelerate these efforts by providing more intelligent systems capable of addressing region-specific challenges. For example, in the Middle East's arid climate, AI systems with enhanced understanding could optimize water usage in agriculture, a critical sector for food security.</p>
+              <h2 id="industry-context">Broader Industry Context</h2>
+              <p id="industry-body">As the NXGOAI team explores these developments, it becomes evident that the shift towards world models is not just a technical evolution but also a strategic one.</p>
+            </div>
+            <div id="telegram-cta" class="mt-12 p-6 rounded-2xl">
+              <p id="telegram-title">Get daily AI updates on Telegram</p>
+              <a id="telegram-link" href="https://t.me/nxgoai_en">Follow @nxgoai_en</a>
+            </div>
+          </div>
+        </article>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('regional-context')
+    expect(ids).toContain('world-model-adoption')
+    expect(ids).toContain('industry-context')
+    expect(ids).toContain('industry-body')
+    expect(ids).not.toContain('telegram-title')
+    expect(ids).not.toContain('home-link')
+    expect(ids).not.toContain('tag-ai')
+    expect(ids).not.toContain('read-time')
+  })
+
+  it('keeps NXGOAI prose paragraphs when the prose container is the content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div class="prose prose-invert prose-orange max-w-none">
+        <p class="" style="-webkit-line-clamp: unset; max-height: unset;">While the global AI landscape is abuzz with these developments, the implications for specific regions, such as the Middle East, are particularly noteworthy.</p>
+        <p id="missed-world-models">The adoption of world models in AI could accelerate these efforts by providing more intelligent systems capable of addressing region-specific challenges. For example, in the Middle East's arid climate, AI systems with enhanced understanding could optimize water usage in agriculture, a critical sector for food security.</p>
+        <h2 class="" style="-webkit-line-clamp: unset; max-height: unset;">Broader Industry Context</h2>
+        <p class="" style="-webkit-line-clamp: unset; max-height: unset;">As the NXGOAI team explores these developments, it becomes evident that the shift towards world models is not just a technical evolution but also a strategic one.</p>
+      </div>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('missed-world-models')
+    expect(target.nodes.some(node => node.textContent?.includes('The adoption of world models in AI could accelerate'))).toBe(true)
+  })
+
+  it('keeps Ars Technica article header title targets', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <header>
+        <div>
+          <div>
+            <div>
+              <div class="upper-deck">
+                <span class="upper-deck__icon"><svg></svg></span>
+                <span id="upper-deck" class="upper-deck__text">Theology of Tolkien</span>
+              </div>
+              <h1 id="article-title">Citing Gandalf, Pope Leo says we must disarm AI</h1>
+              <p id="deck" class="text-gray-550">In an age of AI, Pope looks for artisans of hope.</p>
+              <div>
+                <a id="author" href="https://arstechnica.com/author/nate-anderson/">Nate Anderson</a>
+                <time id="timestamp" datetime="2026-05-25T17:07:42-04:00">2026年5月26日 05:07</time>
+                <a id="comments" class="view-comments" href="#comments">204</a>
+              </div>
+            </div>
+            <div>
+              <div class="caption-content" id="caption">Pope Leo XIV presents Magnifica Humanitas at the Vatican.</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main>
+        <article>
+          <p id="body">Pope Leo XIV quoted Gandalf during a speech about artificial intelligence and human dignity.</p>
+          <p id="body-two">The remarks emphasized responsibility, restraint, and the need for hope in technology policy.</p>
+        </article>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('article-title')
+    expect(ids).toContain('deck')
+    expect(ids).toContain('upper-deck')
+    expect(ids).not.toContain('author')
+    expect(ids).not.toContain('timestamp')
+    expect(ids).not.toContain('comments')
+    expect(ids).not.toContain('caption')
+  })
+
   it('keeps Matt Strom-Awn article paragraphs that mention popular linked subjects', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://mattstromawn.com/writing/expansion-artifacts/'),

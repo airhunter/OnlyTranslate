@@ -1,12 +1,15 @@
 import { asteriskProfile } from './asterisk';
+import { arsTechnicaProfile } from './arsTechnica';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { cnnProfile } from './cnn';
 import { decryptProfile } from './decrypt';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { mediumProfile } from './medium';
+import { nxgoaiProfile } from './nxgoai';
 import { realPythonProfile } from './realPython';
 import { redditProfile } from './reddit';
+import { simonWillisonProfile } from './simonWillison';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
 import type { AfterBilingualAppendCompatFn, ReplaceCompatFn, SelectCompatFn, SiteProfile, SupplementalCompatFn } from './types';
@@ -39,10 +42,13 @@ export const siteProfiles: SiteProfile[] = [
     githubProfile,
     stackOverflowProfile,
     mediumProfile,
+    nxgoaiProfile,
     realPythonProfile,
     redditProfile,
+    simonWillisonProfile,
     hackerNewsProfile,
     asteriskProfile,
+    arsTechnicaProfile,
     claudeNagdyProfile,
     decryptProfile
 ];

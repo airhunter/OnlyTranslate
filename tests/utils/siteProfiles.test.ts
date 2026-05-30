@@ -40,6 +40,18 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['decrypt.co']).toBeTypeOf('function')
   })
 
+  it('registers Simon Willison article profile', () => {
+    expect(selectCompatFn['simonwillison.net']).toBeTypeOf('function')
+  })
+
+  it('registers NXGOAI article profile', () => {
+    expect(selectCompatFn['nxgoai.com']).toBeTypeOf('function')
+  })
+
+  it('registers Ars Technica article profile', () => {
+    expect(selectCompatFn['arstechnica.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'
