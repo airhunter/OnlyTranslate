@@ -764,6 +764,115 @@ describe('resolveAutoTranslateTarget', () => {
     expect(ids).toContain('satya-paragraph')
   })
 
+  it('keeps Real Python table-of-contents links as individual targets', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://realpython.com/claude-api-python/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main class="container main-content">
+        <div class="article-body">
+          <div class="bg-light sidebar-module sidebar-module-inset" id="toc">
+            <p class="h3 mb-2 text-muted">Table of Contents</p>
+            <div class="toc">
+              <ul>
+                <li id="toc-li-prerequisites"><a id="toc-prerequisites" href="#prerequisites">Prerequisites</a></li>
+                <li id="toc-li-step-1">
+                  <a id="toc-step-1" href="#step-1-set-up-the-claude-api-in-python">Step 1: Set Up the Claude API in Python</a>
+                  <ul>
+                    <li id="toc-li-api-key"><a id="toc-api-key" href="#get-your-api-key-and-install-anthropic">Get Your API Key and Install anthropic</a></li>
+                    <li id="toc-li-first-prompt"><a id="toc-first-prompt" href="#send-your-first-prompt">Send Your First Prompt</a></li>
+                  </ul>
+                </li>
+                <li id="toc-li-faq"><a id="toc-faq" href="#frequently-asked-questions">Frequently Asked Questions</a></li>
+              </ul>
+            </div>
+          </div>
+          <p id="intro">The fastest way to use the Claude API in Python is to install anthropic, set your API key, and call client.messages.create.</p>
+          <p id="body">This readable article paragraph gives the detector enough body copy to keep the Real Python article content root selected.</p>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('toc-prerequisites')
+    expect(ids).toContain('toc-step-1')
+    expect(ids).toContain('toc-api-key')
+    expect(ids).toContain('toc-first-prompt')
+    expect(ids).toContain('toc-faq')
+    expect(ids).not.toContain('toc-li-step-1')
+    expect(ids).not.toContain('toc-li-api-key')
+  })
+
+  it('keeps Real Python alert translations on the paragraph instead of the wrapper', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://realpython.com/claude-api-python/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main class="container main-content">
+        <div class="article-body">
+          <p id="before-note">In the following steps, you will install the anthropic SDK, call Claude from Python, and shape Claude's behavior.</p>
+          <div id="note-alert" class="alert alert-primary" role="alert">
+            <p id="note-paragraph"><strong>Note:</strong> Claude's responses are non-deterministic, so the same prompt produces different output each time, which is expected for a large language model.</p>
+          </div>
+          <p id="after-note">Each step builds on the last, and the final script is short enough to read in one sitting.</p>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('note-paragraph')
+    expect(ids).not.toContain('note-alert')
+    expect(ids).not.toContain('')
+  })
+
+  it('keeps Real Python article table cells as individual targets', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://realpython.com/claude-api-python/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main class="container main-content">
+        <div class="article-body">
+          <p id="before-table">Here is what each parameter to client.messages.create controls in the Claude Python SDK.</p>
+          <div id="table-shell" class="table-responsive">
+            <table id="parameter-table" class="table table-hover">
+              <thead>
+                <tr id="head-row">
+                  <th id="parameter-heading">Parameter</th>
+                  <th id="control-heading">What it controls</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr id="messages-row">
+                  <td id="messages-name"><code>messages</code></td>
+                  <td id="messages-description">A list of conversation turns. Each entry is a <a href="/ref/builtin-types/dict/"><code>dict</code></a> with a <code>"role"</code> and <code>"content"</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="after-table">The content attribute is a list because Claude can return multiple content blocks.</p>
+        </div>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map((node) => node.id)
+
+    expect(ids).toContain('parameter-heading')
+    expect(ids).toContain('control-heading')
+    expect(ids).toContain('messages-name')
+    expect(ids).toContain('messages-description')
+    expect(ids).not.toContain('table-shell')
+    expect(ids).not.toContain('parameter-table')
+    expect(ids).not.toContain('messages-row')
+  })
+
   it('keeps Matt Strom-Awn article paragraphs that mention popular linked subjects', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://mattstromawn.com/writing/expansion-artifacts/'),

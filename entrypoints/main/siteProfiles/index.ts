@@ -5,6 +5,7 @@ import { decryptProfile } from './decrypt';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { mediumProfile } from './medium';
+import { realPythonProfile } from './realPython';
 import { redditProfile } from './reddit';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
@@ -38,6 +39,7 @@ export const siteProfiles: SiteProfile[] = [
     githubProfile,
     stackOverflowProfile,
     mediumProfile,
+    realPythonProfile,
     redditProfile,
     hackerNewsProfile,
     asteriskProfile,
