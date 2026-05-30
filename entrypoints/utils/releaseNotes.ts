@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.4',
+    notes: {
+      'zh-CN': {
+        title: '识文性能与论坛页修复',
+        items: [
+          '优化大型新闻、门户和直播类页面的识文扫描，减少导航、广告、推荐区域带来的卡顿。',
+          '新增共享扫描缓存和扫描预算，页面动态更新时会合并补扫，翻译响应更稳定。',
+          '修复 Ziggit/Discourse 论坛主题列表标题无法进入翻译范围的问题。',
+          '补充 Heavy 页面、直播流页面和论坛列表回归样本，降低识文规则反复风险。'
+        ]
+      },
+      'en-US': {
+        title: 'Content Detection Performance and Forum Fixes',
+        items: [
+          'Optimized content detection on large news, portal, and live-style pages to reduce slowdown from navigation, ads, and recommendation areas.',
+          'Added shared scan caching and scan budgets so dynamic page updates are batched and translated more reliably.',
+          'Fixed Ziggit/Discourse forum topic list titles not being included in the translation scope.',
+          'Added regression fixtures for Heavy pages, live-like pages, and forum lists to reduce content-detection rule regressions.'
+        ]
+      },
+      'zh-TW': {
+        title: '識文效能與論壇頁修復',
+        items: [
+          '優化大型新聞、入口網站和直播類頁面的識文掃描，減少導覽、廣告、推薦區域造成的卡頓。',
+          '新增共用掃描快取和掃描預算，頁面動態更新時會合併補掃，翻譯反應更穩定。',
+          '修復 Ziggit/Discourse 論壇主題列表標題無法進入翻譯範圍的問題。',
+          '補充 Heavy 頁面、直播流頁面和論壇列表回歸樣本，降低識文規則反覆風險。'
+        ]
+      },
+      'ja-JP': {
+        title: 'コンテンツ検出の高速化とフォーラム修正',
+        items: [
+          '大型ニュース、ポータル、ライブ形式のページで、ナビゲーション、広告、推薦エリアによる検出の遅さを軽減しました。',
+          '共有スキャンキャッシュとスキャン上限を追加し、動的なページ更新をまとめて再検出できるようにしました。',
+          'Ziggit/Discourse のフォーラム一覧で、トピックタイトルが翻訳対象に入らない問題を修正しました。',
+          'Heavy ページ、ライブ風ページ、フォーラム一覧の回帰サンプルを追加し、検出ルールの揺り戻しを抑えました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.3',
     notes: {
       'zh-CN': {
