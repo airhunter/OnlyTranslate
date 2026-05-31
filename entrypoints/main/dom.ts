@@ -310,17 +310,23 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
 }
 
 function removeNestedTranslateNodes(nodes: Element[]): Element[] {
-    const sorted = Array.from(new Set(nodes)).sort(compareDocumentOrder);
+    const sorted = Array.from(new Set(nodes))
+        .sort((left, right) => getNodeDepth(right) - getNodeDepth(left) || compareDocumentOrder(left, right));
     const kept: Element[] = [];
-    const keptSet = new WeakSet<Element>();
+    const ancestorsOfKept = new WeakSet<Element>();
 
     for (const node of sorted) {
-        if (hasKeptAncestor(node, keptSet)) continue;
+        if (ancestorsOfKept.has(node)) continue;
         kept.push(node);
-        keptSet.add(node);
+
+        let ancestor = node.parentElement;
+        while (ancestor) {
+            ancestorsOfKept.add(ancestor);
+            ancestor = ancestor.parentElement;
+        }
     }
 
-    return kept;
+    return kept.sort(compareDocumentOrder);
 }
 
 function compareDocumentOrder(left: Element, right: Element): number {
@@ -331,14 +337,15 @@ function compareDocumentOrder(left: Element, right: Element): number {
     return 0;
 }
 
-function hasKeptAncestor(node: Element, keptSet: WeakSet<Element>): boolean {
-    let current = node.parentElement;
-    while (current) {
-        if (keptSet.has(current)) return true;
+function getNodeDepth(node: Element): number {
+    let depth = 0;
+    let current: Element | null = node;
+    while (current.parentElement) {
+        depth += 1;
         current = current.parentElement;
     }
 
-    return false;
+    return depth;
 }
 
 // 返回最终应该翻译的父节点或 false
