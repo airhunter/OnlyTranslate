@@ -1,7 +1,11 @@
 import { watch, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 
-export function useTheme(config: Ref<any>) {
+interface ThemeConfig {
+  theme?: string
+}
+
+export function useTheme(config: Ref<ThemeConfig>) {
   const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
   function updateTheme(theme: string) {

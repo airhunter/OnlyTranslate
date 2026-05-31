@@ -5,8 +5,10 @@ import { setLocale } from "@/entrypoints/utils/i18n";
 export let config: Config = new Config();
 export const configReady = loadConfig();
 
+type StoredConfig = Partial<Config> & Pick<Config, 'on' | 'service' | 'from' | 'to'>;
+
 // 检查从存储中解析出的对象是否是有效的Config对象
-function isConfigObjectValid(obj: any): obj is Config {
+function isConfigObjectValid(obj: unknown): obj is StoredConfig {
     if (typeof obj !== 'object' || obj === null) {
         return false;
     }
@@ -19,7 +21,7 @@ async function loadConfig() {
     try {
         const value = await storage.getItem('local:config');
         if (typeof value === 'string' && value.trim().length > 0) {
-            const parsedConfig = JSON.parse(value);
+            const parsedConfig: unknown = JSON.parse(value);
             if (isConfigObjectValid(parsedConfig)) {
                 // 兼容动态面板升级：找出所有配置过的服务，初始化 activeBuiltinProviders
                 if (!parsedConfig.activeBuiltinProviders || parsedConfig.activeBuiltinProviders.length === 0) {
@@ -64,10 +66,10 @@ async function loadConfig() {
 }
 
 // 监控配置变化并更新 config
-storage.watch('local:config', (newValue: any, oldValue: any) => {
+storage.watch('local:config', (newValue: unknown) => {
     if (typeof newValue === 'string' && newValue.trim().length > 0) {
         try {
-            const parsedConfig = JSON.parse(newValue);
+            const parsedConfig: unknown = JSON.parse(newValue);
             if (isConfigObjectValid(parsedConfig)) {
                 // 如果新的配置有效，更新 config
                 Object.assign(config, parsedConfig);
