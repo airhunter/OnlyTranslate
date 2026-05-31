@@ -1,7 +1,7 @@
 import type { GrabAllNodeOptions } from '@/entrypoints/main/dom';
-import { getMainDomain } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
+import { getMainDomain } from '@/entrypoints/utils/domain';
 import { collectTranslationTargets } from './collect';
 import {
     BILINGUAL_CONTENT_CLASS,

@@ -1,6 +1,7 @@
-import { getMainDomain, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
+import { selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { grabAllNode, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
+import { getMainDomain } from '@/entrypoints/utils/domain';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';

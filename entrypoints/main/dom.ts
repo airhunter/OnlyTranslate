@@ -1,4 +1,5 @@
-import { getMainDomain, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
+import { selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
+import { getMainDomain } from "@/entrypoints/utils/domain";
 import { html } from 'js-beautify';
 import { handleBtnTranslation } from "@/entrypoints/main/trans";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";

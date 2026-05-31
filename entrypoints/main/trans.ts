@@ -15,7 +15,8 @@ import {
     smashTruncationStyle
 } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
-import { afterBilingualAppendCompatFn, getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
+import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
+import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";

@@ -1,8 +1,8 @@
-import { getMainDomain } from '@/entrypoints/main/compat';
 import { getTranslatableText } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
+import { getMainDomain } from '@/entrypoints/utils/domain';
 import {
     BILINGUAL_CONTENT_CLASS,
     TRANSLATED_ATTR
