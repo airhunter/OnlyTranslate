@@ -35,6 +35,7 @@ Batch 3 commits so far:
 
 - `1618a08 refactor(types): 收紧翻译热路径类型`
 - `51ca011 refactor(types): 收紧运行时响应解析`
+- `b5e8d48 refactor(types): 收紧配置组合函数类型`
 
 ### Batch 0. Regression Closure Gate
 
