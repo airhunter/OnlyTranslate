@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
@@ -53,6 +53,11 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 const { config, loadConfig } = useConfig()
 const { updateTheme } = useTheme(config)
 const { t, locale } = useI18n()
+
+watchEffect(() => {
+  document.title = t('common.settingsTitle')
+})
+
 loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
   locale.value = resolveLocale(config.value.uiLocale || 'auto')
