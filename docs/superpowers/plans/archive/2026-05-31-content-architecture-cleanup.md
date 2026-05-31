@@ -1,5 +1,15 @@
 # Content Architecture Cleanup Implementation Plan
 
+Status: Completed and archived.
+
+Completed on: 2026-05-31
+
+Verification:
+
+- `pnpm test:content` passed.
+- `pnpm verify` passed.
+- Generic translation target boundary scan found no concrete site-domain matches in the checked generic paths.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Move site-specific content detection behavior back into site profiles while tightening translation DOM utilities, constants, heuristics, and state ownership.
