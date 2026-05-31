@@ -64,6 +64,14 @@ OnlyTranslate 的 v0.5 系列已经引入 `translationTarget/` 分层，识文�
 
 `compat.ts` 暂时继续导出旧名称，但只从 `siteProfiles` 生成映射，作为过渡层。
 
+`compat.ts` 的过渡边界如下：
+
+- `siteProfiles/index.ts` 负责生成 `siteProfileSelectFns`、`siteProfileReplaceFns`、`siteProfileSupplementalFns`、`siteProfileAfterBilingualAppendFns`，后续新增的 profile hook 映射也在这里生成。
+- `compat.ts` 只导入这些映射并按旧名称导出，不在内部重新组装站点 map。
+- `getMainDomain` 暂时继续留在 `compat.ts`，作为调用链兼容的 URL 归一化工具；后续若拆到独立 URL util，必须单独做小步迁移。
+- `dom.ts` 对 `selectCompatFn` 的调用、`trans.ts` 对 `replaceCompatFn` 和 `afterBilingualAppendCompatFn` 的调用，在本次改造中先继续走 facade，避免把站点规则迁移和执行链路迁移混在一起。
+- 新增识文代码不再直接依赖 `compat.ts` 的 map，而是通过 `siteProfiles` 或 profile helper 获取当前站点能力。
+
 ### 翻译执行层保持行为稳定
 
 `trans.ts` 和 `dom.ts` 的整理优先做不改变行为的工作：
@@ -100,7 +108,20 @@ type SiteProfileShouldKeepNestedTarget = (
 - `expandTarget`：把一个站点特有的容器拆成多个翻译目标。GitHub README list 可以把 `ul/ol` 拆成 `li`。
 - `shouldKeepNestedTarget`：合并去重时允许站点保留某些父子目标关系。GitHub Markdown list item 可以保留，list container 可以被丢弃。
 
-通用 `collect.ts` 只调用 profile hook，不再出现 GitHub 函数。
+集成点：
+
+- `collectTranslationCandidates` 先按现有顺序收集 `grab-node`、`site-profile`、`supplemental` 等原始候选。
+- 原始候选进入 `decideTranslationTarget` 之前，调用当前 profile 的 `expandTarget(candidate.node, context)`。
+- `expandTarget` 返回的节点作为新的 `dom-unit` source 候选加入候选池，并经过完整 `decideTranslationTarget` 路径。
+- `expandTarget` 阶段只负责产生候选，不调用 `skipTarget`、`allowTarget` 或通用 content filter；返回节点在 `decideTranslationTarget` 中只按正常顺序执行一次 profile `skipTarget`。
+- 如果 `expandTarget` 返回空值或 `false`，原始候选照常进入决策链。
+- `mergeTranslationDecisions` 中的嵌套去重调用 `shouldKeepNestedTarget(parent, child, context)`。当 hook 返回 `true` 时，child 不会因为 parent 包含它而被删除；如果 parent 只是该 nested target 的容器，parent 会被去掉，避免同时翻译 list container 和 list item。
+
+对应现有 GitHub 逻辑的迁移关系：
+
+- 当前 `collectDomUnitTargets` 中产生 GitHub Markdown list item 的职责迁移到 `expandTarget`。
+- 当前 `mergeTranslationDecisions` 中保留 list item、丢弃 list container 的职责迁移到 `shouldKeepNestedTarget`。
+- 通用 `collect.ts` 只调用 profile hook，不再出现 GitHub 函数或 GitHub 域名判断。
 
 ### 2. GitHub 逻辑迁回 profile
 
@@ -160,6 +181,13 @@ export const BILINGUAL_WRAPPER_CLASS = 'only-translate-bilingual';
 ### 6. 隐式依赖显式化
 
 `trans.ts` 中的 `storage.setItem` 改为显式 import。若项目已有 WXT storage 全局类型，也不再依赖隐式运行时全局。
+
+`dom.ts` 中的 `handleFirstLineText` 不再直接调用 `browser.runtime.sendMessage`。处理方式：
+
+- `dom.ts` 只负责发现“首个可翻译文本节点”，并通过可选回调把 `Text` 节点和原文交给调用方。
+- `GrabAllNodeOptions` 增加一个可选回调，例如 `translateFirstLineText?: (textNode: Text, text: string) => void`。
+- `trans.ts` 在需要保留该行为的路径中注入回调，由执行层调用 `translateText` 或现有消息通道完成翻译。
+- 没有传入回调时，`dom.ts` 不触发 IPC，只返回原有可翻译目标判断结果，避免工具层越层依赖浏览器运行时。
 
 ### 7. 模块级状态收纳
 
@@ -232,6 +260,8 @@ export const originalContents = translationState.originalContents;
 - 替换重复常量声明。
 - 收紧 `dom.ts`、`trans.ts` 中高频 `any`。
 - 显式 import storage。
+- 把 `handleFirstLineText` 的翻译 IPC 从 `dom.ts` 移到 `trans.ts` 层，通过 `GrabAllNodeOptions` 回调注入。
+- 保持 `dom.ts` 的 `selectCompatFn`、`trans.ts` 的 `replaceCompatFn` / `afterBilingualAppendCompatFn` 调用继续走 `compat.ts` facade，不在阶段二迁移这些调用方。
 - 跑类型检查和相关单测。
 
 ### 阶段三：性能和误判修复
@@ -272,6 +302,7 @@ pnpm verify
 
 - GitHub README / PR comment 是高风险区域。迁移时必须保留现有 fixture，先测试失败再迁移。
 - `SiteProfile` hook 扩展会影响多个站点 profile 的类型定义。实现时应保持 hook 可选，默认行为不变。
+- `looksLikeSupplementalWrapper` 里 `[class*="card"]` 这类宽泛类名匹配可能在站点迁移后暴露新的 false positive。它不是本次主动重写对象；如果 GitHub 迁移或 Heavy fixture 暴露误命中，只做局部收紧并补 fixture。
 - 类型收紧可能暴露旧代码中的真实空值问题。优先用类型守卫修复，不用强制断言压过去。
 - 状态收纳可能影响恢复原文和动态翻译。该阶段放在最后，并保持现有导出兼容。
 
