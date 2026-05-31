@@ -13,6 +13,7 @@ import { setupOnboardingWidgets } from "@/entrypoints/content/onboardingSetup";
 import { setupFloatingBallHotkey } from "@/entrypoints/content/floatingBallHotkey";
 import { setupManualTranslationTriggers } from "@/entrypoints/content/manualTranslationTriggers";
 import { setupInputBoxTranslation } from "@/entrypoints/content/inputBoxTranslation";
+import { setupContentRuntimeControls, setupContentUnloadCleanup } from "@/entrypoints/content/contentControls";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -62,83 +63,25 @@ export default defineContentScript({
 
         cache.cleaner();    // 检测是否清理缓存
 
-        // background.ts
-        browser.runtime.onMessage.addListener((message: { message: string; }, sender: any, sendResponse: () => void) => {
-            if (message.message === 'clearCache') {
-                cache.clean()
-                sendResponse();
-                return true;
-            }
-            return false;
+        setupContentRuntimeControls({
+            runtime: browser.runtime,
+            config,
+            document,
+            cache,
+            mountFloatingBall,
+            unmountFloatingBall,
+            mountSelectionTranslator,
+            unmountSelectionTranslator
         });
-        
-        // 处理悬浮球控制消息
-        browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: () => void) => {
-            if (message.type === 'toggleFloatingBall') {
-                if (message.isEnabled) {
-                    mountFloatingBall();
-                } else {
-                    unmountFloatingBall();
-                }
-                sendResponse();
-                return true;
-            }
-            return false;
-        });
-        
-        // 处理划词翻译控制消息
-        browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: () => void) => {
-            if (message.type === 'updateSelectionTranslatorMode') {
-                // 更新配置
-                config.selectionTranslatorMode = message.mode;
-                
-                if (message.mode === 'disabled') {
-                    unmountSelectionTranslator();
-                } else {
-                    // 如果之前没有挂载，现在挂载
-                    if (!document.getElementById('only-translate-selection-translator-container')) {
-                        mountSelectionTranslator();
-                    }
-                }
-                sendResponse();
-                return true;
-            }
-            return false;
-        });
-        
-        // 在页面卸载时清理资源
-        window.addEventListener('beforeunload', () => {
-            // 取消所有待处理的翻译任务
-            cancelAllTranslations();
-            // 移除悬浮球
-            unmountFloatingBall();
-            // 移除划词翻译组件
-            unmountSelectionTranslator();
+
+        setupContentUnloadCleanup({
+            window,
+            cancelAllTranslations,
+            unmountFloatingBall,
+            unmountSelectionTranslator
         });
     }
 })
-
-// 清除所有翻译的函数
-function clearAllTranslations() {
-    // 1. 移除所有翻译结果元素
-    document.querySelectorAll('.only-translate-translation').forEach(el => el.remove());
-
-    // 2. 移除所有加载状态
-    document.querySelectorAll('.only-translate-loading').forEach(el => el.remove());
-
-    // 3. 移除所有错误状态
-    document.querySelectorAll('.only-translate-failure').forEach(el => el.remove());
-
-    // 4. 移除所有翻译相关的类名
-    document.querySelectorAll('.only-translate-processed').forEach(el => {
-        el.classList.remove('only-translate-processed');
-    });
-
-    // 5. 清除内存中的缓存
-    cache.clean();
-
-    console.log('已清除所有翻译缓存');
-}
 
 // 初始化输入框翻译功能
 setupInputBoxTranslation({
