@@ -1,7 +1,5 @@
 import { handleTranslation, autoTranslateEnglishPage, restoreOriginalContent } from "./main/trans";
 import { cache } from "./utils/cache";
-import { constants } from "@/entrypoints/utils/constant";
-import { getCenterPoint } from "@/entrypoints/utils/common";
 import './style.css';
 import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
@@ -13,6 +11,7 @@ import { setupPageTranslationLifecycle } from "@/entrypoints/content/translation
 import { setupVideoSubtitle } from "@/entrypoints/content/videoSubtitleSetup";
 import { setupOnboardingWidgets } from "@/entrypoints/content/onboardingSetup";
 import { setupFloatingBallHotkey } from "@/entrypoints/content/floatingBallHotkey";
+import { setupManualTranslationTriggers } from "@/entrypoints/content/manualTranslationTriggers";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -21,7 +20,14 @@ export default defineContentScript({
         await configReady // 等待配置加载完成
         if (config.on === false) return; // 如果配置关闭，则不执行任何操作
         // 添加手动翻译事件监听器
-        setupManualTranslationTriggers();
+        setupManualTranslationTriggers({
+            config,
+            document,
+            window,
+            navigator,
+            handleTranslation,
+            hasActiveTextSelection
+        });
         // 添加悬浮球快捷键事件监听器
         setupFloatingBallHotkey({
             config,
@@ -110,307 +116,6 @@ export default defineContentScript({
         });
     }
 })
-
-// 注册所有手动翻译触发事件监听器
-function setupManualTranslationTriggers() {
-    const screen = { mouseX: 0, mouseY: 0, hotkeyPressed: false, otherKeyPressed: false, hasSlideTranslation: false };
-    let mouseHotkeysPressed = new Set<string>();
-
-    const shouldDeferToSelectionTranslator = () => {
-        return config.disableSelectionTranslator !== true
-            && config.selectionTranslatorMode !== 'disabled'
-            && hasActiveTextSelection();
-    };
-    
-    // 获取当前配置的鼠标悬浮快捷键
-    const getConfiguredMouseHotkeyParts = () => {
-        // 如果选择了自定义快捷键，使用自定义的
-        const hotkeyString = config.hotkey === 'custom' 
-            ? config.customHotkey 
-            : config.hotkey;
-        
-        if (!hotkeyString || hotkeyString === 'none') {
-            return [];
-        }
-        
-        // 如果是旧的单个按键格式，直接返回
-        if (!hotkeyString.includes('+')) {
-            const k = hotkeyString.toLowerCase();
-            // 标准化修饰键名称
-            if (k === 'ctrl') return ['control'];
-            if (k === 'option') return ['alt'];
-            return [k];
-        }
-        
-        // 组合键格式
-        return hotkeyString.split('+').map(key => {
-            const k = key.toLowerCase();
-            // 标准化修饰键名称
-            if (k === 'ctrl') return 'control';
-            if (k === 'option') return 'alt';
-            return k;
-        });
-    };
-    
-    // 检查是否匹配鼠标悬浮快捷键
-    const checkMouseHotkey = () => {
-        const hotkeyParts = getConfiguredMouseHotkeyParts();
-        if (hotkeyParts.length === 0) return false;
-        
-        const allKeysPressed = hotkeyParts.every(key => mouseHotkeysPressed.has(key));
-        const exactMatch = allKeysPressed && hotkeyParts.length === mouseHotkeysPressed.size;
-        
-        return exactMatch;
-    };
-
-    // 1. 失去焦点时
-    window.addEventListener('blur', () => {
-        screen.hotkeyPressed = false;
-        screen.otherKeyPressed = false;
-        screen.hasSlideTranslation = false;
-        mouseHotkeysPressed.clear();
-    });
-
-    // 2. 按下按键时
-    window.addEventListener('keydown', event => {
-        // 防止重复事件
-        if (event.repeat) return;
-        
-        // 在 Mac 上禁止 cmd 键参与快捷键
-        const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-        if (isMac && event.metaKey) {
-            return;
-        }
-        
-        // 记录修饰键
-        if (event.altKey) mouseHotkeysPressed.add('alt');
-        if (event.ctrlKey) mouseHotkeysPressed.add('control');
-        if (event.metaKey && !isMac) mouseHotkeysPressed.add('control'); // 非Mac系统上metaKey映射到control
-        if (event.shiftKey) mouseHotkeysPressed.add('shift');
-        
-        // 处理普通按键
-        const key = event.key.toLowerCase();
-        const code = event.code?.toLowerCase();
-        
-        // 处理字母键
-        if (code && code.startsWith('key')) {
-            const letter = code.slice(3).toLowerCase();
-            mouseHotkeysPressed.add(letter);
-        } else if (key.length === 1) {
-            // 单个字符的按键
-            mouseHotkeysPressed.add(key);
-        } else if (/^f\d+$/.test(key)) {
-            // 功能键 F1-F12
-            mouseHotkeysPressed.add(key);
-        } else {
-            // 特殊键映射
-            const specialKeys: Record<string, string> = {
-                'escape': 'escape',
-                'enter': 'enter',
-                'space': 'space',
-                'tab': 'tab',
-                'backspace': 'backspace',
-                'delete': 'delete',
-                'insert': 'insert',
-                'home': 'home',
-                'end': 'end',
-                'pageup': 'pageup',
-                'pagedown': 'pagedown',
-                'arrowup': 'arrowup',
-                'arrowdown': 'arrowdown',
-                'arrowleft': 'arrowleft',
-                'arrowright': 'arrowright'
-            };
-            if (specialKeys[key]) {
-                mouseHotkeysPressed.add(specialKeys[key]);
-            }
-        }
-        
-        // 检查是否匹配鼠标悬浮快捷键
-        if (checkMouseHotkey()) {
-            screen.hotkeyPressed = true;
-            screen.otherKeyPressed = false;
-        } else if (screen.hotkeyPressed) {
-            screen.otherKeyPressed = true;
-        }
-    });
-
-    // 3. 抬起按键时
-    window.addEventListener('keyup', event => {
-        // 清除字母键状态（在检查前先清除）
-        const releasedKey = event.key.toLowerCase();
-        const releasedCode = event.code?.toLowerCase();
-        if (releasedCode && releasedCode.startsWith('key')) {
-            const letter = releasedCode.slice(3).toLowerCase();
-            mouseHotkeysPressed.delete(letter);
-        } else if (releasedKey.length === 1) {
-            mouseHotkeysPressed.delete(releasedKey);
-        } else if (/^f\d+$/.test(releasedKey)) {
-            mouseHotkeysPressed.delete(releasedKey);
-        } else {
-            // 特殊键
-            const specialKeys: Record<string, string> = {
-                'escape': 'escape',
-                'enter': 'enter',
-                'space': 'space',
-                'tab': 'tab',
-                'backspace': 'backspace',
-                'delete': 'delete',
-                'insert': 'insert',
-                'home': 'home',
-                'end': 'end',
-                'pageup': 'pageup',
-                'pagedown': 'pagedown',
-                'arrowup': 'arrowup',
-                'arrowdown': 'arrowdown',
-                'arrowleft': 'arrowleft',
-                'arrowright': 'arrowright'
-            };
-            if (specialKeys[releasedKey]) {
-                mouseHotkeysPressed.delete(specialKeys[releasedKey]);
-            }
-        }
-        
-        // 清除修饰键状态
-        if (!event.altKey) mouseHotkeysPressed.delete('alt');
-        if (!event.ctrlKey) mouseHotkeysPressed.delete('control');
-        if (!event.metaKey) mouseHotkeysPressed.delete('control');
-        if (!event.shiftKey) mouseHotkeysPressed.delete('shift');
-        
-        // 获取当前配置的快捷键
-        const hotkeyParts = getConfiguredMouseHotkeyParts();
-        
-        // 如果当前按键集合为空，且之前激活了快捷键，且配置的快捷键不包含当前释放的键，则触发翻译
-        if (screen.hotkeyPressed && mouseHotkeysPressed.size === 0 && !screen.otherKeyPressed && !screen.hasSlideTranslation) {
-            // 检查插件是否开启
-            if (config.on && !shouldDeferToSelectionTranslator()) {
-                handleTranslation(screen.mouseX, screen.mouseY);
-            }
-        }
-        
-        // 如果所有按键都释放了，重置状态
-        if (mouseHotkeysPressed.size === 0) {
-            screen.hotkeyPressed = false;
-            screen.otherKeyPressed = false;
-            screen.hasSlideTranslation = false;
-        }
-    });
-
-    // 4. 鼠标移动时更新位置，并根据 hotkeyPressed 决定是否触发翻译
-    document.body.addEventListener('mousemove', event => {
-        screen.mouseX = event.clientX;
-        screen.mouseY = event.clientY;
-        if (screen.hotkeyPressed && config.on && !shouldDeferToSelectionTranslator()) {
-            screen.hasSlideTranslation = true;
-            handleTranslation(screen.mouseX, screen.mouseY, 50)
-        }
-    });
-
-    // 5、手机端触摸事件，取中心点翻译
-    document.body.addEventListener('touchstart', event => {
-        let coordinate;
-        switch (config.hotkey) {
-            case constants.TwoFinger:
-                coordinate = getCenterPoint(event.touches, 2);
-                break;
-            case constants.ThreeFinger:
-                coordinate = getCenterPoint(event.touches, 3);
-                break;
-            case constants.FourFinger:
-                coordinate = getCenterPoint(event.touches, 4);
-                break;
-            default:
-                return
-        }
-
-        // 检查插件是否开启
-        if (config.on) {
-            handleTranslation(coordinate!.x, coordinate!.y);
-        }
-    });
-
-    // 6、双击鼠标翻译事件
-    document.body.addEventListener('dblclick', event => {
-        if (config.hotkey == constants.DoubleClick && config.on && !shouldDeferToSelectionTranslator()) {
-            // 通过双击事件获取鼠标位置
-            let mouseX = event.clientX;
-            let mouseY = event.clientY;
-            // 调用 handleTranslation 函数进行翻译
-            handleTranslation(mouseX, mouseY);
-        }
-    });
-
-    // 7、长按鼠标翻译事件（长按事件时鼠标不能移动）
-    let timer: number;
-    let startPos = { x: 0, y: 0 }; // startPos 记录鼠标按下时的位置
-    document.body.addEventListener('mouseup', () => clearTimeout(timer));
-    document.body.addEventListener('mousedown', event => {
-        if (config.hotkey === constants.LongPress) {
-            clearTimeout(timer); // 清除之前的计时器
-            startPos.x = event.clientX; // 记录鼠标按下时的初始位置
-            startPos.y = event.clientY;
-            timer = setTimeout(() => {
-                if (config.on && !shouldDeferToSelectionTranslator()) {
-                    let mouseX = event.clientX;
-                    let mouseY = event.clientY;
-                    handleTranslation(mouseX, mouseY);
-                }
-            }, 500) as unknown as number;
-        }
-    });
-    document.body.addEventListener('mousemove', event => {
-        // 如果鼠标移动超过10像素，取消长按事件
-        if (Math.abs(event.clientX - startPos.x) > 10 || Math.abs(event.clientY - startPos.y) > 10) {
-            clearTimeout(timer);
-        }
-    });
-    document.body.addEventListener('mousemove', event => {
-        // 检测鼠标是否移动，如果鼠标移动超过10像素，取消长按事件
-        if (config.hotkey === constants.LongPress
-            && Math.abs(event.clientX - startPos.x) > 10 || Math.abs(event.clientY - startPos.y) > 10) {
-            clearTimeout(timer);
-        }
-    });
-
-
-    // 8、鼠标中键翻译事件
-    document.body.addEventListener('mousedown', event => {
-        if (config.hotkey === constants.MiddleClick && config.on && !shouldDeferToSelectionTranslator()) {
-            if (event.button === 1) {
-                let mouseX = event.clientX;
-                let mouseY = event.clientY;
-                handleTranslation(mouseX, mouseY);
-            }
-        }
-    });
-
-
-    // 9、触屏设备双击/三击翻译事件
-    let touchCount = 0;
-    let touchTimer: any;
-    document.body.addEventListener('touchstart', event => {
-        // 检查是否为有效的热键配置，并且只处理单指触摸事件
-        if (![constants.DoubleClickScreen, constants.TripleClickScreen].includes(config.hotkey)
-            || event.touches.length !== 1) return;
-
-        // 确定需要的点击次数
-        const requiredTouches = config.hotkey === constants.DoubleClickScreen ? 2 : 3;
-
-        touchCount++; // 记录触摸次数
-
-        if (touchCount === 1) {
-            // 如果是第一次触摸，设置定时器，500ms内没有达到所需的触摸次数则重置
-            touchTimer = setTimeout(() => touchCount = 0, 500);
-        } else if (touchCount === requiredTouches) {
-            // 如果达到了所需的触摸次数，清除定时器并调用翻译处理函数
-            clearTimeout(touchTimer);
-            touchCount = 0;
-            if (config.on) {
-                handleTranslation(event.touches[0].clientX, event.touches[0].clientY);
-            }
-        }
-    });
-}
 
 // 清除所有翻译的函数
 function clearAllTranslations() {
