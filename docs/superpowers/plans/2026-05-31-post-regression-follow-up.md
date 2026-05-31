@@ -10,6 +10,116 @@ Start this backlog only after:
 - All bugs found during manual regression are fixed and verified.
 - `pnpm test:content` and `pnpm verify` pass on the bug-fixed branch.
 
+## Execution Order
+
+Treat this backlog as staged cleanup after the regression bugfix pass, not as one large refactor.
+
+### Batch 0. Regression Closure Gate
+
+Purpose:
+
+- Append any manual regression findings to the "Manual Regression Findings" section below.
+- Fix release-blocking content detection bugs before starting architecture cleanup.
+- Confirm the branch is green with `pnpm test:content` and `pnpm verify`.
+
+Commit boundary:
+
+- One focused `fix(content): ...` commit per confirmed regression bug.
+- One `test(content): ...` commit is acceptable when adding fixtures before a larger fix, but prefer fix plus tests together for small bugs.
+
+### Batch 1. Site Profile Ownership Boundary
+
+Do this before further content rule cleanup. The main risk in the current architecture is ambiguity between `compat.ts` and `siteProfiles/`.
+
+Scope:
+
+- Decide and document whether `compat.ts` remains as a thin facade or is removed.
+- Move shared domain parsing such as `getMainDomain` to a neutral utility if needed.
+- Keep site behavior owned by `siteProfiles/`.
+- Add profile registry tests before moving or deleting facade exports.
+
+Out of scope:
+
+- Do not change website-specific matching behavior unless a fixture already proves it is needed.
+- Do not tune generic content heuristics in this batch.
+
+Verification:
+
+- `pnpm test tests/utils/siteProfiles.test.ts`
+- `pnpm test:content`
+- `pnpm verify`
+
+### Batch 2. `content.ts` Responsibility Split
+
+Do this after the profile boundary is stable, because entry wiring depends on the final target selection API shape.
+
+Scope:
+
+- Split dynamic translation lifecycle wiring first.
+- Then split video subtitle initialization.
+- Then split onboarding/update-note initialization.
+- Then split shortcut and pointer event handlers.
+- Keep `entrypoints/content.ts` as orchestration only.
+
+Commit boundary:
+
+- One commit per extracted responsibility.
+- Each commit must preserve user-visible behavior.
+
+Verification:
+
+- `pnpm compile`
+- Focused tests if any extracted module exposes testable behavior.
+- `pnpm verify` after the final split.
+
+### Batch 3. Type Cleanup
+
+Do this after the main module boundaries stop moving.
+
+Scope:
+
+- Audit remaining `any` in `entrypoints/main`, `entrypoints/utils`, composables, and tests.
+- Prioritize public function inputs and translation/DOM execution paths.
+- Prefer small local guards and exact DOM types over broad assertions.
+
+Commit boundary:
+
+- Small `refactor(content): ...` or `refactor(types): ...` commits by module.
+
+Verification:
+
+- `pnpm compile`
+- Focused tests for touched modules.
+- `pnpm verify` before merging.
+
+### Batch 4. Generic Heuristic Review
+
+Do this only with concrete false positives or false negatives from manual regression.
+
+Scope:
+
+- Review `looksLikeSupplementalWrapper` and broad class-name matching such as `[class*="card"]`.
+- Add or update fixture-backed tests before changing behavior.
+- Prefer site profiles for site-specific DOM structures.
+
+Verification:
+
+- `pnpm test:content`
+- `pnpm verify` if shared heuristics changed.
+
+### Batch 5. Release Preparation
+
+Do this only after Batches 0-4 are either complete or explicitly deferred.
+
+Scope:
+
+- Re-read `RELEASE.md`.
+- Update `entrypoints/utils/releaseNotes.ts`.
+- Run `pnpm verify`.
+- Build the release zip.
+- Run the release readiness check from `RELEASE.md`.
+- Proceed with `release-it` only after readiness passes.
+
 ## Deferred Work
 
 ### 1. Continue Splitting `content.ts`
@@ -101,3 +211,11 @@ For each finding, record:
 - Minimal HTML snippet or screenshot reference when available.
 - Whether the fix should be generic, profile-specific, or release-process related.
 
+#### Fixed: Ziggit Topic Reply Paragraphs With Inline Code
+
+- Page URL: `https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822`
+- Expected behavior: Discourse cooked reply paragraphs such as `That is the point of <code>export</code>...` and `found a workaround...` should be translated while user names, timestamps, buttons, and topic stats stay skipped.
+- Actual behavior: Replies inserted outside the initial smart `contentRoot` were not picked up by dynamic supplemental scans.
+- Regression coverage: `tests/fixtures/translation-target/ziggit-topic-thread.html`, `tests/fixtures/translation-target/ziggit-topic-thread.json`, and `tests/utils/autoTranslateTarget.test.ts`.
+- Fix type: profile-specific Ziggit/Discourse cooked-content profile plus a generic dynamic-scan integration point for profile-owned expansion targets.
+- Commit: `19c6382 fix(content): 修复 Ziggit 帖子回复漏翻`
