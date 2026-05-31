@@ -1,0 +1,30 @@
+{
+  "name": "Ziggit topic threads translate cooked reply paragraphs with inline code",
+  "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+  "scope": "smart",
+  "html": "ziggit-topic-thread.html",
+  "include": ["reply-point", "reply-workaround"],
+  "exclude": [
+    "intro",
+    "already-final",
+    "avatar-link",
+    "first-username",
+    "first-time",
+    "views",
+    "second-avatar",
+    "second-username",
+    "second-time",
+    "like-second",
+    "third-username",
+    "third-time",
+    "like-third"
+  ],
+  "textIncludes": [
+    "That is the point of export",
+    "found a workaround"
+  ],
+  "textExcludes": [
+    "like this post",
+    "26 views"
+  ]
+}

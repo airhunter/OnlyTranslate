@@ -1,0 +1,96 @@
+<section class="topic-area" id="topic" data-topic-id="15822">
+  <div class="posts-wrapper">
+    <div class="post-stream">
+      <div class="topic-post clearfix post--sticky-avatar sticky-avatar post--topic-owner topic-owner post--regular regular" data-post-number="1">
+        <h2 aria-hidden="false" class="sr-only" id="post-heading-1">post by lolothedragon 1 hour ago</h2>
+        <article id="post_1" class="boxed onscreen-post" aria-labelledby="post-heading-1" data-post-id="68368">
+          <div class="post__row row">
+            <div class="topic-avatar">
+              <a id="avatar-link" class="main-avatar" href="/u/lolothedragon" data-user-card="lolothedragon">lolothedragon</a>
+            </div>
+            <div class="post__body topic-body clearfix">
+              <div class="topic-meta-data">
+                <span id="first-username" class="first username">lolothedragon</span>
+                <span id="first-time" class="relative-date">1h</span>
+              </div>
+              <div class="post__regular regular post__contents contents">
+                <div class="cooked">
+                  <p id="intro" data-fr-node-id="fr-node-2" data-fr-translated="true" class="only-translate-bilingual">
+                    Hi guys, in my understanding, <code>export</code> is used to expose a Zig function to c/c++ code.
+                    <span class="only-translate-bilingual-content fluent-display-bold">translated intro</span>
+                  </p>
+                  <pre data-code-wrap="zig" class="codeblock-buttons"><code>pub export fn DllMain() bool { return true; }</code></pre>
+                  <p id="already-final" data-fr-node-id="fr-node-3" data-fr-translated="true" class="only-translate-bilingual">
+                    <code>DllMain</code> is exported to the final dll, which is not what wanted.
+                    <span class="only-translate-bilingual-content fluent-display-bold">translated final</span>
+                  </p>
+                </div>
+                <section class="post__menu-area post-menu-area clearfix">
+                  <nav class="post-controls expanded">
+                    <button id="like-first" class="btn no-text btn-icon">like this post</button>
+                  </nav>
+                </section>
+              </div>
+              <div class="post__topic-map topic-map --op">
+                <button id="views" class="btn no-text fk-d-menu__trigger topic-map__views-trigger">
+                  <span class="number">26</span>
+                  <span>views</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="topic-post clearfix post--sticky-avatar sticky-avatar post--regular regular" data-post-number="2">
+        <h2 aria-hidden="false" class="sr-only" id="post-heading-2">post by vulpesx 1 hour ago</h2>
+        <article id="post_2" class="boxed onscreen-post" aria-labelledby="post-heading-2" data-post-id="68369">
+          <div class="post__row row">
+            <div class="topic-avatar">
+              <a id="second-avatar" class="main-avatar" href="/u/vulpesx" data-user-card="vulpesx">vulpesx</a>
+            </div>
+            <div class="post__body topic-body clearfix">
+              <div class="topic-meta-data">
+                <span id="second-username" class="first username">vulpesx</span>
+                <span id="second-time" class="relative-date">1h</span>
+              </div>
+              <div class="post__regular regular post__contents contents">
+                <div class="cooked">
+                  <p id="reply-point">That is the point of <code>export</code>, if you do not want it exported then do not <code>export</code> it</p>
+                </div>
+                <section class="post__menu-area post-menu-area clearfix">
+                  <nav class="post-controls expanded">
+                    <button id="like-second" class="btn no-text btn-icon">like this post</button>
+                  </nav>
+                </section>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="topic-post clearfix post--sticky-avatar sticky-avatar post--regular regular" data-post-number="3">
+        <article id="post_3" class="boxed onscreen-post" data-post-id="68370">
+          <div class="post__row row">
+            <div class="post__body topic-body clearfix">
+              <div class="topic-meta-data">
+                <span id="third-username" class="first username">lolothedragon</span>
+                <span id="third-time" class="relative-date">33m</span>
+              </div>
+              <div class="post__regular regular post__contents contents post__contents--avoid-tab avoid-tab">
+                <div class="cooked">
+                  <p id="reply-workaround">found a workaround: move the code of <code>DllMain</code> into <code>_DllMainCRTStartup</code> then there is no need for <code>DllMain</code></p>
+                </div>
+                <section class="post__menu-area post-menu-area clearfix">
+                  <nav class="post-controls expanded">
+                    <button id="like-third" class="btn no-text btn-icon">like this post</button>
+                  </nav>
+                </section>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>

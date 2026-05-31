@@ -257,6 +257,63 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(nodes.map(node => node.id)).not.toContain('ibuprofen')
   })
 
+  it('collects Ziggit reply paragraphs inserted outside the initial post content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <section id="topic" class="topic-area">
+        <div class="post-stream">
+          <article id="post_1" class="boxed onscreen-post">
+            <div class="post__body topic-body clearfix">
+              <div class="post__regular regular post__contents contents">
+                <div class="cooked">
+                  <p id="intro" data-fr-translated="true" class="only-translate-bilingual">
+                    Hi guys, in my understanding, <code>export</code> is used to expose a Zig function to c/c++ code.
+                    <span class="only-translate-bilingual-content fluent-display-bold">translated intro</span>
+                  </p>
+                  <pre data-code-wrap="zig" class="codeblock-buttons"><code>pub export fn DllMain() bool { return true; }</code></pre>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article id="post_2" class="boxed onscreen-post">
+            <div class="post__body topic-body clearfix">
+              <div class="topic-meta-data">
+                <span id="username" class="first username">vulpesx</span>
+                <span id="time" class="relative-date">1h</span>
+              </div>
+              <div id="reply-contents" class="post__regular regular post__contents contents">
+                <div class="cooked">
+                  <p id="reply-point">That is the point of <code>export</code>, if you do not want it exported then do not <code>export</code> it</p>
+                </div>
+                <section class="post__menu-area post-menu-area clearfix">
+                  <nav class="post-controls expanded">
+                    <button id="like">like this post</button>
+                  </nav>
+                </section>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#post_2')!,
+      document.querySelector('#post_1')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('reply-point')
+    expect(ids).not.toContain('username')
+    expect(ids).not.toContain('time')
+    expect(ids).not.toContain('like')
+  })
+
   it('collects newly revealed nodes from dynamic content regions', () => {
     document.body.innerHTML = `
       <main id="content-root">

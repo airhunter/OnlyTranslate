@@ -23,6 +23,7 @@ import type {
 } from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
+import { ziggitProfile } from './ziggit';
 
 export type {
     ReplaceCompatFn,
@@ -62,7 +63,8 @@ export const siteProfiles: SiteProfile[] = [
     asteriskProfile,
     arsTechnicaProfile,
     claudeNagdyProfile,
-    decryptProfile
+    decryptProfile,
+    ziggitProfile
 ];
 
 export const siteProfileSelectFns: SelectCompatFn = siteProfiles.reduce<SelectCompatFn>((map, profile) => {

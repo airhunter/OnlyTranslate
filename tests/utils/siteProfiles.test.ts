@@ -58,6 +58,11 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['decrypt.co']).toBeTypeOf('function')
   })
 
+  it('registers Ziggit topic supplemental profile', () => {
+    expect(supplementalCompatFn['ziggit.dev']).toBeTypeOf('function')
+    expect(siteProfileExpandTargetFns['ziggit.dev']).toBeTypeOf('function')
+  })
+
   it('registers Simon Willison article profile', () => {
     expect(selectCompatFn['simonwillison.net']).toBeTypeOf('function')
   })

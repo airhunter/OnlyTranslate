@@ -73,9 +73,20 @@ export function isInTranslationScope(
 ): boolean {
     if (scope === 'full' || contentRoot.contains(root)) return true;
 
+    const context: TranslationTargetContext = {
+        mode: grabOptions.siteCompatMode ?? (scope === 'full' ? 'full' : 'smart'),
+        scope,
+        contentRoot,
+        grabOptions
+    };
+
     let current: Element | null = root;
     while (current && current !== document.body) {
         if (isOpenExpandableReadingContainer(current) && isVisibleForTranslation(current)) {
+            return true;
+        }
+
+        if (isProfileTranslationScope(current, context)) {
             return true;
         }
 
@@ -87,6 +98,19 @@ export function isInTranslationScope(
     }
 
     return false;
+}
+
+function isProfileTranslationScope(element: Element, context: TranslationTargetContext): boolean {
+    const profile = getCurrentSiteProfile();
+    if (!profile) return false;
+
+    const skip = profile.skipTarget?.(element, context);
+    if (skip && skip.policy === 'hard-skip' && skip.role !== 'layout') return false;
+
+    if (profile.allowTarget?.(element, context)) return true;
+
+    const expanded = profile.expandTarget?.(element, context);
+    return Array.isArray(expanded) && expanded.some(node => node === element || element.contains(node));
 }
 
 export function getDynamicTranslationScanRoot(
