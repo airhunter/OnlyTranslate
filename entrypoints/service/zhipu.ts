@@ -4,10 +4,11 @@ import {commonMsgTemplate} from "../utils/template";
 import CryptoJS from 'crypto-js';
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 
 // 文档参考：https://open.bigmodel.cn/dev/api#nosdk
-async function zhipu(message: any) {
+async function zhipu(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     // 智谱根据 token 获取 secret（签名密钥） 和 expiration
     let token = config.token[services.zhipu];
     let secret, expiration;
@@ -57,7 +58,7 @@ function generateToken(APIKey: string) {
 }
 
 // 生成JWT（JSON Web Token）
-function generateJWT(secret: string, header: any, payload: any) {
+function generateJWT(secret: string, header: Record<string, string>, payload: Record<string, string | number>) {
     // 对header和payload部分进行UTF-8编码，然后转换为Base64URL格式
     const encodedHeader = base64UrlSafe(btoa(JSON.stringify(header)));
     const encodedPayload = base64UrlSafe(btoa(JSON.stringify(payload)));

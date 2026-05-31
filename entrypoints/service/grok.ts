@@ -3,13 +3,14 @@ import {commonMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 /**
  * Grok 服务实现
  * 使用 X.AI API，兼容 OpenAI 接口
  * 支持模型：grok-3-beta, grok-3-fast-beta, grok-3-mini-beta, grok-3-mini-fast-beta
  */
-async function grok(message: any) {
+async function grok(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
         const headers = new Headers({
             'Content-Type': 'application/json',

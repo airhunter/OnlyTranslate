@@ -1,8 +1,9 @@
 import {services} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
-async function microsoft(message: any) {
+async function microsoft(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     let fromLang = config.from === 'auto' ? '' : config.from;
     const targetLang = message.targetLang || config.to;
 

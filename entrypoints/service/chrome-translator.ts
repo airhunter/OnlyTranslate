@@ -1,5 +1,19 @@
 import { config } from "@/entrypoints/utils/config";
 import { t } from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+
+type ChromeTranslationAvailabilityStatus = 'available' | 'downloadable' | 'downloading' | 'unavailable' | 'not-supported';
+
+interface ChromeTranslationAvailabilityResponse {
+    available: boolean;
+    status: ChromeTranslationAvailabilityStatus;
+    message: string;
+}
+
+interface ChromeTranslationPreloadResponse {
+    success: boolean;
+    message: string;
+}
 
 /**
  * Chrome 内置翻译 API 服务
@@ -10,11 +24,11 @@ import { t } from "@/entrypoints/utils/i18n";
 
 // 等待 offscreen 文档发送就绪信号（解决 race condition）
 async function waitForOffscreenReady(timeout: number = 5000): Promise<void> {
-    let readyListener: ((msg: any) => void) | null = null;
+    let readyListener: ((msg: unknown) => void) | null = null;
     
     const readyPromise = new Promise<void>((resolve) => {
-        readyListener = (msg: any) => {
-            if (msg.type === 'OFFSCREEN_READY') {
+        readyListener = (msg: unknown) => {
+            if (isRuntimeMessageType(msg, 'OFFSCREEN_READY')) {
                 if (readyListener) {
                     chrome.runtime.onMessage.removeListener(readyListener);
                 }
@@ -37,13 +51,13 @@ async function waitForOffscreenReady(timeout: number = 5000): Promise<void> {
 }
 
 // 在 background script 中使用 offscreen API 处理翻译
-async function translateWithOffscreen(message: any): Promise<any> {
+async function translateWithOffscreen(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
         // 确保 offscreen 文档存在
         await ensureOffscreenDocument();
 
         // 向 offscreen 文档发送翻译请求
-        const response = await new Promise((resolve, reject) => {
+        const response = await new Promise<unknown>((resolve, reject) => {
             chrome.runtime.sendMessage({
                 type: 'CHROME_TRANSLATE_OFFSCREEN',
                 data: {
@@ -51,7 +65,7 @@ async function translateWithOffscreen(message: any): Promise<any> {
                     from: message.sourceLang || config.from,
                     to: message.targetLang || config.to
                 }
-            }, (response: any) => {
+            }, (response: unknown) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
                 } else {
@@ -64,6 +78,9 @@ async function translateWithOffscreen(message: any): Promise<any> {
         if (response && typeof response === 'object' && 'success' in response) {
             const typedResponse = response as { success: boolean; result?: string; error?: string };
             if (typedResponse.success) {
+                if (typeof typedResponse.result !== 'string') {
+                    throw new Error(t('runtime.invalidResponse'));
+                }
                 return typedResponse.result;
             } else {
                 throw new Error(typedResponse.error || t('popup.translateFailed'));
@@ -111,7 +128,7 @@ async function ensureOffscreenDocument() {
 }
 
 // 主翻译函数
-export default async function chromeTranslator(message: any): Promise<any> {
+export default async function chromeTranslator(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     // console.log('Chrome Translator 收到消息:', message);
 
     const text = message.origin;
@@ -143,25 +160,23 @@ export default async function chromeTranslator(message: any): Promise<any> {
 export async function checkChromeTranslationAvailability(
     sourceLang: string = 'en',
     targetLang: string = 'zh-Hans'
-): Promise<{
-    available: boolean;
-    status: 'available' | 'downloadable' | 'downloading' | 'unavailable' | 'not-supported';
-    message: string;
-}> {
+): Promise<ChromeTranslationAvailabilityResponse> {
     try {
         // 确保 offscreen 文档存在
         await ensureOffscreenDocument();
 
         // 发送检查请求
-        const response = await new Promise<any>((resolve, reject) => {
+        const response = await new Promise<ChromeTranslationAvailabilityResponse>((resolve, reject) => {
             chrome.runtime.sendMessage({
                 type: 'CHROME_TRANSLATE_CHECK_AVAILABILITY',
                 data: { sourceLang, targetLang }
             }, (res) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message));
-                } else {
+                } else if (isChromeTranslationAvailabilityResponse(res)) {
                     resolve(res);
+                } else {
+                    reject(new Error(t('runtime.invalidResponse')));
                 }
             });
         });
@@ -189,17 +204,20 @@ export async function preloadChromeTranslationModel(
     sourceLang: string = 'en',
     targetLang: string = 'zh-Hans',
     onProgress?: (progress: number) => void
-): Promise<{ success: boolean; message: string }> {
+): Promise<ChromeTranslationPreloadResponse> {
     try {
         // 确保 offscreen 文档存在
         await ensureOffscreenDocument();
 
         // 监听进度更新
-        const progressListener = (msg: any) => {
-            if (msg.type === 'CHROME_TRANSLATE_PRELOAD_PROGRESS') {
-                const { sourceLang: src, targetLang: tgt, progress } = msg.data || {};
+        const progressListener = (msg: unknown) => {
+            if (isRuntimeMessageType(msg, 'CHROME_TRANSLATE_PRELOAD_PROGRESS')) {
+                const data = typeof msg.data === 'object' && msg.data !== null
+                    ? msg.data as { sourceLang?: string; targetLang?: string; progress?: number }
+                    : {};
+                const { sourceLang: src, targetLang: tgt, progress } = data;
                 if (src === sourceLang && tgt === targetLang && onProgress) {
-                    onProgress(progress);
+                    onProgress(progress ?? 0);
                 }
             }
         };
@@ -207,15 +225,17 @@ export async function preloadChromeTranslationModel(
 
         try {
             // 发送预下载请求
-            const response = await new Promise<any>((resolve, reject) => {
+            const response = await new Promise<ChromeTranslationPreloadResponse>((resolve, reject) => {
                 chrome.runtime.sendMessage({
                     type: 'CHROME_TRANSLATE_PRELOAD',
                     data: { sourceLang, targetLang }
                 }, (res) => {
                     if (chrome.runtime.lastError) {
                         reject(new Error(chrome.runtime.lastError.message));
-                    } else {
+                    } else if (isChromeTranslationPreloadResponse(res)) {
                         resolve(res);
+                    } else {
+                        reject(new Error(t('runtime.invalidResponse')));
                     }
                 });
             });
@@ -231,4 +251,33 @@ export async function preloadChromeTranslationModel(
             message: `预下载失败: ${error instanceof Error ? error.message : '未知错误'}`
         };
     }
+}
+
+function isRuntimeMessageType(message: unknown, type: string): message is { type: string; data?: unknown } {
+    return typeof message === 'object'
+        && message !== null
+        && (message as { type?: unknown }).type === type;
+}
+
+function isChromeTranslationAvailabilityResponse(value: unknown): value is ChromeTranslationAvailabilityResponse {
+    if (typeof value !== 'object' || value === null) return false;
+    const response = value as Partial<ChromeTranslationAvailabilityResponse>;
+    return typeof response.available === 'boolean'
+        && isChromeTranslationAvailabilityStatus(response.status)
+        && typeof response.message === 'string';
+}
+
+function isChromeTranslationAvailabilityStatus(value: unknown): value is ChromeTranslationAvailabilityStatus {
+    return value === 'available'
+        || value === 'downloadable'
+        || value === 'downloading'
+        || value === 'unavailable'
+        || value === 'not-supported';
+}
+
+function isChromeTranslationPreloadResponse(value: unknown): value is ChromeTranslationPreloadResponse {
+    if (typeof value !== 'object' || value === null) return false;
+    const response = value as Partial<ChromeTranslationPreloadResponse>;
+    return typeof response.success === 'boolean'
+        && typeof response.message === 'string';
 }

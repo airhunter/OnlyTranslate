@@ -1,10 +1,11 @@
 import {method} from "../utils/constant";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
-async function google(message: any) {
+async function google(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     const targetLang = message.targetLang || config.to;
-    let params: any = {
+    const params: Record<string, string | number> = {
         client: 'gtx', sl: config.from, tl: targetLang, dt: 't', strip: 1, nonced: 1,
         'q': encodeURIComponent(message.origin),
     };
@@ -15,9 +16,14 @@ async function google(message: any) {
     });
 
     if (resp.ok) {
-        let result = await resp.json();
+        const result = await resp.json() as unknown[];
+        const translationParts = Array.isArray(result[0]) ? result[0] : [];
         let sentence = '';
-        result[0].forEach((e: any) => sentence += e[0]);
+        translationParts.forEach((part) => {
+            if (Array.isArray(part) && typeof part[0] === 'string') {
+                sentence += part[0];
+            }
+        });
         return sentence;
     } else {
         console.log(resp);

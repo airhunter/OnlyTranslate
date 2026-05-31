@@ -23,7 +23,7 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { collectDynamicTranslationNodes, handleBilingualTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
@@ -34,10 +34,23 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    vi.clearAllMocks()
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       configurable: true
     })
+  })
+
+  it('translates button text through the shared translateText entrypoint', async () => {
+    vi.mocked(translateText).mockResolvedValue('开始操作')
+    document.body.innerHTML = `<button id="action">Start action</button>`
+
+    const button = document.querySelector('#action') as HTMLElement
+    handleBtnTranslation(button)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(translateText).toHaveBeenCalledWith('Start action', document.title)
+    expect(button.innerText).toBe('开始操作')
   })
 
   it('collects visible detail text after an expandable card opens outside the primary content root', () => {

@@ -2,8 +2,9 @@ import {method, urls} from "../utils/constant";
 import {services} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
-async function deepl(message: any) {
+async function deepl(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     // deepl 不支持 zh-Hans，需要转换为 zh
     const rawTargetLang = message.targetLang || config.to;
     let targetLang = rawTargetLang === 'zh-Hans' ? 'zh' : rawTargetLang;

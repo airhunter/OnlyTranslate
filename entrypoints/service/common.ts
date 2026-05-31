@@ -4,6 +4,7 @@ import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import { services } from "../utils/option";
 import { t } from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 function normalizeOpenAICompatibleUrl(url: string): string {
     let normalizedUrl = url || '';
@@ -19,7 +20,7 @@ function normalizeOpenAICompatibleUrl(url: string): string {
     return normalizedUrl;
 }
 
-async function common(message: any) {
+async function common(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
 
         let token = config.token[config.service] || "";

@@ -1,7 +1,6 @@
 import { selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { html } from 'js-beautify';
-import { handleBtnTranslation } from "@/entrypoints/main/trans";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
     getCachedContentFilterDecision,
@@ -155,6 +154,7 @@ export interface GrabAllNodeOptions {
     scanContext?: ScanContext;
     scanBudget?: ScanBudgetKind;
     translateFirstLineText?: (textNode: Text, text: string) => void;
+    translateButtonText?: (node: HTMLElement) => void;
 }
 
 function isElementNode(node: Node | null | undefined): node is Element {
@@ -367,6 +367,10 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
 
     const curTag = node.tagName.toLowerCase();
 
+    if (isButton(node, curTag)) {
+        return handleButtonTranslation(node, options);
+    }
+
     // 1. 快速过滤：跳过不需要翻译的节点
     if (shouldSkipNode(node, curTag)) return false;
 
@@ -394,12 +398,6 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
 
     // 3. 直接翻译：块级元素
     if (directSet.has(curTag)) return node;
-
-    // 4. 按钮处理：特殊处理按钮内的文本
-    if (isButton(node, curTag)) {
-        handleButtonTranslation(node);
-        return false;
-    }
 
     // 5. 内联元素处理：向上查找合适的父节点
     if (isInlineElement(node, curTag)) {
@@ -622,11 +620,12 @@ function isButton(node: Element, tag: string): boolean {
 }
 
 // 处理按钮翻译
-function handleButtonTranslation(node: Element): void {
-    // 1. 若文本非空，则调用 handleBtnTranslation 进行按钮文本翻译处理
+function handleButtonTranslation(node: Element, options: GrabAllNodeOptions): false {
     if (node.textContent?.trim()) {
-        if (isHTMLElementNode(node)) handleBtnTranslation(node);
+        if (isHTMLElementNode(node)) options.translateButtonText?.(node);
     }
+
+    return false;
 }
 
 // 检查是否为内联元素

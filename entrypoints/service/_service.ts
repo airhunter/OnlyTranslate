@@ -10,9 +10,9 @@ import common from "@/entrypoints/service/common";
 import deepseek from "./deepseek";
 import newapi from "./newapi";
 import chromeTranslator from "./chrome-translator";
+import type { TranslationServiceFunction } from "./types";
 
-type ServiceFunction = (message: any) => Promise<any>;
-type ServiceMap = {[key: string]: ServiceFunction;};
+type ServiceMap = {[key: string]: TranslationServiceFunction;};
 
 export const _service: ServiceMap = {
     [services.microsoft]: microsoft,

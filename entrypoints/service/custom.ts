@@ -4,8 +4,9 @@ import {services} from "@/entrypoints/utils/option";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import {t} from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
-async function custom(message: any) {
+async function custom(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
 
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');

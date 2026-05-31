@@ -13,6 +13,22 @@ import { t } from './i18n';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
+const MAX_RETRY_DELAY = 30000;
+
+let cancellationGeneration = 0;
+const inFlightTranslations = new Map<string, Promise<string>>();
+
+export class TranslationCancelledError extends Error {
+  constructor() {
+    super('Translation cancelled');
+    this.name = 'TranslationCancelledError';
+  }
+}
+
+export function isTranslationCancelledError(error: unknown): boolean {
+  return error instanceof TranslationCancelledError
+    || (typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'TranslationCancelledError');
+}
 
 function normalizeRuntimeTranslationResult(result: unknown): string {
   if (typeof result === 'string') return result;
@@ -31,6 +47,37 @@ function normalizeRuntimeTranslationResult(result: unknown): string {
   }
 
   return result == null ? '' : String(result);
+}
+
+function assertNotCancelled(startGeneration: number): void {
+  if (startGeneration !== cancellationGeneration) {
+    throw new TranslationCancelledError();
+  }
+}
+
+function getRetryDelay(retryCount: number, baseDelay: number): number {
+  return Math.min(baseDelay * (2 ** retryCount), MAX_RETRY_DELAY);
+}
+
+function buildInFlightTranslationKey(
+  origin: string,
+  context: string,
+  sourceLang: string,
+  targetLang: string
+): string {
+  const service = config.service;
+  const model = config.model?.[service] ?? '';
+  const customModel = config.customModel?.[service] ?? '';
+  return JSON.stringify([
+    service,
+    model,
+    customModel,
+    config.style ?? '',
+    sourceLang,
+    targetLang,
+    context,
+    origin
+  ]);
 }
 
 /**
@@ -64,6 +111,10 @@ export async function translateText(origin: string, context: string = document.t
     return origin;
   }
 
+  const inFlightKey = buildInFlightTranslationKey(safeOrigin, context, direction.sourceLang, direction.targetLang);
+  const inFlight = inFlightTranslations.get(inFlightKey);
+  if (inFlight) return inFlight;
+
   // 检查缓存
   if (useCache) {
     const cachedResult = cache.localGet(safeOrigin, direction.targetLang);
@@ -81,10 +132,12 @@ export async function translateText(origin: string, context: string = document.t
   storage.setItem('local:config', JSON.stringify(config));
 
   // 使用队列处理翻译请求
-  return enqueueTranslation(async () => {
+  const requestGeneration = cancellationGeneration;
+  const translationPromise = enqueueTranslation(async () => {
     // 创建翻译任务
     const translationTask = async (retryCount: number = 0): Promise<string> => {
       try {
+        assertNotCancelled(requestGeneration);
         // 发送翻译请求给background脚本处理
         const response = await Promise.race([
           browser.runtime.sendMessage({
@@ -97,6 +150,7 @@ export async function translateText(origin: string, context: string = document.t
             setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
           )
         ]);
+        assertNotCancelled(requestGeneration);
         const result = normalizeRuntimeTranslationResult(response);
 
         // 如果翻译结果为空或与原文完全相同，直接返回原文
@@ -111,6 +165,10 @@ export async function translateText(origin: string, context: string = document.t
 
         return result;
       } catch (error) {
+        if (isTranslationCancelledError(error)) {
+          throw error;
+        }
+
         // 处理错误，根据重试策略决定是否重试
         if (retryCount < maxRetries) {
           if (isDev) {
@@ -118,7 +176,7 @@ export async function translateText(origin: string, context: string = document.t
           }
           
           // 等待一段时间后重试
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          await new Promise(resolve => setTimeout(resolve, getRetryDelay(retryCount, retryDelay)));
           return translationTask(retryCount + 1);
         }
         
@@ -130,6 +188,15 @@ export async function translateText(origin: string, context: string = document.t
     // 开始执行翻译任务
     return translationTask();
   });
+
+  const trackedPromise = translationPromise.finally(() => {
+    if (inFlightTranslations.get(inFlightKey) === trackedPromise) {
+      inFlightTranslations.delete(inFlightKey);
+    }
+  });
+  inFlightTranslations.set(inFlightKey, trackedPromise);
+
+  return trackedPromise;
 }
 
 /**
@@ -139,6 +206,8 @@ export function cancelAllTranslations() {
   if (isDev) {
     console.log('[翻译API] 取消所有等待中的翻译任务');
   }
+  cancellationGeneration += 1;
+  inFlightTranslations.clear();
   clearTranslationQueue();
 }
 

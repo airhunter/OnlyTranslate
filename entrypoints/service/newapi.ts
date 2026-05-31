@@ -3,8 +3,9 @@ import {commonMsgTemplate, deepseekMsgTemplate} from "../utils/template";
 import { config } from "@/entrypoints/utils/config";
 import { contentPostHandler } from "@/entrypoints/utils/check";
 import { t } from "@/entrypoints/utils/i18n";
+import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
-async function newapi(message: any) {
+async function newapi(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
         const headers = new Headers({
             'Content-Type': 'application/json',

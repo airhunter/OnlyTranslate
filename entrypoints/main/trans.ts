@@ -18,7 +18,7 @@ import { throttle } from "@/entrypoints/utils/common";
 import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
-import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { isTranslationCancelledError, translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
@@ -34,7 +34,6 @@ import {
     TRANSLATED_ATTR,
     TRANSLATED_ID_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
-import { storage } from '@wxt-dev/storage';
 
 const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
 
@@ -90,7 +89,10 @@ function translateFirstLineText(textNode: Text, origin: string): void {
         .then((text: string) => {
             textNode.textContent = text;
         })
-        .catch((error: Error) => console.error('翻译失败:', error));
+        .catch((error: Error) => {
+            if (isTranslationCancelledError(error)) return;
+            console.error('翻译失败:', error);
+        });
 }
 
 function shouldBeautifyTranslatedHTML(origin: string, translated: string): boolean {
@@ -296,8 +298,11 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
     clearHoverTimer();
     translationState.hoverTimer = setTimeout(() => {
 
-        // 只在手动悬停翻译注入这个副作用回调；smart/full 自动扫描只能收集目标，不能在识文阶段触发翻译。
-        let node = grabNode(document.elementFromPoint(mouseX, mouseY), { translateFirstLineText });
+        // 只在手动悬停翻译注入副作用回调；smart/full 自动扫描只能收集目标，不能在识文阶段触发翻译。
+        let node = grabNode(document.elementFromPoint(mouseX, mouseY), {
+            translateFirstLineText,
+            translateButtonText: handleBtnTranslation
+        });
         if (!(node instanceof HTMLElement)) return;
 
         // 判断是否跳过节点
@@ -408,6 +413,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
         })
         .catch((error: Error) => {
             spinner.remove();
+            if (isTranslationCancelledError(error)) return;
             insertFailedTip(node, error.toString() || "翻译失败", spinner);
         });
 }
@@ -446,6 +452,7 @@ export function singleTranslate(node: HTMLElement) {
         })
         .catch((error: Error) => {
             spinner.remove();
+            if (isTranslationCancelledError(error)) return;
             insertFailedTip(node, error.toString() || "翻译失败", spinner);
         });
 }
@@ -458,13 +465,15 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
         return;
     }
 
-    config.count++ && storage.setItem('local:config', JSON.stringify(config));
-
-    browser.runtime.sendMessage({ context: document.title, origin: origin })
+    translateText(origin, document.title)
         .then((text: string) => {
+            if (!text || text === origin) return;
             cache.localSetDual(origin, text);
             node.innerText = text;
-        }).catch((error: unknown) => console.error('调用失败:', error))
+        }).catch((error: unknown) => {
+            if (isTranslationCancelledError(error)) return;
+            console.error('调用失败:', error);
+        })
 }, 250)
 
 

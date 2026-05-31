@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 vi.mock('@/entrypoints/main/trans', () => ({
   handleBtnTranslation: vi.fn()
@@ -127,6 +129,30 @@ describe('grabAllNode', () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].text).toBe('Intro text that belongs to the first line ')
     expect(calls[0].textNode.nodeType).toBe(Node.TEXT_NODE)
+  })
+
+  it('delegates button text translation through an injected callback', () => {
+    document.body.innerHTML = `
+      <button id="action">Translate this action</button>
+    `
+
+    const calls: HTMLElement[] = []
+    const button = document.querySelector('#action') as HTMLElement
+    const result = grabNode(button, {
+      translateButtonText: (element) => {
+        calls.push(element)
+      }
+    })
+
+    expect(result).toBe(false)
+    expect(calls).toEqual([button])
+  })
+
+  it('keeps DOM utilities independent from translation execution', () => {
+    const source = readFileSync(resolve(process.cwd(), 'entrypoints/main/dom.ts'), 'utf8')
+
+    expect(source).not.toMatch(/entrypoints\/main\/trans["']/)
+    expect(source).not.toMatch(/from\s+["'][^"']*\/trans["']/)
   })
 
   it('does not treat short readable identifiers as user names', () => {
