@@ -464,7 +464,7 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
         .then((text: string) => {
             cache.localSetDual(origin, text);
             node.innerText = text;
-        }).catch((error: any) => console.error('调用失败:', error))
+        }).catch((error: unknown) => console.error('调用失败:', error))
 }, 250)
 
 

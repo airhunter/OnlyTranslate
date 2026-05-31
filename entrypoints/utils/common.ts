@@ -2,9 +2,9 @@
 import {franc} from "franc-min";
 
 // 防抖限流函数，可传递参数
-export function throttle(fn: (...args: any[]) => void, interval: number) {
+export function throttle<TArgs extends unknown[]>(fn: (...args: TArgs) => void, interval: number) {
     let last = 0; // 维护上次执行的时间
-    return function (this: any, ...args: any[]) {
+    return function (this: unknown, ...args: TArgs) {
         const now = Date.now();
         // 只有当前时间与上次执行时间差大于等于间隔时才执行
         if (now - last >= interval) {

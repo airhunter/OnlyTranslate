@@ -13,7 +13,7 @@ function buildKey(message: string, targetLang = config.to) {
 
 export const cache = {
     // 存入缓存并设置过期时间
-    set(set: Set<any>, key: any, expire: number) {
+    set<T>(set: Set<T>, key: T, expire: number) {
         // 如果禁用缓存，则不执行任何操作
         if (!config.useCache) return;
         
@@ -80,7 +80,7 @@ export const cache = {
 };
 
 // 用于节点序列化
-export function stringifyNode(node: any): string {
+export function stringifyNode(node: Node): string {
     const serializer = new XMLSerializer();
     let outerHTML = serializer.serializeToString(node);
     // 移除多余的空白符

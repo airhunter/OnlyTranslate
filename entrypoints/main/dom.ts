@@ -666,7 +666,7 @@ function handleFirstLineText(node: Element, options: GrabAllNodeOptions): false 
 }
 
 // 检测子元素中是否包含指定标签以外的元素
-function detectChildMeta(parent: any): boolean {
+function detectChildMeta(parent: Node): boolean {
     // 1. 逐个检查子节点
     // 2. 若发现非内联元素则返回 false；否则全部检查通过则返回 true
     let child = parent.firstChild;
@@ -680,17 +680,17 @@ function detectChildMeta(parent: any): boolean {
 }
 
 // 仅译文模式下获取 LLM 应当翻译的标准 HTML
-export function LLMStandardHTML(node: any) {
+export function LLMStandardHTML(node: Node): string {
     // 1. 初始化空字符串 text
     // 2. 遍历子节点
     // 3. 若为文本节点，拼接其文本内容
     // 4. 若为元素节点且在 inlineSet 中，拼接其 outerHTML
     // 5. 否则继续递归处理子节点
     let text = "";
-    node.childNodes.forEach((child: any) => {
-        if (child.nodeType === Node.TEXT_NODE) {
+    node.childNodes.forEach((child: ChildNode) => {
+        if (child instanceof Text) {
             text += child.nodeValue;
-        } else if (child.nodeType === Node.ELEMENT_NODE) {
+        } else if (child instanceof Element) {
             if (isNonTranslatableContentElement(child)) return;
 
             if (inlineSet.has(child.tagName.toLowerCase())) {
@@ -781,15 +781,18 @@ function replaceSensitiveWords(text: string): string {
 }
 
 // 移除特定样式
-export function checkAndRemoveStyle(node: any, styleProperty: any) {
+type MutableStyleDeclaration = CSSStyleDeclaration & Record<string, string | number | null | undefined>;
+
+export function checkAndRemoveStyle(node: HTMLElement, styleProperty: string) {
     // 1. 若节点存在样式且对应属性不为 undefined，则清空该属性
-    if (node.style && node.style[styleProperty] !== undefined) {
-        node.style[styleProperty] = '';
+    const style = node.style as MutableStyleDeclaration;
+    if (style[styleProperty] !== undefined) {
+        style[styleProperty] = '';
     }
 }
 
 // 移除截断样式
-export function smashTruncationStyle(node: any) {
+export function smashTruncationStyle(node: HTMLElement) {
     // 1. 先调用 checkAndRemoveStyle 移除 webkitLineClamp 属性
     // 2. 将节点的相关样式设为 'unset'
     checkAndRemoveStyle(node, 'webkitLineClamp');

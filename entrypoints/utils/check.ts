@@ -75,7 +75,7 @@ export function searchClassName(node: Node, className: string): Node | null {
     return null;
 }
 
-function normalizeContentValue(value: any): string {
+function normalizeContentValue(value: unknown): string {
     if (typeof value === 'string') return value;
     if (value == null) return '';
 
@@ -84,9 +84,10 @@ function normalizeContentValue(value: any): string {
     }
 
     if (typeof value === 'object') {
+        const record = value as Record<string, unknown>;
         for (const key of ['text', 'content', 'translation', 'translatedText', 'output', 'response']) {
-            if (key in value) {
-                return normalizeContentValue(value[key]);
+            if (key in record) {
+                return normalizeContentValue(record[key]);
             }
         }
         return JSON.stringify(value);
@@ -95,7 +96,7 @@ function normalizeContentValue(value: any): string {
     return String(value);
 }
 
-export function contentPostHandler(text: any) {
+export function contentPostHandler(text: unknown): string {
     let content = normalizeContentValue(text);
     content = content.replace(/^<think>[\s\S]*?<\/think>/, "");
     return content;
