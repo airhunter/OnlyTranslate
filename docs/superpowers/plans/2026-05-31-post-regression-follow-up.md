@@ -19,7 +19,9 @@ Treat this backlog as staged cleanup after the regression bugfix pass, not as on
 - Batch 0 completed: regression closure verified with `pnpm test:content` and `pnpm verify`.
 - Batch 1 completed: `compat.ts` is now a thin facade over profile-owned behavior and shared domain parsing lives in a neutral utility.
 - Batch 2 completed: `entrypoints/content.ts` is reduced to orchestration, with lifecycle, video subtitle setup, onboarding, floating-ball hotkey, manual translation triggers, input-box translation, runtime controls, and unload cleanup split into focused modules.
-- Batch 3 started: translation hot-path helpers and runtime response parsing now use narrower DOM, generic, and `unknown` types instead of broad `any`.
+- Batch 3 completed: translation hot-path helpers, runtime response parsing, config composables, runtime declarations, Vue mount helpers, and high-risk utility inputs now use narrower DOM, generic, and `unknown` types instead of broad `any`.
+- Batch 4 reviewed and deferred: no concrete manual-regression false positive/false negative was available for broad generic wrapper/card heuristics, so no shared heuristic change was made.
+- Batch 5 completed through readiness: target version `0.5.5` was calculated, user-facing release notes were updated, `pnpm test:content`, `pnpm verify`, `pnpm zip`, and `pnpm release:check 0.5.5 --check-zip` were run. Formal `release-it` publishing is intentionally left to the release command.
 
 Batch 2 commits:
 
@@ -36,6 +38,11 @@ Batch 3 commits so far:
 - `1618a08 refactor(types): 收紧翻译热路径类型`
 - `51ca011 refactor(types): 收紧运行时响应解析`
 - `b5e8d48 refactor(types): 收紧配置组合函数类型`
+- `195cf90 refactor(types): 清理剩余工具类型`
+
+Batch 5 commits:
+
+- `406a152 docs(release): 准备 0.5.5 更新说明`
 
 ### Batch 0. Regression Closure Gate
 
