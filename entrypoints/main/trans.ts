@@ -78,6 +78,10 @@ function translateFirstLineText(textNode: Text, origin: string): void {
         .catch((error: Error) => console.error('翻译失败:', error));
 }
 
+function shouldBeautifyTranslatedHTML(origin: string, translated: string): boolean {
+    return /<[^>]+>/.test(origin) || /<[^>]+>/.test(translated);
+}
+
 // 恢复原文内容
 export function restoreOriginalContent() {
     // 取消所有等待中的翻译任务
@@ -409,7 +413,9 @@ export function singleTranslate(node: HTMLElement) {
         .then((text: string) => {
             spinner.remove();
             
-            text = beautyHTML(text);
+            if (shouldBeautifyTranslatedHTML(origin, text)) {
+                text = beautyHTML(text);
+            }
             
             if (!text || origin === text) return;
             

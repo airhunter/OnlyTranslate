@@ -129,6 +129,24 @@ describe('grabAllNode', () => {
     expect(calls[0].textNode.nodeType).toBe(Node.TEXT_NODE)
   })
 
+  it('does not treat short readable identifiers as user names', () => {
+    document.body.innerHTML = `
+      <article>
+        <h2 id="web3">web3</h2>
+        <h2 id="step">step_2</h2>
+        <h2 id="act">act_1</h2>
+      </article>
+    `
+
+    const web3 = document.querySelector('#web3') as HTMLElement
+    const step = document.querySelector('#step') as HTMLElement
+    const act = document.querySelector('#act') as HTMLElement
+
+    expect(grabNode(web3)).toBe(web3)
+    expect(grabNode(step)).toBe(step)
+    expect(grabNode(act)).toBe(act)
+  })
+
   it('continues after a selected paragraph that contains multiple inline links', () => {
     document.body.innerHTML = `
       <article>

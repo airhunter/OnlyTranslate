@@ -310,7 +310,35 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
 }
 
 function removeNestedTranslateNodes(nodes: Element[]): Element[] {
-    return nodes.filter(node => !nodes.some(other => node !== other && node.contains(other)));
+    const sorted = Array.from(new Set(nodes)).sort(compareDocumentOrder);
+    const kept: Element[] = [];
+    const keptSet = new WeakSet<Element>();
+
+    for (const node of sorted) {
+        if (hasKeptAncestor(node, keptSet)) continue;
+        kept.push(node);
+        keptSet.add(node);
+    }
+
+    return kept;
+}
+
+function compareDocumentOrder(left: Element, right: Element): number {
+    if (left === right) return 0;
+    const position = left.compareDocumentPosition(right);
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return 0;
+}
+
+function hasKeptAncestor(node: Element, keptSet: WeakSet<Element>): boolean {
+    let current = node.parentElement;
+    while (current) {
+        if (keptSet.has(current)) return true;
+        current = current.parentElement;
+    }
+
+    return false;
 }
 
 // 返回最终应该翻译的父节点或 false
@@ -492,12 +520,7 @@ function isUserIdentifier(text: string): boolean {
     if (/^id@https?:\/\/(x\.com|twitter\.com)\/[\w-]+\/status\/\d+/.test(trimmedText)) return true;
     
     // 检查是否包含"关注"相关内容
-    if (/关注.*\w+/.test(trimmedText) || /Follow.*\w+/.test(trimmedText)) return true;
-    
-    // 检查是否为纯粹的用户名格式（字母、数字、下划线组合）
-    // 必须含数字或下划线，避免把 Readme / Contributing / Activity 这类
-    // 普通英文单词误判为社交媒体用户名
-    if (/^(?=[A-Za-z0-9_]*[0-9_])[A-Za-z0-9_]{1,15}$/.test(trimmedText)) return true;
+    if (/关注\s*@?\w+/.test(trimmedText) || /^Follow\s+@?[\w-]+$/i.test(trimmedText)) return true;
     
     // 特殊格式：带点击动作的用户名
     if (/点击.*\w+/.test(trimmedText) && trimmedText.length < 50) return true;
