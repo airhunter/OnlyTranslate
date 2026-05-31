@@ -113,8 +113,10 @@ type SiteProfileShouldKeepNestedTarget = (
 - `collectTranslationCandidates` 先按现有顺序收集 `grab-node`、`site-profile`、`supplemental` 等原始候选。
 - 原始候选进入 `decideTranslationTarget` 之前，调用当前 profile 的 `expandTarget(candidate.node, context)`。
 - `expandTarget` 返回的节点作为新的 `dom-unit` source 候选加入候选池，并经过完整 `decideTranslationTarget` 路径。
+- 原始候选不会在 `expandTarget` 阶段被主动移除；即使 `expandTarget` 返回了子节点，原始 `ul/ol` 等容器候选仍照常进入决策链。
 - `expandTarget` 阶段只负责产生候选，不调用 `skipTarget`、`allowTarget` 或通用 content filter；返回节点在 `decideTranslationTarget` 中只按正常顺序执行一次 profile `skipTarget`。
-- 如果 `expandTarget` 返回空值或 `false`，原始候选照常进入决策链。
+- 如果容器和子节点都通过决策链，是否丢弃容器只由 `mergeTranslationDecisions` 和 `shouldKeepNestedTarget` 决定，避免扩展阶段提前改变候选语义。
+- 如果 `expandTarget` 返回空值或 `false`，只是不新增子候选，原始候选仍照常进入决策链。
 - `mergeTranslationDecisions` 中的嵌套去重调用 `shouldKeepNestedTarget(parent, child, context)`。当 hook 返回 `true` 时，child 不会因为 parent 包含它而被删除；如果 parent 只是该 nested target 的容器，parent 会被去掉，避免同时翻译 list container 和 list item。
 
 对应现有 GitHub 逻辑的迁移关系：
