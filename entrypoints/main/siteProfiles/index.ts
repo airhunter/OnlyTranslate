@@ -12,7 +12,15 @@ import { redditProfile } from './reddit';
 import { simonWillisonProfile } from './simonWillison';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
-import type { AfterBilingualAppendCompatFn, ReplaceCompatFn, SelectCompatFn, SiteProfile, SupplementalCompatFn } from './types';
+import type {
+    AfterBilingualAppendCompatFn,
+    ExpandTargetCompatFn,
+    ReplaceCompatFn,
+    SelectCompatFn,
+    ShouldKeepNestedTargetCompatFn,
+    SiteProfile,
+    SupplementalCompatFn
+} from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
 
@@ -30,7 +38,11 @@ export type {
     SiteProfileTargetAllow,
     SiteProfileTargetSkip,
     SiteProfileAppendTarget,
+    SiteProfileExpandTarget,
+    SiteProfileShouldKeepNestedTarget,
     AfterBilingualAppendCompatFn,
+    ExpandTargetCompatFn,
+    ShouldKeepNestedTargetCompatFn,
     SupplementalCompatFn
 } from './types';
 
@@ -88,6 +100,26 @@ export const siteProfileAfterBilingualAppendFns: AfterBilingualAppendCompatFn = 
 
     for (const domain of profile.domains) {
         map[domain] = profile.afterBilingualAppend;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileExpandTargetFns: ExpandTargetCompatFn = siteProfiles.reduce<ExpandTargetCompatFn>((map, profile) => {
+    if (!profile.expandTarget) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.expandTarget;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileShouldKeepNestedTargetFns: ShouldKeepNestedTargetCompatFn = siteProfiles.reduce<ShouldKeepNestedTargetCompatFn>((map, profile) => {
+    if (!profile.shouldKeepNestedTarget) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.shouldKeepNestedTarget;
     }
 
     return map;

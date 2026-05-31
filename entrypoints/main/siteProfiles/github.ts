@@ -1,4 +1,5 @@
 import { findMatchingElement } from '@/entrypoints/utils/common';
+import { collectDomTextUnits } from '@/entrypoints/main/translationTarget/unitizer';
 import type { SiteProfile, SiteProfileMode } from './types';
 import { debugLog, isSpecialContent, matchesOrClosest } from './utils';
 
@@ -74,6 +75,13 @@ export const githubProfile: SiteProfile = {
     appendTarget: (node) => {
         return findGitHubSearchSponsorCopy(node);
     },
+    expandTarget: (node) => {
+        return collectGitHubMarkdownUnits(node);
+    },
+    shouldKeepNestedTarget: (parent, child) => {
+        if (isGitHubMarkdownListContainer(parent) && isGitHubMarkdownListItemOf(child, parent)) return true;
+        return parent.matches('.markdown-body') && isGitHubMarkdownReadingUnit(child);
+    },
     allowTarget: (node) => {
         if (isGitHubRepositorySearchDescription(node)) {
             return {
@@ -148,6 +156,29 @@ function findGitHubMarkdownReadingUnit(node: Element): Element | false {
 
 function isInsideGitHubMarkdownBody(node: Element): boolean {
     return Boolean(node.closest('.markdown-body'));
+}
+
+function collectGitHubMarkdownUnits(node: Element): Element[] | false {
+    const roots = getGitHubMarkdownRoots(node);
+    if (roots.length === 0) return false;
+
+    const units = roots.flatMap(root => collectDomTextUnits(root));
+    return units.length > 0 ? units : false;
+}
+
+function getGitHubMarkdownRoots(node: Element): Element[] {
+    if (node.matches('.markdown-body')) return [node];
+    return Array.from(node.querySelectorAll<Element>('.markdown-body'));
+}
+
+function isGitHubMarkdownListContainer(element: Element): boolean {
+    return element.matches('ul, ol') && Boolean(element.closest('.markdown-body'));
+}
+
+function isGitHubMarkdownListItemOf(item: Element, list: Element): boolean {
+    return item.tagName.toLowerCase() === 'li'
+        && item.parentElement === list
+        && Boolean(item.closest('.markdown-body'));
 }
 
 function shouldSkipGitHubElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {

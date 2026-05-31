@@ -91,6 +91,31 @@ describe('translationTarget', () => {
     expect(ids).not.toContain('news-list')
   })
 
+  it('resolves GitHub markdown list items through profile expansion', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article class="markdown-body entry-content">
+          <h1 id="readme-title">Nanobot README</h1>
+          <ul id="news-list">
+            <li id="news-1">Released v0.2.0 with sustained objectives across turns and a real agent-loop refactor.</li>
+            <li id="news-2">Goal mode supports visible multi-step progress and long-horizon missions in chat.</li>
+          </ul>
+        </article>
+      </main>
+    `
+
+    const ids = resolveAutoTranslationTarget('smart').nodes.map(node => node.id)
+
+    expect(ids).toContain('readme-title')
+    expect(ids).toContain('news-1')
+    expect(ids).toContain('news-2')
+    expect(ids).not.toContain('news-list')
+  })
+
   it('lets the CNN profile translate lead package headlines without treating lead as an ad', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://edition.cnn.com/?refresh=1'),

@@ -11,7 +11,6 @@ import {
     hasEnoughProfileTargets,
     type TranslationTargetStats
 } from './scanContext';
-import { collectDomTextUnits } from './unitizer';
 import type { TranslationTargetCandidate, TranslationTargetContext, TranslationTargetDecision } from './types';
 
 export interface AutoTranslationTargetResult {
@@ -120,7 +119,7 @@ export function collectTranslationTargets(
         .filter(decision => decision.policy === 'allow')
         .filter(decision => isVisibleForTranslation(decision.target, context));
 
-    return mergeTranslationDecisions(decisions);
+    return mergeTranslationDecisions(decisions, context);
 }
 
 function collectTranslationCandidates(
@@ -159,12 +158,8 @@ function collectTranslationCandidates(
         }
     }
 
-    for (const node of collectDomUnitTargets(root)) {
-        candidates.push({
-            node,
-            source: 'dom-unit',
-            reasons: ['dom-unit-paragraph']
-        });
+    for (const candidate of collectProfileExpandedTargets(root, candidates, context)) {
+        candidates.push(candidate);
     }
 
     return dedupeCandidates(candidates);
@@ -243,9 +238,6 @@ function getCurrentSiteProfile() {
 }
 
 function expandSupplementalReadingUnit(unit: Element, context: TranslationTargetContext): Element[] {
-    const githubMarkdownListItems = getGitHubMarkdownListItems(unit);
-    if (githubMarkdownListItems.length > 0) return githubMarkdownListItems;
-
     if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
     if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit)) {
         const childUnits = collectHighConfidenceReadingUnits(unit, {
@@ -285,16 +277,33 @@ function looksLikeMultiBlockReadingWrapper(unit: Element): boolean {
     });
 }
 
-function collectDomUnitTargets(root: ParentNode): Element[] {
-    const githubMarkdownRoots = getMainDomain(location.href) === 'github.com'
-        ? Array.from(document.querySelectorAll<Element>('.markdown-body'))
-        : [];
+function collectProfileExpandedTargets(
+    root: ParentNode,
+    candidates: TranslationTargetCandidate[],
+    context: TranslationTargetContext
+): TranslationTargetCandidate[] {
+    const profile = getCurrentSiteProfile();
+    if (!profile?.expandTarget) return [];
 
-    if (githubMarkdownRoots.length > 0) {
-        return githubMarkdownRoots.flatMap(markdownRoot => collectDomTextUnits(markdownRoot));
+    const expansionSources = new Set<Element>();
+    if (root instanceof Element) expansionSources.add(root);
+    for (const candidate of candidates) expansionSources.add(candidate.node);
+
+    const expanded: TranslationTargetCandidate[] = [];
+    for (const source of expansionSources) {
+        const nodes = profile.expandTarget(source, context);
+        if (!nodes) continue;
+
+        for (const node of nodes) {
+            expanded.push({
+                node,
+                source: 'dom-unit',
+                reasons: ['site-profile-expand-target']
+            });
+        }
     }
 
-    return [];
+    return expanded;
 }
 
 function dedupeCandidates(candidates: TranslationTargetCandidate[]): TranslationTargetCandidate[] {
@@ -317,46 +326,29 @@ function dedupeCandidates(candidates: TranslationTargetCandidate[]): Translation
     return Array.from(map.values());
 }
 
-function mergeTranslationDecisions(decisions: TranslationTargetDecision[]): TranslationTargetDecision[] {
+function mergeTranslationDecisions(
+    decisions: TranslationTargetDecision[],
+    context: TranslationTargetContext
+): TranslationTargetDecision[] {
     const unique = Array.from(new Map(decisions.map(decision => [decision.target, decision])).values());
     return unique.filter(decision => {
-        if (unique.some(other => decision !== other && isGitHubMarkdownListContainer(decision.target) && isGitHubMarkdownListItemOf(other.target, decision.target))) {
+        if (unique.some(other =>
+            decision !== other
+            && decision.target.contains(other.target)
+            && shouldKeepNestedTarget(decision.target, other.target, context)
+        )) {
             return false;
         }
 
         return !unique.some(other => {
             if (decision === other || !other.target.contains(decision.target)) return false;
-            return !(isGitHubMarkdownListContainer(other.target) && isGitHubMarkdownListItemOf(decision.target, other.target));
+            return !shouldKeepNestedTarget(other.target, decision.target, context);
         });
     });
 }
 
-function getGitHubMarkdownListItems(unit: Element, includeDescendantLists = true): Element[] {
-    if (getMainDomain(location.href) !== 'github.com') return [];
-    if (!unit.closest('.markdown-body')) return [];
-    if (unit.closest('pre, code, table.highlight, table.diff-table')) return [];
-
-    const lists = unit.matches('ul, ol')
-        ? [unit]
-        : includeDescendantLists
-            ? Array.from(unit.querySelectorAll<Element>('ul, ol'))
-            : [];
-
-    return lists.flatMap(list => Array.from(list.children))
-        .filter(child => child.tagName.toLowerCase() === 'li')
-        .filter(item => (item.textContent?.replace(/\s+/g, ' ').trim().length ?? 0) >= 20);
-}
-
-function isGitHubMarkdownListContainer(element: Element): boolean {
-    return getMainDomain(location.href) === 'github.com'
-        && element.matches('ul, ol')
-        && Boolean(element.closest('.markdown-body'));
-}
-
-function isGitHubMarkdownListItemOf(item: Element, list: Element): boolean {
-    return item.tagName.toLowerCase() === 'li'
-        && item.parentElement === list
-        && Boolean(item.closest('.markdown-body'));
+function shouldKeepNestedTarget(parent: Element, child: Element, context: TranslationTargetContext): boolean {
+    return getCurrentSiteProfile()?.shouldKeepNestedTarget?.(parent, child, context) ?? false;
 }
 
 function chooseStrongerSource(

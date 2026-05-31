@@ -19,6 +19,8 @@ export type SiteProfileAfterBilingualAppend = (node: HTMLElement, translationNod
 export type SiteProfileTargetAllow = (node: Element, context: TranslationTargetContext) => TranslationTargetOverride | false | undefined;
 export type SiteProfileTargetSkip = (node: Element, context: TranslationTargetContext) => TranslationTargetSkip | false | undefined;
 export type SiteProfileAppendTarget = (node: HTMLElement, context: TranslationTargetContext) => HTMLElement | false | undefined;
+export type SiteProfileExpandTarget = (node: Element, context: TranslationTargetContext) => Element[] | false | undefined;
+export type SiteProfileShouldKeepNestedTarget = (parent: Element, child: Element, context: TranslationTargetContext) => boolean;
 
 export interface SiteProfile {
     id: string;
@@ -31,6 +33,8 @@ export interface SiteProfile {
     allowTarget?: SiteProfileTargetAllow;
     skipTarget?: SiteProfileTargetSkip;
     appendTarget?: SiteProfileAppendTarget;
+    expandTarget?: SiteProfileExpandTarget;
+    shouldKeepNestedTarget?: SiteProfileShouldKeepNestedTarget;
 }
 
 export interface SelectCompatFn {
@@ -47,4 +51,12 @@ export interface SupplementalCompatFn {
 
 export interface AfterBilingualAppendCompatFn {
     [domain: string]: SiteProfileAfterBilingualAppend;
+}
+
+export interface ExpandTargetCompatFn {
+    [domain: string]: SiteProfileExpandTarget;
+}
+
+export interface ShouldKeepNestedTargetCompatFn {
+    [domain: string]: SiteProfileShouldKeepNestedTarget;
 }

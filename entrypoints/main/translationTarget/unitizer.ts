@@ -1,5 +1,3 @@
-import { getTranslatableText, inlineSet } from '@/entrypoints/main/dom';
-
 export type DomUnitKind = 'block' | 'inline' | 'paragraph' | 'skip';
 
 export interface DomTextUnit {
@@ -11,6 +9,12 @@ export interface DomTextUnit {
 const FORCE_BLOCK_TAGS = new Set([
     'article', 'section', 'main', 'div', 'p', 'li', 'ul', 'ol',
     'blockquote', 'figure', 'figcaption', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+]);
+
+const INLINE_TAGS = new Set([
+    'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
+    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
+    'img', 'br', 'wbr', 'svg'
 ]);
 
 const SKIP_SELECTOR = [
@@ -43,7 +47,7 @@ export function classifyDomUnit(element: Element): DomTextUnit {
         return { element, kind: 'skip', reason: 'skip-selector' };
     }
 
-    const text = normalizeText(getTranslatableText(element));
+    const text = normalizeText(getUnitText(element));
     if (text.length < 3) return { element, kind: 'skip', reason: 'too-short' };
 
     const tag = element.tagName.toLowerCase();
@@ -110,7 +114,7 @@ function isParagraphElement(element: Element): boolean {
     if (isInlineElement(element)) return false;
     if (hasBlockChild(element)) return false;
 
-    const text = normalizeText(getTranslatableText(element));
+    const text = normalizeText(getUnitText(element));
     return text.length >= 20 || /[.!?。！？]/.test(text);
 }
 
@@ -121,7 +125,7 @@ function hasParagraphChild(element: Element): boolean {
 function hasBlockChild(element: Element): boolean {
     return Array.from(element.children).some(child => {
         const tag = child.tagName.toLowerCase();
-        if (FORCE_BLOCK_TAGS.has(tag) && !inlineSet.has(tag)) return true;
+        if (FORCE_BLOCK_TAGS.has(tag) && !INLINE_TAGS.has(tag)) return true;
         const display = getDisplay(child);
         return display.includes('block') || display === 'list-item' || display.includes('flex') || display.includes('grid');
     });
@@ -129,7 +133,7 @@ function hasBlockChild(element: Element): boolean {
 
 function isInlineElement(element: Element): boolean {
     const tag = element.tagName.toLowerCase();
-    return inlineSet.has(tag) || getDisplay(element).startsWith('inline');
+    return INLINE_TAGS.has(tag) || getDisplay(element).startsWith('inline');
 }
 
 function getDisplay(element: Element): string {
@@ -142,4 +146,10 @@ function getDisplay(element: Element): string {
 
 function normalizeText(text: string): string {
     return text.replace(/\s+/g, ' ').trim();
+}
+
+function getUnitText(element: Element): string {
+    const clone = element.cloneNode(true) as Element;
+    clone.querySelectorAll(SKIP_SELECTOR).forEach(node => node.remove());
+    return clone.textContent ?? '';
 }

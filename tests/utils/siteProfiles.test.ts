@@ -1,6 +1,12 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { afterBilingualAppendCompatFn, replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
+import {
+  siteProfileExpandTargetFns,
+  siteProfileShouldKeepNestedTargetFns
+} from '@/entrypoints/main/siteProfiles'
 
 afterEach(() => {
   window.dispatchEvent(new Event('resize'))
@@ -18,6 +24,18 @@ describe('site profile registry', () => {
     expect(selectCompatFn['towardsdatascience.com']).toBeTypeOf('function')
     expect(selectCompatFn['stackoverflow.com']).toBeTypeOf('function')
     expect(selectCompatFn['news.ycombinator.com']).toBeTypeOf('function')
+  })
+
+  it('registers GitHub target expansion hooks', () => {
+    expect(siteProfileExpandTargetFns['github.com']).toBeTypeOf('function')
+    expect(siteProfileShouldKeepNestedTargetFns['github.com']).toBeTypeOf('function')
+  })
+
+  it('keeps GitHub domain checks out of the generic collect pipeline', () => {
+    const source = readFileSync(resolve(process.cwd(), 'entrypoints/main/translationTarget/collect.ts'), 'utf8')
+
+    expect(source).not.toMatch(/github\.com/i)
+    expect(source).not.toMatch(/GitHub/)
   })
 
   it('registers TDS related article supplemental profile', () => {
