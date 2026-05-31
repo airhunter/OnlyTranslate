@@ -3,6 +3,10 @@ import { getMainDomain } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { collectTranslationTargets } from './collect';
+import {
+    BILINGUAL_CONTENT_CLASS,
+    TRANSLATED_ATTR
+} from './constants';
 import { decideTranslationTarget, isOpenExpandableReadingContainer, isVisibleForTranslation } from './decision';
 import {
     getCachedContentUnitDecision,
@@ -13,8 +17,6 @@ import {
 } from './scanContext';
 import type { TranslationTargetContext } from './types';
 
-const TRANSLATED_ATTR = 'data-fr-translated';
-const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
 
 export function collectDynamicTranslationNodes(

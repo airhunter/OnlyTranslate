@@ -27,6 +27,12 @@ import {
     isInTranslationScope as isDynamicInTranslationScope
 } from '@/entrypoints/main/translationTarget/dynamic';
 import { getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
+import {
+    BILINGUAL_CONTENT_CLASS,
+    BILINGUAL_WRAPPER_CLASS,
+    TRANSLATED_ATTR,
+    TRANSLATED_ID_ATTR
+} from '@/entrypoints/main/translationTarget/constants';
 
 let hoverTimer: any; // 鼠标悬停计时器
 let htmlSet = new Set(); // 防抖
@@ -35,10 +41,6 @@ let isAutoTranslating = false; // 控制是否继续翻译新内容
 let observer: IntersectionObserver | null = null; // 保存观察器实例
 let mutationObserver: MutationObserver | null = null; // 保存 DOM 变化观察器实例
 
-// 使用自定义属性标记已翻译的节点
-const TRANSLATED_ATTR = 'data-fr-translated';
-const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
-const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
 
 let nodeIdCounter = 0; // 节点ID计数器
@@ -82,12 +84,12 @@ export function restoreOriginalContent() {
             node.removeAttribute(TRANSLATED_ID_ATTR);
             
             // 移除可能添加的翻译相关类
-            node.classList.remove('only-translate-bilingual');
+            node.classList.remove(BILINGUAL_WRAPPER_CLASS);
         }
     });
     
     // 2. 移除所有翻译内容元素
-    document.querySelectorAll('.only-translate-bilingual-content').forEach(element => {
+    document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => {
         element.remove();
     });
     
@@ -288,7 +290,7 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
     // 如果已经翻译过，250ms 后删除翻译结果
-    let bilingualNode = searchClassName(node, 'only-translate-bilingual');
+    let bilingualNode = searchClassName(node, BILINGUAL_WRAPPER_CLASS);
     if (bilingualNode) {
         if (slide) {
             htmlSet.delete(nodeOuterHTML);
@@ -297,9 +299,9 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
         let spinner = insertLoadingSpinner(bilingualNode as HTMLElement, true);
         setTimeout(() => {
             spinner.remove();
-            const content = searchClassName(bilingualNode as HTMLElement, 'only-translate-bilingual-content');
+            const content = searchClassName(bilingualNode as HTMLElement, BILINGUAL_CONTENT_CLASS);
             if (content && content instanceof HTMLElement) content.remove();
-            (bilingualNode as HTMLElement).classList.remove('only-translate-bilingual');
+            (bilingualNode as HTMLElement).classList.remove(BILINGUAL_WRAPPER_CLASS);
             htmlSet.delete(nodeOuterHTML);
         }, 250);
         return;
@@ -435,7 +437,7 @@ export const handleBtnTranslation = throttle((node: any) => {
 function bilingualAppendChild(node: any, text: string | Node) {
     if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return;
 
-    node.classList.add("only-translate-bilingual");
+    node.classList.add(BILINGUAL_WRAPPER_CLASS);
     let newNode = document.createElement("span");
     newNode.classList.add(BILINGUAL_CONTENT_CLASS);
     // find the style

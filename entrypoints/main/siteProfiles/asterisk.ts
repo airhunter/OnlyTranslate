@@ -1,3 +1,7 @@
+import {
+    BILINGUAL_CONTENT_CLASS,
+    TRANSLATED_ATTR
+} from '@/entrypoints/main/translationTarget/constants';
 import type { SiteProfile } from './types';
 
 const FOOTNOTE_TRANSLATION_CLASS = 'only-translate-asterisk-footnote';
@@ -107,7 +111,7 @@ function hasAsteriskArticleWrapperClass(node: Element): boolean {
 }
 
 function isManagedTranslationElement(node: Element): boolean {
-    return Boolean(node.closest('.only-translate-bilingual-content, [data-fr-translated="true"]'));
+    return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
 }
 
 function getNormalizedText(node: Element): string {

@@ -4,6 +4,10 @@ import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import {
+    BILINGUAL_CONTENT_CLASS,
+    TRANSLATED_ATTR
+} from './constants';
+import {
     getCachedContentFilterDecision,
     getCachedContentUnitDecision,
     getCachedNormalizedText,
@@ -18,8 +22,6 @@ import type {
     TranslationTargetSkip
 } from './types';
 
-const TRANSLATED_ATTR = 'data-fr-translated';
-const BILINGUAL_CONTENT_CLASS = 'only-translate-bilingual-content';
 const HARD_SKIP_SELECTOR = [
     'script',
     'style',

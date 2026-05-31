@@ -1,3 +1,8 @@
+import {
+    BILINGUAL_CONTENT_CLASS,
+    TRANSLATED_ATTR
+} from './constants';
+
 export type DomUnitKind = 'block' | 'inline' | 'paragraph' | 'skip';
 
 export interface DomTextUnit {
@@ -38,8 +43,8 @@ const SKIP_SELECTOR = [
     '[aria-hidden="true"]',
     '.notranslate',
     '[translate="no"]',
-    '.only-translate-bilingual-content',
-    '[data-fr-translated="true"]'
+    `.${BILINGUAL_CONTENT_CLASS}`,
+    `[${TRANSLATED_ATTR}="true"]`
 ].join(', ');
 
 export function classifyDomUnit(element: Element): DomTextUnit {

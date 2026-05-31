@@ -1,5 +1,9 @@
 import type { ContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import type { ContentUnitDecision } from '@/entrypoints/utils/contentUnitClassifier';
+import {
+    BILINGUAL_CONTENT_CLASS,
+    TRANSLATED_ATTR
+} from './constants';
 
 export type ScanBudgetKind = 'supplemental' | 'dynamic';
 
@@ -212,7 +216,7 @@ export function hasEnoughProfileTargets(targets: Element[], context?: ScanContex
 function computeObviousUiSubtree(context: ScanContext | undefined, element: Element): boolean {
     if (element.matches(OBVIOUS_UI_SELECTOR)) return true;
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tablist"]')) return true;
-    if (element.closest('.only-translate-bilingual-content, [data-fr-translated="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]')) return true;
+    if (element.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`)) return true;
 
     const hint = getElementHint(element);
     if (!NOISE_HINT_PATTERN.test(hint)) return false;
