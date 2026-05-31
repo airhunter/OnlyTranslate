@@ -4,7 +4,7 @@ import { constants } from "@/entrypoints/utils/constant";
 import { getCenterPoint } from "@/entrypoints/utils/common";
 import './style.css';
 import { config, configReady } from "@/entrypoints/utils/config";
-import { mountFloatingBall, unmountFloatingBall, toggleFloatingBallPosition } from "@/entrypoints/utils/floatingBall";
+import { mountFloatingBall, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
 import { t } from "@/entrypoints/utils/i18n";
@@ -12,6 +12,7 @@ import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
 import { setupPageTranslationLifecycle } from "@/entrypoints/content/translationLifecycle";
 import { setupVideoSubtitle } from "@/entrypoints/content/videoSubtitleSetup";
 import { setupOnboardingWidgets } from "@/entrypoints/content/onboardingSetup";
+import { setupFloatingBallHotkey } from "@/entrypoints/content/floatingBallHotkey";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -22,7 +23,13 @@ export default defineContentScript({
         // 添加手动翻译事件监听器
         setupManualTranslationTriggers();
         // 添加悬浮球快捷键事件监听器
-        setupFloatingBallHotkey();
+        setupFloatingBallHotkey({
+            config,
+            document,
+            window,
+            navigator,
+            isDev: process.env.NODE_ENV === 'development'
+        });
         setupPageTranslationLifecycle({
             config,
             document,
@@ -402,185 +409,6 @@ function setupManualTranslationTriggers() {
                 handleTranslation(event.touches[0].clientX, event.touches[0].clientY);
             }
         }
-    });
-}
-
-        // 设置全文翻译快捷键（与悬浮球解耦）
-function setupFloatingBallHotkey() {
-    // 如果快捷键设置为 "none"，则禁用快捷键
-    if (config.floatingBallHotkey === 'none') return;
-
-    // 添加全局键盘事件监听
-    let hotkeysPressed = new Set<string>();
-    let lastKeyDownTime = 0; // 用于防止按键事件重复触发
-    
-    // 开发环境标志
-    const isDev = process.env.NODE_ENV === 'development';
-    
-    // 检测操作系统类型
-    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-    
-    // 获取当前配置的快捷键
-    const getConfiguredHotkeyParts = () => {
-        // 如果选择了自定义快捷键，使用自定义的
-        const hotkeyString = config.floatingBallHotkey === 'custom' 
-            ? config.customFloatingBallHotkey 
-            : config.floatingBallHotkey;
-        
-        if (!hotkeyString || hotkeyString === 'none') {
-            return [];
-        }
-        
-        return hotkeyString.split('+').map(key => {
-            const k = key.toLowerCase();
-            // 标准化修饰键名称
-            if (k === 'ctrl') return 'control';
-            if (k === 'option') return 'alt';
-            return k;
-        });
-    };
-    
-    if (isDev) {
-        console.log(`[OnlyTranslate] 设置悬浮球快捷键: ${config.floatingBallHotkey}, 系统: ${isMac ? 'macOS' : '其他'}`);
-    }
-    
-    // 监听按键按下事件
-    document.addEventListener('keydown', (event) => {
-        // 防止事件重复触发（某些浏览器可能会重复触发keydown事件）
-        const now = Date.now();
-        if (now - lastKeyDownTime < 50) return;
-        lastKeyDownTime = now;
-        
-        // 在 Mac 上禁止 cmd 键参与快捷键
-        if (isMac && event.metaKey) {
-            return;
-        }
-        
-        // 记录修饰键状态
-        if (event.altKey) hotkeysPressed.add('alt');
-        if (event.ctrlKey) hotkeysPressed.add('control');
-        if (event.metaKey && !isMac) hotkeysPressed.add('control'); // 非Mac系统上metaKey映射到control
-        if (event.shiftKey) hotkeysPressed.add('shift');
-        
-        // 处理普通按键
-        const key = event.key.toLowerCase();
-        const code = event.code?.toLowerCase();
-        
-        // 处理字母键
-        if (code && code.startsWith('key')) {
-            const letter = code.slice(3).toLowerCase();
-            hotkeysPressed.add(letter);
-        } else if (key.length === 1) {
-            // 单个字符的按键
-            hotkeysPressed.add(key);
-        } else if (/^f\d+$/.test(key)) {
-            // 功能键 F1-F12
-            hotkeysPressed.add(key);
-        } else {
-            // 特殊按键
-            const specialKeys: Record<string, string> = {
-                'escape': 'escape',
-                'enter': 'enter',
-                'space': 'space',
-                'tab': 'tab',
-                'backspace': 'backspace',
-                'delete': 'delete',
-                'arrowup': 'arrowup',
-                'arrowdown': 'arrowdown', 
-                'arrowleft': 'arrowleft',
-                'arrowright': 'arrowright',
-                'home': 'home',
-                'end': 'end',
-                'pageup': 'pageup',
-                'pagedown': 'pagedown',
-                'insert': 'insert'
-            };
-            
-            if (specialKeys[key]) {
-                hotkeysPressed.add(specialKeys[key]);
-            }
-        }
-        
-        // 获取当前配置的快捷键
-        const hotkeyParts = getConfiguredHotkeyParts();
-        
-        // 如果没有配置快捷键，不处理
-        if (hotkeyParts.length === 0) {
-            return;
-        }
-        
-        // 检查当前按下的键是否完全匹配配置的快捷键
-        const allKeysPressed = hotkeyParts.every(key => hotkeysPressed.has(key));
-        const exactMatch = allKeysPressed && hotkeyParts.length === hotkeysPressed.size;
-        
-        // 如果按键组合完全匹配配置的快捷键
-        // 无论悬浮球是否启用，都派发统一事件，由对应处理方接管
-        if (exactMatch) {
-            // 检查插件是否开启
-            if (!config.on) return;
-            
-            // 防止事件继续传播和默认行为
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // 通过自定义事件来触发翻译
-            document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation'));
-            
-            if (isDev) {
-                const activeHotkey = config.floatingBallHotkey === 'custom' 
-                    ? config.customFloatingBallHotkey 
-                    : config.floatingBallHotkey;
-                console.log(`[OnlyTranslate] 触发悬浮球翻译，快捷键: ${activeHotkey}`);
-            }
-        }
-    });
-    
-    // 监听按键释放事件
-    document.addEventListener('keyup', (event) => {
-        // 清除字母键状态
-        const releasedKey = event.key.toLowerCase();
-        const releasedCode = event.code?.toLowerCase();
-        if (releasedCode && releasedCode.startsWith('key')) {
-            const letter = releasedCode.slice(3).toLowerCase();
-            hotkeysPressed.delete(letter);
-        } else if (releasedKey.length === 1) {
-            hotkeysPressed.delete(releasedKey);
-        } else if (/^f\d+$/.test(releasedKey)) {
-            hotkeysPressed.delete(releasedKey);
-        } else {
-            // 特殊键
-            const specialKeys: Record<string, string> = {
-                'escape': 'escape',
-                'enter': 'enter',
-                'space': 'space',
-                'tab': 'tab',
-                'backspace': 'backspace',
-                'delete': 'delete',
-                'arrowup': 'arrowup',
-                'arrowdown': 'arrowdown',
-                'arrowleft': 'arrowleft',
-                'arrowright': 'arrowright',
-                'home': 'home',
-                'end': 'end',
-                'pageup': 'pageup',
-                'pagedown': 'pagedown',
-                'insert': 'insert'
-            };
-            if (specialKeys[releasedKey]) {
-                hotkeysPressed.delete(specialKeys[releasedKey]);
-            }
-        }
-        
-        // 清除修饰键状态
-        if (!event.altKey) hotkeysPressed.delete('alt');
-        if (!event.ctrlKey) hotkeysPressed.delete('control');
-        if (!event.metaKey) hotkeysPressed.delete('control');
-        if (!event.shiftKey) hotkeysPressed.delete('shift');
-    });
-    
-    // 页面失焦或切换标签页时，清除所有按键状态
-    window.addEventListener('blur', () => {
-        hotkeysPressed.clear();
     });
 }
 
