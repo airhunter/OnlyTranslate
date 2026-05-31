@@ -7,11 +7,11 @@ import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, unmountFloatingBall, toggleFloatingBallPosition } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
-import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
 import { t } from "@/entrypoints/utils/i18n";
 import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
 import { setupPageTranslationLifecycle } from "@/entrypoints/content/translationLifecycle";
 import { setupVideoSubtitle } from "@/entrypoints/content/videoSubtitleSetup";
+import { setupOnboardingWidgets } from "@/entrypoints/content/onboardingSetup";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -42,7 +42,7 @@ export default defineContentScript({
             mountSelectionTranslator();
         }
         
-        mountNewApiComponent();
+        setupOnboardingWidgets();
 
         setupVideoSubtitle();
 
