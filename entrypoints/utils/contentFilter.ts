@@ -1,8 +1,8 @@
 const NOISE_TAGS = new Set(['nav', 'aside', 'footer', 'form', 'dialog']);
 const NOISE_ROLES = new Set(['navigation', 'complementary', 'contentinfo', 'dialog']);
 
-const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x platform|x\.com|medium|youtube|instagram|threads|mastodon|bluesky|github)\b/i;
-const SOCIAL_LINK_PATTERN = /\b(facebook\.com|linkedin\.com|twitter\.com|x\.com|medium\.com|youtube\.com|youtu\.be|instagram\.com|threads\.net|mastodon\.social|bsky\.app|github\.com)\b/i;
+const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x platform|x\.com|medium|youtube|instagram|threads|mastodon|bluesky)\b/i;
+const SOCIAL_LINK_PATTERN = /\b(facebook\.com|linkedin\.com|twitter\.com|x\.com|medium\.com|youtube\.com|youtu\.be|instagram\.com|threads\.net|mastodon\.social|bsky\.app)\b/i;
 const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|chip)\b/i;
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;

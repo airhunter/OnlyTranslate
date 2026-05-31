@@ -154,6 +154,18 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps technical source links to GitHub as readable content', () => {
+    const element = renderElement(`
+      <section class="project-source">
+        <a href="https://github.com/airhunter/OnlyTranslate">GitHub repository</a>
+        <p>Read the source code and installation notes before changing the extension build pipeline.</p>
+      </section>
+    `)
+
+    expect(getContentFilterDecision(element)).toBe('keep')
+    expect(shouldSkipContentBlock(element)).toBe(false)
+  })
+
   it('only skips the mixed block itself when it contains share actions', () => {
     const element = renderElement(`
       <shreddit-post>
