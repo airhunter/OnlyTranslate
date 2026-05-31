@@ -19,6 +19,7 @@ Treat this backlog as staged cleanup after the regression bugfix pass, not as on
 - Batch 0 completed: regression closure verified with `pnpm test:content` and `pnpm verify`.
 - Batch 1 completed: `compat.ts` is now a thin facade over profile-owned behavior and shared domain parsing lives in a neutral utility.
 - Batch 2 completed: `entrypoints/content.ts` is reduced to orchestration, with lifecycle, video subtitle setup, onboarding, floating-ball hotkey, manual translation triggers, input-box translation, runtime controls, and unload cleanup split into focused modules.
+- Batch 3 started: translation hot-path helpers and runtime response parsing now use narrower DOM, generic, and `unknown` types instead of broad `any`.
 
 Batch 2 commits:
 
@@ -29,6 +30,11 @@ Batch 2 commits:
 - `e302320 refactor(content): 拆出手动翻译触发器`
 - `54df240 refactor(content): 拆出输入框翻译`
 - `2b942d6 refactor(content): 拆出入口控制监听`
+
+Batch 3 commits so far:
+
+- `1618a08 refactor(types): 收紧翻译热路径类型`
+- `51ca011 refactor(types): 收紧运行时响应解析`
 
 ### Batch 0. Regression Closure Gate
 
