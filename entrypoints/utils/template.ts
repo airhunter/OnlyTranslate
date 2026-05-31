@@ -47,7 +47,11 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
-    const payload: any = {
+    const payload: {
+        model: string;
+        messages: Array<{ role: 'system' | 'user'; content: string }>;
+        temperature?: number;
+    } = {
         'model': model,
         'messages': [
             {'role': 'system', 'content': system},

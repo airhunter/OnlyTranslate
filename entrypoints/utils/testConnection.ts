@@ -1,5 +1,28 @@
 import { services, servicesType } from "./option";
 import { urls } from "./constant";
+import type { CustomProvider } from "./model";
+
+interface TestConnectionConfig {
+  token: Record<string, string>;
+  proxy: Record<string, string>;
+  model?: Record<string, string>;
+  customModel?: Record<string, string>;
+  customProviders?: CustomProvider[];
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "未知错误";
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException
+    ? error.name === "AbortError"
+    : error instanceof Error && error.name === "AbortError";
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" ? value as Record<string, unknown> : null;
+}
 
 /**
  * Test connection for a translation service
@@ -9,7 +32,7 @@ import { urls } from "./constant";
  */
 export async function testConnection(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string>; customProviders?: any[] }
+  config: TestConnectionConfig
 ): Promise<{ success: boolean; message: string }> {
   const timeout = 10000;
   const controller = new AbortController();
@@ -64,21 +87,24 @@ async function testMicrosoft(signal: AbortSignal): Promise<{ success: boolean; m
       return { success: false, message: `翻译请求失败: ${translateResp.status} ${translateResp.statusText} ${errorBody}` };
     }
 
-    const result = await translateResp.json();
-    const translatedText = result[0]?.translations?.[0]?.text || "未知";
+    const result = await translateResp.json() as unknown;
+    const firstItem = Array.isArray(result) ? asRecord(result[0]) : null;
+    const translations = firstItem?.translations;
+    const firstTranslation = Array.isArray(translations) ? asRecord(translations[0]) : null;
+    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "未知";
 
     return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
       return { success: false, message: "连接超时（10秒）" };
     }
-    return { success: false, message: `连接失败: ${error.message || "未知错误"}` };
+    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
   }
 }
 
 async function testAI(
   service: string,
-  config: { token: Record<string, string>; proxy: Record<string, string>; model?: Record<string, string>; customModel?: Record<string, string>; customProviders?: any[] },
+  config: TestConnectionConfig,
   signal: AbortSignal
 ): Promise<{ success: boolean; message: string }> {
   try {
@@ -152,15 +178,18 @@ async function testAI(
       return { success: false, message: `请求失败: ${resp.status} ${resp.statusText} ${errorBody}` };
     }
 
-    const result = await resp.json();
-    const translatedText = result.choices?.[0]?.message?.content || "未知";
+    const result = asRecord(await resp.json() as unknown);
+    const choices = result?.choices;
+    const firstChoice = Array.isArray(choices) ? asRecord(choices[0]) : null;
+    const message = asRecord(firstChoice?.message);
+    const translatedText = typeof message?.content === "string" ? message.content : "未知";
 
     return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
       return { success: false, message: "连接超时（10秒）" };
     }
-    return { success: false, message: `连接失败: ${error.message || "未知错误"}` };
+    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
   }
 }
 
@@ -199,14 +228,16 @@ async function testDeepL(
       return { success: false, message: `请求失败: ${resp.status} ${resp.statusText}。请检查令牌是否正确` };
     }
 
-    const result = await resp.json();
-    const translatedText = result.translations?.[0]?.text || "未知";
+    const result = asRecord(await resp.json() as unknown);
+    const translations = result?.translations;
+    const firstTranslation = Array.isArray(translations) ? asRecord(translations[0]) : null;
+    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "未知";
 
     return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
       return { success: false, message: "连接超时（10秒）" };
     }
-    return { success: false, message: `连接失败: ${error.message || "未知错误"}` };
+    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
   }
 }

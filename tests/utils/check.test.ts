@@ -9,7 +9,7 @@ vi.mock('@/entrypoints/utils/tip', () => ({
 
 let runtimeConfig: Config
 let checkConfig: () => boolean
-let sendErrorMessage: any
+let sendErrorMessage: (message: string) => void
 
 describe('checkConfig', () => {
     beforeAll(async () => {

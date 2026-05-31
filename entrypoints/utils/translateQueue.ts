@@ -7,7 +7,7 @@ import { config } from './config';
 
 // 队列状态
 let activeTranslations = 0; // 当前活跃的翻译任务数量
-let pendingTranslations: Array<() => Promise<any>> = []; // 等待执行的翻译任务队列
+let pendingTranslations: Array<() => Promise<unknown>> = []; // 等待执行的翻译任务队列
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';

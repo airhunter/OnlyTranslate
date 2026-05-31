@@ -1,6 +1,6 @@
 import { services } from "./option";
 
-export const urls: any = {
+export const urls: Record<string, string> = {
     [services.deepL]: "https://api-free.deepl.com/v2/translate",
     [services.openai]: "https://api.openai.com/v1/chat/completions",
     [services.moonshot]: "https://api.moonshot.cn/v1/chat/completions",

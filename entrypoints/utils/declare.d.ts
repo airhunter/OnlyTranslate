@@ -6,9 +6,9 @@ declare module '*?raw' {
 }
 
 type ChromeMessageListener = (
-  message: any,
-  sender: any,
-  sendResponse: (response?: any) => void
+  message: unknown,
+  sender: unknown,
+  sendResponse: (response?: unknown) => void
 ) => boolean | void;
 
 declare const chrome: {
@@ -17,7 +17,7 @@ declare const chrome: {
       addListener(listener: ChromeMessageListener): void;
       removeListener(listener: ChromeMessageListener): void;
     };
-    sendMessage(message: any, responseCallback?: (response: any) => void): void;
+    sendMessage(message: unknown, responseCallback?: (response: unknown) => void): void;
     lastError?: {
       message?: string;
     };

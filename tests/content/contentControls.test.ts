@@ -6,7 +6,7 @@ import {
 } from '@/entrypoints/content/contentControls'
 
 function createRuntime() {
-  const listeners: Array<(message: any, sender: unknown, sendResponse: (response?: unknown) => void) => boolean> = []
+  const listeners: Array<(message: unknown, sender: unknown, sendResponse: (response?: unknown) => void) => boolean> = []
 
   return {
     runtime: {
@@ -18,7 +18,7 @@ function createRuntime() {
         })
       }
     },
-    send(message: any) {
+    send(message: unknown) {
       const responses: unknown[] = []
       const handled = listeners.some(listener => listener(message, {}, response => responses.push(response)))
       return { handled, responses }

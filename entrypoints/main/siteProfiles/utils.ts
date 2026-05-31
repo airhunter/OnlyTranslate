@@ -1,6 +1,6 @@
 const isDev = process.env.NODE_ENV === 'development';
 
-export function debugLog(type: string, message: string, ...args: any[]): void {
+export function debugLog(type: string, message: string, ...args: unknown[]): void {
     if (!isDev) return;
 
     const colors: { [key: string]: string } = {

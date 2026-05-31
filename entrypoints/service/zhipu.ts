@@ -12,7 +12,7 @@ async function zhipu(message: any) {
     let token = config.token[services.zhipu];
     let secret, expiration;
     config.extra[services.zhipu] && ({secret, expiration} = config.extra[services.zhipu]);
-    if (!secret || expiration <= Date.now()) {
+    if (!secret || !expiration || expiration <= Date.now()) {
         secret = generateToken(token);
         if (!secret) throw new Error(t('runtime.tokenGenerateFailed'));
         // 保存 secret 和 expiration

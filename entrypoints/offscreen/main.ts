@@ -40,6 +40,21 @@ interface CachedTranslator {
     createdAt: number;
 }
 
+interface OffscreenMessage {
+    type?: string;
+    data?: {
+        text?: unknown;
+        from?: string;
+        to?: string;
+        sourceLang?: string;
+        targetLang?: string;
+    };
+}
+
+function asOffscreenMessage(message: unknown): OffscreenMessage {
+    return message && typeof message === 'object' ? message as OffscreenMessage : {};
+}
+
 const translatorCache = new Map<string, CachedTranslator>();
 
 // 生成缓存 key
@@ -488,7 +503,8 @@ async function handleTranslationRequest(data: any): Promise<string> {
 }
 
 // 监听来自 background script 的消息
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((rawMessage, sender, sendResponse) => {
+    const message = asOffscreenMessage(rawMessage);
     // console.log('Offscreen 收到消息:', message);
     
     // 翻译请求
@@ -525,7 +541,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     // 预下载语言模型
     if (message.type === 'CHROME_TRANSLATE_PRELOAD') {
-        const { sourceLang, targetLang } = message.data || { sourceLang: 'en', targetLang: 'zh' };
+        const sourceLang = message.data?.sourceLang || 'en';
+        const targetLang = message.data?.targetLang || 'zh';
         
         preloadLanguageModel(sourceLang, targetLang, (progress) => {
             // 发送进度更新

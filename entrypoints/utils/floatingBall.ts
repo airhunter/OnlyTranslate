@@ -1,12 +1,19 @@
 import { createApp } from 'vue';
+import type { App, ComponentPublicInstance } from 'vue';
 import FloatingBall from '@/components/FloatingBall.vue';
 import { config } from '@/entrypoints/utils/config';
 import browser from 'webextension-polyfill';
 import { storage } from '@wxt-dev/storage';
 import { autoTranslateEnglishPage, restoreOriginalContent } from '@/entrypoints/main/trans';
 
-let floatingBallInstance: any = null;
-let app: any = null;
+type FloatingBallInstance = ComponentPublicInstance & {
+  isTranslating?: boolean;
+  element?: HTMLElement;
+  $el: HTMLElement;
+}
+
+let floatingBallInstance: FloatingBallInstance | null = null;
+let app: App<Element> | null = null;
 let isTranslated = false; // 添加状态变量跟踪翻译状态
 
 /**
@@ -66,7 +73,7 @@ export function mountFloatingBall(position?: 'left' | 'right') {
         isTranslated = false;
         
         // 恢复后确保状态同步
-        floatingBallInstance.$el.classList.remove('is-translating');
+        floatingBallInstance?.$el.classList.remove('is-translating');
       }
     }
   });
@@ -87,7 +94,7 @@ export function mountFloatingBall(position?: 'left' | 'right') {
 export function toggleFloatingBallTranslation() {
   if (!floatingBallInstance) return;
 
-  const currentState = floatingBallInstance.isTranslating;
+  const currentState = Boolean(floatingBallInstance.isTranslating);
   const newState = !currentState;
   
   // 触发对应的自定义事件
@@ -150,6 +157,7 @@ function addFloatingBallAnimation(type: 'translate' | 'restore') {
   if (!floatingBallInstance) return;
   
   const ball = floatingBallInstance.element;
+  if (!ball) return;
   const originalBackground = ball.style.background;
   const originalTransition = ball.style.transition;
   

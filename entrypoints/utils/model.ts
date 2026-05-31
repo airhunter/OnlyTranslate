@@ -6,7 +6,10 @@ interface IMapping {
 
 // 内包，存储额外信息
 interface IExtra {
-    [key: string]: any
+    [key: string]: {
+        secret?: string;
+        expiration?: number;
+    }
 }
 
 export interface CustomProvider {

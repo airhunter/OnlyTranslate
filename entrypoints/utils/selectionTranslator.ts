@@ -1,10 +1,11 @@
 import { createApp } from 'vue';
+import type { App, ComponentPublicInstance } from 'vue';
 import SelectionTranslator from '@/components/SelectionTranslator.vue';
 import { config } from '@/entrypoints/utils/config';
 import { storage } from '@wxt-dev/storage';
 
-let selectionTranslatorInstance: any = null;
-let app: any = null;
+let selectionTranslatorInstance: ComponentPublicInstance | null = null;
+let app: App<Element> | null = null;
 
 /**
  * 挂载选词翻译组件

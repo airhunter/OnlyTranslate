@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setupPageTranslationLifecycle } from '@/entrypoints/content/translationLifecycle'
 
 function createRuntime() {
-  let listener: ((message: any, sender: unknown, sendResponse: (response?: unknown) => void) => boolean) | undefined
+  let listener: ((message: unknown, sender: unknown, sendResponse: (response?: unknown) => void) => boolean) | undefined
 
   return {
     runtime: {
@@ -13,7 +13,7 @@ function createRuntime() {
         })
       }
     },
-    send(message: any) {
+    send(message: unknown) {
       let response: unknown
       const handled = listener?.(message, {}, (value?: unknown) => {
         response = value
