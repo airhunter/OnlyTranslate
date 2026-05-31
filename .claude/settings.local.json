@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "PowerShell(Get-ChildItem \"C:\\\\coding\\\\translates_project\\\\OnlyTranslate\" -Name | Where-Object { $_ -notmatch \"^node_modules$|^\\\\.git$\" })",
+      "Bash(Get-ChildItem \"C:/coding/translates_project/OnlyTranslate/entrypoints\" -Recurse -Include \"*.ts\",\"*.vue\")",
+      "Bash(Measure-Object -Property Length -Sum)"
     ]
   }
 }
