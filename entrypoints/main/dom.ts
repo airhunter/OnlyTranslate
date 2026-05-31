@@ -153,6 +153,15 @@ export interface GrabAllNodeOptions {
     siteCompatMode?: SelectCompatContext['mode'];
     scanContext?: ScanContext;
     scanBudget?: ScanBudgetKind;
+    translateFirstLineText?: (textNode: Text, text: string) => void;
+}
+
+function isElementNode(node: Node | null | undefined): node is Element {
+    return node instanceof Element;
+}
+
+function isHTMLElementNode(node: Node | null | undefined): node is HTMLElement {
+    return node instanceof HTMLElement;
 }
 
 // 内联元素集合（可以包含在其他元素内的元素）
@@ -305,20 +314,20 @@ function removeNestedTranslateNodes(nodes: Element[]): Element[] {
 }
 
 // 返回最终应该翻译的父节点或 false
-export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
+export function grabNode(node: Node | null | undefined, options: GrabAllNodeOptions = {}): Element | false {
     // 空节点检查
     if (!node) return false;
 
     // 对于 Text 节点，尝试找到其可翻译的父节点
     if (node instanceof Text) {
         const parentOrSelf = findTranslatableParent(node, options);
-        if (parentOrSelf && parentOrSelf !== node) {
+        if (parentOrSelf) {
             return parentOrSelf;
         }
         return false;
     }
 
-    if (!node.tagName) return false;
+    if (!isElementNode(node)) return false;
 
     const curTag = node.tagName.toLowerCase();
 
@@ -334,7 +343,7 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
             return false;
         }
         // 如果返回值为节点或其他真值，则返回该值作为翻译节点
-        if (result) return result;
+        if (result instanceof Element) return result;
     }
 
     if (hasContentFilterSkipSelfAncestor(node, options)) return false;
@@ -363,7 +372,7 @@ export function grabNode(node: any, options: GrabAllNodeOptions = {}): any {
 
     // 6. 首行文本处理：处理 div 和 label 的首行文本
     if (curTag === 'div' || curTag === 'label') {
-        return handleFirstLineText(node);
+        return handleFirstLineText(node, options);
     }
 
     return false;
@@ -382,7 +391,7 @@ function hasContentFilterSkipSelfAncestor(node: Element, options: GrabAllNodeOpt
 }
 
 // 检查是否应该跳过节点
-function shouldSkipNode(node: any, tag: string): boolean {
+function shouldSkipNode(node: Element, tag: string): boolean {
     // 1. 判断标签是否在 skipSet 内
     // 2. 检查是否具有 notranslate 类
     // 3. 判断节点是否可编辑
@@ -392,15 +401,15 @@ function shouldSkipNode(node: any, tag: string): boolean {
     return skipSet.has(tag) ||
         node.classList?.contains('notranslate') ||
         node.getAttribute?.('translate') === 'no' ||
-        node.isContentEditable ||
+        (node instanceof HTMLElement && node.isContentEditable) ||
         checkTextSize(node) ||
         isMainlyNumericContent(node) ||
         isJSONContent(node) ||
-        skipAriaRoles.has(node.getAttribute?.('role'));
+        skipAriaRoles.has(node.getAttribute('role') ?? '');
 }
 
 // 检查文本是否为 JSON 格式数据（不应被翻译）
-function isJSONContent(node: any): boolean {
+function isJSONContent(node: Element): boolean {
     const text = node.textContent?.trim();
     if (!text || text.length < 10) return false;
     // 检查文本是否以 { 或 [ 开头，且包含 JSON 键值对特征
@@ -409,17 +418,18 @@ function isJSONContent(node: any): boolean {
 }
 
 // 检查文本长度
-function checkTextSize(node: any): boolean {
+function checkTextSize(node: Element): boolean {
     // 1. 若文本内容长度超过 3072
     // 2. 或者 outerHTML 长度超过 4096，都视为过长
     // 3. 少于3个字符
-    return node.textContent.length > 3072 ||
+    const textLength = node.textContent?.length ?? 0;
+    return textLength > 3072 ||
         (node.outerHTML && node.outerHTML.length > 4096) ||
-        node.textContent.length < 3;
+        textLength < 3;
 }
 
 // 检查节点内容是否主要为数字
-function isMainlyNumericContent(node: any): boolean {
+function isMainlyNumericContent(node: Element): boolean {
     if (!node || !node.textContent) return false;
     
     const text = getTranslatableText(node).trim();
@@ -573,23 +583,23 @@ function isNumericContent(text: string): boolean {
 }
 
 // 检查是否为按钮
-function isButton(node: any, tag: string): boolean {
+function isButton(node: Element, tag: string): boolean {
     // 1. 若当前标签就是 button
     // 2. 或者当前标签为 span 并且其父节点为 button，则视为按钮
     return tag === 'button' ||
-        (tag === 'span' && node.parentNode?.tagName.toLowerCase() === 'button');
+        (tag === 'span' && node.parentElement?.tagName.toLowerCase() === 'button');
 }
 
 // 处理按钮翻译
-function handleButtonTranslation(node: any): void {
+function handleButtonTranslation(node: Element): void {
     // 1. 若文本非空，则调用 handleBtnTranslation 进行按钮文本翻译处理
-    if (node.textContent.trim()) {
-        handleBtnTranslation(node);
+    if (node.textContent?.trim()) {
+        if (isHTMLElementNode(node)) handleBtnTranslation(node);
     }
 }
 
 // 检查是否为内联元素
-function isInlineElement(node: any, tag: string): boolean {
+function isInlineElement(node: Element, tag: string): boolean {
     // 1. 判断是否在 inlineSet 中
     // 2. 判断是否文本节点
     // 3. 检查子元素中是否包含非内联元素
@@ -599,32 +609,24 @@ function isInlineElement(node: any, tag: string): boolean {
 }
 
 // 查找可翻译的父节点
-function findTranslatableParent(node: any, options: GrabAllNodeOptions = {}): any {
+function findTranslatableParent(node: Node, options: GrabAllNodeOptions = {}): Element | false {
     // 1. 递归调用 grabNode 查找父节点是否可翻译
     // 2. 若父节点不可翻译，则返回当前节点
     const parentResult = grabNode(node.parentNode, options);
-    return parentResult || node;
+    return parentResult || (node instanceof Element ? node : false);
 }
 
 // 处理首行文本
-function handleFirstLineText(node: any): boolean {
-    // 1. 遍历子节点，找到首个文本节点
-    // 2. 若存在可翻译文本，则通过 browser.runtime.sendMessage 进行翻译
-    // 3. 翻译成功后，替换该文本；出现错误时，打印错误日志
+function handleFirstLineText(node: Element, options: GrabAllNodeOptions): false {
     let child = node.firstChild;
     while (child) {
-        if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
-            const text = child.textContent.trim();
-            // 跳过 JSON 格式数据
-            if ((text.startsWith('{') || text.startsWith('[')) && /"[a-zA-Z]+"[\s]*:/.test(text)) {
+        if (child instanceof Text && child.textContent?.trim()) {
+            const text = child.textContent;
+            const trimmed = text.trim();
+            if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && /"[a-zA-Z]+"[\s]*:/.test(trimmed)) {
                 return false;
             }
-            browser.runtime.sendMessage({
-                context: document.title,
-                origin: child.textContent
-            })
-                .then((text: string) => child.textContent = text)
-                .catch((error: any) => console.error('翻译失败:', error));
+            options.translateFirstLineText?.(child, text);
             return false;
         }
         child = child.nextSibling;

@@ -33,6 +33,7 @@ import {
     TRANSLATED_ATTR,
     TRANSLATED_ID_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
+import { storage } from '@wxt-dev/storage';
 
 let hoverTimer: any; // 鼠标悬停计时器
 let htmlSet = new Set(); // 防抖
@@ -67,6 +68,14 @@ export function collectDynamicTranslationNodes(
 
 export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
     return resolveAutoTranslationTarget(scope);
+}
+
+function translateFirstLineText(textNode: Text, origin: string): void {
+    translateText(origin, document.title)
+        .then((text: string) => {
+            textNode.textContent = text;
+        })
+        .catch((error: Error) => console.error('翻译失败:', error));
 }
 
 // 恢复原文内容
@@ -151,7 +160,8 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting && isAutoTranslating) {
-                const node = entry.target as Element;
+                const node = entry.target;
+                if (!(node instanceof HTMLElement)) return;
 
                 // 去重
                 if (node.hasAttribute(TRANSLATED_ATTR)) return;
@@ -266,7 +276,9 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
     clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
 
-        let node = grabNode(document.elementFromPoint(mouseX, mouseY));
+        // 只在手动悬停翻译注入这个副作用回调；smart/full 自动扫描只能收集目标，不能在识文阶段触发翻译。
+        let node = grabNode(document.elementFromPoint(mouseX, mouseY), { translateFirstLineText });
+        if (!(node instanceof HTMLElement)) return;
 
         // 判断是否跳过节点
         if (skipNode(node)) return;
@@ -286,7 +298,7 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
 }
 
 // 双语翻译
-export function handleBilingualTranslation(node: any, slide: boolean) {
+export function handleBilingualTranslation(node: HTMLElement, slide: boolean) {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
     // 如果已经翻译过，250ms 后删除翻译结果
@@ -324,7 +336,7 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
 }
 
 // 单语翻译
-export function handleSingleTranslation(node: any, slide: boolean) {
+export function handleSingleTranslation(node: HTMLElement, slide: boolean) {
     let nodeOuterHTML = node.outerHTML;
     let outerHTMLCache = cache.localGet(node.outerHTML);
 
@@ -349,7 +361,7 @@ export function handleSingleTranslation(node: any, slide: boolean) {
 }
 
 
-function bilingualTranslate(node: any, nodeOuterHTML: any) {
+function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
     const plainOrigin = getTranslatableText(node);
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
     const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
@@ -381,7 +393,7 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
 }
 
 
-export function singleTranslate(node: any) {
+export function singleTranslate(node: HTMLElement) {
     const translatableText = getTranslatableText(node);
     if (!shouldTranslateText(translatableText)) return;
 
@@ -416,7 +428,7 @@ export function singleTranslate(node: any) {
         });
 }
 
-export const handleBtnTranslation = throttle((node: any) => {
+export const handleBtnTranslation = throttle((node: HTMLElement) => {
     let origin = node.innerText;
     let rs = cache.localGet(origin);
     if (rs) {
@@ -434,7 +446,7 @@ export const handleBtnTranslation = throttle((node: any) => {
 }, 250)
 
 
-function bilingualAppendChild(node: any, text: string | Node) {
+function bilingualAppendChild(node: HTMLElement, text: string | Node) {
     if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);

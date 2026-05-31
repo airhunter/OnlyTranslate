@@ -9,6 +9,7 @@ import {
   getTranslatableText,
   getTranslatableTextWithProtectedInline,
   grabAllNode,
+  grabNode,
   LLMStandardHTML,
   renderTextWithProtectedInline
 } from '@/entrypoints/main/dom'
@@ -107,6 +108,25 @@ describe('grabAllNode', () => {
 
     expect(ids).not.toContain('year')
     expect(ids).toContain('intro')
+  })
+
+  it('delegates first-line text translation through an injected callback', () => {
+    document.body.innerHTML = `
+      <div id="host">Intro text that belongs to the first line <div>metadata</div></div>
+    `
+
+    const calls: Array<{ textNode: Text; text: string }> = []
+    const host = document.querySelector('#host') as HTMLElement
+    const result = grabNode(host, {
+      translateFirstLineText: (textNode, text) => {
+        calls.push({ textNode, text })
+      }
+    })
+
+    expect(result).toBe(false)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].text).toBe('Intro text that belongs to the first line ')
+    expect(calls[0].textNode.nodeType).toBe(Node.TEXT_NODE)
   })
 
   it('continues after a selected paragraph that contains multiple inline links', () => {
