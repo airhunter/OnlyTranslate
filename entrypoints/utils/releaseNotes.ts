@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.5',
+    notes: {
+      'zh-CN': {
+        title: '论坛回复翻译与稳定性修复',
+        items: [
+          '修复 Ziggit/Discourse 帖子回复中，带有内联代码的短段落漏翻的问题。',
+          '改进动态论坛页的补扫识别，新增回复和正文旁的新段落更容易进入翻译范围。',
+          '优化页面翻译入口、悬浮球快捷键、手动触发和输入框翻译的初始化稳定性。',
+          '补充回归测试和发布前检查，降低升级后再次出现漏翻或误翻的风险。'
+        ]
+      },
+      'en-US': {
+        title: 'Forum Reply Translation and Stability Fixes',
+        items: [
+          'Fixed missed translations for short Ziggit/Discourse reply paragraphs that contain inline code.',
+          'Improved follow-up scanning on dynamic forum pages so new replies and nearby readable paragraphs are picked up more reliably.',
+          'Improved initialization stability for page translation, floating-ball shortcuts, manual triggers, and input-box translation.',
+          'Expanded regression coverage and release checks to reduce the chance of translation misses or false positives after updates.'
+        ]
+      },
+      'zh-TW': {
+        title: '論壇回覆翻譯與穩定性修復',
+        items: [
+          '修復 Ziggit/Discourse 帖子回覆中，帶有內嵌程式碼的短段落漏翻問題。',
+          '改進動態論壇頁的補掃識別，新增回覆和正文旁的新段落更容易進入翻譯範圍。',
+          '優化頁面翻譯入口、懸浮球快捷鍵、手動觸發和輸入框翻譯的初始化穩定性。',
+          '補充回歸測試和發布前檢查，降低升級後再次出現漏翻或誤翻的風險。'
+        ]
+      },
+      'ja-JP': {
+        title: 'フォーラム返信翻訳と安定性の修正',
+        items: [
+          'Ziggit/Discourse の返信で、インラインコードを含む短い段落が翻訳されない問題を修正しました。',
+          '動的なフォーラムページの再検出を改善し、新しい返信や本文付近の段落をより確実に翻訳対象にしました。',
+          'ページ翻訳、フローティングボールのショートカット、手動トリガー、入力欄翻訳の初期化をより安定させました。',
+          '回帰テストとリリース前チェックを追加し、更新後の翻訳漏れや誤検出のリスクを減らしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.4',
     notes: {
       'zh-CN': {
