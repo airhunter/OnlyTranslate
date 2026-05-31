@@ -129,23 +129,42 @@ export function buildModelsEndpoint(value: string) {
   return url.toString()
 }
 
-function parseModelNames(service: string, payload: any) {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : null
+}
+
+function parseModelNames(service: string, payload: unknown) {
+  const payloadRecord = asRecord(payload)
+
   if (service === services.gemini) {
-    return normalizeModelNames((payload.models || [])
-      .filter((item: any) => !item.supportedGenerationMethods || item.supportedGenerationMethods.includes('generateContent'))
-      .map((item: any) => item.name))
+    const models = Array.isArray(payloadRecord?.models) ? payloadRecord.models : []
+    return normalizeModelNames(models
+      .filter((item) => {
+        const model = asRecord(item)
+        const supportedMethods = model?.supportedGenerationMethods
+        return !Array.isArray(supportedMethods) || supportedMethods.includes('generateContent')
+      })
+      .map((item) => {
+        const model = asRecord(item)
+        return typeof model?.name === 'string' ? model.name : ''
+      }))
       .map((name) => name.replace(/^models\//, ''))
   }
 
-  const list = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.models)
-      ? payload.models
+  const list = Array.isArray(payloadRecord?.data)
+    ? payloadRecord.data
+    : Array.isArray(payloadRecord?.models)
+      ? payloadRecord.models
       : Array.isArray(payload)
         ? payload
         : []
 
-  return normalizeModelNames(list.map((item: any) => typeof item === 'string' ? item : item?.id || item?.name))
+  return normalizeModelNames(list.map((item) => {
+    if (typeof item === 'string') return item
+    const model = asRecord(item)
+    const name = model?.id || model?.name
+    return typeof name === 'string' ? name : ''
+  }))
 }
 
 function normalizeModelNames(items: string[]) {

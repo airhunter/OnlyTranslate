@@ -14,16 +14,17 @@ import { t } from './i18n';
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
 
-function normalizeRuntimeTranslationResult(result: any): string {
+function normalizeRuntimeTranslationResult(result: unknown): string {
   if (typeof result === 'string') return result;
 
   if (result && typeof result === 'object') {
-    if (result.success === false) {
-      throw new Error(result.error || 'Translation failed');
+    const response = result as Record<string, unknown>;
+    if (response.success === false) {
+      throw new Error(typeof response.error === 'string' ? response.error : 'Translation failed');
     }
 
     for (const key of ['translatedText', 'text', 'content']) {
-      if (typeof result[key] === 'string') return result[key];
+      if (typeof response[key] === 'string') return response[key];
     }
 
     throw new Error(`Unexpected translation response: ${JSON.stringify(result)}`);
