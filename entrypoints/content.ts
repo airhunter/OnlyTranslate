@@ -6,11 +6,12 @@ import './style.css';
 import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, unmountFloatingBall, toggleFloatingBallPosition } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
-import { cancelAllTranslations, translateText } from "@/entrypoints/utils/translateApi";
+import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
 import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
 import { initVideoSubtitle } from "@/entrypoints/video/manager";
 import { t } from "@/entrypoints/utils/i18n";
 import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
+import { setupPageTranslationLifecycle } from "@/entrypoints/content/translationLifecycle";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -22,21 +23,13 @@ export default defineContentScript({
         setupManualTranslationTriggers();
         // 添加悬浮球快捷键事件监听器
         setupFloatingBallHotkey();
-        // 当悬浮球关闭时，仍然允许使用快捷键进行全文翻译的独立开关
-        let isFullPageTranslating = false;
-        document.addEventListener('onlytranslate-toggle-translation', () => {
-            // 仅在悬浮球被禁用（未挂载）时由内容脚本接管快捷键
-            if (config.disableFloatingBall === true) {
-                isFullPageTranslating = !isFullPageTranslating;
-                if (isFullPageTranslating) {
-                    autoTranslateEnglishPage();
-                } else {
-                    restoreOriginalContent();
-                }
-            }
+        setupPageTranslationLifecycle({
+            config,
+            document,
+            runtime: browser.runtime,
+            autoTranslateEnglishPage,
+            restoreOriginalContent
         });
-        // 添加自动翻译事件监听器
-        if (config.autoTranslate) autoTranslationEvent();
 
         // 挂载悬浮球（如果配置未禁用）
         if (config.disableFloatingBall !== true) {
@@ -96,35 +89,6 @@ export default defineContentScript({
                 }
                 sendResponse();
                 return true;
-            }
-            return false;
-        });
-        
-        // 处理右键菜单触发的全文翻译和撤销
-        browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: (response?: any) => void) => {
-            if (message.type === 'contextMenuTranslate') {
-                // 检查插件是否已启用
-                if (config.on === false) {
-                    sendResponse({ status: 'disabled' });
-                    return true;
-                }
-                
-                if (message.action === 'fullPage') {
-                    // 触发全文翻译（scope 由 popup 显式传入，避免 storage 同步竞态）
-                    autoTranslateEnglishPage(message.scope);
-                    sendResponse({ status: 'success', action: 'translated' });
-                    return true;
-                } else if (message.action === 'restore') {
-                    // 撤销翻译，恢复原文
-                    restoreOriginalContent();
-                    sendResponse({ status: 'success', action: 'restored' });
-                    return true;
-                } else if (message.action === 'getStatus') {
-                    // 查询当前页面的翻译状态
-                    const hasTranslatedNodes = document.querySelectorAll('[data-fr-translated="true"]').length > 0;
-                    sendResponse({ status: 'success', isTranslated: hasTranslatedNodes });
-                    return true;
-                }
             }
             return false;
         });
@@ -619,12 +583,6 @@ function setupFloatingBallHotkey() {
     window.addEventListener('blur', () => {
         hotkeysPressed.clear();
     });
-}
-
-// 注册自动翻译事件
-function autoTranslationEvent() {
-    // 自动翻译英文页面
-    autoTranslateEnglishPage();
 }
 
 // 清除所有翻译的函数
