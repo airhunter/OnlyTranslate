@@ -8,10 +8,10 @@ import { mountFloatingBall, unmountFloatingBall, toggleFloatingBallPosition } fr
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
 import { mountNewApiComponent } from "@/entrypoints/utils/newApi"
-import { initVideoSubtitle } from "@/entrypoints/video/manager";
 import { t } from "@/entrypoints/utils/i18n";
 import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
 import { setupPageTranslationLifecycle } from "@/entrypoints/content/translationLifecycle";
+import { setupVideoSubtitle } from "@/entrypoints/content/videoSubtitleSetup";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
@@ -44,8 +44,7 @@ export default defineContentScript({
         
         mountNewApiComponent();
 
-        // 初始化视频字幕翻译（在支持的平台上注入拦截脚本）
-        initVideoSubtitle();
+        setupVideoSubtitle();
 
         cache.cleaner();    // 检测是否清理缓存
 
