@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.5](https://github.com/airhunter/OnlyTranslate/compare/v0.5.4...v0.5.5) (2026-06-01)
+
+
+### Bug Fixes
+
+* **content:** 保持嵌套目标去重语义 ([8f89ba2](https://github.com/airhunter/OnlyTranslate/commit/8f89ba22005bf63ed79f4e8817f17e9bf3390e95))
+* **content:** 修复 Ziggit 帖子回复漏翻 ([19c6382](https://github.com/airhunter/OnlyTranslate/commit/19c63829d201ac29e4c98424950446ad7fe76526))
+* **content:** 避免 GitHub 链接被通用社交过滤误伤 ([b13f04c](https://github.com/airhunter/OnlyTranslate/commit/b13f04c84dee8d897dafd3b84a435e1be40e046e))
+* **options:** 修复设置页标题占位符 ([a359b50](https://github.com/airhunter/OnlyTranslate/commit/a359b5017d49527daf111f8a7708c582e36e419f))
+
+
+### Performance Improvements
+
+* **content:** 收紧用户名识别并优化节点过滤 ([eacc715](https://github.com/airhunter/OnlyTranslate/commit/eacc71582de22479d5b516df0f78aae253ac876d))
+
 ## [0.5.4](https://github.com/airhunter/OnlyTranslate/compare/v0.5.3...v0.5.4) (2026-05-30)
 
 
