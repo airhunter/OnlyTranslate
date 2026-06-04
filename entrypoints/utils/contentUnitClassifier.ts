@@ -56,7 +56,7 @@ const UI_PATTERN = /\b(nav|menu|toolbar|button|control|tab|tabs|dropdown|sidebar
 const NOISE_PATTERN = /\b(share|social|subscribe|newsletter|sponsor|sponsored|advertis|promo|related|recommend|popular|trending|author-card)\b/i;
 const META_PATTERN = /\b(meta|metadata|filename|file-name|information|informations|attachment|lightbox|caption-title|badge|tag|tags|category|categories|replies|views|activity|avatar|time|date|age|score|count|stats?)\b/i;
 const STAT_TEXT_PATTERN = /^(replies|views|activity|latest|hot|categories|docs|tags|topics|users?|likes?|votes?|share|reply|more|sign up|log in)$/i;
-const FILE_META_TEXT_PATTERN = /\b(\d+\s*[x×]\s*\d+|\d+(?:\.\d+)?\s*(kb|mb|gb)|no\s+llm|filename|download)\b/i;
+const FILE_META_TEXT_PATTERN = /^(?:\d+\s*[x×]\s*\d+|\d+(?:\.\d+)?\s*(?:kb|mb|gb))$/i;
 
 export function classifyContentUnit(element: Element): ContentUnitDecision {
     const metrics = getUnitMetrics(element);

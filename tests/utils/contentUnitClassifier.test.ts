@@ -123,6 +123,18 @@ describe('contentUnitClassifier', () => {
     expect(classifyContentUnit(document.querySelector('#promo')!).action).toBe('skip')
   })
 
+  it('does not skip readable prose just because it contains file-related words', () => {
+    document.body.innerHTML = `
+      <main>
+        <div id="download-prose">Then they let you download the image or they send you prints.</div>
+        <div id="generated-name-prose">The filename is generated after upload so the customer can recognize the edited image later.</div>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#download-prose')!).action).not.toBe('skip')
+    expect(classifyContentUnit(document.querySelector('#generated-name-prose')!).action).not.toBe('skip')
+  })
+
   it('allows forum topic titles and excerpts but skips stats metadata', () => {
     document.body.innerHTML = `
       <div id="main-outlet" role="main">

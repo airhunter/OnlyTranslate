@@ -60,8 +60,15 @@ export function setupPageTranslationLifecycle(options: PageTranslationLifecycleO
         }
 
         if (message.action === 'fullPage') {
-            options.autoTranslateEnglishPage(message.scope);
-            sendResponse({ status: 'success', action: 'translated' });
+            try {
+                options.autoTranslateEnglishPage(message.scope);
+                sendResponse({ status: 'success', action: 'translated' });
+            } catch (error) {
+                sendResponse({
+                    status: 'error',
+                    error: error instanceof Error ? error.message : String(error)
+                });
+            }
             return true;
         }
 

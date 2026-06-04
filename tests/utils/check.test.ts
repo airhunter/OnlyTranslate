@@ -9,6 +9,7 @@ vi.mock('@/entrypoints/utils/tip', () => ({
 
 let runtimeConfig: Config
 let checkConfig: () => boolean
+let contentPostHandler: (text: unknown) => string
 let sendErrorMessage: (message: string) => void
 
 describe('checkConfig', () => {
@@ -25,6 +26,7 @@ describe('checkConfig', () => {
 
         runtimeConfig = configModule.config
         checkConfig = checkModule.checkConfig
+        contentPostHandler = checkModule.contentPostHandler
         sendErrorMessage = vi.mocked(tipModule.sendErrorMessage)
     })
 
@@ -73,5 +75,11 @@ describe('checkConfig', () => {
 
         expect(checkConfig()).toBe(false)
         expect(sendErrorMessage).toHaveBeenCalled()
+    })
+})
+
+describe('contentPostHandler', () => {
+    it('removes leaked LLM file separator tokens from translation output', () => {
+        expect(contentPostHandler('该公司成立于 21 世纪初。<|file_separator|>')).toBe('该公司成立于 21 世纪初。')
     })
 })

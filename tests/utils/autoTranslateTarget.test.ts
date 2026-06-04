@@ -176,6 +176,37 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(ids).not.toContain('protip')
   })
 
+  it('collects every readable list item in a VitePress article list', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://danielmiessler.com/blog/companies-graph-of-algorithms'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div class="dp-doc">
+        <div>
+          <p>Well, let's say that your company takes pictures, cleans them up, stylizes them, and adds a caption--which customers can then download in a large format.</p>
+          <p>The company started in the early 2000's, founded by an artist/photographer, and here's how it works:</p>
+          <p><img src="/images/graph-of-algorithms-memories-workflow.png" alt="Memories Company Workflow"></p>
+          <ul>
+            <li id="upload">The user uploads the best quality digital image that you have of the photo, or sends it to the company</li>
+            <li id="scan"><em>Memories</em> receives it and does a high-quality scan--checking quality and repairing any damage using old-school photography techniques + Photoshop</li>
+            <li id="stylize">Then they stylize the image in some kind of way, like Retro, Cinematic, Family, whatever--and add a caption</li>
+            <li id="download">Then they let you download the image or they send you prints.</li>
+          </ul>
+          <p>Simple enough, and for anyone into computers you will recognize this as a series of steps, aka--an algorithm.</p>
+        </div>
+      </div>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map(node => node.id)
+
+    expect(ids).toContain('upload')
+    expect(ids).toContain('scan')
+    expect(ids).toContain('stylize')
+    expect(ids).toContain('download')
+  })
+
   it('skips Asterisk dynamic progress chapter navigation while keeping article headings', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet'),

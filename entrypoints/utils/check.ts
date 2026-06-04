@@ -99,5 +99,6 @@ function normalizeContentValue(value: unknown): string {
 export function contentPostHandler(text: unknown): string {
     let content = normalizeContentValue(text);
     content = content.replace(/^<think>[\s\S]*?<\/think>/, "");
+    content = content.replace(/\s*<\|file_separator\|>\s*/g, "");
     return content;
 }

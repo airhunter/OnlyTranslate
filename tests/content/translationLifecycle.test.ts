@@ -115,4 +115,23 @@ describe('page translation lifecycle', () => {
       response: { status: 'disabled' }
     })
   })
+
+  it('returns the translation startup error when full page translation throws', () => {
+    const runtime = createRuntime()
+
+    setupPageTranslationLifecycle({
+      config: { autoTranslate: false, disableFloatingBall: false, on: true },
+      document,
+      runtime: runtime.runtime,
+      autoTranslateEnglishPage: vi.fn(() => {
+        throw new Error('content root failed')
+      }),
+      restoreOriginalContent: vi.fn()
+    })
+
+    expect(runtime.send({ type: 'contextMenuTranslate', action: 'fullPage' })).toEqual({
+      handled: true,
+      response: { status: 'error', error: 'content root failed' }
+    })
+  })
 })

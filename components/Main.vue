@@ -259,15 +259,18 @@ async function translateCurrentPage() {
       ElMessage.error(t('popup.noActiveTab'));
       return;
     }
-    await browser.tabs.sendMessage(tabs[0].id, {
+    const response = await browser.tabs.sendMessage(tabs[0].id, {
       type: 'contextMenuTranslate',
       action: 'fullPage',
       scope: config.value.translationScope ?? 'smart'
-    });
+    }) as { status?: string; error?: string };
+    if (response?.status !== 'success') {
+      throw new Error(response?.error || t('popup.translateFailed'));
+    }
     isTranslated.value = true;
   } catch (error) {
     console.error('翻译失败:', error);
-    ElMessage.error(t('popup.translateFailed'));
+    ElMessage.error(error instanceof Error ? error.message : t('popup.translateFailed'));
   } finally {
     translating.value = false;
   }
