@@ -19,6 +19,11 @@ const directSet = new Set([
     'figcaption'                         // 图片说明
 ]);
 
+const inlineOnlyTextBlockSet = new Set([
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'p', 'blockquote', 'figcaption'
+]);
+
 const protectedInlineSet = new Set(['code', 'kbd', 'samp']);
 
 export interface ProtectedInlinePlaceholder {
@@ -278,7 +283,10 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                     }
                 }
 
-                // 如果有非空子元素，跳过当前节点
+                // 如果语义正文块只包含文本/内联节点，保留整个块作为翻译目标。
+                if (isInlineOnlyDirectTextBlock(node, tag)) {
+                    return NodeFilter.FILTER_ACCEPT;
+                }
                 if (isInlineOnlyReadableBlock(node, tag)) {
                     return NodeFilter.FILTER_ACCEPT;
                 }
@@ -655,6 +663,18 @@ function isInlineOnlyReadableBlock(node: Element, tag: string): boolean {
     if (text.length > 0 && linkTextLength / text.length > 0.45) return false;
 
     return true;
+}
+
+function isInlineOnlyDirectTextBlock(node: Element, tag: string): boolean {
+    if (!inlineOnlyTextBlockSet.has(tag)) return false;
+    if (!containsOnlyInlineDescendants(node)) return false;
+
+    return getTranslatableText(node).trim().length >= 3;
+}
+
+function containsOnlyInlineDescendants(node: Element): boolean {
+    return Array.from(node.querySelectorAll('*'))
+        .every(child => inlineSet.has(child.tagName.toLowerCase()));
 }
 
 // 查找可翻译的父节点

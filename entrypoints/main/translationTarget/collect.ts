@@ -9,6 +9,7 @@ import { decideTranslationTarget, isExpandableReadingContainer, isOpenExpandable
 import {
     cloneScanStats,
     createScanContext,
+    getCachedNormalizedText,
     hasEnoughProfileTargets,
     type TranslationTargetStats
 } from './scanContext';
@@ -241,6 +242,9 @@ function getCurrentSiteProfile() {
 function expandSupplementalReadingUnit(unit: Element, context: TranslationTargetContext): Element[] {
     if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
     if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit)) {
+        const directTextChildren = getDirectReadableTextChildren(unit, context);
+        if (directTextChildren.length >= 2) return directTextChildren.flatMap(child => expandSupplementalReadingUnit(child, context));
+
         const childUnits = collectHighConfidenceReadingUnits(unit, {
             scanContext: context.grabOptions?.scanContext,
             candidateOnly: true,
@@ -270,11 +274,24 @@ function looksLikeMultiBlockReadingWrapper(unit: Element): boolean {
 
     const readableDescendants = unit.querySelectorAll('h1, h2, h3, h4, p, li, blockquote, figcaption');
     if (readableDescendants.length < 2) return false;
+    if (getDirectReadableTextChildren(unit).length >= 2) return true;
 
     return Array.from(unit.children).some(child => {
         const childTag = child.tagName.toLowerCase();
         return ['article', 'section', 'div'].includes(childTag)
             && child.querySelector('h1, h2, h3, h4, p, li, blockquote, figcaption') !== null;
+    });
+}
+
+function getDirectReadableTextChildren(unit: Element, context?: TranslationTargetContext): Element[] {
+    return Array.from(unit.children).filter(child => {
+        const tag = child.tagName.toLowerCase();
+        if (!['p', 'blockquote', 'figcaption'].includes(tag)) return false;
+
+        const text = getCachedNormalizedText(context?.grabOptions?.scanContext, child);
+        if (text.length < 40) return false;
+
+        return /[.!?\u3002\uff01\uff1f]/.test(text) || text.split(/\s+/).length >= 8;
     });
 }
 

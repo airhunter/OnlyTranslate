@@ -1,0 +1,16 @@
+{
+  "name": "Substack emphasized intro paragraphs are translated as body text",
+  "url": "https://newsletter.semianalysis.com/p/finding-miscompiles-for-fun-not-profit",
+  "scope": "smart",
+  "html": "substack-emphasized-intro-paragraph.html",
+  "contentRoot": "main",
+  "include": ["update-note", "first-body"],
+  "textIncludes": [
+    "Update June 1:",
+    "The day after we published",
+    "I've worked on compilers for ML"
+  ],
+  "textExcludes": [
+    "Share"
+  ]
+}
