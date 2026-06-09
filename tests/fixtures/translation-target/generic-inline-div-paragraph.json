@@ -1,0 +1,14 @@
+{
+  "name": "generic article keeps inline-only div paragraphs as whole targets",
+  "url": "https://example.com/reports/inline-block-paragraphs",
+  "scope": "smart",
+  "html": "generic-inline-div-paragraph.html",
+  "include": ["intro", "inline-div-paragraph"],
+  "exclude": ["share-facebook"],
+  "textIncludes": [
+    "social media distribution"
+  ],
+  "textExcludes": [
+    "Share to Facebook"
+  ]
+}

@@ -8,6 +8,11 @@ const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;
 const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
+const INLINE_TEXT_TAGS = new Set([
+    'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
+    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
+    'img', 'br', 'wbr', 'svg'
+]);
 
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
@@ -36,7 +41,7 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
     const structuralHint = getElementStructuralSignalText(element);
     const hint = getElementSignalText(element, metrics.text);
 
-    if (isShareBlock(hint, metrics)) return 'skip-self';
+    if (isShareBlock(element, hint, metrics)) return 'skip-self';
     if (isTagCluster(hint, metrics)) return 'skip-self';
     if (isAuthorOrBylineBlock(hint, metrics)) return 'skip-self';
     if (isPromoOrCtaBlock(hint, metrics)) return 'skip-self';
@@ -49,8 +54,10 @@ export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
 }
 
-function isShareBlock(hint: string, metrics: BlockMetrics): boolean {
+function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
+    if (isReadableParagraphLeaf(element, metrics)) return false;
     if (!SHARE_PATTERN.test(hint) && !metrics.hasSocialLinks) return false;
+    if (metrics.buttonCount > 0 && metrics.shortInteractiveCount > 0 && metrics.longParagraphCount <= 1) return true;
     return metrics.longParagraphCount === 0
         && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
 }
@@ -107,9 +114,23 @@ function isRelatedBlock(element: Element, hint: string, structuralHint: string, 
 }
 
 function isReadableParagraphLeaf(element: Element, metrics: BlockMetrics): boolean {
-    return element.matches('p, blockquote, figcaption')
+    return isReadableParagraphLikeElement(element)
         && metrics.textLength >= 80
         && metrics.linkDensity < 0.45;
+}
+
+function isReadableParagraphLikeElement(element: Element): boolean {
+    const isSemanticParagraph = element.matches('p, blockquote, figcaption');
+    const isInlineOnlyBlock = element.tagName.toLowerCase() === 'div'
+        && Array.from(element.children).every(child => INLINE_TEXT_TAGS.has(child.tagName.toLowerCase()));
+    if (!isSemanticParagraph && !isInlineOnlyBlock) return false;
+
+    const text = getNormalizedText(element);
+    if (text.length < 80) return false;
+
+    const linkTextLength = Array.from(element.querySelectorAll('a'))
+        .reduce((sum, link) => sum + getNormalizedText(link).length, 0);
+    return text.length === 0 || linkTextLength / text.length < 0.45;
 }
 
 function getBlockMetrics(element: Element): BlockMetrics {
@@ -126,8 +147,9 @@ function getBlockMetrics(element: Element): BlockMetrics {
     }).length;
 
     const paragraphLikeBlocks = [
-        ...(element.matches('p, blockquote, figcaption') ? [element] : []),
-        ...Array.from(element.querySelectorAll('p, blockquote, figcaption'))
+        ...(isReadableParagraphLikeElement(element) ? [element] : []),
+        ...Array.from(element.querySelectorAll('p, blockquote, figcaption, div'))
+            .filter(isReadableParagraphLikeElement)
     ];
     const longParagraphCount = paragraphLikeBlocks
         .filter((item) => getNormalizedText(item).length >= 80).length;

@@ -1,0 +1,12 @@
+{
+  "name": "archive snapshots keep Substack inline-link div paragraphs",
+  "url": "https://archive.md/myA7R",
+  "scope": "smart",
+  "html": "archive-substack-inline-divs.html",
+  "contentRoot": "[role=\"main\"]",
+  "include": ["plain-before", "productization", "byte-shadow", "plain-after"],
+  "textIncludes": [
+    "Many Chinese companies offer coding plans",
+    "The shadow of ByteDance"
+  ]
+}

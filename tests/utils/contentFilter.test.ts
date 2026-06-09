@@ -127,6 +127,42 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps paragraph-like divs that contain only text and inline links', () => {
+    const element = renderElement(`
+      <div>
+        <span>Many Chinese companies offer coding plans, often with generous token limits to attract customers away from Claude Code, but companies have also pursued more niche product directions. MiniMax builds highly lucrative </span>
+        <a href="https://example.com/ai-companion">AI companion products</a>
+        <span>, while Z.ai has sought out B2B partnerships with social media companies and Comac, China's commercial aircraft manufacturer, as well as contracts with government entities.</span>
+      </div>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
+  it('keeps article containers whose readable paragraphs are inline-only divs', () => {
+    const element = renderElement(`
+      <article>
+        <h1>Inline Block Paragraphs</h1>
+        <div>
+          This article uses block elements as paragraphs because some rendering pipelines preserve visual layout with generic divs rather than semantic paragraph tags.
+        </div>
+        <div>
+          <span>Many product teams publish long-form reports as text fragments wrapped by inline elements. The paragraph can mention </span>
+          <a href="https://example.com/social-distribution">social media distribution</a>
+          <span>, partner links, product names, and citations while still being one coherent readable article paragraph.</span>
+        </div>
+        <section class="share-this-article">
+          <h2>Share This Article</h2>
+          <a href="https://www.facebook.com/sharer/sharer.php">Share to Facebook</a>
+        </section>
+      </article>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
   it('still skips structurally marked popular article modules', () => {
     const element = renderElement(`
       <section class="popular-articles">

@@ -12,7 +12,12 @@ const POSITIVE_PATTERN = /\b(content|article|post|body|entry|text|story|blog|pro
 const NEGATIVE_PATTERN = /\b(nav|sidebar|footer|widget|menu|comment|banner|ad|promo|related|share|social|toc)\b/i;
 
 // 参与向上传播的叶子内容节点（不含 li，li 在导航中太常见，是主要噪音）
-const CONTENT_LEAF_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, blockquote, pre, td';
+const CONTENT_LEAF_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, blockquote, pre, td, div';
+const INLINE_TEXT_TAGS = new Set([
+    'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
+    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
+    'img', 'br', 'wbr', 'svg'
+]);
 
 // 候选容器最少要有这么多字才有意义
 const MIN_TEXT_LENGTH = 100;
@@ -90,6 +95,8 @@ function findByBottomUpScore(scanContext?: ScanContext): Element | null {
 
     for (const leaf of leaves) {
         markScannedElement(scanContext);
+        if (leaf.tagName.toLowerCase() === 'div' && !isParagraphLikeDiv(leaf, scanContext)) continue;
+
         const text = getCachedNormalizedText(scanContext, leaf);
         if (text.length < 10) continue;
 
@@ -251,6 +258,17 @@ function findLeadingPrimaryHeading(candidate: Element, base: Element): Element |
         const relation = heading.compareDocumentPosition(base);
         return Boolean(relation & Node.DOCUMENT_POSITION_FOLLOWING);
     }) ?? null;
+}
+
+function isParagraphLikeDiv(element: Element, scanContext?: ScanContext): boolean {
+    if (!Array.from(element.children).every(child => INLINE_TEXT_TAGS.has(child.tagName.toLowerCase()))) return false;
+
+    const text = getCachedNormalizedText(scanContext, element);
+    if (text.length < 40) return false;
+    if (!/[.!?\u3002\uff01\uff1f]/.test(text) && text.split(/\s+/).length < 12) return false;
+    if (getLinkDensity(element, scanContext) > 0.45) return false;
+
+    return true;
 }
 
 function getTextLength(el: Element, scanContext?: ScanContext): number {

@@ -279,6 +279,9 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 }
 
                 // 如果有非空子元素，跳过当前节点
+                if (isInlineOnlyReadableBlock(node, tag)) {
+                    return NodeFilter.FILTER_ACCEPT;
+                }
                 if (hasNonEmptyElement) {
                     return NodeFilter.FILTER_SKIP;
                 }
@@ -398,6 +401,7 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
 
     // 3. 直接翻译：块级元素
     if (directSet.has(curTag)) return node;
+    if (isInlineOnlyReadableBlock(node, curTag)) return node;
 
     // 5. 内联元素处理：向上查找合适的父节点
     if (isInlineElement(node, curTag)) {
@@ -636,6 +640,21 @@ function isInlineElement(node: Element, tag: string): boolean {
     return inlineSet.has(tag) ||
         node.nodeType === Node.TEXT_NODE ||
         detectChildMeta(node);
+}
+
+function isInlineOnlyReadableBlock(node: Element, tag: string): boolean {
+    if (tag !== 'div') return false;
+    if (!detectChildMeta(node)) return false;
+
+    const text = getTranslatableText(node).replace(/\s+/g, ' ').trim();
+    if (text.length < 80) return false;
+    if (!/[.!?\u3002\uff01\uff1f]/.test(text) && text.split(/\s+/).length < 12) return false;
+
+    const linkTextLength = Array.from(node.querySelectorAll('a'))
+        .reduce((total, link) => total + getTranslatableText(link).replace(/\s+/g, ' ').trim().length, 0);
+    if (text.length > 0 && linkTextLength / text.length > 0.45) return false;
+
+    return true;
 }
 
 // 查找可翻译的父节点
