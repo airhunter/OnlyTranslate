@@ -1,0 +1,39 @@
+{
+  "name": "Intercom help articles include the title metadata and intro paragraphs",
+  "url": "https://support.claude.com/en/articles/15400594-claude-cowork-june-2026-usage-promotion",
+  "scope": "smart",
+  "html": "intercom-help-article-intro.html",
+  "contentRootContains": [
+    "#article-title",
+    "#updated-time",
+    "#intro-offer",
+    "#intro-eligibility",
+    "#promotion-detail"
+  ],
+  "contentRootExcludes": [
+    ".table_of_contents"
+  ],
+  "include": [
+    "article-title",
+    "intro-offer",
+    "intro-eligibility",
+    "h_139476d55c",
+    "promotion-detail"
+  ],
+  "exclude": [
+    "toc-promotion",
+    "toc-eligibility",
+    "side-toc-promotion",
+    "side-toc-eligibility"
+  ],
+  "textIncludes": [
+    "Claude Cowork June 2026 usage promotion",
+    "We're offering a limited-time promotion",
+    "This promotion is available for Pro, Max, and Team plans",
+    "What is the promotion?",
+    "From June 5, 2026 through July 5, 2026"
+  ],
+  "textExcludes": [
+    "Table of contents"
+  ]
+}

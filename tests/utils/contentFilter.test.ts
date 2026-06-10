@@ -97,6 +97,17 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps article paragraphs that mention a promotion without CTA actions', () => {
+    const element = renderElement(`
+      <div class="intercom-interblocks-paragraph no-margin intercom-interblocks-align-left">
+        <p>This promotion is available for Pro, Max, and Team plans, as well as legacy seat-based users on Enterprise plans. Free plans and consumption-based Enterprise seats are not included in this promotion.</p>
+      </div>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
   it('keeps article paragraphs that mention code being written by AI', () => {
     const element = renderElement(`
       <p>

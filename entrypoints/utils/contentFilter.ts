@@ -81,9 +81,10 @@ function isPromoOrCtaBlock(hint: string, metrics: BlockMetrics): boolean {
     const hasAction = metrics.linkCount > 0 || metrics.buttonCount > 0;
     const hasReadableArticleShape = metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.45;
 
+    if (!hasAction) return false;
     if (hasReadableArticleShape) return false;
 
-    return hasAction || metrics.longParagraphCount < 2;
+    return true;
 }
 
 function isAuthorOrBylineBlock(hint: string, metrics: BlockMetrics): boolean {
