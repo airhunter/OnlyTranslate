@@ -8,6 +8,12 @@ import {
     type ScanBudgetKind,
     type ScanContext
 } from '@/entrypoints/main/translationTarget/scanContext';
+import {
+    getProseEvidence,
+    getStructuralHint,
+    MAX_INTERACTIVE_DENSITY,
+    type ProseEvidence
+} from '@/entrypoints/utils/proseSignals';
 
 export type ContentUnitKind =
     | 'title'
@@ -34,8 +40,10 @@ interface UnitMetrics {
     linkDensity: number;
     linkCount: number;
     buttonCount: number;
+    interactiveSignalText: string;
     childTextBlockCount: number;
     hasReadableSentence: boolean;
+    proseEvidence: ProseEvidence;
 }
 
 interface CollectReadingUnitsOptions {
@@ -53,7 +61,7 @@ const CARD_PATTERN = /\b(card|note|insight|callout|stage|step|flow|pipeline|pane
 const INTRO_CARD_PATTERN = /\b(welcome|intro|introduction|notice|announcement|message|alert|banner)\b/i;
 const FORUM_TOPIC_PATTERN = /\b(topic|thread|discussion|post-title|raw-topic-link)\b/i;
 const UI_PATTERN = /\b(nav|menu|toolbar|button|control|tab|tabs|dropdown|sidebar|side-bar|rail|login|sign|search|filter|sort|breadcrumb)\b/i;
-const NOISE_PATTERN = /\b(share|social|subscribe|newsletter|sponsor|sponsored|advertis|promo|related|recommend|popular|trending|author-card)\b/i;
+const NOISE_PATTERN = /\b(share|social|subscribe|newsletter|sponsor|sponsored|ad|ads|advert|advertisement|advertising|promo|related|recommend|popular|trending|author-card)\b/i;
 const META_PATTERN = /\b(meta|metadata|filename|file-name|information|informations|attachment|lightbox|caption-title|badge|tag|tags|category|categories|replies|views|activity|avatar|time|date|age|score|count|stats?)\b/i;
 const STAT_TEXT_PATTERN = /^(replies|views|activity|latest|hot|categories|docs|tags|topics|users?|likes?|votes?|share|reply|more|sign up|log in)$/i;
 const FILE_META_TEXT_PATTERN = /^(?:\d+\s*[x×]\s*\d+|\d+(?:\.\d+)?\s*(?:kb|mb|gb))$/i;
@@ -63,7 +71,7 @@ export function classifyContentUnit(element: Element): ContentUnitDecision {
     if (metrics.textLength === 0) return neutral('empty');
 
     if (isStructuralUi(element, metrics)) return skip('ui', 0.98, 'structural-ui');
-    if (isMetadataElement(element, metrics)) return skip('metadata', 0.92, 'metadata-signal');
+    if (metrics.proseEvidence.strength !== 'strong' && isMetadataElement(element, metrics)) return skip('metadata', 0.92, 'metadata-signal');
     if (isNoiseElement(element, metrics)) return skip('noise', 0.9, 'noise-signal');
 
     const forumTopicScore = scoreForumTopic(element, metrics);
@@ -158,7 +166,7 @@ function scoreTitle(element: Element, metrics: UnitMetrics): number {
     if (!looksLikeTitleText(metrics.text)) return 0;
 
     const tag = element.tagName.toLowerCase();
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     let score = 0;
 
     if (/^h[12]$/.test(tag)) score += 4;
@@ -183,7 +191,7 @@ function scoreSubtitle(element: Element, metrics: UnitMetrics): number {
     if (metrics.textLength < 24 || metrics.textLength > 320) return 0;
     if (!metrics.hasReadableSentence) return 0;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     let score = 0;
 
     if (SUBTITLE_PATTERN.test(hint)) score += 4;
@@ -205,7 +213,7 @@ function scoreContentCard(element: Element, metrics: UnitMetrics): number {
     if (metrics.textLength < 40 || metrics.textLength > 1200) return 0;
     if (metrics.buttonCount > 1) return 0;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     const hasHeadingChild = element.querySelector('h2, h3, h4, [role="heading"], strong, b') !== null;
     const hasReadableChild = Array.from(element.children)
         .some(child => getNormalizedText(child).length >= 24 && /[.!?。！？]/.test(getNormalizedText(child)));
@@ -233,9 +241,9 @@ function scoreForumTopic(element: Element, metrics: UnitMetrics): number {
     if (!['a', 'h2', 'h3', 'span', 'div'].includes(tag)) return 0;
     if (!looksLikeTitleText(metrics.text)) return 0;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     const row = element.closest('li, tr, article, [role="row"], .topic-list-item, .topic-row, .discussion, .thread, .post');
-    const rowHint = row ? getElementHint(row) : '';
+    const rowHint = row ? getStructuralHint(row) : '';
     const rowText = row ? getNormalizedText(row) : '';
     const hasForumStats = Boolean(row?.querySelector('.replies, .views, .activity, .posts, .posters, [class*="reply"], [class*="view"], [class*="activity"]'));
 
@@ -257,7 +265,7 @@ function scoreForumExcerpt(element: Element, metrics: UnitMetrics): number {
     if (metrics.textLength < 35 || metrics.textLength > 420) return 0;
     if (!metrics.hasReadableSentence) return 0;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     let score = 0;
 
     if (/\b(excerpt|summary|preview)\b/i.test(hint)) score += 4;
@@ -282,17 +290,16 @@ function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return true;
     if (element.closest('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]')) return true;
 
-    const hint = getElementHint(element);
-    const text = getNormalizedText(element);
+    const hint = getStructuralHint(element);
+    const text = metrics.text;
+    if (metrics.proseEvidence.strength === 'strong') return false;
     if (UI_PATTERN.test(hint) && text.length < 80) return true;
 
     return false;
 }
 
 function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
-    if (isReadableProseUnit(element, metrics)) return false;
-
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     const text = metrics.text;
 
     if (META_PATTERN.test(hint) && metrics.textLength <= 180) return true;
@@ -306,28 +313,37 @@ function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
 }
 
 function isNoiseElement(element: Element, metrics: UnitMetrics): boolean {
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     if (!NOISE_PATTERN.test(hint)) return false;
+    if (isCompactNoiseActionCluster(element, metrics)) return true;
     if (isReadableProseUnit(element, metrics)) return false;
-    if (metrics.textLength > 600 && metrics.hasReadableSentence && metrics.linkDensity < 0.25) return false;
+
+    if (metrics.proseEvidence.strength === 'weak' && metrics.proseEvidence.interactiveDensity < MAX_INTERACTIVE_DENSITY) return false;
+    if (metrics.textLength > 600 && metrics.hasReadableSentence && metrics.proseEvidence.interactiveDensity < 0.25) return false;
     return true;
 }
 
+function isCompactNoiseActionCluster(element: Element, metrics: UnitMetrics): boolean {
+    const hasNoiseAction = NOISE_PATTERN.test(metrics.interactiveSignalText)
+        || /\b(sign up|subscribe|join|share|follow)\b/i.test(metrics.interactiveSignalText);
+    if (!hasNoiseAction) return false;
+    if (metrics.buttonCount === 0) return false;
+    if (metrics.textLength > 180) return false;
+    if (!element.querySelector('h1, h2, h3, [role="heading"]')) return false;
+
+    const hasLongParagraph = Array.from(element.querySelectorAll('p, blockquote, figcaption, div'))
+        .some(child => getNormalizedText(child).length >= 80);
+    return !hasLongParagraph;
+}
+
 function isReadableProseUnit(element: Element, metrics: UnitMetrics): boolean {
-    if (metrics.textLength < 80 || !metrics.hasReadableSentence) return false;
-    if (metrics.linkDensity >= 0.45 || metrics.buttonCount > 0) return false;
+    if (metrics.proseEvidence.strength !== 'strong') return false;
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return false;
-
-    const tag = element.tagName.toLowerCase();
-    if (['p', 'blockquote', 'figcaption', 'li'].includes(tag)) return true;
-
-    return ['article', 'section', 'div'].includes(tag)
-        && metrics.childTextBlockCount > 0
-        && !element.hasAttribute('role');
+    return true;
 }
 
 function getUiPenalty(element: Element, metrics: UnitMetrics): number {
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     let penalty = 0;
 
     if (UI_PATTERN.test(hint) && !isRichReadingControl(element, metrics)) penalty += 3;
@@ -347,7 +363,7 @@ function isRichReadingControl(element: Element, metrics: UnitMetrics): boolean {
     if (metrics.linkDensity > 0.35 || metrics.buttonCount > 0) return false;
     if (metrics.childTextBlockCount < 2 || !metrics.hasReadableSentence) return false;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     if (!CARD_PATTERN.test(hint)) return false;
 
     return Array.from(element.children)
@@ -422,9 +438,13 @@ function looksLikeTitleText(text: string): boolean {
 
 function getUnitMetrics(element: Element): UnitMetrics {
     const text = getNormalizedText(element);
+    const proseEvidence = getProseEvidence(element);
     const links = Array.from(element.querySelectorAll('a'));
     const buttons = Array.from(element.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]'));
     const linkTextLength = links.reduce((sum, link) => sum + getNormalizedText(link).length, 0);
+    const interactiveSignalText = [...links, ...buttons]
+        .map(item => getNormalizedText(item))
+        .join(' ');
     const childTextBlockCount = Array.from(element.children)
         .filter(child => getNormalizedText(child).length >= 8)
         .length;
@@ -435,26 +455,11 @@ function getUnitMetrics(element: Element): UnitMetrics {
         linkDensity: text.length > 0 ? linkTextLength / text.length : 0,
         linkCount: links.length,
         buttonCount: buttons.length,
+        interactiveSignalText,
         childTextBlockCount,
-        hasReadableSentence: /[.!?。！？]/.test(text) || text.split(/\s+/).length >= 8
+        hasReadableSentence: proseEvidence.hasSentence || proseEvidence.hasEnoughWords,
+        proseEvidence
     };
-}
-
-function getElementHint(element: Element): string {
-    const attrs = [
-        element.tagName.toLowerCase(),
-        element.id,
-        typeof element.className === 'string' ? element.className : '',
-        element.getAttribute('role') ?? '',
-        element.getAttribute('aria-label') ?? '',
-        element.getAttribute('title') ?? '',
-        element.getAttribute('slot') ?? '',
-        element.getAttribute('itemprop') ?? '',
-        element.getAttribute('data-testid') ?? '',
-        element.getAttribute('data-test-id') ?? ''
-    ];
-
-    return attrs.join(' ');
 }
 
 function getNormalizedText(element: Element): string {

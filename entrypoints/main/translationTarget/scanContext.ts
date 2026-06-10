@@ -1,6 +1,11 @@
 import type { ContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import type { ContentUnitDecision } from '@/entrypoints/utils/contentUnitClassifier';
 import {
+    getProseEvidence,
+    getStructuralHint,
+    type ProseEvidence
+} from '@/entrypoints/utils/proseSignals';
+import {
     BILINGUAL_CONTENT_CLASS,
     TRANSLATED_ATTR
 } from './constants';
@@ -22,6 +27,7 @@ export interface ScanContext {
     normalizedText: WeakMap<Element, string>;
     contentFilter: WeakMap<Element, ContentFilterDecision>;
     contentUnit: WeakMap<Element, ContentUnitDecision>;
+    proseEvidence: WeakMap<Element, ProseEvidence>;
     visibility: WeakMap<Element, boolean>;
     uiSubtree: WeakMap<Element, boolean>;
 }
@@ -92,6 +98,7 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
         normalizedText: new WeakMap(),
         contentFilter: new WeakMap(),
         contentUnit: new WeakMap(),
+        proseEvidence: new WeakMap(),
         visibility: new WeakMap(),
         uiSubtree: new WeakMap()
     };
@@ -125,6 +132,7 @@ export function invalidateScanCache(context: ScanContext | undefined, root: Elem
         context.normalizedText.delete(element);
         context.contentFilter.delete(element);
         context.contentUnit.delete(element);
+        context.proseEvidence.delete(element);
         context.visibility.delete(element);
         context.uiSubtree.delete(element);
     }
@@ -147,6 +155,17 @@ export function getCachedNormalizedText(context: ScanContext | undefined, elemen
     const text = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     context?.normalizedText.set(element, text);
     return text;
+}
+
+export function getCachedProseEvidence(context: ScanContext | undefined, element: Element): ProseEvidence {
+    const cached = context?.proseEvidence.get(element);
+    if (cached) return cached;
+
+    const evidence = getProseEvidence(element, {
+        getText: node => getCachedNormalizedText(context, node)
+    });
+    context?.proseEvidence.set(element, evidence);
+    return evidence;
 }
 
 export function getCachedContentFilterDecision(
@@ -202,7 +221,7 @@ export function isObviousUiSubtree(context: ScanContext | undefined, element: El
 
 export function isLikelyReadingCandidate(element: Element): boolean {
     if (element.matches(READING_CANDIDATE_SELECTOR)) return true;
-    return POSITIVE_HINT_PATTERN.test(getElementHint(element));
+    return POSITIVE_HINT_PATTERN.test(getStructuralHint(element));
 }
 
 export function hasEnoughProfileTargets(targets: Element[], context?: ScanContext): boolean {
@@ -218,43 +237,13 @@ function computeObviousUiSubtree(context: ScanContext | undefined, element: Elem
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tablist"]')) return true;
     if (element.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`)) return true;
 
-    const hint = getElementHint(element);
+    const hint = getStructuralHint(element);
     if (!NOISE_HINT_PATTERN.test(hint)) return false;
     if (POSITIVE_HINT_PATTERN.test(hint)) return false;
 
-    const text = getCachedNormalizedText(context, element);
-    if (looksLikeReadableProseSubtree(context, element, text)) return false;
-    if (text.length > 600 && /[.!?\u3002\uff01\uff1f]/.test(text)) return false;
+    const evidence = getCachedProseEvidence(context, element);
+    if (evidence.strength === 'strong') return false;
+    if (evidence.textLength > 600 && evidence.hasSentence && evidence.interactiveDensity < 0.45) return false;
 
     return true;
-}
-
-function looksLikeReadableProseSubtree(context: ScanContext | undefined, element: Element, text: string): boolean {
-    if (text.length < 80) return false;
-    if (!/[.!?\u3002\uff01\uff1f]/.test(text) && text.split(/\s+/).length < 12) return false;
-    if (element.querySelector('button, [role="button"], input[type="button"], input[type="submit"]')) return false;
-
-    const links = Array.from(element.querySelectorAll('a'));
-    const linkTextLength = links.reduce((sum, link) => sum + getCachedNormalizedText(context, link).length, 0);
-    if (text.length > 0 && linkTextLength / text.length >= 0.45) return false;
-
-    const tag = element.tagName.toLowerCase();
-    if (['p', 'blockquote', 'figcaption', 'li'].includes(tag)) return true;
-
-    return ['article', 'section', 'div'].includes(tag)
-        && element.querySelector('p, blockquote, figcaption, li, h1, h2, h3, h4') !== null;
-}
-
-function getElementHint(element: Element): string {
-    return [
-        element.tagName.toLowerCase(),
-        element.id,
-        typeof element.className === 'string' ? element.className : '',
-        element.getAttribute('role') ?? '',
-        element.getAttribute('aria-label') ?? '',
-        element.getAttribute('title') ?? '',
-        element.getAttribute('data-component-name') ?? '',
-        element.getAttribute('data-testid') ?? '',
-        element.getAttribute('data-test-id') ?? ''
-    ].join(' ');
 }

@@ -1,0 +1,46 @@
+{
+  "name": "Noisy class names do not override readable prose evidence",
+  "url": "https://example.com/noisy-name-readable-prose",
+  "scope": "smart",
+  "html": "noisy-name-readable-prose.html",
+  "contentRoot": "#story-root",
+  "contentRootContains": [
+    "#story-title",
+    "#promo-copy",
+    "#newsletter-note",
+    "#copyable-section",
+    "#linked-keyword-prose"
+  ],
+  "contentRootExcludes": [
+    "#comment-competitor"
+  ],
+  "include": [
+    "story-title",
+    "promo-copy",
+    "newsletter-note",
+    "copyable-prose",
+    "linked-keyword-prose"
+  ],
+  "exclude": [
+    "comment-competitor",
+    "real-share-box",
+    "real-subscribe-box",
+    "real-related-box"
+  ],
+  "textIncludes": [
+    "Readable Article With Noisy Class Names",
+    "This promotion paragraph is actual article prose",
+    "The newsletter note is written as a plain text div",
+    "This readable article block has enough body text",
+    "Some teams subscribe to annual contracts"
+  ],
+  "textExcludes": [
+    "Share this article",
+    "Subscribe to our newsletter",
+    "Related articles",
+    "Reader comments"
+  ],
+  "stats": {
+    "budgetExceeded": false
+  }
+}

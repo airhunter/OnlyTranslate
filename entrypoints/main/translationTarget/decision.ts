@@ -4,6 +4,11 @@ import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import {
+    getStructuralHint,
+    hasSentencePunctuation,
+    PROSE_TEXT_MIN_SHORT
+} from '@/entrypoints/utils/proseSignals';
+import {
     BILINGUAL_CONTENT_CLASS,
     TRANSLATED_ATTR
 } from './constants';
@@ -149,7 +154,7 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
         .filter(candidate => isVisibleForTranslation(candidate, context))
         .find(candidate => {
             const text = getCachedNormalizedText(context.grabOptions?.scanContext, candidate);
-            return text.length >= 40 && /[.!?。！？]/.test(text);
+            return text.length >= PROSE_TEXT_MIN_SHORT && hasSentencePunctuation(text);
         });
 
     return target ?? node;
@@ -271,7 +276,7 @@ function inferDefaultRole(element: Element): TranslationTargetRole {
     if (/^h[1-6]$/.test(tag)) return 'title';
     if (tag === 'figcaption') return 'summary';
     if (['p', 'li', 'blockquote'].includes(tag)) return 'paragraph';
-    if (element.hasAttribute('aria-expanded') || /\b(card|headline|title|summary|description)\b/i.test(getElementHint(element))) {
+    if (element.hasAttribute('aria-expanded') || /\b(card|headline|title|summary|description)\b/i.test(getStructuralHint(element))) {
         return 'card';
     }
     return 'paragraph';
@@ -284,15 +289,4 @@ function mapContentUnitRole(kind?: string): TranslationTargetRole {
     if (kind === 'metadata') return 'metadata';
     if (kind === 'ui' || kind === 'noise') return 'ui';
     return 'paragraph';
-}
-
-function getElementHint(element: Element): string {
-    return [
-        element.id,
-        typeof element.className === 'string' ? element.className : '',
-        element.getAttribute('role') ?? '',
-        element.getAttribute('aria-label') ?? '',
-        element.getAttribute('data-testid') ?? '',
-        element.getAttribute('data-test-id') ?? ''
-    ].join(' ');
 }

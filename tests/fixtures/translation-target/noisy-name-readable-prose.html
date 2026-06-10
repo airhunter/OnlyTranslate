@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <body>
+    <header>
+      <nav><a href="/">Home</a><a href="/topics">Topics</a><a href="/about">About</a></nav>
+    </header>
+    <main>
+      <div id="story-root" class="share-story related-work promo-update">
+        <h1 id="story-title">Readable Article With Noisy Class Names</h1>
+        <p id="promo-copy" class="promo-copy">This promotion paragraph is actual article prose. It explains the policy instead of asking the reader to sign up.</p>
+        <div id="newsletter-note" class="newsletter-note">The newsletter note is written as a plain text div. It is still a complete paragraph that should be translated.</div>
+        <section id="copyable-section" class="share-section">
+          <p id="copyable-prose">This readable article block has enough body text to survive a small copy control. The author is explaining how a product behaves under sustained use.</p>
+          <button>Copy</button>
+        </section>
+        <p id="linked-keyword-prose">
+          Some teams subscribe to annual contracts because procurement is easier, and
+          <a href="https://example.com/contracts">this source</a>
+          explains related billing tradeoffs without being a newsletter signup module.
+        </p>
+        <section id="real-share-box" class="share-tools">
+          <h2>Share this article</h2>
+          <a href="https://www.facebook.com/sharer/sharer.php">Facebook</a>
+          <a href="https://www.linkedin.com/shareArticle">LinkedIn</a>
+        </section>
+        <section id="real-subscribe-box" class="newsletter-signup">
+          <h2>Subscribe to our newsletter</h2>
+          <button>Sign up</button>
+        </section>
+        <section id="real-related-box" class="related-articles">
+          <h2>Related articles</h2>
+          <a href="/one">Another story</a>
+          <a href="/two">A second story</a>
+        </section>
+      </div>
+      <section id="comment-competitor" class="comment-thread content">
+        <h2>Reader comments</h2>
+        <p>This comment section contains enough natural language to compete with the article in bottom up scoring. It should not become the selected content root even though it has readable paragraphs.</p>
+        <p>Another reader adds more detail, commas, and context so the competing block is not trivial. The detector must still keep the noisy named article root.</p>
+      </section>
+    </main>
+  </body>
+</html>

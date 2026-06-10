@@ -124,6 +124,18 @@ describe('contentUnitClassifier', () => {
     expect(classifyContentUnit(document.querySelector('#promo')!).action).toBe('skip')
   })
 
+  it('skips single-link advertisement blocks as interface noise', () => {
+    document.body.innerHTML = `
+      <main>
+        <section id="top-ad" class="ad-banner advertisement">
+          <a href="/sponsor">Advertisement</a>
+        </section>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#top-ad')!).action).toBe('skip')
+  })
+
   it.each([
     ['promo-copy', 'This promotion is available for Pro, Max, and Team plans. The article explains which accounts qualify, why the limit changes, and how the usage window works.'],
     ['popular-copy', 'The popular explanation misses the hardware constraints. This paragraph compares the design choices and remains normal article prose.'],
@@ -159,6 +171,77 @@ describe('contentUnitClassifier', () => {
 
     expect(classifyContentUnit(document.querySelector('#download-prose')!).action).not.toBe('skip')
     expect(classifyContentUnit(document.querySelector('#generated-name-prose')!).action).not.toBe('skip')
+  })
+
+  it('does not skip short complete prose with a noisy class', () => {
+    document.body.innerHTML = `
+      <main>
+        <p id="short-promo" class="promo-copy">This promotion paragraph is actual article prose. It explains the policy instead of asking the reader to sign up.</p>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#short-promo')!).action).not.toBe('skip')
+  })
+
+  it('does not skip pure text div prose with a noisy class', () => {
+    document.body.innerHTML = `
+      <main>
+        <div id="plain-newsletter" class="newsletter-note">The newsletter note is written as a plain text div. It is still a complete paragraph that should be translated.</div>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#plain-newsletter')!).action).not.toBe('skip')
+  })
+
+  it('does not treat noise words in ordinary link URLs as interactive noise actions', () => {
+    document.body.innerHTML = `
+      <main>
+        <p id="shared-url-prose" class="promo-note">
+          This article paragraph explains how storage engines coordinate writes, checkpoints, and replication under sustained load.
+          The linked guide is supporting context rather than a sharing widget:
+          <a href="/guides/how-to-share-data">implementation guide</a>.
+        </p>
+        <p id="neutral-url-prose" class="promo-note">
+          This article paragraph explains how storage engines coordinate writes, checkpoints, and replication under sustained load.
+          The linked guide is supporting context rather than a sharing widget:
+          <a href="/guides/storage-engine">implementation guide</a>.
+        </p>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#shared-url-prose')!).action).not.toBe('skip')
+    expect(classifyContentUnit(document.querySelector('#neutral-url-prose')!).action).not.toBe('skip')
+  })
+
+  it('lets strong prose evidence override noisy naming even when the prose contains a subscribe link', () => {
+    document.body.innerHTML = `
+      <main>
+        <section id="newsletter-prose" class="newsletter-update">
+          <p>
+            This archive paragraph describes why some teams subscribe to annual support contracts during migration projects.
+            It includes enough surrounding context to read as article prose, and the link is part of the sentence instead of a call-to-action module.
+            <a href="/accounts/plans">Subscribe plan details</a>
+          </p>
+        </section>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#newsletter-prose')!).action).not.toBe('skip')
+  })
+
+  it('does not prune readable prose subtrees just because they include a small button', () => {
+    document.body.innerHTML = `
+      <main>
+        <section id="share-section" class="share-section">
+          <p>This readable article block has enough body text to survive a small copy control. The author is explaining how a product behaves under sustained use.</p>
+          <button>Copy</button>
+        </section>
+      </main>
+    `
+
+    const scanContext = createScanContext()
+
+    expect(isObviousUiSubtree(scanContext, document.querySelector('#share-section')!)).toBe(false)
   })
 
   it('allows forum topic titles and excerpts but skips stats metadata', () => {

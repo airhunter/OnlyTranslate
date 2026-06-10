@@ -1,19 +1,19 @@
+import {
+    getProseEvidence,
+    getStructuralHint,
+    type ProseEvidence
+} from '@/entrypoints/utils/proseSignals';
+
 const NOISE_TAGS = new Set(['nav', 'aside', 'footer', 'form', 'dialog']);
 const NOISE_ROLES = new Set(['navigation', 'complementary', 'contentinfo', 'dialog']);
 
 const SHARE_PATTERN = /\b(share|social|facebook|linkedin|twitter|x-platform|x platform|x\.com|medium|youtube|instagram|threads|mastodon|bluesky)\b/i;
 const SOCIAL_LINK_PATTERN = /\b(facebook\.com|linkedin\.com|twitter\.com|x\.com|medium\.com|youtube\.com|youtu\.be|instagram\.com|threads\.net|mastodon\.social|bsky\.app)\b/i;
 const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|chip)\b/i;
-const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|advertis|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
+const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|ad|ads|advert|advertisement|advertising|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;
 const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
-const INLINE_TEXT_TAGS = new Set([
-    'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
-    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
-    'img', 'br', 'wbr', 'svg'
-]);
-
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
 interface BlockMetrics {
@@ -23,9 +23,11 @@ interface BlockMetrics {
     linkCount: number;
     buttonCount: number;
     shortInteractiveCount: number;
+    interactiveSignalText: string;
     longParagraphCount: number;
     hasCodeOrTable: boolean;
     hasSocialLinks: boolean;
+    proseEvidence: ProseEvidence;
 }
 
 export function getContentFilterDecision(element: Element): ContentFilterDecision {
@@ -39,12 +41,12 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
     if (metrics.textLength === 0) return 'keep';
 
     const structuralHint = getElementStructuralSignalText(element);
-    const hint = getElementSignalText(element, metrics.text);
+    const hint = structuralHint;
 
     if (isShareBlock(element, hint, metrics)) return 'skip-self';
     if (isTagCluster(hint, metrics)) return 'skip-self';
     if (isAuthorOrBylineBlock(hint, metrics)) return 'skip-self';
-    if (isPromoOrCtaBlock(hint, metrics)) return 'skip-self';
+    if (isPromoOrCtaBlock(element, hint, metrics)) return 'skip-self';
     if (isRelatedBlock(element, hint, structuralHint, metrics)) return 'skip-self';
 
     return 'keep';
@@ -56,7 +58,17 @@ export function shouldSkipContentBlock(element: Element): boolean {
 
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (isReadableParagraphLeaf(element, metrics)) return false;
-    if (!SHARE_PATTERN.test(hint) && !metrics.hasSocialLinks) return false;
+    const hasShareSignal = SHARE_PATTERN.test(hint)
+        || SHARE_PATTERN.test(metrics.interactiveSignalText)
+        || metrics.hasSocialLinks;
+    if (!hasShareSignal) return false;
+    if (
+        metrics.proseEvidence.strength === 'strong'
+        && !SHARE_PATTERN.test(metrics.interactiveSignalText)
+        && !metrics.hasSocialLinks
+    ) {
+        return false;
+    }
     if (metrics.buttonCount > 0 && metrics.shortInteractiveCount > 0 && metrics.longParagraphCount <= 1) return true;
     return metrics.longParagraphCount === 0
         && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
@@ -74,9 +86,10 @@ function isTagCluster(hint: string, metrics: BlockMetrics): boolean {
     return hasTagHint || looksLikePills;
 }
 
-function isPromoOrCtaBlock(hint: string, metrics: BlockMetrics): boolean {
+function isPromoOrCtaBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (!PROMO_PATTERN.test(hint)) return false;
     if (metrics.hasCodeOrTable) return false;
+    if (isReadableParagraphLeaf(element, metrics)) return false;
 
     const hasAction = metrics.linkCount > 0 || metrics.buttonCount > 0;
     const hasReadableArticleShape = metrics.longParagraphCount >= 2 && metrics.linkDensity < 0.45;
@@ -115,27 +128,13 @@ function isRelatedBlock(element: Element, hint: string, structuralHint: string, 
 }
 
 function isReadableParagraphLeaf(element: Element, metrics: BlockMetrics): boolean {
-    return isReadableParagraphLikeElement(element)
-        && metrics.textLength >= 80
-        && metrics.linkDensity < 0.45;
-}
-
-function isReadableParagraphLikeElement(element: Element): boolean {
-    const isSemanticParagraph = element.matches('p, blockquote, figcaption');
-    const isInlineOnlyBlock = element.tagName.toLowerCase() === 'div'
-        && Array.from(element.children).every(child => INLINE_TEXT_TAGS.has(child.tagName.toLowerCase()));
-    if (!isSemanticParagraph && !isInlineOnlyBlock) return false;
-
-    const text = getNormalizedText(element);
-    if (text.length < 80) return false;
-
-    const linkTextLength = Array.from(element.querySelectorAll('a'))
-        .reduce((sum, link) => sum + getNormalizedText(link).length, 0);
-    return text.length === 0 || linkTextLength / text.length < 0.45;
+    return metrics.proseEvidence.strength === 'strong'
+        && metrics.proseEvidence.isParagraphLike;
 }
 
 function getBlockMetrics(element: Element): BlockMetrics {
     const text = getNormalizedText(element);
+    const proseEvidence = getProseEvidence(element);
     const textLength = text.length;
     const links = Array.from(element.querySelectorAll('a'));
     const buttons = Array.from(element.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]'));
@@ -146,11 +145,17 @@ function getBlockMetrics(element: Element): BlockMetrics {
         const itemText = getNormalizedText(item);
         return itemText.length > 0 && itemText.length <= 32;
     }).length;
+    const interactiveSignalText = interactive
+        .map(item => getNormalizedText(item))
+        .join(' ');
 
     const paragraphLikeBlocks = [
-        ...(isReadableParagraphLikeElement(element) ? [element] : []),
+        ...(proseEvidence.strength === 'strong' && proseEvidence.isParagraphLike ? [element] : []),
         ...Array.from(element.querySelectorAll('p, blockquote, figcaption, div'))
-            .filter(isReadableParagraphLikeElement)
+            .filter(item => {
+                const evidence = getProseEvidence(item);
+                return evidence.strength === 'strong' && evidence.isParagraphLike;
+            })
     ];
     const longParagraphCount = paragraphLikeBlocks
         .filter((item) => getNormalizedText(item).length >= 80).length;
@@ -162,30 +167,16 @@ function getBlockMetrics(element: Element): BlockMetrics {
         linkCount: links.length,
         buttonCount: buttons.length,
         shortInteractiveCount,
+        interactiveSignalText,
         longParagraphCount,
         hasCodeOrTable: element.querySelector('pre, code, table') !== null,
-        hasSocialLinks: links.some(link => SOCIAL_LINK_PATTERN.test(link.getAttribute('href') ?? ''))
+        hasSocialLinks: links.some(link => SOCIAL_LINK_PATTERN.test(link.getAttribute('href') ?? '')),
+        proseEvidence
     };
 }
 
-function getElementSignalText(element: Element, text: string): string {
-    return `${getElementStructuralSignalText(element)} ${text}`;
-}
-
 function getElementStructuralSignalText(element: Element): string {
-    const attrs = [
-        element.id,
-        typeof element.className === 'string' ? element.className : '',
-        element.getAttribute('role') ?? '',
-        element.getAttribute('aria-label') ?? '',
-        element.getAttribute('title') ?? ''
-    ];
-
-    const hrefs = Array.from(element.querySelectorAll('a'))
-        .map((link) => link.getAttribute('href') ?? '')
-        .join(' ');
-
-    return `${attrs.join(' ')} ${hrefs}`;
+    return getStructuralHint(element);
 }
 
 function getNormalizedText(element: Element): string {

@@ -10,6 +10,7 @@ import {
     cloneScanStats,
     createScanContext,
     getCachedNormalizedText,
+    getCachedProseEvidence,
     hasEnoughProfileTargets,
     type TranslationTargetStats
 } from './scanContext';
@@ -241,7 +242,7 @@ function getCurrentSiteProfile() {
 
 function expandSupplementalReadingUnit(unit: Element, context: TranslationTargetContext): Element[] {
     if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
-    if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit)) {
+    if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit, context)) {
         const directTextChildren = getDirectReadableTextChildren(unit, context);
         if (directTextChildren.length >= 2) return directTextChildren.flatMap(child => expandSupplementalReadingUnit(child, context));
 
@@ -267,14 +268,14 @@ function looksLikeSupplementalWrapper(unit: Element): boolean {
     return false;
 }
 
-function looksLikeMultiBlockReadingWrapper(unit: Element): boolean {
+function looksLikeMultiBlockReadingWrapper(unit: Element, context?: TranslationTargetContext): boolean {
     const tag = unit.tagName.toLowerCase();
     if (!['main', 'article', 'section', 'div'].includes(tag)) return false;
     if (isExpandableReadingContainer(unit)) return false;
 
     const readableDescendants = unit.querySelectorAll('h1, h2, h3, h4, p, li, blockquote, figcaption');
     if (readableDescendants.length < 2) return false;
-    if (getDirectReadableTextChildren(unit).length >= 2) return true;
+    if (getDirectReadableTextChildren(unit, context).length >= 2) return true;
 
     return Array.from(unit.children).some(child => {
         const childTag = child.tagName.toLowerCase();
@@ -288,10 +289,7 @@ function getDirectReadableTextChildren(unit: Element, context?: TranslationTarge
         const tag = child.tagName.toLowerCase();
         if (!['p', 'blockquote', 'figcaption'].includes(tag)) return false;
 
-        const text = getCachedNormalizedText(context?.grabOptions?.scanContext, child);
-        if (text.length < 40) return false;
-
-        return /[.!?\u3002\uff01\uff1f]/.test(text) || text.split(/\s+/).length >= 8;
+        return getCachedProseEvidence(context?.grabOptions?.scanContext, child).strength !== 'none';
     });
 }
 

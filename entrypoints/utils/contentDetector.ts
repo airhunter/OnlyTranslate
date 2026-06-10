@@ -3,9 +3,11 @@
 // class/id 正向关键词（乘以加分系数）
 import {
     getCachedNormalizedText,
+    getCachedProseEvidence,
     markScannedElement,
     type ScanContext
 } from '@/entrypoints/main/translationTarget/scanContext';
+import { getStructuralHint } from '@/entrypoints/utils/proseSignals';
 
 const POSITIVE_PATTERN = /\b(content|article|post|body|entry|text|story|blog|prose|readme|markdown|main)\b/i;
 // class/id 负向关键词（乘以惩罚系数）
@@ -13,12 +15,6 @@ const NEGATIVE_PATTERN = /\b(nav|sidebar|footer|widget|menu|comment|banner|ad|pr
 
 // 参与向上传播的叶子内容节点（不含 li，li 在导航中太常见，是主要噪音）
 const CONTENT_LEAF_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, blockquote, pre, td, div';
-const INLINE_TEXT_TAGS = new Set([
-    'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
-    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
-    'img', 'br', 'wbr', 'svg'
-]);
-
 // 候选容器最少要有这么多字才有意义
 const MIN_TEXT_LENGTH = 100;
 const MAX_PROMOTION_DEPTH = 4;
@@ -60,7 +56,7 @@ function findSemanticRoot(scanContext?: ScanContext): Element | null {
     if (
         getTextLength(art, scanContext) >= MIN_TEXT_LENGTH
         && getLinkDensity(art, scanContext) <= 0.45
-        && !isLikelyNoise(art)
+        && !isLikelyNoise(art, scanContext)
     ) {
         return promoteToContentShell(art, scanContext);
     }
@@ -79,12 +75,21 @@ function findMainRoot(scanContext?: ScanContext): Element | null {
         getTextLength(main, scanContext) >= MIN_TEXT_LENGTH * 2
         && getLinkDensity(main, scanContext) <= 0.5
         && hasPrimaryHeading(main)
-        && !isLikelyNoise(main)
+        && !hasCompetingDirectReadingChildren(main, scanContext)
+        && !isLikelyNoise(main, scanContext)
     ) {
         return main;
     }
 
     return null;
+}
+
+function hasCompetingDirectReadingChildren(element: Element, scanContext?: ScanContext): boolean {
+    // Avoid selecting broad semantic shells such as <main> when they contain a real
+    // article and a separate high-text competitor like comments or recommendations.
+    return Array.from(element.children)
+        .filter(child => getCachedProseEvidence(scanContext, child).strength === 'strong')
+        .length > 1;
 }
 
 function findByBottomUpScore(scanContext?: ScanContext): Element | null {
@@ -95,7 +100,7 @@ function findByBottomUpScore(scanContext?: ScanContext): Element | null {
 
     for (const leaf of leaves) {
         markScannedElement(scanContext);
-        if (leaf.tagName.toLowerCase() === 'div' && !isParagraphLikeDiv(leaf, scanContext)) continue;
+        if (leaf.tagName.toLowerCase() === 'div' && getCachedProseEvidence(scanContext, leaf).strength !== 'strong') continue;
 
         const text = getCachedNormalizedText(scanContext, leaf);
         if (text.length < 10) continue;
@@ -125,14 +130,15 @@ function findByBottomUpScore(scanContext?: ScanContext): Element | null {
     let bestScore = 0;
 
     for (const [el, raw] of scores) {
-        if (getTextLength(el, scanContext) < MIN_TEXT_LENGTH || isLikelyNoise(el)) continue;
+        if (getTextLength(el, scanContext) < MIN_TEXT_LENGTH || isLikelyNoise(el, scanContext)) continue;
+        if (isSemanticContentShell(el) && hasCompetingDirectReadingChildren(el, scanContext)) continue;
 
         const linkDensity = getLinkDensity(el, scanContext);
 
         // 链接密度越高，得分衰减越狠（导航区链接密度往往 > 0.5）
         let score = raw * Math.max(0.05, 1 - linkDensity * 2);
 
-        score *= getClassWeight(el);
+        score *= getClassWeight(el, scanContext);
         score *= getTagWeight(el);
 
         if (score > bestScore) {
@@ -171,7 +177,7 @@ function promoteToContentShell(base: Element, scanContext?: ScanContext): Elemen
 
 function getPromotionScore(candidate: Element, base: Element, baseLen: number, depth: number, scanContext?: ScanContext): number {
     if (!candidate.contains(base)) return 0;
-    if (isLikelyNoise(candidate)) return 0;
+    if (isLikelyNoise(candidate, scanContext)) return 0;
 
     const candidateLen = getTextLength(candidate, scanContext);
     if (candidateLen < baseLen) return 0;
@@ -185,11 +191,15 @@ function getPromotionScore(candidate: Element, base: Element, baseLen: number, d
 
     // 候选外壳只允许比正文容器略宽。超出的文字太多，通常意味着带进了侧栏/推荐/评论。
     if (!hasArticleLeadHeading && textRatio > 2.4 && extraText > 600) return 0;
+    // A semantic parent without its own heading may just be a layout wrapper around
+    // the article plus adjacent modules. Keep promotion narrow unless heading
+    // evidence proves the wider shell belongs to the story.
+    if (!hasHeadingOutsideBase && isSemanticContentShell(candidate) && extraText > Math.max(200, baseLen * 0.3)) return 0;
     if (!hasArticleLeadHeading && linkDensity > 0.35) return 0;
     if (candidate.querySelectorAll('article, [role="article"]').length > 1) return 0;
 
     const isSemanticShell = isSemanticContentShell(candidate);
-    const hasPositiveHint = POSITIVE_PATTERN.test(getNodeHint(candidate));
+    const hasPositiveHint = POSITIVE_PATTERN.test(getStructuralHint(candidate));
 
     if (!hasHeading && !isSemanticShell && !hasPositiveHint) return 0;
     if (!hasHeadingOutsideBase && !isSemanticShell) return 0;
@@ -260,17 +270,6 @@ function findLeadingPrimaryHeading(candidate: Element, base: Element): Element |
     }) ?? null;
 }
 
-function isParagraphLikeDiv(element: Element, scanContext?: ScanContext): boolean {
-    if (!Array.from(element.children).every(child => INLINE_TEXT_TAGS.has(child.tagName.toLowerCase()))) return false;
-
-    const text = getCachedNormalizedText(scanContext, element);
-    if (text.length < 40) return false;
-    if (!/[.!?\u3002\uff01\uff1f]/.test(text) && text.split(/\s+/).length < 12) return false;
-    if (getLinkDensity(element, scanContext) > 0.45) return false;
-
-    return true;
-}
-
 function getTextLength(el: Element, scanContext?: ScanContext): number {
     return getCachedNormalizedText(scanContext, el).length;
 }
@@ -284,11 +283,11 @@ function getLinkDensity(el: Element, scanContext?: ScanContext): number {
     return linkLen / textLen;
 }
 
-function getClassWeight(el: Element): number {
-    const hint = getNodeHint(el);
+function getClassWeight(el: Element, scanContext?: ScanContext): number {
+    const hint = getStructuralHint(el);
     let weight = 1;
     if (POSITIVE_PATTERN.test(hint)) weight *= 1.5;
-    if (NEGATIVE_PATTERN.test(hint)) weight *= 0.2;
+    if (NEGATIVE_PATTERN.test(hint) && getCachedProseEvidence(scanContext, el).strength !== 'strong') weight *= 0.2;
     return weight;
 }
 
@@ -300,14 +299,10 @@ function getTagWeight(el: Element): number {
     return 1;
 }
 
-function isLikelyNoise(el: Element): boolean {
+function isLikelyNoise(el: Element, scanContext?: ScanContext): boolean {
     const tag = el.tagName.toLowerCase();
     if (tag === 'nav' || tag === 'aside' || tag === 'footer') return true;
     if (el.getAttribute('role') === 'navigation' || el.getAttribute('aria-hidden') === 'true') return true;
-    return NEGATIVE_PATTERN.test(getNodeHint(el));
-}
-
-function getNodeHint(el: Element): string {
-    const className = typeof el.className === 'string' ? el.className : '';
-    return `${className} ${el.id}`;
+    if (!NEGATIVE_PATTERN.test(getStructuralHint(el))) return false;
+    return getCachedProseEvidence(scanContext, el).strength !== 'strong';
 }

@@ -152,6 +152,32 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps linked article prose that mentions subscription and related topics', () => {
+    const element = renderElement(`
+      <p class="article-copy">
+        Some teams subscribe to annual contracts because procurement is easier, and
+        <a href="https://example.com/contracts">this source</a>
+        explains related billing tradeoffs without being a newsletter signup module.
+      </p>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
+  it('keeps readable noisy-class prose with ordinary links whose URLs contain noise words', () => {
+    const element = renderElement(`
+      <p class="promo-note">
+        This article paragraph explains how storage engines coordinate writes, checkpoints, and replication under sustained load.
+        The linked guide is supporting context rather than a sharing widget:
+        <a href="/guides/how-to-share-data">implementation guide</a>.
+      </p>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
   it('keeps paragraph-like divs that contain only text and inline links', () => {
     const element = renderElement(`
       <div>

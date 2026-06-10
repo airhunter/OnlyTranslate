@@ -133,4 +133,24 @@ describe('contentDetector', () => {
 
     expect(findMainContent()).toBe(document.body)
   })
+
+  it('does not let noisy class names suppress a readable root during scoring', () => {
+    document.body.innerHTML = `
+      <header><nav><a>Home</a><a>Topics</a><a>About</a></nav></header>
+      <main>
+        <div id="story-root" class="share-story related-work promo-update">
+          <h1>Readable article title with noisy class names</h1>
+          <p>${paragraph.repeat(4)}</p>
+          <p>${paragraph.repeat(3)}</p>
+        </div>
+        <section id="comment-competitor" class="comment-thread content">
+          <h2>Reader comments</h2>
+          <p>${paragraph.repeat(2)}</p>
+          <p>${paragraph.repeat(2)}</p>
+        </section>
+      </main>
+    `
+
+    expect(findMainContent()).toBe(document.querySelector('#story-root'))
+  })
 })
