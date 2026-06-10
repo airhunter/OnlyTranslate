@@ -290,6 +290,8 @@ function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
 }
 
 function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
+    if (isReadableProseUnit(element, metrics)) return false;
+
     const hint = getElementHint(element);
     const text = metrics.text;
 
@@ -306,8 +308,22 @@ function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
 function isNoiseElement(element: Element, metrics: UnitMetrics): boolean {
     const hint = getElementHint(element);
     if (!NOISE_PATTERN.test(hint)) return false;
+    if (isReadableProseUnit(element, metrics)) return false;
     if (metrics.textLength > 600 && metrics.hasReadableSentence && metrics.linkDensity < 0.25) return false;
     return true;
+}
+
+function isReadableProseUnit(element: Element, metrics: UnitMetrics): boolean {
+    if (metrics.textLength < 80 || !metrics.hasReadableSentence) return false;
+    if (metrics.linkDensity >= 0.45 || metrics.buttonCount > 0) return false;
+    if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return false;
+
+    const tag = element.tagName.toLowerCase();
+    if (['p', 'blockquote', 'figcaption', 'li'].includes(tag)) return true;
+
+    return ['article', 'section', 'div'].includes(tag)
+        && metrics.childTextBlockCount > 0
+        && !element.hasAttribute('role');
 }
 
 function getUiPenalty(element: Element, metrics: UnitMetrics): number {

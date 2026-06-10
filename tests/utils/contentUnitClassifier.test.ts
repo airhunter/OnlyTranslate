@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier'
+import { createScanContext, isObviousUiSubtree } from '@/entrypoints/main/translationTarget/scanContext'
 
 describe('contentUnitClassifier', () => {
   beforeEach(() => {
@@ -121,6 +122,31 @@ describe('contentUnitClassifier', () => {
     `
 
     expect(classifyContentUnit(document.querySelector('#promo')!).action).toBe('skip')
+  })
+
+  it.each([
+    ['promo-copy', 'This promotion is available for Pro, Max, and Team plans. The article explains which accounts qualify, why the limit changes, and how the usage window works.'],
+    ['popular-copy', 'The popular explanation misses the hardware constraints. This paragraph compares the design choices and remains normal article prose.'],
+    ['share-copy', 'The share of total memory bandwidth matters because each stage waits for the previous one. The sentence is about resource allocation, not social sharing.'],
+    ['newsletter-copy', 'The newsletter version includes a short summary before the technical details. The paragraph still describes the article itself rather than a sign-up module.']
+  ])('does not classify readable prose as noise just because it has a noisy class: %s', (id, text) => {
+    document.body.innerHTML = `<main><p id="${id}" class="${id}">${text}</p></main>`
+
+    expect(classifyContentUnit(document.querySelector(`#${id}`)!).action).not.toBe('skip')
+  })
+
+  it('does not prune readable prose subtrees just because their class has a noise word', () => {
+    document.body.innerHTML = `
+      <main>
+        <section id="newsletter-panel" class="newsletter-update">
+          <p>This newsletter article explains how the system behaves under sustained load. The paragraph has enough context to be translated as normal prose.</p>
+        </section>
+      </main>
+    `
+
+    const scanContext = createScanContext()
+
+    expect(isObviousUiSubtree(scanContext, document.querySelector('#newsletter-panel')!)).toBe(false)
   })
 
   it('does not skip readable prose just because it contains file-related words', () => {

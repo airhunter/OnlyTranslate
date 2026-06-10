@@ -223,9 +223,26 @@ function computeObviousUiSubtree(context: ScanContext | undefined, element: Elem
     if (POSITIVE_HINT_PATTERN.test(hint)) return false;
 
     const text = getCachedNormalizedText(context, element);
+    if (looksLikeReadableProseSubtree(context, element, text)) return false;
     if (text.length > 600 && /[.!?\u3002\uff01\uff1f]/.test(text)) return false;
 
     return true;
+}
+
+function looksLikeReadableProseSubtree(context: ScanContext | undefined, element: Element, text: string): boolean {
+    if (text.length < 80) return false;
+    if (!/[.!?\u3002\uff01\uff1f]/.test(text) && text.split(/\s+/).length < 12) return false;
+    if (element.querySelector('button, [role="button"], input[type="button"], input[type="submit"]')) return false;
+
+    const links = Array.from(element.querySelectorAll('a'));
+    const linkTextLength = links.reduce((sum, link) => sum + getCachedNormalizedText(context, link).length, 0);
+    if (text.length > 0 && linkTextLength / text.length >= 0.45) return false;
+
+    const tag = element.tagName.toLowerCase();
+    if (['p', 'blockquote', 'figcaption', 'li'].includes(tag)) return true;
+
+    return ['article', 'section', 'div'].includes(tag)
+        && element.querySelector('p, blockquote, figcaption, li, h1, h2, h3, h4') !== null;
 }
 
 function getElementHint(element: Element): string {

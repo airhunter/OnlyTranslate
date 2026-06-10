@@ -108,6 +108,20 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it.each([
+    ['promotion', 'This promotion is part of the actual product policy. The article explains who qualifies, when the offer begins, and which accounts are excluded from the usage change.'],
+    ['popular', 'The popular explanation is incomplete because it ignores the compiler details. This paragraph uses the word as part of the article argument, not as a recommendation module.'],
+    ['share', 'A share of the cost is paid by each team, but the article is discussing billing mechanics and not asking the reader to share anything on social networks.'],
+    ['subscribe', 'Some teams subscribe to annual contracts because procurement is easier. This sentence describes enterprise purchasing behavior inside the article body.'],
+    ['newsletter', 'The newsletter format makes the update easier to follow, and the paragraph continues with enough context to read like normal prose.'],
+    ['related', 'The related systems are compared in the next section, where the author explains why one implementation behaves differently under load.']
+  ])('keeps readable prose containing the noise word "%s"', (_, text) => {
+    const element = renderElement(`<p>${text}</p>`)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+  })
+
   it('keeps article paragraphs that mention code being written by AI', () => {
     const element = renderElement(`
       <p>
