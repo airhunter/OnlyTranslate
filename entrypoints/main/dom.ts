@@ -317,7 +317,9 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
         if (translateNode) {
             result.push(translateNode);
             // 跳过已确定要翻译的节点的所有子节点
-            walker.currentNode = currentNode.nextSibling || currentNode;
+            if (currentNode instanceof Element && currentNode.children.length > 0) {
+                walker.currentNode = currentNode.nextSibling || currentNode;
+            }
         }
     }
     return removeNestedTranslateNodes(Array.from(new Set(result)));
@@ -399,8 +401,6 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
         if (result instanceof Element) return result;
     }
 
-    if (hasContentFilterSkipSelfAncestor(node, options)) return false;
-
     if (!tryUseScanBudget(options.scanContext, options.scanBudget)) return false;
 
     const contentUnitDecision = options.contentUnitClassifier
@@ -408,6 +408,7 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
         : undefined;
     if (contentUnitDecision?.action === 'skip' && contentUnitDecision.confidence >= 0.85) return false;
     if (contentUnitDecision?.action === 'allow' && contentUnitDecision.confidence >= 0.7) return node;
+    if (hasContentFilterSkipSelfAncestor(node, options)) return false;
 
     // 3. 直接翻译：块级元素
     if (directSet.has(curTag)) return node;

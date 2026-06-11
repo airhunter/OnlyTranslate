@@ -9,6 +9,7 @@ import { decideTranslationTarget, isExpandableReadingContainer, isOpenExpandable
 import {
     cloneScanStats,
     createScanContext,
+    getCachedContentFilterDecision,
     getCachedNormalizedText,
     getCachedProseEvidence,
     hasEnoughProfileTargets,
@@ -216,6 +217,7 @@ function collectGenericSupplementalReadingTargets(
         candidateOnly: true,
         pruneUiSubtrees: true
     })
+        .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
 }
 

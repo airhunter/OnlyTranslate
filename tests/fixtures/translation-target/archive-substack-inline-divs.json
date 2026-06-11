@@ -4,7 +4,7 @@
   "scope": "smart",
   "html": "archive-substack-inline-divs.html",
   "contentRoot": "[role=\"main\"]",
-  "include": ["plain-before", "productization", "byte-shadow", "plain-after"],
+  "include": ["archive-title", "archive-subtitle", "plain-before", "productization", "byte-shadow", "plain-after"],
   "textIncludes": [
     "Many Chinese companies offer coding plans",
     "The shadow of ByteDance"

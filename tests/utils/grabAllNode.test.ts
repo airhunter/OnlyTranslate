@@ -16,6 +16,7 @@ import {
   renderTextWithProtectedInline
 } from '@/entrypoints/main/dom'
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter'
+import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier'
 
 describe('grabAllNode', () => {
   beforeEach(() => {
@@ -286,5 +287,31 @@ describe('grabAllNode', () => {
     expect(ids).not.toContain('social-youtube')
     expect(ids).not.toContain('promo-text')
     expect(ids).not.toContain('promo-button')
+  })
+
+  it('keeps article header titles when the header also contains a share button', () => {
+    document.body.innerHTML = `
+      <div role="main" aria-label="Post">
+        <article>
+          <div role="region" aria-label="Post header">
+            <h1 id="archive-title">We Spent 10 Days Touring Chinese AI Labs. Here's What We Saw.</h1>
+            <h3 id="archive-subtitle">Sleeping Cots, Robot Pharmacies, and the Race for AGI</h3>
+            <div>Lily Ottinger and Kai Williams</div>
+            <div>May 08, 2026</div>
+            <button>Share</button>
+          </div>
+          <div id="article-body">This paragraph is part of the actual article body. It has enough detail, context, and natural language to look like readable long-form content.</div>
+        </article>
+      </div>
+    `
+
+    const nodes = grabAllNode(document.body, {
+      contentFilter: getContentFilterDecision,
+      contentUnitClassifier: classifyContentUnit
+    })
+    const ids = nodes.map((node) => node.id)
+
+    expect(ids).toContain('archive-title')
+    expect(ids).toContain('archive-subtitle')
   })
 })

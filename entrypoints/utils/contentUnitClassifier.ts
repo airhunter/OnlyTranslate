@@ -85,13 +85,17 @@ export function classifyContentUnit(element: Element): ContentUnitDecision {
     }
 
     const titleScore = scoreTitle(element, metrics);
-    if (titleScore >= 6) {
+    if (titleScore >= 7) {
         return allow('title', Math.min(0.98, titleScore / 10), 'title-score');
     }
 
     const subtitleScore = scoreSubtitle(element, metrics);
     if (subtitleScore >= 6) {
         return allow('subtitle', Math.min(0.95, subtitleScore / 10), 'subtitle-score');
+    }
+
+    if (titleScore >= 6) {
+        return allow('title', Math.min(0.98, titleScore / 10), 'title-score');
     }
 
     const cardScore = scoreContentCard(element, metrics);
@@ -189,7 +193,8 @@ function scoreTitle(element: Element, metrics: UnitMetrics): number {
 
 function scoreSubtitle(element: Element, metrics: UnitMetrics): number {
     if (metrics.textLength < 24 || metrics.textLength > 320) return 0;
-    if (!metrics.hasReadableSentence) return 0;
+    const nearPrimaryTitle = hasNearbyPrimaryTitle(element) || hasPreviousPrimaryTitleSibling(element);
+    if (!metrics.hasReadableSentence && !nearPrimaryTitle) return 0;
 
     const hint = getStructuralHint(element);
     let score = 0;
