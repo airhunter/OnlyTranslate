@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.6](https://github.com/airhunter/OnlyTranslate/compare/v0.5.5...v0.5.6) (2026-06-15)
+
+
+### Bug Fixes
+
+* **content:** 保留带分享按钮的文章标题 ([078cf5e](https://github.com/airhunter/OnlyTranslate/commit/078cf5e7fa4f3408440ffa7e2254633dc4ca4370))
+* **content:** 保留含推广词的正文段落 ([1dc4c25](https://github.com/airhunter/OnlyTranslate/commit/1dc4c251b5ca1beb465f9c0cbb8689532b9069ed))
+* **content:** 避免噪声词误杀正文 ([510ff36](https://github.com/airhunter/OnlyTranslate/commit/510ff36634f1d0d2fc2fb1e88386fee456f4287e))
+* **content:** 识别内联块级正文段落 ([42401d9](https://github.com/airhunter/OnlyTranslate/commit/42401d9ebd4d4c0456acc4c2e5fddfc87917e97b))
+* **content:** 识别内联样式正文段落 ([508b708](https://github.com/airhunter/OnlyTranslate/commit/508b708bbad4806060fed36b78e06c904463576d))
+* **content:** 统一正文识别与噪声裁决 ([abab93c](https://github.com/airhunter/OnlyTranslate/commit/abab93c5aacbabf0388553737a83e3d8a13d4b92))
+* **content:** 修复本地模型异常输出与正文漏译 ([62a3e66](https://github.com/airhunter/OnlyTranslate/commit/62a3e6642f29a9c70197f2a4e8b57431c83fdf9e))
+
 ## [0.5.5](https://github.com/airhunter/OnlyTranslate/compare/v0.5.4...v0.5.5) (2026-06-01)
 
 
