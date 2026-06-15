@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.6',
+    notes: {
+      'zh-CN': {
+        title: '文章识别与标题漏翻修复',
+        items: [
+          '修复 archive.md、Substack、SemiAnalysis 和 Claude 帮助页等文章开头、标题或短说明漏翻的问题。',
+          '改进正文识别逻辑，带有分享、订阅、相关内容等词的真实正文不再容易被误判跳过。',
+          '优化带按钮和链接的文章区块处理，正文里出现 Copy、Share、Subscribe 等操作时仍能保留可读内容。',
+          '补充多组网页结构回归样本，降低后续版本再次出现漏翻和误杀的风险。'
+        ]
+      },
+      'en-US': {
+        title: 'Article Detection and Missed Title Fixes',
+        items: [
+          'Fixed missed translations for article openings, titles, and short descriptions on pages such as archive.md, Substack, SemiAnalysis, and Claude Help.',
+          'Improved article detection so real content mentioning share, subscribe, related, or similar words is less likely to be skipped by mistake.',
+          'Improved handling for article blocks that contain buttons and links, keeping readable content even when actions such as Copy, Share, or Subscribe are nearby.',
+          'Added more webpage-structure regression samples to reduce future missed translations and false skips.'
+        ]
+      },
+      'zh-TW': {
+        title: '文章識別與標題漏翻修復',
+        items: [
+          '修復 archive.md、Substack、SemiAnalysis 和 Claude 說明頁等文章開頭、標題或短說明漏翻的問題。',
+          '改進正文識別邏輯，帶有分享、訂閱、相關內容等字詞的真實正文不再容易被誤判跳過。',
+          '優化帶有按鈕和連結的文章區塊處理，正文裡出現 Copy、Share、Subscribe 等操作時仍能保留可讀內容。',
+          '補充多組網頁結構回歸樣本，降低後續版本再次出現漏翻和誤殺的風險。'
+        ]
+      },
+      'ja-JP': {
+        title: '記事検出とタイトル翻訳漏れの修正',
+        items: [
+          'archive.md、Substack、SemiAnalysis、Claude ヘルプなどで、記事冒頭、タイトル、短い説明が翻訳されない問題を修正しました。',
+          '本文検出を改善し、share、subscribe、related などの語を含む実際の本文が誤って除外されにくくなりました。',
+          'ボタンやリンクを含む記事ブロックの処理を改善し、Copy、Share、Subscribe などの操作が近くにあっても読み物としての内容を保持します。',
+          '複数のページ構造回帰サンプルを追加し、今後の翻訳漏れや誤除外の再発リスクを減らしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.5',
     notes: {
       'zh-CN': {
