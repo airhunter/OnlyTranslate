@@ -149,6 +149,29 @@ describe('grabAllNode', () => {
     expect(calls).toEqual([button])
   })
 
+  it('uses the readable tweet quote when manual translation hits an Astro tweet embed host', () => {
+    document.body.innerHTML = `
+      <article>
+        <astro-embed-tweet id="tweet-host">
+          <blockquote id="tweet-blockquote" class="twitter-tweet" data-dnt="true" data-theme="light">
+            <p lang="en" dir="ltr">
+              So tired. Everyone is so tired.
+              <br><br>
+              Meetings keep getting cancelled because no one has a topic.
+            </p>
+            — Jay Conrod (@jayconrod)
+            <a href="https://x.com/jayconrod/status/1428087609532686342">August 18, 2021</a>
+          </blockquote>
+        </astro-embed-tweet>
+      </article>
+    `
+
+    const host = document.querySelector('#tweet-host') as HTMLElement
+    const blockquote = document.querySelector('#tweet-blockquote') as HTMLElement
+
+    expect(grabNode(host)).toBe(blockquote)
+  })
+
   it('keeps DOM utilities independent from translation execution', () => {
     const source = readFileSync(resolve(process.cwd(), 'entrypoints/main/dom.ts'), 'utf8')
 

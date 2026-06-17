@@ -389,6 +389,9 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
     // 1. 快速过滤：跳过不需要翻译的节点
     if (shouldSkipNode(node, curTag)) return false;
 
+    const embeddedReadableTarget = findKnownEmbeddedReadableTarget(node, curTag, options);
+    if (embeddedReadableTarget) return embeddedReadableTarget;
+
     // 2. 特殊适配：根据域名进行特殊处理
     const domainHandler = selectCompatFn[getMainDomain(location.href.split('?')[0])];
     if (domainHandler) {
@@ -455,6 +458,16 @@ function shouldSkipNode(node: Element, tag: string): boolean {
         isMainlyNumericContent(node) ||
         isJSONContent(node) ||
         skipAriaRoles.has(node.getAttribute('role') ?? '');
+}
+
+function findKnownEmbeddedReadableTarget(node: Element, tag: string, options: GrabAllNodeOptions): Element | false {
+    if (tag !== 'astro-embed-tweet') return false;
+
+    const blockquote = Array.from(node.children)
+        .find(child => child.matches('blockquote.twitter-tweet'));
+    if (!blockquote || !blockquote.querySelector('p')) return false;
+
+    return grabNode(blockquote, options);
 }
 
 // 检查文本是否为 JSON 格式数据（不应被翻译）
