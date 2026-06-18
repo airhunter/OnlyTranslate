@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.5.7',
+    notes: {
+      'zh-CN': {
+        title: '嵌套列表与引用内容翻译修复',
+        items: [
+          '修复 Smashing Magazine 等文章中嵌套列表前导文字漏翻的问题，父列表文字和子列表内容会分别进入翻译。',
+          '改进列表项、定义说明、引用和图片说明中“文字 + 子块”结构的识别，减少父子内容合并或直接文字漏掉的情况。',
+          '修复部分嵌入式 X/Twitter 引用块、博客摘录和说明框中的正文内容没有被识文翻译命中的问题。',
+          '优化临时翻译目标的清理，翻译被跳过或页面动态再扫描后不再留下多余的内部包装节点。'
+        ]
+      },
+      'en-US': {
+        title: 'Nested List and Quote Translation Fixes',
+        items: [
+          'Fixed missed leading text in nested article lists, such as Smashing Magazine examples where parent list text and child list details should translate separately.',
+          'Improved detection for list items, definition text, quotes, and captions that mix direct text with nested blocks, reducing merged or missed translation targets.',
+          'Fixed missed readable text in embedded X/Twitter quotes, blog excerpts, and note-style content blocks during manual page-text translation.',
+          'Improved cleanup for temporary translation targets so skipped translations and dynamic rescans do not leave extra internal wrapper nodes behind.'
+        ]
+      },
+      'zh-TW': {
+        title: '巢狀列表與引用內容翻譯修復',
+        items: [
+          '修復 Smashing Magazine 等文章中巢狀列表前導文字漏翻的問題，父列表文字和子列表內容會分別進入翻譯。',
+          '改進列表項目、定義說明、引用和圖片說明中「文字 + 子區塊」結構的識別，減少父子內容合併或直接文字漏掉的情況。',
+          '修復部分嵌入式 X/Twitter 引用區塊、部落格摘錄和說明框中的正文內容沒有被識文翻譯命中的問題。',
+          '優化臨時翻譯目標的清理，翻譯被跳過或頁面動態重新掃描後不再留下多餘的內部包裝節點。'
+        ]
+      },
+      'ja-JP': {
+        title: '入れ子リストと引用文の翻訳修正',
+        items: [
+          'Smashing Magazine などの記事で、入れ子リストの親項目の先頭テキストが翻訳されない問題を修正しました。',
+          'リスト項目、定義説明、引用、キャプションで「直接の文章 + 子ブロック」が混在する構造の検出を改善し、結合や翻訳漏れを減らしました。',
+          '埋め込み X/Twitter 引用、ブログ抜粋、注記風の本文ブロックが識文翻訳で拾われないことがある問題を修正しました。',
+          '一時的な翻訳対象の後片付けを改善し、翻訳をスキップした後や動的な再スキャン後に余分な内部ラッパーが残らないようにしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.6',
     notes: {
       'zh-CN': {
