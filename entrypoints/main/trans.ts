@@ -12,7 +12,10 @@ import {
     renderTextWithProtectedInline,
     type GrabAllNodeOptions,
     LLMStandardHTML,
-    smashTruncationStyle
+    smashTruncationStyle,
+    DIRECT_TEXT_TARGET_ATTR,
+    cleanupDirectTextTargets,
+    unwrapDirectTextTarget
 } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
 import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
@@ -99,6 +102,11 @@ function shouldBeautifyTranslatedHTML(origin: string, translated: string): boole
     return /<[^>]+>/.test(origin) || /<[^>]+>/.test(translated);
 }
 
+function shouldStartTranslation(node: HTMLElement): boolean {
+    const translatableText = getTranslatableText(node);
+    return Boolean(translatableText.trim()) && shouldTranslateText(translatableText);
+}
+
 // 恢复原文内容
 export function restoreOriginalContent() {
     // 取消所有等待中的翻译任务
@@ -127,6 +135,10 @@ export function restoreOriginalContent() {
     // 3. 移除所有翻译过程中添加的加载动画和错误提示
     document.querySelectorAll('.only-translate-loading, .only-translate-retry-wrapper').forEach(element => {
         element.remove();
+    });
+
+    document.querySelectorAll(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`).forEach(element => {
+        unwrapDirectTextTarget(element);
     });
     
     // 4. 清空存储的原始内容
@@ -299,18 +311,37 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
     translationState.hoverTimer = setTimeout(() => {
 
         // 只在手动悬停翻译注入副作用回调；smart/full 自动扫描只能收集目标，不能在识文阶段触发翻译。
+        const directTextRunWrappers = new Set<Element>();
+        const cleanupProbeWrappers = (keep?: Element) => {
+            cleanupDirectTextTargets(directTextRunWrappers, keep ? [keep] : []);
+        };
         let node = grabNode(document.elementFromPoint(mouseX, mouseY), {
             translateFirstLineText,
-            translateButtonText: handleBtnTranslation
+            translateButtonText: handleBtnTranslation,
+            directTextRunWrapperCollector: directTextRunWrappers
         });
-        if (!(node instanceof HTMLElement)) return;
+        if (!(node instanceof HTMLElement)) {
+            cleanupProbeWrappers();
+            return;
+        }
 
         // 判断是否跳过节点
-        if (skipNode(node)) return;
+        if (skipNode(node)) {
+            cleanupProbeWrappers();
+            return;
+        }
+
+        if (!shouldStartTranslation(node)) {
+            cleanupProbeWrappers();
+            return;
+        }
 
         // 防抖
         let nodeOuterHTML = node.outerHTML;
-        if (translationState.htmlSet.has(nodeOuterHTML)) return;
+        if (translationState.htmlSet.has(nodeOuterHTML)) {
+            cleanupProbeWrappers();
+            return;
+        }
         translationState.htmlSet.add(nodeOuterHTML);
 
         // 根据翻译模式进行翻译

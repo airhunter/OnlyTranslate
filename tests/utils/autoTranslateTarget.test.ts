@@ -1,9 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mockConfig = vi.hoisted(() => ({
+  translationScope: 'smart',
+  on: true,
+  service: 'microsoft',
+  display: 1,
+  style: 0,
+  to: 'zh-Hans',
+  bidirectionalTranslation: false,
+  bidirectionalTarget: 'en',
+  model: {} as Record<string, string>,
+  token: {} as Record<string, string>,
+  customProviders: []
+}))
+
 vi.mock('@/entrypoints/utils/config', () => ({
-  config: {
-    translationScope: 'smart'
-  }
+  config: mockConfig
 }))
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
@@ -16,6 +28,10 @@ vi.mock('@/entrypoints/utils/icon', () => ({
   insertLoadingSpinner: vi.fn(() => ({ remove: vi.fn() }))
 }))
 
+vi.mock('@/entrypoints/utils/translationDirection', () => ({
+  shouldTranslateText: vi.fn(() => true)
+}))
+
 vi.mock('element-plus', () => ({
   ElMessage: {
     error: vi.fn(),
@@ -23,18 +39,33 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, resolveAutoTranslateTarget } from '@/entrypoints/main/trans'
+import { collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
+import { DIRECT_TEXT_TARGET_ATTR, grabNode } from '@/entrypoints/main/dom'
+import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
+import { TRANSLATED_ATTR } from '@/entrypoints/main/translationTarget/constants'
+import { siteProfiles } from '@/entrypoints/main/siteProfiles'
 import { translateText } from '@/entrypoints/utils/translateApi'
+import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
 
 describe('resolveAutoTranslateTarget behavior', () => {
   const originalLocation = window.location
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    mockConfig.translationScope = 'smart'
+    mockConfig.on = true
+    mockConfig.service = 'microsoft'
+    mockConfig.display = 1
+    mockConfig.style = 0
+    mockConfig.to = 'zh-Hans'
+    mockConfig.bidirectionalTranslation = false
+    mockConfig.bidirectionalTarget = 'en'
     vi.clearAllMocks()
+    vi.mocked(shouldTranslateText).mockReturnValue(true)
+    vi.useRealTimers()
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       configurable: true
@@ -106,6 +137,180 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(translation?.textContent).toContain('原始 HTML')
     expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
+  })
+
+  it('restores bilingual direct text wrappers without disturbing nested child blocks', async () => {
+    vi.mocked(translateText).mockResolvedValue('Translated log event.')
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul id="nested-list">
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const target = grabNode(document.querySelector('#first-label')) as HTMLElement
+
+    expect(target.getAttribute('data-fr-direct-text-target')).toBe('true')
+
+    handleBilingualTranslation(target, false)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(target.querySelector('.only-translate-bilingual-content')?.textContent).toContain('Translated log event.')
+    expect(document.querySelector('#first-verdict')?.textContent).toContain('Filter Verdict:')
+
+    restoreOriginalContent()
+
+    expect(document.querySelector('[data-fr-direct-text-target="true"]')).toBeNull()
+    expect(document.querySelector('.only-translate-bilingual-content')).toBeNull()
+    expect(document.querySelector('#first-label')?.parentElement?.id).toBe('first-event')
+    expect(document.querySelector('#nested-list > #first-verdict')?.textContent).toContain('Filter Verdict:')
+  })
+
+  it('collects nested list direct text and child blocks as separate auto translation targets', () => {
+    document.body.innerHTML = `
+      <article>
+        <p>The audit was to decide what to keep invisible in the Meridian example.</p>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+          <li id="second-event">
+            <em id="second-label">Log Event:</em> Comparing repair estimate to BlueBook value.
+            <ul>
+              <li id="second-verdict"><em>Filter Verdict:</em> <strong>Show.</strong> (High Stakes, impacts user's payout).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const texts = target.nodes.map(node => node.textContent?.replace(/\s+/g, ' ').trim())
+
+    expect(texts).toContain('Log Event: Pinging Server West-2 for redundancy check.')
+    expect(texts).toContain('Filter Verdict: Hide. (Low Stakes, High Technicality).')
+    expect(texts).toContain('Log Event: Comparing repair estimate to BlueBook value.')
+    expect(texts).toContain("Filter Verdict: Show. (High Stakes, impacts user's payout).")
+    expect(texts).not.toContain('Log Event: Pinging Server West-2 for redundancy check. Filter Verdict: Hide. (Low Stakes, High Technicality).')
+  })
+
+  it('unwraps direct text wrappers that are discarded during target collection', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://direct-wrapper-test.example/article'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    siteProfiles.push({
+      id: 'direct-wrapper-test',
+      domains: ['direct-wrapper-test.example'],
+      skipTarget: (element) => element.hasAttribute(DIRECT_TEXT_TARGET_ATTR)
+        ? { policy: 'hard-skip', reason: 'test-direct-wrapper-skip' }
+        : undefined
+    })
+
+    try {
+      const decisions = collectTranslationTargets(document.body, {
+        mode: 'smart',
+        scope: 'smart',
+        contentRoot: document.body,
+        grabOptions: {
+          siteCompatMode: 'smart'
+        }
+      }, { includeSupplemental: false })
+
+      expect(decisions.some(decision => decision.target.hasAttribute(DIRECT_TEXT_TARGET_ATTR))).toBe(false)
+      expect(document.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBeNull()
+      expect(document.querySelector('#first-label')?.parentElement?.id).toBe('first-event')
+      expect(document.querySelector('#first-event > ul > #first-verdict')).not.toBeNull()
+    } finally {
+      siteProfiles.pop()
+    }
+  })
+
+  it('keeps already translated direct text wrappers during dynamic rescans', () => {
+    document.body.innerHTML = `
+      <article id="story">
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const wrapper = grabNode(document.querySelector('#first-label')) as HTMLElement
+    wrapper.setAttribute(TRANSLATED_ATTR, 'true')
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#first-event')!,
+      document.querySelector('#story')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(document.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrapper)
+    expect(document.querySelector('#first-label')?.closest(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrapper)
+    expect(wrapper.getAttribute(TRANSLATED_ATTR)).toBe('true')
+    expect(nodes).not.toContain(wrapper)
+  })
+
+  it('cleans hover direct text wrappers when translation direction skips the target text', () => {
+    vi.useFakeTimers()
+    vi.mocked(shouldTranslateText).mockReturnValue(false)
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const label = document.querySelector('#first-label') as Element
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(label)
+
+    try {
+      handleTranslation(12, 34)
+      vi.runAllTimers()
+
+      expect(shouldTranslateText).toHaveBeenCalledWith(expect.stringContaining('Log Event:'))
+      expect(translateText).not.toHaveBeenCalled()
+      expect(document.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBeNull()
+      expect(document.querySelector('#first-label')?.parentElement?.id).toBe('first-event')
+      expect(document.querySelector('#first-event > ul > #first-verdict')).not.toBeNull()
+    } finally {
+      elementFromPoint.mockRestore()
+      vi.useRealTimers()
+      restoreOriginalContent()
+    }
   })
 
   it('appends GitHub search sponsor translations beside the sponsor paragraph', () => {

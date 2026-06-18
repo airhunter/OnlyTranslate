@@ -1,6 +1,6 @@
 import { selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
-import { grabAllNode, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
+import { cleanupDirectTextTargets, grabAllNode, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
@@ -117,13 +117,38 @@ export function collectTranslationTargets(
     context: TranslationTargetContext,
     options: { includeSupplemental?: boolean; fallback?: boolean } = {}
 ): TranslationTargetDecision[] {
-    const candidates = collectTranslationCandidates(root, context, options);
-    const decisions = candidates
-        .map(candidate => decideTranslationTarget(candidate, context))
-        .filter(decision => decision.policy === 'allow')
-        .filter(decision => isVisibleForTranslation(decision.target, context));
+    const directTextRunWrappers = new Set<Element>();
+    const trackedContext = withDirectTextRunWrapperCollector(context, directTextRunWrappers);
+    let mergedDecisions: TranslationTargetDecision[] = [];
 
-    return mergeTranslationDecisions(decisions, context);
+    try {
+        const candidates = collectTranslationCandidates(root, trackedContext, options);
+        const decisions = candidates
+            .map(candidate => decideTranslationTarget(candidate, trackedContext))
+            .filter(decision => decision.policy === 'allow')
+            .filter(decision => isVisibleForTranslation(decision.target, trackedContext));
+
+        mergedDecisions = mergeTranslationDecisions(decisions, trackedContext);
+        return mergedDecisions;
+    } finally {
+        cleanupDirectTextTargets(
+            directTextRunWrappers,
+            mergedDecisions.flatMap(decision => [decision.node, decision.target])
+        );
+    }
+}
+
+function withDirectTextRunWrapperCollector(
+    context: TranslationTargetContext,
+    directTextRunWrapperCollector: Set<Element>
+): TranslationTargetContext {
+    return {
+        ...context,
+        grabOptions: {
+            ...context.grabOptions,
+            directTextRunWrapperCollector
+        }
+    };
 }
 
 function collectTranslationCandidates(

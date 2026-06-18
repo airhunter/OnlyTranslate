@@ -7,6 +7,8 @@ vi.mock('@/entrypoints/main/trans', () => ({
 }))
 
 import {
+  cleanupDirectTextTargets,
+  DIRECT_TEXT_TARGET_ATTR,
   getTranslatableHTML,
   getTranslatableText,
   getTranslatableTextWithProtectedInline,
@@ -170,6 +172,196 @@ describe('grabAllNode', () => {
     const blockquote = document.querySelector('#tweet-blockquote') as HTMLElement
 
     expect(grabNode(host)).toBe(blockquote)
+  })
+
+  it('wraps the direct inline run when manual translation hits a nested list item prefix', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const label = document.querySelector('#first-label') as HTMLElement
+    const target = grabNode(label) as HTMLElement
+
+    expect(target.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(target.parentElement?.id).toBe('first-event')
+    expect(target.textContent).toContain('Log Event:')
+    expect(target.textContent).toContain('Pinging Server West-2 for redundancy check.')
+    expect(target.textContent).not.toContain('Filter Verdict')
+
+    const repeatedTarget = grabNode(label) as HTMLElement
+
+    expect(repeatedTarget).toBe(target)
+    expect(document.querySelectorAll('[data-fr-direct-text-target="true"]')).toHaveLength(1)
+  })
+
+  it('wraps the direct inline run when manual translation hits direct text after an inline label', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em>Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const label = document.querySelector('#first-label') as HTMLElement
+    const directText = label.nextSibling as Text
+    const target = grabNode(directText) as HTMLElement
+
+    expect(target.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(target.parentElement?.id).toBe('first-event')
+    expect(target.textContent).toContain('Pinging Server West-2 for redundancy check.')
+    expect(target.textContent).not.toContain('Filter Verdict')
+  })
+
+  it('wraps the direct inline run even when a nested child block is long', () => {
+    const nestedDetail = Array.from({ length: 120 }, () => 'Nested detail should not decide the prefix target.').join(' ')
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Compare the repair estimate.
+            <ul>
+              <li id="long-child">${nestedDetail}</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const target = grabNode(document.querySelector('#first-label')) as HTMLElement
+
+    expect(target.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(target.textContent).toContain('Compare the repair estimate.')
+    expect(target.textContent).not.toContain('Nested detail')
+  })
+
+  it('excludes hidden inline siblings from a direct text run wrapper', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <span style="display: none">Hidden prefix should not translate.</span>
+            <span style="visibility: hidden">Invisible prefix should not translate.</span>
+            <span style="visibility: collapse">Collapsed prefix should not translate.</span>
+            <em id="first-label">Log Event:</em> Compare the repair estimate.
+            <ul>
+              <li>Nested child stays separate.</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const target = grabNode(document.querySelector('#first-label')) as HTMLElement
+
+    expect(target.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(target.textContent).toContain('Log Event:')
+    expect(target.textContent).not.toContain('Hidden prefix')
+    expect(target.textContent).not.toContain('Invisible prefix')
+    expect(target.textContent).not.toContain('Collapsed prefix')
+  })
+
+  it('keeps nested list item hits on the nested child target', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em>Log Event:</em> Pinging Server West-2 for redundancy check.
+            <ul>
+              <li id="first-verdict"><em id="verdict-label">Filter Verdict:</em> <strong>Hide.</strong> (Low Stakes, High Technicality).</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const verdictLabel = document.querySelector('#verdict-label') as HTMLElement
+    const target = grabNode(verdictLabel) as HTMLElement
+
+    expect(target.id).toBe('first-verdict')
+    expect(target.getAttribute('data-fr-direct-text-target')).toBeNull()
+  })
+
+  it('wraps direct inline runs in generic mixed definition and quote blocks', () => {
+    document.body.innerHTML = `
+      <article>
+        <dl>
+          <dd id="definition">
+            <strong id="term-label">Term:</strong> explanation before nested detail.
+            <div id="definition-detail">Nested definition detail should stay separate.</div>
+          </dd>
+        </dl>
+        <blockquote id="quote">
+          <em id="quote-label">Quote:</em> direct quote before nested paragraph.
+          <p id="quote-detail">Nested paragraph should stay separate.</p>
+        </blockquote>
+      </article>
+    `
+
+    const definitionTarget = grabNode(document.querySelector('#term-label')) as HTMLElement
+    const quoteTarget = grabNode(document.querySelector('#quote-label')) as HTMLElement
+
+    expect(definitionTarget.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(definitionTarget.parentElement?.id).toBe('definition')
+    expect(definitionTarget.textContent).toContain('Term:')
+    expect(definitionTarget.textContent).not.toContain('Nested definition detail')
+
+    expect(quoteTarget.getAttribute('data-fr-direct-text-target')).toBe('true')
+    expect(quoteTarget.parentElement?.id).toBe('quote')
+    expect(quoteTarget.textContent).toContain('Quote:')
+    expect(quoteTarget.textContent).not.toContain('Nested paragraph')
+  })
+
+  it('keeps flat list items and inline-link paragraphs as element targets', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="flat-item"><em id="flat-label">Memories</em> receives it and scans the image.</li>
+        </ul>
+        <p id="inline-paragraph">Read the <a id="inline-link" href="/guide">complete guide</a> before starting.</p>
+      </article>
+    `
+
+    expect(grabNode(document.querySelector('#flat-label'))).toBe(document.querySelector('#flat-item'))
+    expect(grabNode(document.querySelector('#inline-link'))).toBe(document.querySelector('#inline-paragraph'))
+    expect(document.querySelector('[data-fr-direct-text-target="true"]')).toBeNull()
+  })
+
+  it('unwraps direct text wrappers when only an ancestor target is kept', () => {
+    document.body.innerHTML = `
+      <article>
+        <ul>
+          <li id="first-event">
+            <em id="first-label">Log Event:</em> Compare the repair estimate.
+            <ul>
+              <li>Nested child stays separate.</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    `
+
+    const host = document.querySelector('#first-event')!
+    const wrapper = grabNode(document.querySelector('#first-label')) as HTMLElement
+
+    cleanupDirectTextTargets(new Set([wrapper]), [host])
+
+    expect(document.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBeNull()
+    expect(document.querySelector('#first-label')?.parentElement).toBe(host)
   })
 
   it('keeps DOM utilities independent from translation execution', () => {

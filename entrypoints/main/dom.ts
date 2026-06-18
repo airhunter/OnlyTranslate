@@ -21,6 +21,8 @@ const directSet = new Set([
     'figcaption'                         // 图片说明
 ]);
 
+const directTextRunHostSet = new Set(['li', 'dd', 'blockquote', 'figcaption']);
+
 const inlineOnlyTextBlockSet = new Set([
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'p', 'blockquote', 'figcaption'
@@ -149,6 +151,7 @@ const skipAriaRoles = new Set([
 
 const translationContentClass = 'only-translate-bilingual-content';
 const translatedAttr = 'data-fr-translated';
+export const DIRECT_TEXT_TARGET_ATTR = 'data-fr-direct-text-target';
 const nonTranslatableContentSelector = 'script, style, noscript, template, iframe';
 
 type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
@@ -162,6 +165,8 @@ export interface GrabAllNodeOptions {
     scanBudget?: ScanBudgetKind;
     translateFirstLineText?: (textNode: Text, text: string) => void;
     translateButtonText?: (node: HTMLElement) => void;
+    enableDirectTextRunWrapper?: boolean;
+    directTextRunWrapperCollector?: Set<Element>;
 }
 
 function isElementNode(node: Node | null | undefined): node is Element {
@@ -365,12 +370,224 @@ function getNodeDepth(node: Element): number {
 }
 
 // 返回最终应该翻译的父节点或 false
+const directTextTargetSelector = `[${DIRECT_TEXT_TARGET_ATTR}="true"]`;
+
+interface DirectTextRunContext {
+    host: Element;
+    directChild: ChildNode | null;
+}
+
+function isDirectTextTargetElement(node: Element): boolean {
+    return node.getAttribute(DIRECT_TEXT_TARGET_ATTR) === 'true';
+}
+
+function findClosestDirectTextTarget(node: Node): Element | null {
+    const element = node instanceof Element ? node : node.parentElement;
+    return element?.closest(directTextTargetSelector) ?? null;
+}
+
+function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Element | false {
+    if (options.enableDirectTextRunWrapper === false) return false;
+
+    const existingWrapper = findClosestDirectTextTarget(node);
+    if (existingWrapper) return existingWrapper;
+
+    const context = resolveDirectTextRunContext(node);
+    if (!context) return false;
+
+    const { host, directChild } = context;
+    const hostTag = host.tagName.toLowerCase();
+    if (!directTextRunHostSet.has(hostTag)) return false;
+    if (shouldSkipDirectTextHost(host, hostTag)) return false;
+    if (host.closest(`.${translationContentClass}, [${translatedAttr}="true"]`)) return false;
+    if (hasContentFilterSkipSelfAncestor(host, options)) return false;
+    if (!hasDirectBlockBoundary(host)) return false;
+
+    const run = findDirectTextRun(host, directChild);
+    if (!run) return false;
+
+    const runWrapper = run.find(child => child instanceof Element && isDirectTextTargetElement(child)) as Element | undefined;
+    if (runWrapper) return runWrapper;
+
+    return wrapDirectTextRun(host, run, options);
+}
+
+function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
+    if (node instanceof Element && directTextRunHostSet.has(node.tagName.toLowerCase())) {
+        return { host: node, directChild: null };
+    }
+
+    let current: Node | null = node;
+    while (current?.parentNode) {
+        const parent = current.parentNode as Node | null;
+        if (parent instanceof Element && directTextRunHostSet.has(parent.tagName.toLowerCase())) {
+            return {
+                host: parent,
+                directChild: current as ChildNode
+            };
+        }
+        current = parent;
+    }
+
+    return null;
+}
+
+function hasDirectBlockBoundary(host: Element): boolean {
+    return Array.from(host.children)
+        .some(child => !inlineSet.has(child.tagName.toLowerCase()));
+}
+
+function findDirectTextRun(host: Element, directChild: ChildNode | null): ChildNode[] | null {
+    let selectedRun: ChildNode[] | null = null;
+    let firstReadableRun: ChildNode[] | null = null;
+    let currentRun: ChildNode[] = [];
+
+    const flush = () => {
+        if (!currentRun.length) return;
+
+        const candidate = currentRun;
+        currentRun = [];
+        if (!hasReadableDirectTextRun(candidate)) return;
+
+        if (directChild && candidate.includes(directChild)) {
+            selectedRun = candidate;
+            return;
+        }
+
+        if (!directChild && !firstReadableRun) {
+            firstReadableRun = candidate;
+        }
+    };
+
+    host.childNodes.forEach(child => {
+        if (isDirectTextRunNode(child)) {
+            currentRun.push(child);
+            return;
+        }
+        flush();
+    });
+    flush();
+
+    return selectedRun ?? firstReadableRun;
+}
+
+function isDirectTextRunNode(node: ChildNode): boolean {
+    if (node instanceof Text) return true;
+    if (!(node instanceof Element)) return false;
+
+    const tag = node.tagName.toLowerCase();
+    return inlineSet.has(tag) && isSafeInlineRunElement(node, tag);
+}
+
+function isSafeInlineRunElement(node: Element, tag: string): boolean {
+    if (skipSet.has(tag)) return false;
+    if (node.classList?.contains(translationContentClass)) return false;
+    if (node.classList?.contains('notranslate')) return false;
+    if (node.getAttribute?.('translate') === 'no') return false;
+    if (node.hasAttribute('hidden')) return false;
+    if (node.getAttribute('aria-hidden') === 'true') return false;
+    if (node instanceof HTMLElement && node.isContentEditable) return false;
+    if (skipAriaRoles.has(node.getAttribute('role') ?? '')) return false;
+
+    try {
+        const style = window.getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+    } catch (_) {}
+
+    return true;
+}
+
+function shouldSkipDirectTextHost(node: Element, tag: string): boolean {
+    if (skipSet.has(tag)) return true;
+    if (node.classList?.contains('notranslate')) return true;
+    if (node.getAttribute?.('translate') === 'no') return true;
+    if (node.hasAttribute('hidden')) return true;
+    if (node.getAttribute('aria-hidden') === 'true') return true;
+    if (node instanceof HTMLElement && node.isContentEditable) return true;
+    if (skipAriaRoles.has(node.getAttribute('role') ?? '')) return true;
+
+    try {
+        if (window.getComputedStyle(node).display === 'none') return true;
+    } catch (_) {}
+
+    return false;
+}
+
+function hasReadableDirectTextRun(run: ChildNode[]): boolean {
+    return getDirectTextRunText(run).trim().length >= 3;
+}
+
+function getDirectTextRunText(run: ChildNode[]): string {
+    return run.map(child => getTranslatableText(child)).join('');
+}
+
+function wrapDirectTextRun(host: Element, run: ChildNode[], options: GrabAllNodeOptions): Element | false {
+    const first = run[0];
+    if (!first) return false;
+
+    const wrapper = host.ownerDocument.createElement('span');
+    wrapper.setAttribute(DIRECT_TEXT_TARGET_ATTR, 'true');
+    host.insertBefore(wrapper, first);
+    run.forEach(child => wrapper.appendChild(child));
+    options.directTextRunWrapperCollector?.add(wrapper);
+
+    if (shouldSkipNode(wrapper, wrapper.tagName.toLowerCase())) {
+        unwrapDirectTextTarget(wrapper);
+        options.directTextRunWrapperCollector?.delete(wrapper);
+        return false;
+    }
+
+    return wrapper;
+}
+
+export function cleanupDirectTextTargets(wrappers: Iterable<Element>, keep: Iterable<Element> = []): void {
+    const keepers = Array.from(new Set(keep));
+    const candidates = Array.from(new Set(wrappers))
+        .sort((left, right) => getNodeDepth(right) - getNodeDepth(left) || compareDocumentOrder(left, right));
+
+    for (const wrapper of candidates) {
+        if (!isDirectTextTargetElement(wrapper)) continue;
+        if (!wrapper.parentNode) continue;
+        if (wrapper.closest(`[${translatedAttr}="true"]`)) continue;
+        if (shouldKeepDirectTextTarget(wrapper, keepers)) continue;
+
+        unwrapDirectTextTarget(wrapper);
+    }
+}
+
+export function unwrapDirectTextTarget(wrapper: Element): void {
+    const parent = wrapper.parentNode;
+    if (!parent) {
+        wrapper.remove();
+        return;
+    }
+
+    while (wrapper.firstChild) {
+        parent.insertBefore(wrapper.firstChild, wrapper);
+    }
+    wrapper.remove();
+}
+
+function shouldKeepDirectTextTarget(wrapper: Element, keepers: Element[]): boolean {
+    return keepers.some(keeper =>
+        keeper === wrapper ||
+        wrapper.contains(keeper)
+    );
+}
+
 export function grabNode(node: Node | null | undefined, options: GrabAllNodeOptions = {}): Element | false {
     // 空节点检查
     if (!node) return false;
 
+    if (node instanceof Element && isDirectTextTargetElement(node)) {
+        return node;
+    }
+
     // 对于 Text 节点，尝试找到其可翻译的父节点
     if (node instanceof Text) {
+        const directTextTarget = findDirectTextRunTarget(node, options);
+        if (directTextTarget) return directTextTarget;
+
         const parentOrSelf = findTranslatableParent(node, options);
         if (parentOrSelf) {
             return parentOrSelf;
@@ -391,6 +608,9 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
 
     const embeddedReadableTarget = findKnownEmbeddedReadableTarget(node, curTag, options);
     if (embeddedReadableTarget) return embeddedReadableTarget;
+
+    const directTextTarget = findDirectTextRunTarget(node, options);
+    if (directTextTarget) return directTextTarget;
 
     // 2. 特殊适配：根据域名进行特殊处理
     const domainHandler = selectCompatFn[getMainDomain(location.href.split('?')[0])];
@@ -467,7 +687,10 @@ function findKnownEmbeddedReadableTarget(node: Element, tag: string, options: Gr
         .find(child => child.matches('blockquote.twitter-tweet'));
     if (!blockquote || !blockquote.querySelector('p')) return false;
 
-    return grabNode(blockquote, options);
+    return grabNode(blockquote, {
+        ...options,
+        enableDirectTextRunWrapper: false
+    });
 }
 
 // 检查文本是否为 JSON 格式数据（不应被翻译）
