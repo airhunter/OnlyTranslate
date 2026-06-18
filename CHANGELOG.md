@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.7](https://github.com/airhunter/OnlyTranslate/compare/v0.5.6...v0.5.7) (2026-06-18)
+
+
+### Bug Fixes
+
+* **content:** 修复 Astro 推文嵌入识文命中 ([e83c287](https://github.com/airhunter/OnlyTranslate/commit/e83c287ca464d929c209144daaf94f6c796639ba))
+* **content:** 修复嵌套块直接文本翻译目标 ([58a1b6f](https://github.com/airhunter/OnlyTranslate/commit/58a1b6f91fb1beaeddb008ddf4101f5fe4a69bb0))
+
 ## [0.5.6](https://github.com/airhunter/OnlyTranslate/compare/v0.5.5...v0.5.6) (2026-06-15)
 
 
