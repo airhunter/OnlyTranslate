@@ -8,6 +8,7 @@ import { autoTranslateEnglishPage, restoreOriginalContent } from '@/entrypoints/
 
 type FloatingBallInstance = ComponentPublicInstance & {
   isTranslating?: boolean;
+  toggleTranslationFromExternal?: () => void;
   element?: HTMLElement;
   $el: HTMLElement;
 }
@@ -47,13 +48,22 @@ export function mountFloatingBall(position?: 'left' | 'right') {
       browser.runtime.sendMessage({ type: 'openOptionsPage' });
     },
     // 添加位置变化事件监听
-    onPositionChanged: (newPosition: 'left' | 'right') => {
+    onPositionChanged: (newPosition: 'left' | 'right', offsetY: number | null) => {
       // 保存位置到配置
       config.floatingBallPosition = newPosition;
+      config.floatingBallOffsetY = offsetY;
       
       // 保存配置到存储
       saveConfig();
 
+    },
+    onScopeChanged: (scope: 'smart' | 'full') => {
+      config.translationScope = scope;
+      saveConfig();
+    },
+    onServiceChanged: (service: string) => {
+      config.service = service;
+      saveConfig();
     },
     // 添加翻译状态变化事件监听
     onTranslationToggle: (isTranslating: boolean) => {
@@ -75,7 +85,8 @@ export function mountFloatingBall(position?: 'left' | 'right') {
         // 恢复后确保状态同步
         floatingBallInstance?.$el.classList.remove('is-translating');
       }
-    }
+    },
+    offsetY: config.floatingBallOffsetY ?? null
   });
 
   // 挂载应用
@@ -93,6 +104,11 @@ export function mountFloatingBall(position?: 'left' | 'right') {
  */
 export function toggleFloatingBallTranslation() {
   if (!floatingBallInstance) return;
+
+  if (floatingBallInstance.toggleTranslationFromExternal) {
+    floatingBallInstance.toggleTranslationFromExternal();
+    return;
+  }
 
   const currentState = Boolean(floatingBallInstance.isTranslating);
   const newState = !currentState;

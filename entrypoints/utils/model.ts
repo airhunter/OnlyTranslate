@@ -49,6 +49,7 @@ export class Config {
     useCache: boolean; // 是否使用缓存
     disableFloatingBall: boolean; // 是否禁用悬浮球
     floatingBallPosition: 'left' | 'right'; // 悬浮球位置
+    floatingBallOffsetY: number | null; // 悬浮球距离页面顶部的位置，未拖动时为 null
     floatingBallHotkey: string; // 悬浮球快捷键
     customFloatingBallHotkey: string; // 自定义悬浮球快捷键
     customHotkey: string; // 自定义鼠标悬浮快捷键
@@ -100,6 +101,7 @@ export class Config {
         this.useCache = true; // 默认开启缓存
         this.disableFloatingBall = false; // 默认启用悬浮球
         this.floatingBallPosition = 'right'; // 默认在右侧
+        this.floatingBallOffsetY = null; // 默认使用右下角位置
         this.floatingBallHotkey = 'Alt+T'; // 默认快捷键为 Alt+T
         this.customFloatingBallHotkey = ''; // 自定义快捷键为空
         this.customHotkey = ''; // 自定义鼠标悬浮快捷键为空

@@ -37,6 +37,7 @@ vi.mock('../../entrypoints/utils/model', () => ({
     useCache = true
     disableFloatingBall = false
     floatingBallPosition = 'right'
+    floatingBallOffsetY = null
     floatingBallHotkey = 'Alt+T'
     customFloatingBallHotkey = ''
     customHotkey = ''

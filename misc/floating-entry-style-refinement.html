@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OnlyTranslate Floating Toolbar Structure Directions</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #dce4ef;
+      --line-strong: #c7d2e2;
+      --text: #172033;
+      --muted: #657285;
+      --sky: #5BB5F5;
+      --sky-deep: #258ed8;
+      --sky-ink: #126da8;
+      --sky-soft: #edf8ff;
+      --sky-soft-2: #dff3ff;
+      --sky-line: #b9e3fb;
+      --done: #20a77a;
+      --done-deep: #0f7c5a;
+      --done-soft: #eefaf5;
+      --done-line: #b8ead7;
+      --amber: #a96b00;
+      --amber-soft: #fff7e8;
+      --shadow-heavy: 0 18px 44px rgba(23, 32, 51, 0.16);
+      --shadow-mid: 0 12px 30px rgba(23, 32, 51, 0.11);
+      --shadow-soft: 0 8px 22px rgba(23, 32, 51, 0.08);
+      font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 30px 22px 48px;
+    }
+
+    .page-header {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #3d495b;
+      font-size: 12px;
+    }
+
+    .swatch::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--swatch);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .panel {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      display: grid;
+      gap: 3px;
+    }
+
+    .panel-title h2 {
+      font-size: 17px;
+      font-weight: 730;
+      letter-spacing: 0;
+    }
+
+    .panel-title p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .browser {
+      position: relative;
+      min-height: 334px;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #eef2f7;
+    }
+
+    .browser-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #f9fbff;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c6cfdd;
+    }
+
+    .url {
+      flex: 1;
+      height: 18px;
+      border-radius: 999px;
+      background: #edf1f7;
+    }
+
+    .mock-page {
+      position: relative;
+      height: 300px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .mock-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 42px;
+      padding: 0 18px;
+      border-bottom: 1px solid #edf0f5;
+      color: #5c6878;
+      font-size: 12px;
+    }
+
+    .mock-layout {
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr) 92px;
+      gap: 18px;
+      height: calc(100% - 42px);
+      padding: 18px;
+    }
+
+    .side-rail,
+    .toc,
+    .article {
+      display: grid;
+      align-content: start;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .rail-line,
+    .article-line,
+    .article-subtitle {
+      border-radius: 999px;
+      background: #dce3ed;
+    }
+
+    .rail-line {
+      height: 9px;
+      background: #e6ebf2;
+    }
+
+    .article-title {
+      width: 82%;
+      height: 18px;
+      border-radius: 5px;
+      background: #253044;
+    }
+
+    .article-subtitle {
+      width: 70%;
+      height: 10px;
+      background: #b5c1d2;
+    }
+
+    .article-line {
+      height: 8px;
+    }
+
+    .article-line:nth-child(4) {
+      width: 94%;
+    }
+
+    .article-line:nth-child(5) {
+      width: 88%;
+    }
+
+    .article-line:nth-child(6) {
+      width: 96%;
+    }
+
+    .article-line:nth-child(7) {
+      width: 68%;
+    }
+
+    .callout {
+      display: grid;
+      gap: 7px;
+      margin-top: 4px;
+      padding: 10px;
+      border: 1px solid #d6e1ef;
+      border-radius: 8px;
+      background: #f7fafc;
+    }
+
+    .floating-dock {
+      position: absolute;
+      top: 126px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 4;
+    }
+
+    .entry {
+      position: relative;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      border: 1px solid transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 760;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .entry:active,
+    .toolbar-button:active,
+    .scope-toggle:active,
+    .service-trigger:active {
+      transform: scale(0.97);
+    }
+
+    .toolbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      max-width: min(540px, calc(100vw - 120px));
+      border: 1px solid transparent;
+      border-radius: 999px;
+      opacity: 1;
+    }
+
+    .toolbar::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -5px;
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      display: none;
+    }
+
+    .toolbar-button,
+    .scope-toggle,
+    .service-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      border-radius: 8px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .toolbar-button {
+      padding: 0 11px;
+      border: 1px solid transparent;
+      background: #fff;
+    }
+
+    .scope-toggle {
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid transparent;
+    }
+
+    .scope-toggle span {
+      display: grid;
+      place-items: center;
+      min-width: 40px;
+      height: 24px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .service-wrap {
+      position: relative;
+      display: inline-flex;
+      min-width: 0;
+    }
+
+    .service-trigger {
+      max-width: 130px;
+      padding: 0 10px;
+      overflow: hidden;
+      border: 1px solid transparent;
+      text-overflow: ellipsis;
+      background: #fff;
+    }
+
+    .service-trigger::after {
+      content: "";
+      width: 5px;
+      height: 5px;
+      margin-left: 6px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: translateY(-1px) rotate(45deg);
+      opacity: 0.7;
+    }
+
+    .service-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      display: grid;
+      gap: 4px;
+      width: 150px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .service-menu button {
+      min-height: 29px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 6px;
+      color: #253044;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .service-menu button:hover {
+      background: #f1f5fb;
+    }
+
+    .service-menu .active {
+      color: var(--sky-ink);
+      background: var(--sky-soft);
+      font-weight: 700;
+    }
+
+    .demo-detached .entry,
+    .demo-rail .entry,
+    .demo-drawer .entry,
+    .demo-stack .entry {
+      color: #fff;
+      background: var(--sky);
+      box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
+    }
+
+    .demo-detached[data-translated="true"] .entry::after,
+    .demo-rail[data-translated="true"] .entry::after,
+    .demo-drawer[data-translated="true"] .entry::after,
+    .demo-stack[data-translated="true"] .entry::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 13px;
+      height: 13px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: var(--done);
+    }
+
+    .demo-detached .toolbar,
+    .demo-rail .toolbar,
+    .demo-drawer .toolbar,
+    .demo-stack .toolbar {
+      padding: 8px;
+      border-color: var(--line);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: var(--shadow-heavy);
+    }
+
+    .demo-detached .toolbar-button,
+    .demo-rail .toolbar-button,
+    .demo-drawer .toolbar-button,
+    .demo-stack .toolbar-button {
+      color: #fff;
+      border-color: var(--sky);
+      background: var(--sky);
+      font-weight: 680;
+    }
+
+    .demo-detached[data-translated="true"] [data-translate],
+    .demo-rail[data-translated="true"] [data-translate],
+    .demo-drawer[data-translated="true"] [data-translate],
+    .demo-stack[data-translated="true"] [data-translate] {
+      border-color: var(--done);
+      background: var(--done);
+    }
+
+    .demo-detached .scope-toggle,
+    .demo-rail .scope-toggle,
+    .demo-drawer .scope-toggle,
+    .demo-stack .scope-toggle {
+      background: #eef2f7;
+      border-color: #d8e0ec;
+    }
+
+    .demo-detached .scope-toggle span,
+    .demo-rail .scope-toggle span,
+    .demo-drawer .scope-toggle span,
+    .demo-stack .scope-toggle span {
+      color: #647084;
+    }
+
+    .demo-detached[data-scope="smart"] .smart,
+    .demo-detached[data-scope="full"] .full,
+    .demo-rail[data-scope="smart"] .smart,
+    .demo-rail[data-scope="full"] .full,
+    .demo-drawer[data-scope="smart"] .smart,
+    .demo-drawer[data-scope="full"] .full,
+    .demo-stack[data-scope="smart"] .smart,
+    .demo-stack[data-scope="full"] .full {
+      color: var(--sky-ink);
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(23, 32, 51, 0.12);
+      font-weight: 700;
+    }
+
+    .demo-detached .service-trigger,
+    .demo-rail .service-trigger,
+    .demo-drawer .service-trigger,
+    .demo-stack .service-trigger {
+      color: #4a5567;
+      border-color: var(--line);
+      background: #f8fafc;
+    }
+
+    .demo-rail {
+      gap: 18px;
+    }
+
+    .demo-rail::before {
+      content: "";
+      position: absolute;
+      right: 42px;
+      top: 50%;
+      width: 18px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(91, 181, 245, 0.18), rgba(91, 181, 245, 0.42));
+      transform: translateY(-50%);
+    }
+
+    .demo-drawer {
+      right: 0;
+      gap: 0;
+    }
+
+    .demo-drawer .toolbar {
+      padding-right: 15px;
+      border-right: 0;
+      border-radius: 999px 0 0 999px;
+      box-shadow: 0 16px 40px rgba(23, 32, 51, 0.15);
+    }
+
+    .demo-drawer .entry {
+      width: 46px;
+      height: 46px;
+      border-radius: 999px 0 0 999px;
+      box-shadow: 0 14px 32px rgba(91, 181, 245, 0.32);
+    }
+
+    .demo-stack {
+      top: 78px;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .demo-stack .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      width: 134px;
+      border-radius: 16px;
+    }
+
+    .demo-stack .toolbar-button,
+    .demo-stack .service-trigger {
+      width: 100%;
+    }
+
+    .demo-stack .service-menu {
+      right: calc(100% + 8px);
+      top: 0;
+    }
+
+    .demo-stack .scope-toggle {
+      width: 100%;
+    }
+
+    .demo-stack .scope-toggle span {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .demo-stack .entry {
+      width: 40px;
+      height: 40px;
+    }
+
+    .demo-detached .more,
+    .demo-rail .more,
+    .demo-drawer .more,
+    .demo-stack .more {
+      color: #344154;
+      border-color: #dbe3ee;
+      background: #f8fafc;
+    }
+
+    .mock-page.translated .article-title {
+      background: #226c50;
+    }
+
+    .mock-page.translated .article-line,
+    .mock-page.translated .article-subtitle,
+    .mock-page.translated .callout .article-line {
+      background: #d9eadf;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 18px 0;
+    }
+
+    .control {
+      height: 31px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: #253044;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .control:hover {
+      border-color: var(--sky-line);
+      background: var(--sky-soft);
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .note {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .note h3 {
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .note p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1060px) {
+      .comparison-grid,
+      .notes {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        padding: 20px 12px 36px;
+      }
+
+      .mock-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .side-rail,
+      .toc {
+        display: none;
+      }
+
+      .service-trigger {
+        max-width: 90px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>强对比工具条结构方案</h1>
+      <p class="lead">这版只基于“当前强对比”的按钮风格继续发散：天蓝入口、实心翻译按钮、明确阴影都保留；重点替换掉对话气泡式三角尾巴，看圆球和工具条到底应该怎样相处。</p>
+      <div class="palette">
+        <span class="swatch" style="--swatch: var(--sky)">图标天蓝 #5BB5F5</span>
+        <span class="swatch" style="--swatch: var(--done)">完成青绿 #20A77A</span>
+        <span class="swatch" style="--swatch: var(--amber)">结构对比：无三角尾巴</span>
+      </div>
+    </header>
+
+    <section class="comparison-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <h2>1A. 分离胶囊</h2>
+            <p>圆球和工具条完全分开，靠同一高度、间距和阴影建立关系，看起来最不像气泡。</p>
+          </div>
+          <span class="tag">推荐</span>
+        </div>
+        <div class="browser" data-demo>
+          <div class="browser-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+          <div class="mock-page">
+            <div class="mock-nav"><span>OnlyTranslate Demo</span><span>Docs · Blog · Account</span></div>
+            <div class="mock-layout">
+              <aside class="side-rail"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+              <div class="article">
+                <span class="article-title"></span><span class="article-subtitle"></span>
+                <span class="article-line"></span><span class="article-line"></span><span class="article-line"></span><span class="article-line"></span>
+                <div class="callout"><span class="article-line"></span><span class="article-line"></span></div>
+              </div>
+              <aside class="toc"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+            </div>
+            <div class="floating-dock demo-detached" data-floating>
+              <div class="toolbar">
+                <button class="toolbar-button" data-translate>翻译</button>
+                <button class="scope-toggle" data-scope><span class="smart">识文</span><span class="full">全页</span></button>
+                <span class="service-wrap">
+                  <button class="service-trigger" data-service>DeepSeek</button>
+                  <span class="service-menu" data-menu hidden><button class="active" data-service-choice="DeepSeek">DeepSeek</button><button data-service-choice="OpenAI">OpenAI</button><button data-service-choice="Google">Google</button></span>
+                </span>
+                <button class="toolbar-button more">更多</button>
+              </div>
+              <button class="entry">译</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <h2>1B. 磁吸短轨</h2>
+            <p>中间只放一段短圆轨，表达“从圆球展开”，但不使用气泡尾巴。</p>
+          </div>
+          <span class="tag">关系最清楚</span>
+        </div>
+        <div class="browser" data-demo>
+          <div class="browser-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+          <div class="mock-page">
+            <div class="mock-nav"><span>OnlyTranslate Demo</span><span>Docs · Blog · Account</span></div>
+            <div class="mock-layout">
+              <aside class="side-rail"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+              <div class="article">
+                <span class="article-title"></span><span class="article-subtitle"></span>
+                <span class="article-line"></span><span class="article-line"></span><span class="article-line"></span><span class="article-line"></span>
+                <div class="callout"><span class="article-line"></span><span class="article-line"></span></div>
+              </div>
+              <aside class="toc"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+            </div>
+            <div class="floating-dock demo-rail" data-floating>
+              <div class="toolbar">
+                <button class="toolbar-button" data-translate>翻译</button>
+                <button class="scope-toggle" data-scope><span class="smart">识文</span><span class="full">全页</span></button>
+                <span class="service-wrap">
+                  <button class="service-trigger" data-service>DeepSeek</button>
+                  <span class="service-menu" data-menu hidden><button class="active" data-service-choice="DeepSeek">DeepSeek</button><button data-service-choice="OpenAI">OpenAI</button><button data-service-choice="Google">Google</button></span>
+                </span>
+                <button class="toolbar-button more">更多</button>
+              </div>
+              <button class="entry">译</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <h2>1C. 边缘抽屉</h2>
+            <p>工具条像从页面边缘抽出来，圆球成为右侧把手，整体更贴边、更有扩展感。</p>
+          </div>
+          <span class="tag">贴边感</span>
+        </div>
+        <div class="browser" data-demo>
+          <div class="browser-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+          <div class="mock-page">
+            <div class="mock-nav"><span>OnlyTranslate Demo</span><span>Docs · Blog · Account</span></div>
+            <div class="mock-layout">
+              <aside class="side-rail"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+              <div class="article">
+                <span class="article-title"></span><span class="article-subtitle"></span>
+                <span class="article-line"></span><span class="article-line"></span><span class="article-line"></span><span class="article-line"></span>
+                <div class="callout"><span class="article-line"></span><span class="article-line"></span></div>
+              </div>
+              <aside class="toc"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+            </div>
+            <div class="floating-dock demo-drawer" data-floating>
+              <div class="toolbar">
+                <button class="toolbar-button" data-translate>翻译</button>
+                <button class="scope-toggle" data-scope><span class="smart">识文</span><span class="full">全页</span></button>
+                <span class="service-wrap">
+                  <button class="service-trigger" data-service>DeepSeek</button>
+                  <span class="service-menu" data-menu hidden><button class="active" data-service-choice="DeepSeek">DeepSeek</button><button data-service-choice="OpenAI">OpenAI</button><button data-service-choice="Google">Google</button></span>
+                </span>
+                <button class="toolbar-button more">更多</button>
+              </div>
+              <button class="entry">译</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <h2>1D. 竖向紧凑</h2>
+            <p>工具条向上展开，避免横向占太宽；小屏和右侧内容密集页面会更友好。</p>
+          </div>
+          <span class="tag">小屏候选</span>
+        </div>
+        <div class="browser" data-demo>
+          <div class="browser-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url"></span></div>
+          <div class="mock-page">
+            <div class="mock-nav"><span>OnlyTranslate Demo</span><span>Docs · Blog · Account</span></div>
+            <div class="mock-layout">
+              <aside class="side-rail"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+              <div class="article">
+                <span class="article-title"></span><span class="article-subtitle"></span>
+                <span class="article-line"></span><span class="article-line"></span><span class="article-line"></span><span class="article-line"></span>
+                <div class="callout"><span class="article-line"></span><span class="article-line"></span></div>
+              </div>
+              <aside class="toc"><span class="rail-line"></span><span class="rail-line"></span><span class="rail-line"></span></aside>
+            </div>
+            <div class="floating-dock demo-stack" data-floating>
+              <div class="toolbar">
+                <button class="toolbar-button" data-translate>翻译</button>
+                <button class="scope-toggle" data-scope><span class="smart">识文</span><span class="full">全页</span></button>
+                <span class="service-wrap">
+                  <button class="service-trigger" data-service>DeepSeek</button>
+                  <span class="service-menu" data-menu hidden><button class="active" data-service-choice="DeepSeek">DeepSeek</button><button data-service-choice="OpenAI">OpenAI</button><button data-service-choice="Google">Google</button></span>
+                </span>
+                <button class="toolbar-button more">更多</button>
+              </div>
+              <button class="entry">译</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="controls">
+      <button class="control" data-action="translate">切换翻译/还原状态</button>
+      <button class="control" data-action="scope">切换识文/全页</button>
+      <button class="control" data-action="menu">打开/关闭服务菜单</button>
+    </div>
+
+    <section class="notes">
+      <div class="note"><h3>我更偏向 1A</h3><p>分离胶囊最干净，不会让用户联想到聊天气泡，也最容易落到真实扩展里。</p></div>
+      <div class="note"><h3>1B 更有因果感</h3><p>短轨能说明工具条由圆球召出，但要控制得很轻，否则又会显得多余。</p></div>
+      <div class="note"><h3>1C 更像抽屉</h3><p>贴边感强，适合“入口在页面边缘”的逻辑，但视觉存在感也最强。</p></div>
+      <div class="note"><h3>1D 适合窄屏</h3><p>竖向紧凑能省横向空间，但鼠标连续操作效率不如横向工具条。</p></div>
+    </section>
+  </main>
+
+  <script>
+    const demos = Array.from(document.querySelectorAll('[data-demo]'));
+    let translated = false;
+    let scope = 'smart';
+    let service = 'DeepSeek';
+    let menuOpen = false;
+
+    const render = () => {
+      demos.forEach((demo) => {
+        const floating = demo.querySelector('[data-floating]');
+        const page = demo.querySelector('.mock-page');
+        const translate = demo.querySelector('[data-translate]');
+        const scopeButton = demo.querySelector('[data-scope]');
+        const serviceButton = demo.querySelector('[data-service]');
+        const menu = demo.querySelector('[data-menu]');
+
+        floating.dataset.translated = String(translated);
+        floating.dataset.scope = scope;
+        page.classList.toggle('translated', translated);
+        translate.textContent = translated ? '还原' : '翻译';
+        scopeButton.dataset.scope = scope;
+        serviceButton.firstChild.textContent = service;
+        menu.hidden = !menuOpen;
+
+        demo.querySelectorAll('[data-service-choice]').forEach((button) => {
+          button.classList.toggle('active', button.dataset.serviceChoice === service);
+        });
+      });
+    };
+
+    document.querySelector('[data-action="translate"]').addEventListener('click', () => {
+      translated = !translated;
+      render();
+    });
+
+    document.querySelector('[data-action="scope"]').addEventListener('click', () => {
+      scope = scope === 'smart' ? 'full' : 'smart';
+      render();
+    });
+
+    document.querySelector('[data-action="menu"]').addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      render();
+    });
+
+    document.querySelectorAll('[data-service]').forEach((button) => {
+      button.addEventListener('click', () => {
+        menuOpen = !menuOpen;
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-service-choice]').forEach((button) => {
+      button.addEventListener('click', () => {
+        service = button.dataset.serviceChoice;
+        menuOpen = false;
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-scope]').forEach((button) => {
+      button.addEventListener('click', () => {
+        scope = scope === 'smart' ? 'full' : 'smart';
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-translate]').forEach((button) => {
+      button.addEventListener('click', () => {
+        translated = !translated;
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,45 +1,105 @@
 <template>
-  <div class="fr-floating-ball" :class="{
-    'floating-ball-expanded': isExpanded,
-    'dragging': isDragging,
-    'is-translating': isTranslating,
-    'animating': isAnimating && config.animations,
-    'static-mode': !config.animations
-  }" :data-position="currentDisplayPosition" @mouseenter="expandBall" @mouseleave="collapseBall" :style="positionStyle"
-       @mousedown="startDrag" @click="toggleTranslation" ref="floatingBall">
-    <div class="floating-ball-icon">
-      <div class="fr-icon-container">
-        <svg v-if="iconType === 'simple' && !isTranslating" class="translation-icon" viewBox="0 0 24 24" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M12.87 15.07L10.33 12.56L10.36 12.53C12.1 10.59 13.34 8.36 14.07 6H17V4H10V2H8V4H1V6H12.17C11.5 7.92 10.44 9.75 9 11.35C8.07 10.32 7.3 9.19 6.69 8H4.69C5.42 9.63 6.42 11.17 7.67 12.56L2.58 17.58L4 19L9 14L12.11 17.11L12.87 15.07Z"
-            fill="#333" />
-        </svg>
-        <svg v-if="iconType === 'simple' && isTranslating" class="translation-icon" viewBox="0 0 24 24" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M12.87 15.07L10.33 12.56L10.36 12.53C12.1 10.59 13.34 8.36 14.07 6H17V4H10V2H8V4H1V6H12.17C11.5 7.92 10.44 9.75 9 11.35C8.07 10.32 7.3 9.19 6.69 8H4.69C5.42 9.63 6.42 11.17 7.67 12.56L2.58 17.58L4 19L9 14L12.11 17.11L12.87 15.07Z"
-            fill="#4caf50" />
-        </svg>
-        <svg v-if="iconType === 'morden'" class="imt-fb-logo-img-big-bg"
-          :class="{ 'imt-float-ball-translated': isTranslating }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path fill="none" d="M0 0h24v24H0z"></path>
-          <path
-            d="M5 15v2a2 2 0 0 0 1.85 1.995L7 19h3v2H7a4 4 0 0 1-4-4v-2h2zm13-5l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16 10h2zm-1 2.885L15.753 16h2.492L17 12.885zM8 2v2h4v7H8v3H6v-3H2V4h4V2h2zm9 1a4 4 0 0 1 4 4v2h-2V7a2 2 0 0 0-2-2h-3V3h3zM6 6H4v3h2V6zm4 0H8v3h2V6z"
-            fill="rgba(255,255,255,1)"></path>
-        </svg>
+  <div
+    ref="floatingBall"
+    class="fr-floating-ball"
+    :class="{
+      'dragging': isDragging,
+      'is-translating': isTranslating,
+      'animating': isAnimating && config.animations,
+      'static-mode': !config.animations
+    }"
+    :data-position="currentDisplayPosition"
+    :style="positionStyle"
+  >
+    <div
+      class="floating-toolbar floating-toolbar--detached"
+      :class="{ 'floating-toolbar--open': isToolbarOpen }"
+      data-testid="floating-toolbar"
+      @click.stop
+      @mousedown.stop
+    >
+      <button
+        type="button"
+        class="toolbar-button toolbar-button--primary"
+        :class="{ 'toolbar-button--restore': isTranslating }"
+        data-testid="floating-toolbar-translate"
+        @click="toggleTranslation"
+      >
+        {{ isTranslating ? t('runtime.floatingToolbar.restore') : t('runtime.floatingToolbar.translate') }}
+      </button>
 
-        <div class="check-mark" v-if="isTranslating"></div>
-        
-        <!-- 添加快捷键提示 -->
-        <div class="shortcut-tooltip" v-if="showShortcutTooltip">
-          {{ shortcutTip }}
-        </div>
-        
-        <!-- 波纹效果容器 -->
-        <div class="ripple-container" ref="rippleContainer"></div>
-      </div>
+      <button
+        type="button"
+        class="scope-toggle"
+        :data-scope="activeScope"
+        data-testid="floating-toolbar-scope"
+        @click="toggleScope"
+      >
+        <span class="scope-toggle-option scope-toggle-option--smart">{{ t('popup.smartScope') }}</span>
+        <span class="scope-toggle-option scope-toggle-option--full">{{ t('popup.fullScope') }}</span>
+      </button>
+
+      <span class="service-menu-wrap" :class="{ 'service-menu-wrap--open': isServiceMenuOpen }">
+        <button
+          type="button"
+          class="service-pill service-pill--button"
+          data-testid="floating-toolbar-service"
+          :title="t('popup.service')"
+          @click.stop="toggleServiceMenu"
+        >
+          {{ activeServiceLabel }}
+        </button>
+        <span
+          class="service-menu"
+          :class="{ 'service-menu--open': isServiceMenuOpen }"
+          data-testid="floating-toolbar-service-menu"
+        >
+          <button
+            v-for="service in availableServiceOptions"
+            :key="service.value"
+            type="button"
+            class="service-menu-item"
+            :class="{ 'service-menu-item--active': service.value === activeService }"
+            :data-testid="`floating-toolbar-service-${service.value}`"
+            @click.stop="selectService(service.value)"
+          >
+            {{ service.label }}
+          </button>
+        </span>
+      </span>
+
+      <button
+        type="button"
+        class="toolbar-button toolbar-button--secondary"
+        data-testid="floating-toolbar-more"
+        @click="openMore"
+      >
+        {{ t('runtime.floatingToolbar.more') }}
+      </button>
     </div>
+
+    <button
+      type="button"
+      class="floating-ball-trigger"
+      data-testid="floating-ball-trigger"
+      :aria-expanded="isToolbarOpen"
+      :aria-label="t('runtime.floatingToolbar.open')"
+      @mousedown="startDrag"
+      @click.stop="toggleToolbar"
+    >
+      <svg class="floating-ball-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="none" d="M0 0h24v24H0z"></path>
+        <path
+          d="M5 15v2a2 2 0 0 0 1.85 1.995L7 19h3v2H7a4 4 0 0 1-4-4v-2h2zm13-5l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16 10h2zm-1 2.885L15.753 16h2.492L17 12.885zM8 2v2h4v7H8v3H6v-3H2V4h4V2h2zm9 1a4 4 0 0 1 4 4v2h-2V7a2 2 0 0 0-2-2h-3V3h3zM6 6H4v3h2V6zm4 0H8v3h2V6z"
+          fill="currentColor"
+        ></path>
+      </svg>
+      <span v-if="isTranslating" class="check-mark" aria-hidden="true"></span>
+      <span v-if="showShortcutTooltip" class="shortcut-tooltip">
+        {{ shortcutTip }}
+      </span>
+      <span ref="rippleContainer" class="ripple-container" aria-hidden="true"></span>
+    </button>
   </div>
 </template>
 
@@ -47,13 +107,22 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import type { PropType, CSSProperties } from 'vue';
 import { config } from '@/entrypoints/utils/config';
+import { isServiceConfigured, options } from '@/entrypoints/utils/option';
 import { t } from '@/entrypoints/utils/i18n';
+
+type FloatingBallPosition = 'left' | 'right';
+type TranslationScope = 'smart' | 'full';
+type ServiceOption = { value: string; label: string };
 
 const props = defineProps({
   position: {
-    type: String as PropType<'left' | 'right'>,
+    type: String as PropType<FloatingBallPosition>,
     default: 'right',
     validator: (value: string) => ['left', 'right'].includes(value)
+  },
+  offsetY: {
+    type: Number as PropType<number | null>,
+    default: null
   },
   showMenu: {
     type: Boolean,
@@ -68,92 +137,138 @@ const props = defineProps({
     default: () => { }
   },
   onPositionChanged: {
-    type: Function as PropType<(newPosition: 'left' | 'right') => void>,
+    type: Function as PropType<(newPosition: FloatingBallPosition, offsetY: number | null) => void>,
     default: () => { }
   },
   onTranslationToggle: {
     type: Function as PropType<(isTranslating: boolean) => void>,
     default: () => { }
   },
-  iconType: {
-    type: String as PropType<'simple' | 'morden'>,
-    default: 'morden',
-    validator: (value: string) => ['simple', 'morden'].includes(value)
+  onScopeChanged: {
+    type: Function as PropType<(scope: TranslationScope) => void>,
+    default: () => { }
   },
-  showShortcutTooltip: {
-    type: Boolean,
-    default: false
-  },
-  shortcutTip: {
-    type: String,
-    default: ''
+  onServiceChanged: {
+    type: Function as PropType<(service: string) => void>,
+    default: () => { }
   }
 });
 
-const isExpanded = ref(false);
-const positionStyle = ref<CSSProperties>({});
-const isDragging = ref(false);
-const startX = ref(0);
-const startY = ref(0);
-const draggedY = ref<number | null>(null);
-const internalPosition = ref<'left' | 'right' | null>(null);
-const isTranslating = ref(false);
-const dragStartTime = ref(0);
 const floatingBall = ref<HTMLElement | null>(null);
 const rippleContainer = ref<HTMLElement | null>(null);
+const positionStyle = ref<CSSProperties>({});
+const internalPosition = ref<FloatingBallPosition>(props.position);
+const draggedY = ref<number | null>(props.offsetY ?? null);
+const isToolbarOpen = ref(false);
+const isServiceMenuOpen = ref(false);
+const isDragging = ref(false);
+const isTranslating = ref(false);
 const isAnimating = ref(false);
 const showShortcutTooltip = ref(false);
 const shortcutTip = ref(t('runtime.shortcutTip', { shortcut: 'Alt+T' }));
+const pointerStartX = ref(0);
+const pointerStartY = ref(0);
+const pointerLastX = ref(0);
+const pointerLastY = ref(0);
+const suppressNextClick = ref(false);
+const activeScope = ref<TranslationScope>(config.translationScope === 'full' ? 'full' : 'smart');
+const activeService = ref(config.service);
+const availableServiceOptions = ref<ServiceOption[]>([]);
 
-const currentDisplayPosition = computed(() => internalPosition.value || props.position);
+const currentDisplayPosition = computed(() => internalPosition.value);
+const getServiceLabel = (serviceValue: string) => {
+  const customProvider = config.customProviders?.find(provider => provider.id === serviceValue);
+  if (customProvider?.name) return customProvider.name;
+  const service = options.services.find(item => item.value === serviceValue);
+  return service?.label ?? serviceValue;
+};
+const activeServiceLabel = computed(() => getServiceLabel(activeService.value));
+const buildAvailableServiceOptions = (): ServiceOption[] => {
+  const result: ServiceOption[] = [];
 
-const expandBall = () => {
-  if (isDragging.value) return;
-  isExpanded.value = true;
+  for (const item of options.services) {
+    if (item.disabled) continue;
+    const isGoogleDisplayFilter = item.value === 'google' && config.display !== 1;
+    if (!isGoogleDisplayFilter && isServiceConfigured(item.value, config)) {
+      result.push({ value: item.value, label: item.label });
+    }
+  }
+
+  for (const provider of config.customProviders ?? []) {
+    if (isServiceConfigured(provider.id, config)) {
+      result.push({
+        value: provider.id,
+        label: provider.name || provider.id
+      });
+    }
+  }
+
+  return result;
 };
 
-const collapseBall = () => {
-  if (isDragging.value) return;
-  if (floatingBall.value?.matches(':hover')) return;
-  isExpanded.value = false;
+const syncToolbarState = () => {
+  activeScope.value = config.translationScope === 'full' ? 'full' : 'smart';
+  activeService.value = config.service;
+  availableServiceOptions.value = buildAvailableServiceOptions();
+  isServiceMenuOpen.value = false;
 };
 
 const updatePositionStyle = () => {
   if (isDragging.value) return;
 
-  const newTop = draggedY.value !== null ? `${draggedY.value}px` : '50%';
-
-  positionStyle.value = {
-    top: newTop,
+  const sideProperty = internalPosition.value === 'left' ? 'left' : 'right';
+  const style: CSSProperties = {
     left: undefined,
     right: undefined,
+    top: undefined,
+    bottom: undefined,
     transform: undefined
   };
+
+  style[sideProperty] = '18px';
+
+  if (draggedY.value === null) {
+    style.bottom = '74px';
+  } else {
+    style.top = `${draggedY.value}px`;
+  }
+
+  positionStyle.value = style;
+};
+
+const toggleToolbar = () => {
+  if (suppressNextClick.value) {
+    suppressNextClick.value = false;
+    return;
+  }
+  if (!isToolbarOpen.value) {
+    syncToolbarState();
+  } else {
+    isServiceMenuOpen.value = false;
+  }
+  isToolbarOpen.value = !isToolbarOpen.value;
 };
 
 const startDrag = (event: MouseEvent) => {
   if (event.button !== 0 || !floatingBall.value) return;
 
   isDragging.value = true;
-  isExpanded.value = false;
-  startX.value = event.clientX;
-  startY.value = event.clientY;
-  dragStartTime.value = Date.now();
+  pointerStartX.value = event.clientX;
+  pointerStartY.value = event.clientY;
+  pointerLastX.value = event.clientX;
+  pointerLastY.value = event.clientY;
 
   const rect = floatingBall.value.getBoundingClientRect();
-  const currentElementX = rect.left;
-  const currentElementY = rect.top;
-
   positionStyle.value = {
-    left: `${currentElementX}px`,
-    top: `${currentElementY}px`,
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
     right: 'auto',
+    bottom: 'auto',
     transform: 'none'
   };
 
   document.addEventListener('mousemove', drag);
   document.addEventListener('mouseup', stopDrag);
-
   event.preventDefault();
 };
 
@@ -161,25 +276,28 @@ const drag = (event: MouseEvent) => {
   if (!isDragging.value || !floatingBall.value) return;
 
   const rect = floatingBall.value.getBoundingClientRect();
-  const offsetX = event.clientX - startX.value;
-  const offsetY = event.clientY - startY.value;
-
-  const newX = rect.left + offsetX;
-  const newY = rect.top + offsetY;
-
-  // 确保悬浮球不会超出屏幕边界
+  const offsetX = event.clientX - pointerLastX.value;
+  const offsetY = event.clientY - pointerLastY.value;
+  const movedX = Math.abs(event.clientX - pointerStartX.value);
+  const movedY = Math.abs(event.clientY - pointerStartY.value);
   const maxX = window.innerWidth - rect.width;
   const maxY = window.innerHeight - rect.height;
 
+  if (movedX > 5 || movedY > 5) {
+    isToolbarOpen.value = false;
+    isServiceMenuOpen.value = false;
+  }
+
   positionStyle.value = {
-    left: `${Math.max(0, Math.min(newX, maxX))}px`,
-    top: `${Math.max(0, Math.min(newY, maxY))}px`,
+    left: `${Math.max(0, Math.min(rect.left + offsetX, maxX))}px`,
+    top: `${Math.max(0, Math.min(rect.top + offsetY, maxY))}px`,
     right: 'auto',
+    bottom: 'auto',
     transform: 'none'
   };
 
-  startX.value = event.clientX;
-  startY.value = event.clientY;
+  pointerLastX.value = event.clientX;
+  pointerLastY.value = event.clientY;
 };
 
 const stopDrag = (event: MouseEvent) => {
@@ -188,158 +306,112 @@ const stopDrag = (event: MouseEvent) => {
   document.removeEventListener('mousemove', drag);
   document.removeEventListener('mouseup', stopDrag);
 
-  isDragging.value = false;
+  const movedX = Math.abs(event.clientX - pointerStartX.value);
+  const movedY = Math.abs(event.clientY - pointerStartY.value);
+  const isDragGesture = movedX > 5 || movedY > 5;
 
-  const dragDuration = Date.now() - dragStartTime.value;
-  const movedX = Math.abs(event.clientX - startX.value);
-  const movedY = Math.abs(event.clientY - startY.value);
-  const isDragGesture = dragDuration > 200 || movedX > 5 || movedY > 5;
+  if (!isDragGesture) {
+    suppressNextClick.value = false;
+    isDragging.value = false;
+    nextTick(updatePositionStyle);
+    return;
+  }
 
   const rect = floatingBall.value.getBoundingClientRect();
-  const finalY = rect.top;
+  const maxY = window.innerHeight - rect.height;
+  const nextPosition = rect.left + rect.width / 2 < window.innerWidth / 2 ? 'left' : 'right';
+  const nextOffsetY = Math.max(8, Math.min(rect.top, maxY - 8));
 
-  const newPosition = event.clientX < window.innerWidth / 2 ? 'left' : 'right';
+  internalPosition.value = nextPosition;
+  draggedY.value = nextOffsetY;
+  suppressNextClick.value = isDragGesture;
+  isDragging.value = false;
+  props.onPositionChanged(nextPosition, nextOffsetY);
 
-  draggedY.value = finalY;
-  internalPosition.value = newPosition;
-
-  // 无论位置是否变化，都通知父组件，以便触发拖动状态更新
-  props.onPositionChanged(newPosition);
-
-  nextTick(() => {
-    updatePositionStyle();
-  });
+  nextTick(updatePositionStyle);
 };
 
-const handleDocClick = (event: MouseEvent) => {
-  event.stopPropagation();
-  props.onDocClick(event);
-};
-
-const handleSettingsClick = (event: MouseEvent) => {
-  event.stopPropagation();
-  props.onSettingsClick(event);
-};
-
-// 新增：添加波纹效果
-const addRippleEffect = (color: string = '#4caf50') => {
+const addRippleEffect = (color: string) => {
   if (!rippleContainer.value) return;
-  
-  const ripple = document.createElement('div');
+
+  const ripple = document.createElement('span');
   ripple.classList.add('ripple');
   ripple.style.backgroundColor = color;
-  
   rippleContainer.value.appendChild(ripple);
-  
-  // 触发波纹动画
+
   setTimeout(() => {
     ripple.classList.add('active');
-    
-    // 动画结束后移除波纹元素
     setTimeout(() => {
-      if (rippleContainer.value?.contains(ripple)) {
-        rippleContainer.value.removeChild(ripple);
-      }
+      ripple.remove();
     }, 600);
   }, 10);
 };
 
-// 新增：触发动画效果
 const triggerAnimation = (type: 'translate' | 'restore') => {
   isAnimating.value = true;
-  
-  // 添加波纹效果
-  addRippleEffect(type === 'translate' ? '#4285f4' : '#4caf50');
-  
-  // 显示快捷键提示
+  addRippleEffect(type === 'translate' ? '#5bb5f5' : '#20a77a');
   showShortcutTooltip.value = true;
-  
-  // 2秒后隐藏提示
+
   setTimeout(() => {
     showShortcutTooltip.value = false;
-  }, 2000);
-  
-  // 动画结束后重置状态
+  }, 1800);
+
   setTimeout(() => {
     isAnimating.value = false;
   }, 500);
 };
 
-// 修改原有的toggleTranslation函数
-const toggleTranslation = (event: MouseEvent) => {
-  const dragDuration = Date.now() - dragStartTime.value;
-  const movedX = Math.abs(event.clientX - startX.value);
-  const movedY = Math.abs(event.clientY - startY.value);
-  const isDragEndClick = dragDuration > 150 || movedX > 5 || movedY > 5;
-
-  // 如果是拖动结束的点击，或者当前正在拖动中，则不触发翻译
-  if (isDragEndClick || isDragging.value) {
-    return;
-  }
-
-  isTranslating.value = !isTranslating.value;
-  triggerAnimation(isTranslating.value ? 'translate' : 'restore');
-  
-  // 触发自定义事件
-  if (isTranslating.value) {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
-  } else {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
-  }
-  
-  if (floatingBall.value?.matches(':hover')) {
-    isExpanded.value = true;
-  }
-  props.onTranslationToggle(isTranslating.value);
+const setTranslationState = (nextState: boolean) => {
+  if (isTranslating.value === nextState) return;
+  isTranslating.value = nextState;
+  triggerAnimation(nextState ? 'translate' : 'restore');
+  props.onTranslationToggle(nextState);
 };
 
-// 新增：响应自定义事件，从外部触发切换
-const handleExternalToggle = () => {
-  // 切换状态
-  isTranslating.value = !isTranslating.value;
-  
-  // 触发动画
-  triggerAnimation(isTranslating.value ? 'translate' : 'restore');
-  
-  // 触发自定义事件
-  if (isTranslating.value) {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
-  } else {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
-  }
-  
-  // 通知父组件
-  props.onTranslationToggle(isTranslating.value);
+const toggleTranslation = () => {
+  setTranslationState(!isTranslating.value);
+};
+
+const toggleTranslationFromExternal = () => {
+  toggleTranslation();
+};
+
+const toggleScope = () => {
+  const nextScope: TranslationScope = activeScope.value === 'full' ? 'smart' : 'full';
+  activeScope.value = nextScope;
+  config.translationScope = nextScope;
+  props.onScopeChanged(nextScope);
+};
+
+const toggleServiceMenu = () => {
+  isServiceMenuOpen.value = !isServiceMenuOpen.value;
+};
+
+const selectService = (service: string) => {
+  activeService.value = service;
+  config.service = service;
+  isServiceMenuOpen.value = false;
+  props.onServiceChanged(service);
+};
+
+const openMore = (event: MouseEvent) => {
+  props.onSettingsClick(event);
 };
 
 const handleClickOutside = (event: MouseEvent) => {
-  if (floatingBall.value?.matches(':hover')) return;
-  if (!floatingBall.value?.contains(event.target as Node)) {
-    isExpanded.value = false;
-  }
-};
-
-const handleMouseMove = (event: MouseEvent) => {
-  if (floatingBall.value?.contains(event.target as Node)) {
-    isExpanded.value = true;
-  }
+  const target = event.target as Node;
+  if (floatingBall.value?.contains(target)) return;
+  isToolbarOpen.value = false;
+  isServiceMenuOpen.value = false;
 };
 
 onMounted(() => {
   internalPosition.value = props.position;
+  draggedY.value = props.offsetY ?? null;
+  availableServiceOptions.value = buildAvailableServiceOptions();
   updatePositionStyle();
   window.addEventListener('resize', updatePositionStyle);
   document.addEventListener('click', handleClickOutside);
-  document.addEventListener('mousemove', handleMouseMove);
-  
-  // 监听自定义事件
-  document.addEventListener('onlytranslate-toggle-translation', handleExternalToggle);
-  
-  // 使组件暴露给父组件
-  if (floatingBall.value) {
-    (floatingBall.value as any).element = floatingBall.value;
-    (floatingBall.value as any).isTranslating = isTranslating.value;
-  }
 });
 
 onBeforeUnmount(() => {
@@ -347,308 +419,432 @@ onBeforeUnmount(() => {
   document.removeEventListener('mousemove', drag);
   document.removeEventListener('mouseup', stopDrag);
   document.removeEventListener('click', handleClickOutside);
-  document.removeEventListener('mousemove', handleMouseMove);
-  
-  // 移除自定义事件监听
-  document.removeEventListener('onlytranslate-toggle-translation', handleExternalToggle);
 });
 
 watch(() => props.position, (newPosition) => {
   if (newPosition !== internalPosition.value) {
     internalPosition.value = newPosition;
-    draggedY.value = null;
     updatePositionStyle();
   }
 });
 
+watch(() => props.offsetY, (newOffsetY) => {
+  draggedY.value = newOffsetY ?? null;
+  updatePositionStyle();
+});
+
+defineExpose({
+  isTranslating,
+  setTranslationState,
+  toggleTranslationFromExternal
+});
 </script>
 
 <style scoped>
 .fr-floating-ball {
   position: fixed;
   z-index: 9999;
-  transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
-  cursor: pointer;
+  width: 42px;
+  height: 42px;
   user-select: none;
   touch-action: none;
-  border-radius: 50%;
+  transition: top 0.22s ease, left 0.22s ease, right 0.22s ease, bottom 0.22s ease;
+  --fr-sky: #5bb5f5;
+  --fr-sky-deep: #258ed8;
+  --fr-sky-ink: #126da8;
+  --fr-sky-soft: #edf8ff;
+  --fr-sky-line: #b9e3fb;
+  --fr-done: #20a77a;
+  --fr-done-deep: #0f7c5a;
+  --fr-done-line: #b8ead7;
 }
 
-.floating-ball-icon {
-  width: 34px;
-  height: 34px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #333;
-  font-weight: bold;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  border: 1.5px solid #e0e0e0;
-  overflow: hidden;
+.fr-floating-ball.dragging {
+  transition: none;
+}
+
+.floating-ball-trigger {
   position: relative;
-}
-
-.imt-fb-logo-img-big-bg {
-  box-sizing: content-box !important;
-  width: 16px !important;
-  height: 16px !important;
-  min-width: 16px !important;
-  min-height: 16px !important;
-  max-width: 16px !important;
-  max-height: 16px !important;
-  padding: 4px !important;
-  background-color: #5BB5F5;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: 50%;
-  margin: 0 2px;
-  flex-shrink: 0;
-  display: block !important;
+  background: var(--fr-sky);
+  color: #ffffff;
+  box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
+  cursor: pointer;
+  overflow: visible;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.floating-ball-expanded .floating-ball-icon {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  border-color: #4caf50;
+.floating-ball-trigger:hover {
+  transform: translateY(-1px);
+  background: #4aaaf0;
+  box-shadow: 0 16px 36px rgba(91, 181, 245, 0.38);
 }
 
-.fr-icon-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+.floating-ball-trigger:active {
+  transform: scale(0.96);
 }
 
-.translation-icon {
-  width: 18px;
-  height: 18px;
-  transition: all 0.3s ease;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+.floating-ball-logo {
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  color: #ffffff;
+  background: transparent;
 }
 
-.is-translating .translation-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 2px 4px rgba(76, 175, 80, 0.2));
+.is-translating .floating-ball-trigger {
+  border-color: transparent;
+  background: var(--fr-sky);
+  box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
 }
 
-.is-translating .floating-ball-icon {
-  background-color: #ffffff;
-  border-color: #4caf50;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+.is-translating .floating-ball-logo {
+  background: transparent;
 }
 
-/* 动画相关样式 */
-.animating.is-translating .floating-ball-icon {
+.animating.is-translating .floating-ball-trigger {
   animation: pulse-green 0.5s ease;
 }
 
-.animating:not(.is-translating) .floating-ball-icon {
+.animating:not(.is-translating) .floating-ball-trigger {
   animation: pulse-blue 0.5s ease;
 }
 
-/* 静态模式样式 */
-.static-mode .floating-ball-icon {
-  animation: none !important;
-}
-
-.static-mode .floating-ball-tooltip {
-  animation: none !important;
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-.static-mode .pulsing-circle {
-  animation: none !important;
-}
-
-.static-mode .dot-animate {
+.static-mode .floating-ball-trigger {
   animation: none !important;
 }
 
 @keyframes pulse-green {
   0% {
+    box-shadow: 0 12px 28px rgba(23, 32, 51, 0.18);
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   50% {
-    transform: scale(1.2);
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+    box-shadow: 0 0 0 8px rgba(32, 167, 122, 0.16);
+    transform: scale(1.08);
   }
   100% {
+    box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
   }
 }
 
 @keyframes pulse-blue {
   0% {
+    box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   50% {
-    transform: scale(1.2);
-    box-shadow: 0 0 15px rgba(0, 128, 255, 0.8);
+    box-shadow: 0 0 0 8px rgba(91, 181, 245, 0.20);
+    transform: scale(1.08);
   }
   100% {
+    box-shadow: 0 14px 32px rgba(91, 181, 245, 0.34);
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-}
-
-/* 波纹效果 */
-.ripple-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-/* 快捷键提示 */
-.shortcut-tooltip {
-  position: absolute;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  animation: fadeIn 0.3s ease forwards;
-}
-
-.shortcut-tooltip:after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 0 6px 6px 6px;
-  border-style: solid;
-  border-color: transparent transparent rgba(0, 0, 0, 0.7) transparent;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 5px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
   }
 }
 
 .check-mark {
   position: absolute;
-  bottom: 1.5px;
-  right: 1.5px;
-  width: 12px;
-  height: 12px;
-  background-color: #4caf50;
+  right: -1px;
+  bottom: -1px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-  animation: pulse 1.5s infinite ease-in-out;
-  border: 0.75px solid #ffffff;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-  }
-
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(76, 175, 80, 0);
-  }
-
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-  }
+  background: var(--fr-done);
 }
 
 .check-mark::after {
   content: "";
-  display: block;
   width: 4px;
   height: 7px;
-  border-right: 1.5px solid white;
-  border-bottom: 1.5px solid white;
-  transform: rotate(45deg) translate(-0.75px, -0.75px);
+  border-right: 1.6px solid #ffffff;
+  border-bottom: 1.6px solid #ffffff;
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.fr-floating-ball[data-position="left"] {
-  left: 0;
-  right: auto;
+.shortcut-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
   transform: translateX(-50%);
+  max-width: 220px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: #ffffff;
+  background: rgba(16, 24, 40, 0.82);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.fr-floating-ball[data-position="right"] {
+.ripple-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ripple-container :deep(.ripple) {
+  position: absolute;
+  inset: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.35;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+.ripple-container :deep(.ripple.active) {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(8);
+}
+
+.floating-toolbar {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 8px);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(520px, calc(100vw - 92px));
+  padding: 8px;
+  border: 1px solid #dfe5ef;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.16);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(10px, -50%) scale(0.86);
+  transform-origin: right center;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fr-floating-ball[data-position="left"] .floating-toolbar {
+  right: auto;
+  left: calc(100% + 8px);
+  transform: translate(-10px, -50%) scale(0.86);
+  transform-origin: left center;
+}
+
+.floating-toolbar--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, -50%) scale(1);
+}
+
+.fr-floating-ball[data-position="left"] .floating-toolbar--open {
+  transform: translate(0, -50%) scale(1);
+}
+
+.toolbar-button,
+.scope-toggle,
+.service-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.toolbar-button {
+  padding: 0 11px;
+  border: 1px solid #dfe5ef;
+  color: #172033;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.toolbar-button:hover {
+  border-color: var(--fr-sky-line);
+  background: var(--fr-sky-soft);
+}
+
+.toolbar-button:active {
+  transform: scale(0.96);
+}
+
+.toolbar-button--primary {
+  border-color: var(--fr-sky);
+  color: #ffffff;
+  background: var(--fr-sky);
+  font-weight: 680;
+}
+
+.toolbar-button--primary:hover {
+  border-color: var(--fr-sky-deep);
+  background: var(--fr-sky-deep);
+}
+
+.toolbar-button--restore {
+  border-color: var(--fr-done);
+  background: var(--fr-done);
+}
+
+.toolbar-button--restore:hover {
+  border-color: var(--fr-done-deep);
+  background: var(--fr-done-deep);
+}
+
+.toolbar-button--secondary {
+  color: #344154;
+  border-color: #dbe3ee;
+  background: #f8fafc;
+}
+
+.toolbar-button--secondary:hover {
+  color: #263244;
+  border-color: #cbd6e6;
+  background: #f1f5fb;
+}
+
+.scope-toggle {
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #d8e0ec;
+  background: #eef2f7;
+  cursor: pointer;
+}
+
+.scope-toggle-option {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 24px;
+  border-radius: 6px;
+  color: #647084;
+  font-size: 12px;
+}
+
+.scope-toggle[data-scope="smart"] .scope-toggle-option--smart,
+.scope-toggle[data-scope="full"] .scope-toggle-option--full {
+  color: var(--fr-sky-ink);
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(23, 32, 51, 0.12);
+  font-weight: 700;
+}
+
+.service-pill {
+  max-width: 138px;
+  padding: 0 10px;
+  overflow: hidden;
+  color: #4a5567;
+  border: 1px solid #dfe5ef;
+  background: #f8fafc;
+  text-overflow: ellipsis;
+}
+
+.service-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.service-pill--button {
+  cursor: pointer;
+}
+
+.service-pill--button::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-right: 1.5px solid #647084;
+  border-bottom: 1.5px solid #647084;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.service-menu {
+  position: absolute;
+  top: calc(100% + 8px);
   right: 0;
-  left: auto;
-  transform: translateX(50%);
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  width: 156px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgba(23, 32, 51, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.floating-ball-expanded {
-  transform: translateX(0) !important;
+.fr-floating-ball[data-position="left"] .service-menu {
+  right: auto;
+  left: 0;
 }
 
-.fr-floating-ball.dragging {
-  transition: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.service-menu--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
-.fr-floating-ball.dragging .floating-ball-icon {
-  border-color: #4caf50;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+.service-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 30px;
+  width: 100%;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  color: #263244;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.path-animate {
-  transition: all 0.5s ease;
+.service-menu-item:hover {
+  background: #f1f5fb;
 }
 
-.path-animate.active {
-  filter: drop-shadow(0 0 2px rgba(76, 175, 80, 0.7));
+.service-menu-item--active {
+  color: var(--fr-sky-ink);
+  background: var(--fr-sky-soft);
+  font-weight: 700;
 }
 
-.dot-animate {
-  r: 1;
-  opacity: 0.7;
-  transition: all 0.3s ease;
-}
-
-.dot-animate.active {
-  animation: dotPulse 2s infinite alternate;
-}
-
-@keyframes dotPulse {
-  0% {
-    r: 1;
-    opacity: 0.7;
+@media (max-width: 520px) {
+  .floating-toolbar {
+    gap: 6px;
+    padding: 7px;
+    max-width: calc(100vw - 76px);
   }
 
-  50% {
-    r: 1.5;
-    opacity: 1;
+  .service-pill {
+    max-width: 92px;
   }
 
-  100% {
-    r: 1;
-    opacity: 0.7;
+  .toolbar-button,
+  .scope-toggle,
+  .service-pill {
+    font-size: 12px;
   }
 }
 </style>

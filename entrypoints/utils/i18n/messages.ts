@@ -79,6 +79,12 @@ export const messages = {
       modelFetchUnsupported: '该服务暂不支持自动获取模型列表',
       apiKeyRequired: '请先填写 API Key',
       shortcutTip: '快捷键: {shortcut}',
+      floatingToolbar: {
+        open: '打开页面翻译工具',
+        translate: '翻译',
+        restore: '还原',
+        more: '更多'
+      },
       translateFailedStatus: '翻译失败: {status} {statusText}{detail}',
       requestFailed: '请求失败: {message}',
       microsoftTranslateFailed: '微软翻译失败',
@@ -461,6 +467,12 @@ export const messages = {
       modelFetchUnsupported: 'This service does not support automatic model fetching yet',
       apiKeyRequired: 'Enter API Key first',
       shortcutTip: 'Shortcut: {shortcut}',
+      floatingToolbar: {
+        open: 'Open page translation tools',
+        translate: 'Translate',
+        restore: 'Restore',
+        more: 'More'
+      },
       translateFailedStatus: 'Translation failed: {status} {statusText}{detail}',
       requestFailed: 'Request failed: {message}',
       microsoftTranslateFailed: 'Microsoft Translator failed',
@@ -843,6 +855,12 @@ export const messages = {
       modelFetchUnsupported: '該服務暫不支援自動取得模型列表',
       apiKeyRequired: '請先填寫 API Key',
       shortcutTip: '快捷鍵: {shortcut}',
+      floatingToolbar: {
+        open: '開啟頁面翻譯工具',
+        translate: '翻譯',
+        restore: '還原',
+        more: '更多'
+      },
       translateFailedStatus: '翻譯失敗: {status} {statusText}{detail}',
       requestFailed: '請求失敗: {message}',
       microsoftTranslateFailed: '微軟翻譯失敗',
@@ -1225,6 +1243,12 @@ export const messages = {
       modelFetchUnsupported: 'このサービスはモデル一覧の自動取得にまだ対応していません',
       apiKeyRequired: '先に API Key を入力してください',
       shortcutTip: 'ショートカット: {shortcut}',
+      floatingToolbar: {
+        open: 'ページ翻訳ツールを開く',
+        translate: '翻訳',
+        restore: '復元',
+        more: 'その他'
+      },
       translateFailedStatus: '翻訳に失敗しました: {status} {statusText}{detail}',
       requestFailed: 'リクエストに失敗しました: {message}',
       microsoftTranslateFailed: 'Microsoft Translator に失敗しました',
