@@ -73,23 +73,23 @@ describe('FloatingBall', () => {
 
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('mousedown', { button: 0, clientX: 120, clientY: 120 })
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('click')
-    expect(mockConfig.translationScope).toBe('full')
     expect(onScopeChanged).toHaveBeenCalledWith('full')
     expect(wrapper.get('[data-testid="floating-toolbar-scope"]').attributes('data-scope')).toBe('full')
+    expect(mockConfig.translationScope).toBe('smart')
     expect(onPositionChanged).not.toHaveBeenCalled()
 
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('click')
-    expect(mockConfig.translationScope).toBe('smart')
     expect(onScopeChanged).toHaveBeenLastCalledWith('smart')
     expect(wrapper.get('[data-testid="floating-toolbar-scope"]').attributes('data-scope')).toBe('smart')
+    expect(mockConfig.translationScope).toBe('smart')
 
     await wrapper.get('[data-testid="floating-toolbar-service"]').trigger('click')
     expect(wrapper.get('[data-testid="floating-toolbar-service-menu"]').classes()).toContain('service-menu--open')
 
     await wrapper.get('[data-testid="floating-toolbar-service-openai"]').trigger('click')
-    expect(mockConfig.service).toBe('openai')
     expect(onServiceChanged).toHaveBeenCalledWith('openai')
     expect(wrapper.get('[data-testid="floating-toolbar-service"]').text()).toContain('OpenAI')
+    expect(mockConfig.service).toBe('deepseek')
 
     await wrapper.get('[data-testid="floating-toolbar-more"]').trigger('click')
     expect(onSettingsClick).toHaveBeenCalledTimes(1)
@@ -180,5 +180,48 @@ describe('FloatingBall', () => {
     expect(onPositionChanged).toHaveBeenCalledWith('right', 220)
 
     wrapper.unmount()
+  })
+
+  it('clamps the restored vertical offset when the viewport is resized smaller', async () => {
+    const originalInnerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', {
+      value: 800,
+      configurable: true
+    })
+
+    const wrapper = mount(FloatingBall, {
+      props: {
+        offsetY: 260
+      },
+      attachTo: document.body
+    })
+
+    const ball = wrapper.get('.fr-floating-ball')
+    vi.spyOn(ball.element as HTMLElement, 'getBoundingClientRect').mockReturnValue({
+      x: 700,
+      y: 260,
+      left: 700,
+      top: 260,
+      right: 742,
+      bottom: 302,
+      width: 42,
+      height: 42,
+      toJSON: () => ({})
+    } as DOMRect)
+
+    Object.defineProperty(window, 'innerHeight', {
+      value: 80,
+      configurable: true
+    })
+    window.dispatchEvent(new Event('resize'))
+    await nextTick()
+
+    expect(ball.attributes('style')).toContain('top: 30px')
+
+    wrapper.unmount()
+    Object.defineProperty(window, 'innerHeight', {
+      value: originalInnerHeight,
+      configurable: true
+    })
   })
 })

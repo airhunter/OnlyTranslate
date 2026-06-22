@@ -114,6 +114,8 @@ type FloatingBallPosition = 'left' | 'right';
 type TranslationScope = 'smart' | 'full';
 type ServiceOption = { value: string; label: string };
 
+const BILINGUAL_DISPLAY_MODE = 1;
+
 const props = defineProps({
   position: {
     type: String as PropType<FloatingBallPosition>,
@@ -188,7 +190,7 @@ const buildAvailableServiceOptions = (): ServiceOption[] => {
 
   for (const item of options.services) {
     if (item.disabled) continue;
-    const isGoogleDisplayFilter = item.value === 'google' && config.display !== 1;
+    const isGoogleDisplayFilter = item.value === 'google' && config.display !== BILINGUAL_DISPLAY_MODE;
     if (!isGoogleDisplayFilter && isServiceConfigured(item.value, config)) {
       result.push({ value: item.value, label: item.label });
     }
@@ -213,6 +215,12 @@ const syncToolbarState = () => {
   isServiceMenuOpen.value = false;
 };
 
+const clampVerticalOffset = (offsetY: number) => {
+  const floatingBallHeight = floatingBall.value?.getBoundingClientRect().height || 42;
+  const maxY = window.innerHeight - floatingBallHeight;
+  return Math.max(8, Math.min(offsetY, maxY - 8));
+};
+
 const updatePositionStyle = () => {
   if (isDragging.value) return;
 
@@ -230,7 +238,9 @@ const updatePositionStyle = () => {
   if (draggedY.value === null) {
     style.bottom = '74px';
   } else {
-    style.top = `${draggedY.value}px`;
+    const clampedOffsetY = clampVerticalOffset(draggedY.value);
+    draggedY.value = clampedOffsetY;
+    style.top = `${clampedOffsetY}px`;
   }
 
   positionStyle.value = style;
@@ -318,9 +328,8 @@ const stopDrag = (event: MouseEvent) => {
   }
 
   const rect = floatingBall.value.getBoundingClientRect();
-  const maxY = window.innerHeight - rect.height;
   const nextPosition = rect.left + rect.width / 2 < window.innerWidth / 2 ? 'left' : 'right';
-  const nextOffsetY = Math.max(8, Math.min(rect.top, maxY - 8));
+  const nextOffsetY = clampVerticalOffset(rect.top);
 
   internalPosition.value = nextPosition;
   draggedY.value = nextOffsetY;
@@ -379,7 +388,6 @@ const toggleTranslationFromExternal = () => {
 const toggleScope = () => {
   const nextScope: TranslationScope = activeScope.value === 'full' ? 'smart' : 'full';
   activeScope.value = nextScope;
-  config.translationScope = nextScope;
   props.onScopeChanged(nextScope);
 };
 
@@ -389,7 +397,6 @@ const toggleServiceMenu = () => {
 
 const selectService = (service: string) => {
   activeService.value = service;
-  config.service = service;
   isServiceMenuOpen.value = false;
   props.onServiceChanged(service);
 };
