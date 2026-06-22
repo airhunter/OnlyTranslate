@@ -4,11 +4,14 @@ OnlyTranslate 的识文链路已经从早期平铺规则演进为 `translationTa
 
 ## Core Pipeline
 
-当前 smart 识文主链路按三段组织：
+当前 smart 识文主链路按几个小模块组织：
 
 - `collect`：收集可能需要翻译的 DOM 候选。
 - `decision`：结合通用过滤、站点规则、内容单元分类，决定候选是否进入翻译目标。
+- `dynamic`：处理 MutationObserver 触发的动态补扫。
+- `scanContext`：维护单轮扫描缓存、预算和统计信息。
 - `types`：定义候选、决策、上下文、统计信息等共享结构。
+- `unitizer`：把复杂块拆成更稳定的 DOM text units。
 
 `resolveAutoTranslationTarget()` 负责创建每轮扫描的上下文，并在 smart、smart fallback、body fallback 之间降级。识文改动应优先保持这条降级链可用，避免单个规则误判导致整页不可翻。
 

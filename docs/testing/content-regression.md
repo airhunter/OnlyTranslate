@@ -85,7 +85,7 @@ https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822
 
 修复方式：
 
-- 使用 Ziggit/Discourse profile 补充 cooked content 识别。
+- 使用 Ziggit profile 补充 Discourse cooked content 识别。
 - 让动态扫描路径能够接入 profile-owned expansion target。
 
 回归覆盖：
@@ -108,4 +108,4 @@ pnpm test:content
 pnpm verify
 ```
 
-若改动触及发布流程，还需要按 `RELEASE.md` 执行 zip 构建和 release readiness check。
+若改动触及发布流程，还需要按 `RELEASE.md` 执行 zip 构建和 `pnpm release:check`。

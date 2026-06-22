@@ -16,4 +16,11 @@ describe('i18n', () => {
     expect(t('common.appName')).toBe('只译')
     expect(t('missing.key')).toBe('missing.key')
   })
+
+  it('labels the page translation shortcut separately from translation scope', () => {
+    setLocale('zh-CN')
+    expect(t('options.interaction.scopeToggle')).toBe('页面翻译快捷键')
+    expect(t('options.interaction.scopeToggleTip')).toContain('当前翻译范围')
+    expect(t('popup.fullPageShortcut')).toBe('页面翻译')
+  })
 })
