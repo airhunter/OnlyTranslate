@@ -20,6 +20,9 @@ vi.mock('@/entrypoints/utils/config', () => ({
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
   cancelAllTranslations: vi.fn(),
+  isTranslationCancelledError: vi.fn((error: unknown) => {
+    return error instanceof Error && error.name === 'TranslationCancelledError'
+  }),
   translateText: vi.fn()
 }))
 
@@ -39,13 +42,18 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
+import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, grabNode } from '@/entrypoints/main/dom'
 import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
-import { TRANSLATED_ATTR } from '@/entrypoints/main/translationTarget/constants'
+import {
+  BILINGUAL_CONTENT_CLASS,
+  BILINGUAL_WRAPPER_CLASS,
+  TRANSLATED_ATTR,
+  TRANSLATED_ID_ATTR
+} from '@/entrypoints/main/translationTarget/constants'
 import { siteProfiles } from '@/entrypoints/main/siteProfiles'
 import { translateText } from '@/entrypoints/utils/translateApi'
 import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
@@ -309,6 +317,281 @@ describe('resolveAutoTranslateTarget behavior', () => {
     } finally {
       elementFromPoint.mockRestore()
       vi.useRealTimers()
+      restoreOriginalContent()
+    }
+  })
+
+  it('clears auto-translation markers when a bilingual translation is cancelled before insertion', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(
+        private readonly callback: IntersectionObserverCallback
+      ) {}
+
+      observe(target: Element) {
+        this.callback([
+          {
+            isIntersecting: true,
+            target
+          } as IntersectionObserverEntry
+        ], this as unknown as IntersectionObserver)
+      }
+
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockImplementation(() => Promise.reject(Object.assign(new Error('Translation cancelled'), {
+      name: 'TranslationCancelledError'
+    })))
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://arstechnica.com/gadgets/2026/06/20-years-of-intel-macs-why-apple-switched-and-why-it-switched-again/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="main">
+        <article>
+          <h1>20 years of Intel Macs</h1>
+          <p>Apple switched the Mac to Intel processors after years of internal experiments and shipping constraints.</p>
+          <figure class="ars-wp-img-shortcode id-2159213 align-fullwidth">
+            <figcaption>
+              <div class="caption">
+                <div class="caption-icon"></div>
+                <div id="powerbook-caption" class="caption-content">
+                  An early 2000s-era titanium PowerBook G4 running Mac OS X Leopard. Apple was never able to squeeze the PowerPC G5 into a laptop.
+                  <span class="caption-credit">Credit: Andrew Cunningham</span>
+                </div>
+              </div>
+            </figcaption>
+          </figure>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      const caption = document.querySelector('#powerbook-caption') as HTMLElement
+      expect(caption.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+      expect(caption.hasAttribute(TRANSLATED_ID_ATTR)).toBe(false)
+      expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('retries stale bilingual auto-translation markers that have no inserted translation', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(
+        private readonly callback: IntersectionObserverCallback
+      ) {}
+
+      observe(target: Element) {
+        this.callback([
+          {
+            isIntersecting: true,
+            target
+          } as IntersectionObserverEntry
+        ], this as unknown as IntersectionObserver)
+      }
+
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => {
+      if (origin.includes('PowerBook G4')) {
+        return Promise.resolve('早期 2000 年代钛金属 PowerBook G4 运行 Mac OS X Leopard。')
+      }
+      return Promise.resolve(`translated: ${origin}`)
+    })
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://arstechnica.com/gadgets/2026/06/20-years-of-intel-macs-why-apple-switched-and-why-it-switched-again/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="main">
+        <article>
+          <h1>20 years of Intel Macs</h1>
+          <p>Apple switched the Mac to Intel processors after years of internal experiments and shipping constraints.</p>
+          <figure class="ars-wp-img-shortcode id-2159213 align-fullwidth">
+            <figcaption>
+              <div class="caption">
+                <div class="caption-icon"></div>
+                <div
+                  id="powerbook-caption"
+                  class="caption-content"
+                  ${TRANSLATED_ATTR}="true"
+                  ${TRANSLATED_ID_ATTR}="fr-node-3"
+                >
+                  An early 2000s-era titanium PowerBook G4 running Mac OS X Leopard. Apple was never able to squeeze the PowerPC G5 into a laptop.
+                  <span class="caption-credit">Credit: Andrew Cunningham</span>
+                </div>
+              </div>
+            </figcaption>
+          </figure>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      const caption = document.querySelector('#powerbook-caption') as HTMLElement
+      expect(caption.getAttribute(TRANSLATED_ATTR)).toBe('true')
+      expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('PowerBook G4')
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('keeps existing bilingual content when auto translation rescans a node missing its translated marker', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(
+        private readonly callback: IntersectionObserverCallback
+      ) {}
+
+      observe(target: Element) {
+        this.callback([
+          {
+            isIntersecting: true,
+            target
+          } as IntersectionObserverEntry
+        ], this as unknown as IntersectionObserver)
+      }
+
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.useFakeTimers()
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('不应重新翻译这条标注。')
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://arstechnica.com/gadgets/2026/06/20-years-of-intel-macs-why-apple-switched-and-why-it-switched-again/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="main">
+        <article>
+          <h1>20 years of Intel Macs</h1>
+          <p>Apple switched the Mac to Intel processors after years of internal experiments and shipping constraints.</p>
+          <figure class="ars-wp-img-shortcode id-2159213 align-fullwidth">
+            <figcaption>
+              <div class="caption">
+                <div class="caption-icon"></div>
+                <div id="powerbook-caption" class="caption-content ${BILINGUAL_WRAPPER_CLASS}">
+                  An early 2000s-era titanium PowerBook G4 running Mac OS X Leopard. Apple was never able to squeeze the PowerPC G5 into a laptop.
+                  <span class="caption-credit">Credit: Andrew Cunningham</span>
+                  <span class="${BILINGUAL_CONTENT_CLASS}">早期 2000 年代钛金属 PowerBook G4 运行 Mac OS X Leopard。</span>
+                </div>
+              </div>
+            </figcaption>
+          </figure>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+
+      const caption = document.querySelector('#powerbook-caption') as HTMLElement
+      expect(caption.getAttribute(TRANSLATED_ATTR)).toBe('true')
+      expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('钛金属 PowerBook G4')
+      expect(translateText).not.toHaveBeenCalledWith(expect.stringContaining('PowerBook G4'), document.title)
+    } finally {
+      vi.useRealTimers()
+      restoreOriginalContent()
+    }
+  })
+
+  it('does not clean stale bilingual markers while an auto translation pass is already active', () => {
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://arstechnica.com/gadgets/2026/06/20-years-of-intel-macs-why-apple-switched-and-why-it-switched-again/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="main">
+        <article>
+          <h1>20 years of Intel Macs</h1>
+          <p>Apple switched the Mac to Intel processors after years of internal experiments and shipping constraints.</p>
+          <p id="active-pass-seed">The Intel Mac era changed Apple's laptop lineup for years.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+
+      const staleCaption = document.createElement('div')
+      staleCaption.id = 'stale-caption'
+      staleCaption.className = 'caption-content'
+      staleCaption.setAttribute(TRANSLATED_ATTR, 'true')
+      staleCaption.setAttribute(TRANSLATED_ID_ATTR, 'fr-node-99')
+      staleCaption.textContent = 'An early 2000s-era titanium PowerBook G4 running Mac OS X Leopard.'
+      document.querySelector('article')?.appendChild(staleCaption)
+
+      autoTranslateEnglishPage('smart')
+
+      expect(staleCaption.getAttribute(TRANSLATED_ATTR)).toBe('true')
+      expect(staleCaption.getAttribute(TRANSLATED_ID_ATTR)).toBe('fr-node-99')
+    } finally {
       restoreOriginalContent()
     }
   })

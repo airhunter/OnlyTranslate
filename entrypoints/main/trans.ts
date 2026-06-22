@@ -39,6 +39,7 @@ import {
 } from '@/entrypoints/main/translationTarget/constants';
 
 const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
+const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
 
 const translationState = {
     hoverTimer: undefined as ReturnType<typeof setTimeout> | undefined,
@@ -67,6 +68,10 @@ interface AutoTranslateTarget {
     contentRoot: Element;
     nodes: Element[];
     grabOptions?: GrabAllNodeOptions;
+}
+
+interface BilingualTranslationOptions {
+    removeExisting?: boolean;
 }
 
 function isManagedTranslationNode(node: Node): boolean {
@@ -105,6 +110,37 @@ function shouldBeautifyTranslatedHTML(origin: string, translated: string): boole
 function shouldStartTranslation(node: HTMLElement): boolean {
     const translatableText = getTranslatableText(node);
     return Boolean(translatableText.trim()) && shouldTranslateText(translatableText);
+}
+
+function clearUnfinishedAutoTranslation(node: HTMLElement): void {
+    if (!node.hasAttribute(TRANSLATED_ATTR)) return;
+    if (node.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)) return;
+
+    const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
+    if (nodeId) {
+        originalContents.delete(nodeId);
+        node.removeAttribute(TRANSLATED_ID_ATTR);
+    }
+    node.removeAttribute(TRANSLATED_ATTR);
+    node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+}
+
+function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body): void {
+    if (config.display !== styles.bilingualTranslation) return;
+
+    const translatedSelector = `[${TRANSLATED_ATTR}="true"]`;
+    const translatedElements = Array.from(root.querySelectorAll<HTMLElement>(translatedSelector));
+    if (root instanceof HTMLElement && root.matches(translatedSelector)) {
+        translatedElements.unshift(root);
+    }
+
+    translatedElements.forEach(element => {
+        if (element.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)) return;
+        if (element.matches(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
+        if (element.querySelector(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
+
+        clearUnfinishedAutoTranslation(element);
+    });
 }
 
 // 恢复原文内容
@@ -168,6 +204,8 @@ export function restoreOriginalContent() {
 export function autoTranslateEnglishPage(scopeOverride?: string) {
     // 如果已经在翻译中，则返回
     if (translationState.isAutoTranslating) return;
+
+    clearStaleBilingualTranslationMarkers();
     
     // 获取当前页面的语言（暂时注释，存在识别问题）
     // const text = document.documentElement.innerText || '';
@@ -211,7 +249,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
                 node.setAttribute(TRANSLATED_ATTR, 'true');
 
                 if (config.display === styles.bilingualTranslation) {
-                    handleBilingualTranslation(node, false);
+                    handleBilingualTranslation(node, false, { removeExisting: false });
                 } else {
                     handleSingleTranslation(node, false);
                 }
@@ -354,12 +392,20 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
 }
 
 // 双语翻译
-export function handleBilingualTranslation(node: HTMLElement, slide: boolean) {
+export function handleBilingualTranslation(
+    node: HTMLElement,
+    slide: boolean,
+    options: BilingualTranslationOptions = {}
+) {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
     // 如果已经翻译过，250ms 后删除翻译结果
     let bilingualNode = searchClassName(node, BILINGUAL_WRAPPER_CLASS);
     if (bilingualNode) {
+        if (options.removeExisting === false) {
+            translationState.htmlSet.delete(nodeOuterHTML);
+            return;
+        }
         if (slide) {
             translationState.htmlSet.delete(nodeOuterHTML);
             return;
@@ -421,9 +467,15 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
     const plainOrigin = getTranslatableText(node);
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
     const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
-    if (!shouldTranslateText(plainOrigin)) return;
+    if (!shouldTranslateText(plainOrigin)) {
+        clearUnfinishedAutoTranslation(node);
+        return;
+    }
 
-    if (!origin?.trim()) return;
+    if (!origin?.trim()) {
+        clearUnfinishedAutoTranslation(node);
+        return;
+    }
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
@@ -444,7 +496,11 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
         })
         .catch((error: Error) => {
             spinner.remove();
-            if (isTranslationCancelledError(error)) return;
+            if (isTranslationCancelledError(error)) {
+                translationState.htmlSet.delete(nodeOuterHTML);
+                clearUnfinishedAutoTranslation(node);
+                return;
+            }
             insertFailedTip(node, error.toString() || "翻译失败", spinner);
         });
 }
@@ -452,13 +508,19 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
 
 export function singleTranslate(node: HTMLElement) {
     const translatableText = getTranslatableText(node);
-    if (!shouldTranslateText(translatableText)) return;
+    if (!shouldTranslateText(translatableText)) {
+        clearUnfinishedAutoTranslation(node);
+        return;
+    }
 
     let origin = servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node);
     if (!origin?.trim()) {
         origin = translatableText.trim();
     }
-    if (!origin) return;
+    if (!origin) {
+        clearUnfinishedAutoTranslation(node);
+        return;
+    }
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
@@ -470,7 +532,10 @@ export function singleTranslate(node: HTMLElement) {
                 text = beautyHTML(text);
             }
             
-            if (!text || origin === text) return;
+            if (!text || origin === text) {
+                clearUnfinishedAutoTranslation(node);
+                return;
+            }
             
             let oldOuterHtml = node.outerHTML;
             node.innerHTML = text;
@@ -483,7 +548,10 @@ export function singleTranslate(node: HTMLElement) {
         })
         .catch((error: Error) => {
             spinner.remove();
-            if (isTranslationCancelledError(error)) return;
+            if (isTranslationCancelledError(error)) {
+                clearUnfinishedAutoTranslation(node);
+                return;
+            }
             insertFailedTip(node, error.toString() || "翻译失败", spinner);
         });
 }
