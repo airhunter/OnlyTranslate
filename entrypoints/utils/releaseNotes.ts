@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.6.0',
+    notes: {
+      'zh-CN': {
+        title: '页面浮动工具条升级',
+        items: [
+          '点击页面浮动入口会展开分离式胶囊工具条，翻译、还原、设置入口更集中也更清爽。',
+          '可以直接在页面上切换“识文”和“全页”翻译范围，不必每次回到弹窗或设置页调整。',
+          '浮动工具条支持快速切换已配置的翻译服务，当前服务状态在页面内一眼可见。',
+          '优化页面翻译快捷键和工具条文案，翻译与还原状态表达更准确。'
+        ]
+      },
+      'en-US': {
+        title: 'Floating Page Toolbar Upgrade',
+        items: [
+          'The floating page entry now opens a detached capsule toolbar, bringing translate, restore, and settings actions into one cleaner control.',
+          'You can switch between Smart and Full-page translation directly on the page without returning to the popup or settings page.',
+          'The toolbar lets you quickly switch between configured translation services and shows the active service in place.',
+          'Improved page-translation shortcut and toolbar labels so translate and restore states are clearer.'
+        ]
+      },
+      'zh-TW': {
+        title: '頁面浮動工具列升級',
+        items: [
+          '點擊頁面浮動入口會展開分離式膠囊工具列，翻譯、還原和設定入口更集中也更清爽。',
+          '可以直接在頁面上切換「識文」和「全頁」翻譯範圍，不必每次回到彈窗或設定頁調整。',
+          '浮動工具列支援快速切換已設定的翻譯服務，當前服務狀態可在頁面內直接查看。',
+          '優化頁面翻譯快捷鍵和工具列文案，翻譯與還原狀態表達更準確。'
+        ]
+      },
+      'ja-JP': {
+        title: 'ページ上のフローティングツールバーを刷新',
+        items: [
+          'ページ上のフローティング入口をクリックすると、独立したカプセル型ツールバーが開き、翻訳、復元、設定をより扱いやすくまとめました。',
+          'ポップアップや設定ページに戻らず、ページ上で「スマート」と「全ページ」の翻訳範囲を切り替えられます。',
+          '設定済みの翻訳サービスをツールバーから素早く切り替えられ、現在のサービスもその場で確認できます。',
+          'ページ翻訳のショートカットとツールバー文言を見直し、翻訳中と復元の状態がより分かりやすくなりました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.5.7',
     notes: {
       'zh-CN': {

@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.6.0](https://github.com/airhunter/OnlyTranslate/compare/v0.5.7...v0.6.0) (2026-06-23)
+
+
+### Bug Fixes
+
+* **content:** 修复图片标注自动翻译闪退 ([362cc80](https://github.com/airhunter/OnlyTranslate/commit/362cc80ca9cf4990c3a76ed653e4070e005e01c5))
+* **ui:** 修正页面翻译快捷键文案 ([599f0c3](https://github.com/airhunter/OnlyTranslate/commit/599f0c3138edfd8b33329c71f622a3db6c9d66e0))
+* **ui:** 收敛浮动工具条配置更新边界 ([f31e9da](https://github.com/airhunter/OnlyTranslate/commit/f31e9da9db050a595be4f5cbde5cf4d46ba1f7bc))
+
+
+### Features
+
+* **ui:** 实现页面内分离胶囊工具条 ([4f5230d](https://github.com/airhunter/OnlyTranslate/commit/4f5230d53259097498781688c1ee6fb7eb15b570))
+
 ## [0.5.7](https://github.com/airhunter/OnlyTranslate/compare/v0.5.6...v0.5.7) (2026-06-18)
 
 
