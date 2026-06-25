@@ -1,0 +1,84 @@
+<main class="flex flex-1 flex-col">
+  <div class="container relative flex flex-row justify-center gap-4">
+    <div class="max-w-full pb-16 pt-6 lg:max-w-3xl lg:flex-1 lg:pt-16">
+      <div class="max-lg:overflow-hidden">
+        <div class="blog-content copiable-code-container prose mx-auto mb-8">
+          <div class="mb-4">
+            <a id="back-link" href="/blog" class="text-gray-500! no-underline! hover:underline! flex items-center font-sans">
+              Back to Articles
+            </a>
+          </div>
+          <h1 id="article-title" class="group relative flex items-center max-md:[&amp;>a]:hidden">
+            <a id="title-anchor" class="block pr-1.5 text-lg md:absolute md:p-1.5 md:opacity-0 md:group-hover:opacity-100 md:right-full" href="#mosaicleaks-can-your-research-agent-keep-a-secret" rel="nofollow">
+              <span class="header-link">#</span>
+            </a>
+            <span>MosaicLeaks: Can your research agent keep a secret?</span>
+          </h1>
+          <div>
+            <div class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-base">
+              <a id="article-label" href="/blog" class="flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-4 py-1.5 font-sans text-sm font-semibold no-underline bg-purple-500/10">
+                <span>Enterprise</span>
+                <span>Article</span>
+              </a>
+              <div class="flex items-center gap-x-4">
+                <span id="published-date" class="whitespace-nowrap text-sm sm:text-base">Published 18 June 2026</span>
+              </div>
+            </div>
+          </div>
+          <div class="not-prose">
+            <div id="authors" class="mb-12 flex flex-wrap items-center gap-x-5 gap-y-3.5">
+              <div>
+                <a id="author-name" href="/agurung">Alexander Gurung</a>
+                <a id="author-handle" href="/agurung">agurung</a>
+                <button id="follow-button" type="button">Follow</button>
+                <a id="author-org" href="/ServiceNow">ServiceNow</a>
+              </div>
+            </div>
+          </div>
+          <div id="toc" class="absolute -left-12 bottom-0 top-0 z-10 not-prose hidden lg:block">
+            <nav aria-label="Secondary">
+              <a id="toc-tldr" href="#tldr">TL;DR</a>
+              <a id="toc-privacy" href="#privacy-leakage-in-deep-research-agents">Privacy Leakage in Deep-Research Agents</a>
+            </nav>
+          </div>
+          <h2 id="tldr-heading" class="relative group flex items-baseline">
+            <a id="tldr-anchor" class="block pr-1.5 text-lg md:absolute md:p-1.5 md:opacity-0 md:group-hover:opacity-100 md:right-full" href="#tldr" rel="nofollow">
+              <span class="header-link">#</span>
+            </a>
+            <span>TL;DR</span>
+          </h2>
+          <p id="summary">
+            Deep research agents increasingly combine private local documents with external tools like web retrieval,
+            creating a privacy risk: an agent's external queries may leak sensitive information.
+          </p>
+          <h2 id="privacy-heading" class="relative group flex items-baseline">
+            <a id="privacy-anchor" class="block pr-1.5 text-lg md:absolute md:p-1.5 md:opacity-0 md:group-hover:opacity-100 md:right-full" href="#privacy-leakage-in-deep-research-agents" rel="nofollow">
+              <span class="header-link">#</span>
+            </a>
+            <span>Privacy Leakage in Deep-Research Agents</span>
+          </h2>
+          <p id="body">
+            A research agent at a healthcare firm is working through a routine question, and along the way it fires off
+            a handful of ordinary-looking web searches.
+          </p>
+        </div>
+      </div>
+    </div>
+    <aside id="upvote-rail" class="hidden xl:block">
+      <div class="SVELTE_HYDRATER contents" data-target="UpvoteControl">
+        <div class="flex flex-wrap items-center gap-2.5 pt-1 lg:max-w-60 lg:flex-col lg:items-start! lg:sticky lg:top-8">
+          <a id="upvote-login" href="/login?next=%2Fblog%2FServiceNow%2Fmosaicleaks" class="self-start">
+            <div id="upvote-button" class="shadow-alternate group flex h-9 cursor-pointer select-none items-center gap-2 rounded-lg border">
+              Upvote
+              <div id="upvote-count" class="font-semibold text-orange-500">12</div>
+            </div>
+          </a>
+          <ul id="upvoter-list" class="flex items-center text-gray-600 flex-row text-base">
+            <li title="victor"><a id="upvoter-victor" href="/victor"><img alt="" src="/avatars/victor.svg"></a></li>
+            <li title="rafapi-snow"><a id="upvoter-rafapi" href="/rafapi-snow"><img alt="" src="/avatars/rafapi.svg"></a></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>

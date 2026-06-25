@@ -789,6 +789,48 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(nodes.map(node => node.id)).not.toContain('ibuprofen')
   })
 
+  it('skips dynamically mounted Hugging Face blog upvote controls', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://huggingface.co/blog/ServiceNow/mosaicleaks'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="page-root">
+        <div class="blog-content prose">
+          <h1 id="article-title">MosaicLeaks: Can your research agent keep a secret?</h1>
+          <p id="summary">
+            Deep research agents increasingly combine private local documents with external tools like web retrieval,
+            creating a privacy risk that external queries may leak sensitive information.
+          </p>
+        </div>
+        <aside id="upvote-rail">
+          <div id="upvote-control" class="SVELTE_HYDRATER contents" data-target="UpvoteControl">
+            <div class="flex flex-wrap items-center gap-2.5 pt-1 lg:sticky lg:top-8">
+              <a href="/login?next=%2Fblog%2FServiceNow%2Fmosaicleaks" class="self-start">
+                <div id="upvote-button" class="shadow-alternate group flex h-9 cursor-pointer select-none items-center gap-2 rounded-lg border">
+                  Upvote
+                  <div id="upvote-count" class="font-semibold text-orange-500">12</div>
+                </div>
+              </a>
+              <ul id="upvoter-list" class="flex items-center text-gray-600 flex-row text-base">
+                <li title="victor"><a href="/victor"><img alt="" src="/avatars/victor.svg"></a></li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#upvote-control')!,
+      document.querySelector('#page-root')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(nodes).toEqual([])
+  })
+
   it('collects Ziggit reply paragraphs inserted outside the initial post content root', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822'),

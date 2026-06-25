@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { afterBilingualAppendCompatFn, replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
 import {
+  siteProfiles,
   siteProfileExpandTargetFns,
   siteProfileShouldKeepNestedTargetFns
 } from '@/entrypoints/main/siteProfiles'
@@ -75,6 +76,11 @@ describe('site profile registry', () => {
     expect(selectCompatFn['arstechnica.com']).toBeTypeOf('function')
   })
 
+  it('registers Hugging Face blog article profile', () => {
+    expect(selectCompatFn['huggingface.co']).toBeTypeOf('function')
+    expect(afterBilingualAppendCompatFn['huggingface.co']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'
@@ -136,6 +142,61 @@ describe('site profile registry', () => {
     expect(resizeHandler).not.toHaveBeenCalled()
 
     window.removeEventListener('resize', resizeHandler)
+  })
+
+  it('stacks Hugging Face blog heading translations below flex headings', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://huggingface.co/blog/ServiceNow/mosaicleaks'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="blog-content prose">
+          <h1 id="article-title" class="group relative flex items-center">
+            <a href="#mosaicleaks-can-your-research-agent-keep-a-secret">
+              <span class="header-link">#</span>
+            </a>
+            <span>MosaicLeaks: Can your research agent keep a secret?</span>
+          </h1>
+        </div>
+      </main>
+    `
+    const heading = document.querySelector<HTMLElement>('#article-title')!
+    const translationNode = document.createElement('span')
+    translationNode.textContent = 'MosaicLeaks：您的研究代理能否保守秘密？'
+
+    afterBilingualAppendCompatFn['huggingface.co']?.(heading, translationNode, heading)
+
+    expect(heading.style.display).toBe('block')
+    expect(translationNode.style.display).toBe('block')
+  })
+
+  it('skips Hugging Face blog upvote controls outside the article body', () => {
+    document.body.innerHTML = `
+      <main>
+        <aside>
+          <div id="upvote-control" data-target="UpvoteControl">
+            <div>
+              <a href="/login?next=%2Fblog%2FServiceNow%2Fmosaicleaks">
+                <div id="upvote-button">Upvote <span>12</span></div>
+              </a>
+            </div>
+          </div>
+        </aside>
+      </main>
+    `
+    const profile = siteProfiles.find(item => item.id === 'hugging-face')!
+    const skip = profile.skipTarget?.(document.querySelector('#upvote-button')!, {
+      mode: 'smart',
+      scope: 'smart',
+      contentRoot: document.body
+    })
+
+    expect(skip).toMatchObject({
+      policy: 'hard-skip',
+      role: 'metadata',
+      reason: 'hugging-face-blog-metadata'
+    })
   })
 
   it('recognizes common CNN headline and description nodes', () => {

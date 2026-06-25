@@ -5,6 +5,7 @@ import { cnnProfile } from './cnn';
 import { decryptProfile } from './decrypt';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
+import { huggingFaceProfile } from './huggingFace';
 import { mediumProfile } from './medium';
 import { nxgoaiProfile } from './nxgoai';
 import { realPythonProfile } from './realPython';
@@ -60,6 +61,7 @@ export const siteProfiles: SiteProfile[] = [
     redditProfile,
     simonWillisonProfile,
     hackerNewsProfile,
+    huggingFaceProfile,
     asteriskProfile,
     arsTechnicaProfile,
     claudeNagdyProfile,

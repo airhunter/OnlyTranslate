@@ -1,0 +1,27 @@
+{
+  "name": "Hugging Face blog profile keeps article text without header metadata",
+  "url": "https://huggingface.co/blog/ServiceNow/mosaicleaks",
+  "scope": "smart",
+  "html": "huggingface-blog-article.html",
+  "include": ["article-title", "tldr-heading", "summary", "privacy-heading", "body"],
+  "exclude": ["back-link", "article-label", "published-date", "authors", "author-name", "author-handle", "follow-button", "author-org", "toc", "toc-tldr", "toc-privacy", "upvote-rail", "upvote-login", "upvote-button", "upvote-count", "upvoter-list", "upvoter-victor", "upvoter-rafapi"],
+  "textIncludes": [
+    "MosaicLeaks: Can your research agent keep a secret?",
+    "TL;DR",
+    "Deep research agents increasingly combine private local documents",
+    "Privacy Leakage in Deep-Research Agents"
+  ],
+  "textExcludes": [
+    "Back to Articles",
+    "Enterprise Article",
+    "Published 18 June 2026",
+    "Alexander Gurung",
+    "agurung",
+    "Follow",
+    "ServiceNow",
+    "Upvote"
+  ],
+  "stats": {
+    "profileFastPathUsed": true
+  }
+}
