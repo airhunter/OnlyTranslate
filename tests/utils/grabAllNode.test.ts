@@ -90,6 +90,36 @@ describe('grabAllNode', () => {
     expect(host.innerHTML).toBe('VS Code 已成熟。运行 <code>code --install-extension Anthropic.claude-code</code>。')
   })
 
+  it('preserves default keepSelector inline elements without preserving a link shell', () => {
+    document.body.innerHTML = `
+      <p id="intro">
+        Open <a href="/docs">the <code>Config</code> guide</a>, set <var>targetLang</var>, and keep
+        <span class="math">E = mc^2</span> unchanged.
+      </p>
+    `
+
+    const node = document.querySelector('#intro') as HTMLElement
+    const result = getTranslatableTextWithProtectedInline(node)
+
+    expect(result.protectedInlines).toHaveLength(3)
+    expect(result.text).toContain('the ')
+    expect(result.text).toContain(' guide')
+    expect(result.text).not.toContain('Config')
+    expect(result.text).not.toContain('targetLang')
+    expect(result.text).not.toContain('E = mc^2')
+
+    const [code, variable, formula] = result.protectedInlines
+    const fragment = renderTextWithProtectedInline(
+      `打开这份 ${code.placeholder} 指南，设置 ${variable.placeholder}，并保持 ${formula.placeholder} 不变。`,
+      result.protectedInlines
+    )
+    const host = document.createElement('span')
+    host.append(fragment as DocumentFragment)
+
+    expect(host.innerHTML).toBe('打开这份 <code>Config</code> 指南，设置 <var>targetLang</var>，并保持 <span class="math">E = mc^2</span> 不变。')
+    expect(host.querySelector('a')).toBeNull()
+  })
+
   it('returns null when protected inline placeholders are missing', () => {
     document.body.innerHTML = `
       <p id="intro">Run <code>npm install</code>.</p>

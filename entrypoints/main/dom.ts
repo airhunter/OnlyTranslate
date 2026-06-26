@@ -1,4 +1,4 @@
-import { selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
+import { keepSelectorCompatFn, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { html } from 'js-beautify';
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
@@ -42,7 +42,7 @@ const inlineOnlyTextBlockSet = new Set([
     'p', 'blockquote', 'figcaption'
 ]);
 
-const protectedInlineSet = new Set(['code', 'kbd', 'samp']);
+const defaultKeepSelector = 'code, kbd, samp, var, math, .math';
 
 export interface ProtectedInlinePlaceholder {
     placeholder: string;
@@ -65,8 +65,7 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
         if (!(current instanceof Element)) return current.textContent ?? '';
         if (isNonTranslatableContentElement(current)) return '';
 
-        const tag = current.tagName.toLowerCase();
-        if (protectedInlineSet.has(tag)) {
+        if (isProtectedInlineElement(current)) {
             const placeholder = buildProtectedInlinePlaceholder(current, protectedInlines.length);
             protectedInlines.push({
                 placeholder,
@@ -86,6 +85,33 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
         text: collect(node),
         protectedInlines
     };
+}
+
+function isProtectedInlineElement(node: Element): boolean {
+    return matchesSelectorList(node, getActiveKeepSelector());
+}
+
+function getActiveKeepSelector(): string {
+    const url = location.href.split('?')[0] ?? location.href;
+    const siteSelector = keepSelectorCompatFn[getMainDomain(url)];
+    return [defaultKeepSelector, siteSelector].filter(Boolean).join(', ');
+}
+
+function matchesSelectorList(node: Element, selectorList: string): boolean {
+    return splitSelectorList(selectorList).some(selector => {
+        try {
+            return node.matches(selector);
+        } catch {
+            return false;
+        }
+    });
+}
+
+function splitSelectorList(selectorList: string): string[] {
+    return selectorList
+        .split(',')
+        .map(selector => selector.trim())
+        .filter(Boolean);
 }
 
 export function renderTextWithProtectedInline(

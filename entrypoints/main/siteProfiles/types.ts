@@ -29,6 +29,7 @@ export interface SiteProfile {
     rootsSelector?: string;
     targetSelector?: string;
     ignoreSelector?: string;
+    keepSelector?: string;
     select?: SiteProfileSelect;
     replace?: SiteProfileReplace;
     supplemental?: SiteProfileSupplemental;
@@ -42,6 +43,10 @@ export interface SiteProfile {
 
 export interface SelectCompatFn {
     [domain: string]: SiteProfileSelect;
+}
+
+export interface KeepSelectorCompatFn {
+    [domain: string]: string;
 }
 
 export interface ReplaceCompatFn {

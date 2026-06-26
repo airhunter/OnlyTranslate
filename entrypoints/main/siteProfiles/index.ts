@@ -16,6 +16,7 @@ import { stackOverflowProfile } from './stackoverflow';
 import type {
     AfterBilingualAppendCompatFn,
     ExpandTargetCompatFn,
+    KeepSelectorCompatFn,
     ReplaceCompatFn,
     SelectCompatFn,
     ShouldKeepNestedTargetCompatFn,
@@ -28,6 +29,7 @@ import { youtubeProfile } from './youtube';
 import { ziggitProfile } from './ziggit';
 
 export type {
+    KeepSelectorCompatFn,
     ReplaceCompatFn,
     SelectCompatFn,
     SiteProfile,
@@ -107,6 +109,16 @@ export const siteProfileSelectFns: SelectCompatFn = siteProfiles.reduce<SelectCo
 
     for (const domain of profile.domains) {
         map[domain] = select;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileKeepSelectorFns: KeepSelectorCompatFn = siteProfiles.reduce<KeepSelectorCompatFn>((map, profile) => {
+    if (!profile.keepSelector) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.keepSelector;
     }
 
     return map;
