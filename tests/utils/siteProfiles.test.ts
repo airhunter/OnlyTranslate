@@ -98,6 +98,17 @@ describe('site profile registry', () => {
     expect(selectCompatFn['mvnrepository.com']?.(element, { mode: 'smart' })).toBe(element)
   })
 
+  it('registers declarative simple target selectors as select profiles', () => {
+    const profile = siteProfiles.find(item => item.id === 'aozora')!
+    const element = document.createElement('div')
+    element.className = 'main_text'
+    element.textContent = 'Readable Aozora text'
+
+    expect(profile.targetSelector).toBe('div.main_text')
+    expect(profile.select).toBeUndefined()
+    expect(selectCompatFn['aozora.gr.jp']?.(element, { mode: 'smart' })).toBe(element)
+  })
+
   it('relayouts Asterisk footnotes after bilingual text is appended', () => {
     vi.useFakeTimers()
     const resizeHandler = vi.fn()

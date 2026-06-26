@@ -20,6 +20,7 @@ import type {
     SelectCompatFn,
     ShouldKeepNestedTargetCompatFn,
     SiteProfile,
+    SiteProfileSelect,
     SupplementalCompatFn
 } from './types';
 import { xProfile } from './x';
@@ -69,11 +70,43 @@ export const siteProfiles: SiteProfile[] = [
     ziggitProfile
 ];
 
+function createDeclarativeSelect(profile: SiteProfile): SiteProfileSelect | undefined {
+    if (!profile.targetSelector) return profile.select;
+
+    return (node) => {
+        if (profile.ignoreSelector && safeMatchesOrClosest(node, profile.ignoreSelector)) return { skip: true };
+        if (profile.rootsSelector && !safeMatchesOrClosest(node, profile.rootsSelector)) return false;
+        if (safeMatches(node, profile.targetSelector!)) return node;
+        return false;
+    };
+}
+
+function safeMatchesOrClosest(node: Element, selector: string): boolean {
+    return safeMatches(node, selector) || Boolean(safeClosest(node, selector));
+}
+
+function safeClosest(node: Element, selector: string): Element | null {
+    try {
+        return node.closest(selector);
+    } catch {
+        return null;
+    }
+}
+
+function safeMatches(node: Element, selector: string): boolean {
+    try {
+        return node.matches(selector);
+    } catch {
+        return false;
+    }
+}
+
 export const siteProfileSelectFns: SelectCompatFn = siteProfiles.reduce<SelectCompatFn>((map, profile) => {
-    if (!profile.select) return map;
+    const select = createDeclarativeSelect(profile);
+    if (!select) return map;
 
     for (const domain of profile.domains) {
-        map[domain] = profile.select;
+        map[domain] = select;
     }
 
     return map;

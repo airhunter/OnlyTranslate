@@ -26,6 +26,9 @@ export interface SiteProfile {
     id: string;
     domains: string[];
     targetStrategy?: 'profile-first';
+    rootsSelector?: string;
+    targetSelector?: string;
+    ignoreSelector?: string;
     select?: SiteProfileSelect;
     replace?: SiteProfileReplace;
     supplemental?: SiteProfileSupplemental;

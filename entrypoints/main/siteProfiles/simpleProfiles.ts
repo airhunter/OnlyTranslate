@@ -4,25 +4,16 @@ export const simpleProfiles: SiteProfile[] = [
     {
         id: 'mvnrepository',
         domains: ['mvnrepository.com'],
-        select: (node) => {
-            if (node.tagName.toLowerCase() === 'div' && node.classList.contains('im-description')) return node;
-            return false;
-        }
+        targetSelector: 'div.im-description'
     },
     {
         id: 'aozora',
         domains: ['aozora.gr.jp'],
-        select: (node) => {
-            if (node.tagName.toLowerCase() === 'div' && node.classList.contains('main_text')) return node;
-            return false;
-        }
+        targetSelector: 'div.main_text'
     },
     {
         id: 'webtrees',
         domains: ['webtrees.net'],
-        select: (node) => {
-            if (node.tagName.toLowerCase() === 'div' && node.classList.contains('kmsg')) return node;
-            return false;
-        }
+        targetSelector: 'div.kmsg'
     }
 ];
