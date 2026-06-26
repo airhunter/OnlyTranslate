@@ -1,0 +1,23 @@
+{
+  "name": "lilianweng nested table of contents keeps every list item",
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "scope": "smart",
+  "html": "lilianweng-nested-toc.html",
+  "contentRoot": "article.post-single",
+  "textIncludes": [
+    "Early days: ML loss predictability",
+    "Scaling Laws in Data-Infinite Region",
+    "Kaplan et al.'s Scaling Laws",
+    "Chinchilla Scaling Laws",
+    "Method 1: Fix model sizes, vary the token budget",
+    "Method 2: IsoFLOP profiles",
+    "Method 3: Parametric fit",
+    "Reconciling Kaplan and Chinchilla",
+    "Why power law?",
+    "Scaling Laws in Data-Limited Region",
+    "Trickiness of Fitting Scaling Laws in Reality",
+    "Toy simulation",
+    "Citation",
+    "References"
+  ]
+}

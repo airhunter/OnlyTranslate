@@ -30,6 +30,31 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('skip-self')
   })
 
+  it('keeps nested table-of-contents list items rather than treating them as flat tag clusters', () => {
+    const element = renderElement(`
+      <li>
+        <a href="#infinite">Scaling Laws in Data-Infinite Region</a>
+        <ul>
+          <li><a href="#kaplan">Kaplan et al.'s Scaling Laws</a></li>
+          <li><a href="#chinchilla">Chinchilla Scaling Laws</a>
+            <ul>
+              <li><a href="#method-1">Method 1: Fix model sizes, vary the token budget</a></li>
+              <li><a href="#method-2">Method 2: IsoFLOP profiles</a></li>
+              <li><a href="#method-3">Method 3: Parametric fit</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    `)
+
+    expect(shouldSkipContentBlock(element)).toBe(false)
+    expect(getContentFilterDecision(element)).toBe('keep')
+
+    const nestedList = element.querySelector('ul')
+    expect(nestedList).not.toBeNull()
+    expect(getContentFilterDecision(nestedList as Element)).toBe('keep')
+  })
+
   it('skips a TDS-like share block', () => {
     const element = renderElement(`
       <section class="share-this-article">

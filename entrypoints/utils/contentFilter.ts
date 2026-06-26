@@ -44,7 +44,7 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
     const hint = structuralHint;
 
     if (isShareBlock(element, hint, metrics)) return 'skip-self';
-    if (isTagCluster(hint, metrics)) return 'skip-self';
+    if (isTagCluster(element, hint, metrics)) return 'skip-self';
     if (isAuthorOrBylineBlock(hint, metrics)) return 'skip-self';
     if (isPromoOrCtaBlock(element, hint, metrics)) return 'skip-self';
     if (isRelatedBlock(element, hint, structuralHint, metrics)) return 'skip-self';
@@ -74,7 +74,8 @@ function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): bo
         && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
 }
 
-function isTagCluster(hint: string, metrics: BlockMetrics): boolean {
+function isTagCluster(element: Element, hint: string, metrics: BlockMetrics): boolean {
+    if (isNestedListItem(element)) return false;
     if (metrics.longParagraphCount > 0 || metrics.hasCodeOrTable) return false;
     if (metrics.linkCount < 3 && metrics.shortInteractiveCount < 3) return false;
 
@@ -84,6 +85,17 @@ function isTagCluster(hint: string, metrics: BlockMetrics): boolean {
         && metrics.linkDensity >= 0.45;
 
     return hasTagHint || looksLikePills;
+}
+
+function isNestedListItem(element: Element): boolean {
+    const tag = element.tagName.toLowerCase();
+    if ((tag === 'ul' || tag === 'ol') && element.parentElement?.tagName.toLowerCase() === 'li') return true;
+    if (tag !== 'li') return false;
+
+    return Array.from(element.children).some(child => {
+        const childTag = child.tagName.toLowerCase();
+        return childTag === 'ul' || childTag === 'ol';
+    });
 }
 
 function isPromoOrCtaBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
