@@ -147,6 +147,42 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
   })
 
+  it('uses block insertion layout for flex translation targets in normal flow', async () => {
+    vi.mocked(translateText).mockResolvedValue('研究代理会混合私有文档和外部工具。')
+    document.body.innerHTML = `
+      <article id="article" style="display: block;">
+        <h1 id="headline" style="display: flex;">Research agents mix private documents with external tools.</h1>
+      </article>
+    `
+
+    const headline = document.querySelector('#headline') as HTMLElement
+    handleBilingualTranslation(headline, false)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const translation = headline.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    expect(headline.style.display).toBe('block')
+    expect(translation?.style.display).toBe('block')
+    expect(translation?.style.width).toBe('100%')
+  })
+
+  it('preserves flex item layout when the translation target parent is flex', async () => {
+    vi.mocked(translateText).mockResolvedValue('操作按钮保持在工具栏内。')
+    document.body.innerHTML = `
+      <div id="toolbar" style="display: flex;">
+        <span id="toolbar-copy" style="display: flex;">Action button copy stays inside a toolbar.</span>
+      </div>
+    `
+
+    const copy = document.querySelector('#toolbar-copy') as HTMLElement
+    handleBilingualTranslation(copy, false)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const translation = copy.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    expect(copy.style.display).toBe('flex')
+    expect(translation?.style.display).toBe('')
+    expect(translation?.style.width).toBe('')
+  })
+
   it('restores bilingual direct text wrappers without disturbing nested child blocks', async () => {
     vi.mocked(translateText).mockResolvedValue('Translated log event.')
     document.body.innerHTML = `

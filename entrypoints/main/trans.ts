@@ -591,9 +591,41 @@ function bilingualAppendChild(node: HTMLElement, text: string | Node) {
     smashTruncationStyle(node);
     const appendTarget = getBilingualAppendTarget(node);
     appendTarget.appendChild(newNode);
+    applyBilingualInsertionLayout(appendTarget, newNode);
 
     const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
     if (fn) fn(node, newNode, appendTarget);
+}
+
+function applyBilingualInsertionLayout(appendTarget: HTMLElement, translationNode: HTMLElement): void {
+    const layoutTarget = resolveBlockInsertionLayoutTarget(appendTarget);
+    if (!layoutTarget) return;
+
+    layoutTarget.style.display = 'block';
+    translationNode.style.display = 'block';
+    translationNode.style.width = '100%';
+}
+
+function resolveBlockInsertionLayoutTarget(appendTarget: HTMLElement): HTMLElement | null {
+    const targetDisplay = getComputedDisplay(appendTarget);
+    if (!isFlexOrGridDisplay(targetDisplay)) return null;
+
+    const parent = appendTarget.parentElement;
+    if (parent && isFlexOrGridDisplay(getComputedDisplay(parent))) return null;
+
+    return appendTarget;
+}
+
+function getComputedDisplay(element: HTMLElement): string {
+    try {
+        return window.getComputedStyle(element).display || '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function isFlexOrGridDisplay(display: string): boolean {
+    return display.includes('flex') || display.includes('grid');
 }
 
 function getBilingualAppendTarget(node: HTMLElement): HTMLElement {
