@@ -1,0 +1,14 @@
+{
+  "name": "recognizes Paul Graham old table essay body",
+  "url": "https://paulgraham.com/earn.html",
+  "scope": "smart",
+  "html": "paulgraham-old-essay.html",
+  "include": [],
+  "exclude": ["sidebar", "nav-image", "essay-title", "essay-body", "inline-link", "inline-emphasis"],
+  "textIncludes": [
+    "Since this is apparently the future prime ministers' club",
+    "Starting a successful startup is the most"
+  ],
+  "textExcludes": ["Home Essays"],
+  "nodesEveryElement": true
+}

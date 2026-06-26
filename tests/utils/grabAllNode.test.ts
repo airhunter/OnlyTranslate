@@ -227,6 +227,108 @@ describe('grabAllNode', () => {
     expect(target.textContent).not.toContain('Filter Verdict')
   })
 
+  it('wraps legacy font inline flow into br-separated direct text targets', () => {
+    document.body.innerHTML = `
+      <article>
+        <font id="essay-body" size="2" face="verdana">
+          June 2026<br><br>
+          <i id="intro-note">This is based on a talk I gave at the Oxford Union.</i><br><br>
+          Since this is apparently the future prime ministers' club, I'm going
+          to tell you about how people become billionaires. Starting a successful
+          startup is the most <a id="inline-link" href="/richnow.html">common</a>
+          way to become a billionaire.<br><br>
+          Of course it's possible. It's <i id="inline-emphasis">hard</i>, but it's possible.
+        </font>
+      </article>
+    `
+
+    const nodes = grabAllNode(document.body)
+    const wrappers = nodes.filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(4)
+    expect(wrappers.map(node => node.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'June 2026',
+      'This is based on a talk I gave at the Oxford Union.',
+      "Since this is apparently the future prime ministers' club, I'm going to tell you about how people become billionaires. Starting a successful startup is the most common way to become a billionaire.",
+      "Of course it's possible. It's hard, but it's possible."
+    ])
+    expect(nodes).not.toContain(document.querySelector('#inline-link'))
+    expect(nodes).not.toContain(document.querySelector('#inline-emphasis'))
+  })
+
+  it('keeps a single br inside one legacy font direct text target', () => {
+    document.body.innerHTML = `
+      <article>
+        <font id="essay-body" size="2" face="verdana">
+          First line of the same paragraph<br>
+          continues with enough natural language to stay together.<br><br>
+          Second paragraph has enough detail to become another target.
+        </font>
+      </article>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(2)
+    expect(wrappers[0].textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'First line of the same paragraph continues with enough natural language to stay together.'
+    )
+    expect(wrappers[1].textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Second paragraph has enough detail to become another target.'
+    )
+  })
+
+  it('does not use legacy font wrapping without a br paragraph boundary', () => {
+    document.body.innerHTML = `
+      <article>
+        <font id="essay-body" size="2" face="verdana">
+          A short inline note without legacy paragraph breaks.
+          <i id="inline-emphasis">Still inline.</i>
+        </font>
+      </article>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(0)
+  })
+
+  it('does not use legacy font wrapping inside navigation', () => {
+    document.body.innerHTML = `
+      <nav>
+        <font id="nav-font" size="2" face="verdana">
+          Home page introduction with many words.<br><br>
+          Essays archive and other navigation labels.
+        </font>
+      </nav>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(0)
+  })
+
+  it('does not use legacy font wrapping for high link density text', () => {
+    document.body.innerHTML = `
+      <article>
+        <font id="link-list" size="2" face="verdana">
+          Browse <a href="/home">Home</a> <a href="/essays">Essays</a>
+          <a href="/books">Books</a> <a href="/rss">RSS</a><br><br>
+          More <a href="/bio">Bio</a> <a href="/twitter">Twitter</a>
+          <a href="/mastodon">Mastodon</a>
+        </font>
+      </article>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(0)
+  })
+
   it('wraps the direct inline run even when a nested child block is long', () => {
     const nestedDetail = Array.from({ length: 120 }, () => 'Nested detail should not decide the prefix target.').join(' ')
     document.body.innerHTML = `

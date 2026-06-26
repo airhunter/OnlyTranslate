@@ -12,7 +12,7 @@ import {
     type ScanBudgetKind,
     type ScanContext
 } from "@/entrypoints/main/translationTarget/scanContext";
-import { isInlineOnlyElement } from "@/entrypoints/utils/proseSignals";
+import { getProseEvidence, isInlineOnlyElement } from "@/entrypoints/utils/proseSignals";
 
 // 直接翻译的标签集合（块级元素）
 const directSet = new Set([
@@ -22,6 +22,20 @@ const directSet = new Set([
 ]);
 
 const directTextRunHostSet = new Set(['li', 'dd', 'blockquote', 'figcaption']);
+const legacyInlineFlowHostSet = new Set(['font']);
+
+const legacyInlineFlowBlockedAncestorSelector = [
+    'nav',
+    'header',
+    'footer',
+    'form',
+    'button',
+    'menu',
+    '[role="navigation"]',
+    '[role="menu"]',
+    '[role="menubar"]',
+    '[role="toolbar"]'
+].join(', ');
 
 const inlineOnlyTextBlockSet = new Set([
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -372,9 +386,12 @@ function getNodeDepth(node: Element): number {
 // 返回最终应该翻译的父节点或 false
 const directTextTargetSelector = `[${DIRECT_TEXT_TARGET_ATTR}="true"]`;
 
+type DirectTextRunKind = 'mixed-block' | 'legacy-inline-flow';
+
 interface DirectTextRunContext {
     host: Element;
     directChild: ChildNode | null;
+    kind: DirectTextRunKind;
 }
 
 function isDirectTextTargetElement(node: Element): boolean {
@@ -395,15 +412,17 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
     const context = resolveDirectTextRunContext(node);
     if (!context) return false;
 
-    const { host, directChild } = context;
+    const { host, directChild, kind } = context;
     const hostTag = host.tagName.toLowerCase();
-    if (!directTextRunHostSet.has(hostTag)) return false;
     if (shouldSkipDirectTextHost(host, hostTag)) return false;
     if (host.closest(`.${translationContentClass}, [${translatedAttr}="true"]`)) return false;
     if (hasContentFilterSkipSelfAncestor(host, options)) return false;
-    if (!hasDirectBlockBoundary(host)) return false;
+    if (kind === 'mixed-block' && !hasDirectBlockBoundary(host)) return false;
+    if (kind === 'legacy-inline-flow' && !shouldUseLegacyInlineFlowHost(host, options)) return false;
 
-    const run = findDirectTextRun(host, directChild);
+    const run = kind === 'legacy-inline-flow'
+        ? findLegacyInlineFlowRun(host, directChild)
+        : findDirectTextRun(host, directChild);
     if (!run) return false;
 
     const runWrapper = run.find(child => child instanceof Element && isDirectTextTargetElement(child)) as Element | undefined;
@@ -414,7 +433,11 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
 
 function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
     if (node instanceof Element && directTextRunHostSet.has(node.tagName.toLowerCase())) {
-        return { host: node, directChild: null };
+        return { host: node, directChild: null, kind: 'mixed-block' };
+    }
+
+    if (node instanceof Element && legacyInlineFlowHostSet.has(node.tagName.toLowerCase())) {
+        return { host: node, directChild: null, kind: 'legacy-inline-flow' };
     }
 
     let current: Node | null = node;
@@ -423,7 +446,15 @@ function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
         if (parent instanceof Element && directTextRunHostSet.has(parent.tagName.toLowerCase())) {
             return {
                 host: parent,
-                directChild: current as ChildNode
+                directChild: current as ChildNode,
+                kind: 'mixed-block'
+            };
+        }
+        if (parent instanceof Element && legacyInlineFlowHostSet.has(parent.tagName.toLowerCase())) {
+            return {
+                host: parent,
+                directChild: current as ChildNode,
+                kind: 'legacy-inline-flow'
             };
         }
         current = parent;
@@ -469,6 +500,157 @@ function findDirectTextRun(host: Element, directChild: ChildNode | null): ChildN
     flush();
 
     return selectedRun ?? firstReadableRun;
+}
+
+function findLegacyInlineFlowRun(host: Element, directChild: ChildNode | null): ChildNode[] | null {
+    let selectedRun: ChildNode[] | null = null;
+    let firstReadableRun: ChildNode[] | null = null;
+    let currentRun: ChildNode[] = [];
+    let breakBuffer: ChildNode[] = [];
+
+    const flushRun = () => {
+        if (!currentRun.length) return;
+
+        const candidate = currentRun;
+        currentRun = [];
+        if (!hasReadableDirectTextRun(candidate)) return;
+
+        if (directChild && candidate.includes(directChild)) {
+            selectedRun = candidate;
+            return;
+        }
+
+        if (!directChild && !firstReadableRun) {
+            firstReadableRun = candidate;
+        }
+    };
+
+    const flushBreakBuffer = () => {
+        if (!breakBuffer.length) return;
+
+        const boundary = isLegacyParagraphBreakBuffer(breakBuffer);
+        const buffered = breakBuffer;
+        breakBuffer = [];
+
+        if (boundary) {
+            flushRun();
+            return;
+        }
+
+        currentRun.push(...buffered);
+    };
+
+    host.childNodes.forEach(child => {
+        if (isLegacyParagraphBreakElement(child)) {
+            breakBuffer.push(child);
+            return;
+        }
+
+        if (breakBuffer.length && isWhitespaceTextNode(child)) {
+            breakBuffer.push(child);
+            return;
+        }
+
+        if (child.nodeType === Node.COMMENT_NODE) {
+            return;
+        }
+
+        flushBreakBuffer();
+
+        if (isLegacyInlineFlowRunNode(child)) {
+            currentRun.push(child);
+            return;
+        }
+
+        flushRun();
+    });
+
+    flushBreakBuffer();
+    flushRun();
+
+    return selectedRun ?? firstReadableRun;
+}
+
+function shouldUseLegacyInlineFlowHost(host: Element, options: GrabAllNodeOptions): boolean {
+    if (hasContentFilterSkip(host, options)) return false;
+    if (isInsideLegacyInlineFlowBlockedArea(host)) return false;
+    if (!hasOnlyLegacyInlineFlowChildren(host)) return false;
+    if (!hasDirectReadableTextChild(host)) return false;
+    if (!hasLegacyParagraphBoundary(host)) return false;
+
+    const evidence = getProseEvidence(host, {
+        getText: element => getTranslatableText(element)
+    });
+
+    return evidence.strength !== 'none';
+}
+
+function hasContentFilterSkip(node: Element, options: GrabAllNodeOptions): boolean {
+    if (!options.contentFilter) return false;
+
+    return getCachedContentFilterDecision(options.scanContext, node, options.contentFilter) !== 'keep';
+}
+
+function isInsideLegacyInlineFlowBlockedArea(host: Element): boolean {
+    try {
+        return Boolean(host.closest(legacyInlineFlowBlockedAncestorSelector));
+    } catch {
+        return false;
+    }
+}
+
+function hasOnlyLegacyInlineFlowChildren(host: Element): boolean {
+    return Array.from(host.childNodes).every(child => {
+        if (child instanceof Text) return true;
+        if (child.nodeType === Node.COMMENT_NODE) return true;
+        if (!(child instanceof Element)) return false;
+
+        const tag = child.tagName.toLowerCase();
+        return inlineSet.has(tag) && isSafeInlineRunElement(child, tag);
+    });
+}
+
+function hasDirectReadableTextChild(host: Element): boolean {
+    return Array.from(host.childNodes).some(child =>
+        child instanceof Text && child.textContent?.trim()
+    );
+}
+
+function hasLegacyParagraphBoundary(host: Element): boolean {
+    let breakCount = 0;
+
+    for (const child of Array.from(host.childNodes)) {
+        if (isLegacyParagraphBreakElement(child)) {
+            breakCount += 1;
+            if (breakCount >= 2) return true;
+            continue;
+        }
+
+        if (breakCount > 0 && isWhitespaceTextNode(child)) continue;
+        breakCount = 0;
+    }
+
+    return false;
+}
+
+function isLegacyInlineFlowRunNode(node: ChildNode): boolean {
+    if (node instanceof Text) return true;
+    if (!(node instanceof Element)) return false;
+
+    const tag = node.tagName.toLowerCase();
+    return inlineSet.has(tag) && isSafeInlineRunElement(node, tag);
+}
+
+function isLegacyParagraphBreakBuffer(nodes: ChildNode[]): boolean {
+    return nodes.filter(isLegacyParagraphBreakElement).length >= 2;
+}
+
+function isLegacyParagraphBreakElement(node: Node): node is HTMLBRElement {
+    return node instanceof Element && node.tagName.toLowerCase() === 'br';
+}
+
+function isWhitespaceTextNode(node: Node): boolean {
+    return node instanceof Text && !node.textContent?.trim();
 }
 
 function isDirectTextRunNode(node: ChildNode): boolean {
