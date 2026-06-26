@@ -4,7 +4,19 @@
       "Bash(xargs cat:*)",
       "PowerShell(Get-ChildItem \"C:\\\\coding\\\\translates_project\\\\OnlyTranslate\" -Name | Where-Object { $_ -notmatch \"^node_modules$|^\\\\.git$\" })",
       "Bash(Get-ChildItem \"C:/coding/translates_project/OnlyTranslate/entrypoints\" -Recurse -Include \"*.ts\",\"*.vue\")",
-      "Bash(Measure-Object -Property Length -Sum)"
+      "Bash(Measure-Object -Property Length -Sum)",
+      "Bash(python3 -)",
+      "Bash(echo \"############ READ-FROG 结构 ############\" *)",
+      "Read(//Users/wuwenjie/Documents/IdeaProjects/kiss-translator/src/config/**)",
+      "Read(//Users/wuwenjie/Documents/IdeaProjects/kiss-translator/src/**)",
+      "Bash(echo \"=== dom.ts: 直接文本 wrapper / br 相关逻辑 ===\")",
+      "Bash(grep -n 'br\\\\|BR\\\\|directText\\\\|direct text\\\\|inline\\\\|figcaption\\\\|blockquote\\\\|childNodes\\\\|TEXT_NODE\\\\|nodeType' /Users/wuwenjie/Documents/IdeaProjects/OnlyTranslate/entrypoints/main/dom.ts)",
+      "Bash(echo \"=== DIRECT_TEXT_TARGET_ATTR 真实值 ===\")",
+      "Bash(grep -rn 'DIRECT_TEXT_TARGET_ATTR\\\\s*=' /Users/wuwenjie/Documents/IdeaProjects/OnlyTranslate/entrypoints/main/dom.ts)",
+      "Bash(echo)",
+      "Bash(echo \"=== grabAllNode 入口：如何遍历到 td/div/font ===\")",
+      "Bash(grep -n 'grabAllNode\\\\|function grabAllNode\\\\|TreeWalker\\\\|createTreeWalker\\\\|NodeFilter\\\\|querySelectorAll\\\\|skipSet\\\\b' /Users/wuwenjie/Documents/IdeaProjects/OnlyTranslate/entrypoints/main/dom.ts)",
+      "Bash(corepack pnpm *)"
     ]
   }
 }
