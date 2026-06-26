@@ -355,16 +355,18 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
         }
     );
 
-    // 遍历出所有可翻译的节点
+    const candidates: Node[] = [];
     let currentNode: Node | null;
     while (currentNode = walker.nextNode()) {
-        const translateNode = grabNode(currentNode as Element | Text, options);
+        candidates.push(currentNode);
+    }
+
+    // 先快照再调用 grabNode：direct-text 包装会移动 DOM 节点，
+    // 边使用 live TreeWalker 边 mutate DOM 会让游标语义变脆弱。
+    for (const candidate of candidates) {
+        const translateNode = grabNode(candidate as Element | Text, options);
         if (translateNode) {
             result.push(translateNode);
-            // 跳过已确定要翻译的节点的所有子节点
-            if (currentNode instanceof Element && currentNode.children.length > 0) {
-                walker.currentNode = currentNode.nextSibling || currentNode;
-            }
         }
     }
     return removeNestedTranslateNodes(Array.from(new Set(result)));
