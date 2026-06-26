@@ -123,6 +123,38 @@ describe('FloatingBall', () => {
     wrapper.unmount()
   })
 
+  it('syncs translation state from external page actions without toggling translation again', async () => {
+    const onTranslationToggle = vi.fn()
+    const wrapper = mount(FloatingBall, {
+      props: {
+        onTranslationToggle
+      },
+      attachTo: document.body
+    })
+
+    const trigger = wrapper.get('[data-testid="floating-ball-trigger"]')
+    await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
+    await nextTick()
+    await trigger.trigger('click')
+
+    ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(true)
+    await nextTick()
+
+    expect(onTranslationToggle).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').classes()).toContain('toolbar-button--restore')
+    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').text()).toContain('还原')
+
+    ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(false)
+    await nextTick()
+
+    expect(onTranslationToggle).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').classes()).not.toContain('toolbar-button--restore')
+    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').text()).toContain('翻译')
+
+    wrapper.unmount()
+  })
+
   it('closes the toolbar when the recall entry is clicked again', async () => {
     const wrapper = mount(FloatingBall, {
       attachTo: document.body

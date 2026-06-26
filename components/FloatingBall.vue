@@ -377,6 +377,12 @@ const setTranslationState = (nextState: boolean) => {
   props.onTranslationToggle(nextState);
 };
 
+const syncTranslationState = (nextState: boolean) => {
+  if (isTranslating.value === nextState) return;
+  isTranslating.value = nextState;
+  triggerAnimation(nextState ? 'translate' : 'restore');
+};
+
 const toggleTranslation = () => {
   setTranslationState(!isTranslating.value);
 };
@@ -443,6 +449,7 @@ watch(() => props.offsetY, (newOffsetY) => {
 defineExpose({
   isTranslating,
   setTranslationState,
+  syncTranslationState,
   toggleTranslationFromExternal
 });
 </script>

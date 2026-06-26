@@ -2,7 +2,7 @@ import { handleTranslation, autoTranslateEnglishPage, restoreOriginalContent } f
 import { cache } from "./utils/cache";
 import './style.css';
 import { config, configReady } from "@/entrypoints/utils/config";
-import { mountFloatingBall, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
+import { mountFloatingBall, setFloatingBallTranslationState, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
 import { t } from "@/entrypoints/utils/i18n";
@@ -43,7 +43,8 @@ export default defineContentScript({
             document,
             runtime: browser.runtime,
             autoTranslateEnglishPage,
-            restoreOriginalContent
+            restoreOriginalContent,
+            onPageTranslationStateChange: setFloatingBallTranslationState
         });
 
         // 挂载悬浮球（如果配置未禁用）

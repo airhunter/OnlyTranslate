@@ -8,6 +8,7 @@ import { autoTranslateEnglishPage, restoreOriginalContent } from '@/entrypoints/
 
 type FloatingBallInstance = ComponentPublicInstance & {
   isTranslating?: boolean;
+  syncTranslationState?: (isTranslated: boolean) => void;
   toggleTranslationFromExternal?: () => void;
   element?: HTMLElement;
   $el: HTMLElement;
@@ -91,11 +92,19 @@ export function mountFloatingBall(position?: 'left' | 'right') {
 
   // 挂载应用
   floatingBallInstance = app.mount(container);
+  if (isTranslated) {
+    floatingBallInstance.syncTranslationState?.(true);
+  }
   
   // 监听自定义事件，用于通过快捷键触发悬浮球
   document.addEventListener('onlytranslate-toggle-translation', toggleFloatingBallTranslation);
 
   return floatingBallInstance;
+}
+
+export function setFloatingBallTranslationState(nextState: boolean) {
+  isTranslated = nextState;
+  floatingBallInstance?.syncTranslationState?.(nextState);
 }
 
 /**

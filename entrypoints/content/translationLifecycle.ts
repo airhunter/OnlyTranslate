@@ -19,6 +19,7 @@ export interface PageTranslationLifecycleOptions {
     runtime: RuntimeLike;
     autoTranslateEnglishPage: (scope?: string) => void;
     restoreOriginalContent: () => void;
+    onPageTranslationStateChange?: (isTranslated: boolean) => void;
 }
 
 export interface PageTranslationLifecycle {
@@ -62,6 +63,7 @@ export function setupPageTranslationLifecycle(options: PageTranslationLifecycleO
         if (message.action === 'fullPage') {
             try {
                 options.autoTranslateEnglishPage(message.scope);
+                options.onPageTranslationStateChange?.(true);
                 sendResponse({ status: 'success', action: 'translated' });
             } catch (error) {
                 sendResponse({
@@ -74,6 +76,7 @@ export function setupPageTranslationLifecycle(options: PageTranslationLifecycleO
 
         if (message.action === 'restore') {
             options.restoreOriginalContent();
+            options.onPageTranslationStateChange?.(false);
             sendResponse({ status: 'success', action: 'restored' });
             return true;
         }

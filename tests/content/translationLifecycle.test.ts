@@ -69,13 +69,15 @@ describe('page translation lifecycle', () => {
     const runtime = createRuntime()
     const autoTranslateEnglishPage = vi.fn()
     const restoreOriginalContent = vi.fn()
+    const onPageTranslationStateChange = vi.fn()
 
     setupPageTranslationLifecycle({
       config: { autoTranslate: false, disableFloatingBall: false, on: true },
       document,
       runtime: runtime.runtime,
       autoTranslateEnglishPage,
-      restoreOriginalContent
+      restoreOriginalContent,
+      onPageTranslationStateChange
     })
 
     expect(runtime.send({ type: 'contextMenuTranslate', action: 'fullPage', scope: 'smart' })).toEqual({
@@ -83,12 +85,14 @@ describe('page translation lifecycle', () => {
       response: { status: 'success', action: 'translated' }
     })
     expect(autoTranslateEnglishPage).toHaveBeenCalledWith('smart')
+    expect(onPageTranslationStateChange).toHaveBeenLastCalledWith(true)
 
     expect(runtime.send({ type: 'contextMenuTranslate', action: 'restore' })).toEqual({
       handled: true,
       response: { status: 'success', action: 'restored' }
     })
     expect(restoreOriginalContent).toHaveBeenCalledTimes(1)
+    expect(onPageTranslationStateChange).toHaveBeenLastCalledWith(false)
 
     const translated = document.createElement('p')
     translated.setAttribute('data-fr-translated', 'true')
