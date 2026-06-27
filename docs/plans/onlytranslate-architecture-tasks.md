@@ -20,7 +20,28 @@ The two most important lessons for OnlyTranslate are:
 - Make site profiles more declarative and data-shaped, with functions reserved
   for complex escape hatches.
 
+## TODO
+
+- [x] P0: Generic bilingual insertion layout strategy
+  - Done in `1649ee9 fix(content): 通用化双语插入布局`.
+- [x] P0: Declarative SiteProfile schema
+  - Done in `277d036 refactor(content): 支持声明式站点目标规则`.
+  - V1 includes `rootsSelector`, `targetSelector`, `ignoreSelector`,
+    `keepSelector`, and `targetStrategy`. `forceBlockSelector` is deferred until
+    the insertion path has a concrete implementation and tests.
+- [x] P0: `keepSelector` and inline protection
+  - Done in `d783a30 feat(content): 支持站点级 keepSelector`.
+  - Global defaults intentionally protect `code, kbd, samp, var, math, .math`.
+    `a:has(code)` is not a global default; profiles can add it if a site needs
+    whole code links preserved in translated copies.
+- [ ] P1: Subtitle cleaning, deduplication, and segmentation
+- [ ] P1: Batch translation queue with fallback
+- [ ] P1: AI context-aware translation
+- [ ] P2: Site rule dataization and remote subscription
+
 ## P0: Generic Bilingual Insertion Layout Strategy
+
+Status: Done.
 
 ### Background
 
@@ -78,6 +99,8 @@ Initial policy:
 
 ## P0: Declarative SiteProfile Schema
 
+Status: Done.
+
 ### Background
 
 OnlyTranslate currently expresses most site behavior through TypeScript
@@ -113,7 +136,6 @@ Extend `SiteProfile` with declarative fields:
 - `targetSelector`: declares likely translation targets.
 - `ignoreSelector`: declares subtree or self skips.
 - `keepSelector`: declares inline content that should be protected.
-- `forceBlockSelector`: declares targets that need block-like insertion.
 - `targetStrategy`: keeps existing concepts such as profile-first behavior.
 
 Function hooks should remain available:
@@ -126,6 +148,10 @@ Function hooks should remain available:
 Start by migrating only simple profiles. Do not force complex profiles into a
 declarative shape too early.
 
+V1 note: `forceBlockSelector` is intentionally not part of the implemented
+schema yet. Add it only when it is wired to the insertion path and covered by
+layout tests.
+
 ### Acceptance Criteria
 
 - At least two or three simple profiles use declarative fields.
@@ -134,6 +160,8 @@ declarative shape too early.
 - Run `pnpm test:content`.
 
 ## P0: keepSelector and Inline Protection
+
+Status: Done.
 
 ### Background
 
@@ -163,7 +191,7 @@ API references, equations, and pages with inline keyboard shortcuts.
 Define a default keep selector. Candidate defaults:
 
 ```text
-code, kbd, samp, var, math, .math, a:has(code)
+code, kbd, samp, var, math, .math
 ```
 
 Then make the rich-text extraction path explicitly consume this selector.
@@ -171,6 +199,10 @@ Profiles should be able to add or override keep selectors where necessary.
 
 The implementation should preserve the structure and visible text of protected
 inline elements while still allowing surrounding prose to be translated.
+
+V1 note: `a:has(code)` is deliberately not global because it preserves the whole
+link shell in translated copies and can leave surrounding link prose untranslated.
+Site profiles can opt into it when that tradeoff is desirable.
 
 ### Acceptance Criteria
 
@@ -366,13 +398,18 @@ Security boundaries:
 
 ## Suggested Processing Order
 
-1. Generic bilingual insertion layout strategy.
-2. `keepSelector` and inline protection.
-3. Declarative SiteProfile schema.
-4. Subtitle cleaning and segmentation.
-5. Batch translation queue.
-6. AI context-aware translation.
-7. Rule dataization and remote subscription.
+Completed P0 foundation work:
 
-This order fixes the layout and rich-text foundations before expanding larger
-systems such as batching, context, or remote rules.
+1. Generic bilingual insertion layout strategy.
+2. Declarative SiteProfile schema.
+3. `keepSelector` and inline protection.
+
+Recommended remaining order:
+
+1. Subtitle cleaning and segmentation.
+2. Batch translation queue.
+3. AI context-aware translation.
+4. Rule dataization and remote subscription.
+
+This keeps the next work focused on visible quality and reliability before
+expanding larger systems such as batching, context, or remote rules.
