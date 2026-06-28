@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.7.0](https://github.com/airhunter/OnlyTranslate/compare/v0.6.0...v0.7.0) (2026-06-28)
+
+
+### Bug Fixes
+
+* **content:** 保留嵌套目录列表目标 ([1a9c19f](https://github.com/airhunter/OnlyTranslate/commit/1a9c19f06669d3fda975eb97042c71392c479802))
+* **content:** 修复 Hugging Face 博客识文目标 ([c9de3e0](https://github.com/airhunter/OnlyTranslate/commit/c9de3e0e904333da97a8e416e878148df13b08c6))
+* **content:** 支持旧式 font 文本流分段 ([e948df4](https://github.com/airhunter/OnlyTranslate/commit/e948df49ab9d783701f7e7b407bbe185874a179f))
+* **content:** 通用化双语插入布局 ([1649ee9](https://github.com/airhunter/OnlyTranslate/commit/1649ee9a9a22a7fdbdd371b0845130458c3b8332))
+* **ui:** 同步页面翻译状态到浮动工具栏 ([d6b2c0a](https://github.com/airhunter/OnlyTranslate/commit/d6b2c0a5b904b5b417721f607598f3c1695e900d))
+
+
+### Features
+
+* **content:** 支持站点级 keepSelector ([d783a30](https://github.com/airhunter/OnlyTranslate/commit/d783a30581c8457cc4ecf8fa09cd599e666c70bc))
+
 # [0.6.0](https://github.com/airhunter/OnlyTranslate/compare/v0.5.7...v0.6.0) (2026-06-23)
 
 
