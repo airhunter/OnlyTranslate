@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.7.0',
+    notes: {
+      'zh-CN': {
+        title: '网页识别与双语排版增强',
+        items: [
+          '改进旧式文章页面、嵌套目录和多层列表的识文能力，减少 Paul Graham、技术博客目录等页面中的漏翻。',
+          '优化双语译文插入布局，标题、卡片和弹性布局中的译文更不容易挤在同一行或破坏原页面排版。',
+          '新增行内代码、变量和数学内容保护，翻译技术文章和文档时更好保留代码片段、公式与周围正文。',
+          '修复弹窗和页面浮动工具条的翻译/还原状态同步，入口状态现在更一致。'
+        ]
+      },
+      'en-US': {
+        title: 'Better Page Detection and Bilingual Layout',
+        items: [
+          'Improved smart detection for legacy article pages, nested tables of contents, and multi-level lists, reducing missed translations on pages such as Paul Graham essays and technical blog outlines.',
+          'Improved bilingual insertion layout so translations around headings, cards, and flex-style layouts are less likely to crowd the original text or disturb the page.',
+          'Added protection for inline code, variables, and math content so technical articles and documentation keep code snippets, formulas, and surrounding prose in better shape.',
+          'Fixed state sync between the popup and floating page toolbar so translate and restore actions stay consistent across entry points.'
+        ]
+      },
+      'zh-TW': {
+        title: '網頁識別與雙語排版增強',
+        items: [
+          '改進舊式文章頁面、巢狀目錄和多層列表的識文能力，減少 Paul Graham、技術部落格目錄等頁面中的漏翻。',
+          '優化雙語譯文插入版面，標題、卡片和彈性版面中的譯文更不容易擠在同一行或破壞原頁面排版。',
+          '新增內嵌程式碼、變數和數學內容保護，翻譯技術文章和文件時更好保留程式碼片段、公式與周圍正文。',
+          '修復彈窗和頁面浮動工具列的翻譯/還原狀態同步，入口狀態現在更一致。'
+        ]
+      },
+      'ja-JP': {
+        title: 'ページ検出とバイリンガル表示を強化',
+        items: [
+          '古い形式の記事ページ、入れ子の目次、多階層リストのスマート検出を改善し、Paul Graham のエッセイや技術ブログの目次などで翻訳漏れを減らしました。',
+          '見出し、カード、flex レイアウト付近のバイリンガル挿入を改善し、訳文が原文と同じ行に詰まったりページレイアウトを崩したりしにくくなりました。',
+          'インラインコード、変数、数式の保護を追加し、技術記事やドキュメントでコード片、数式、周辺の本文をより自然に保ちます。',
+          'ポップアップとページ上のフローティングツールバーの翻訳/復元状態同期を修正し、どの入口から操作しても状態が揃うようになりました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.6.0',
     notes: {
       'zh-CN': {
