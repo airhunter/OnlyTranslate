@@ -1,6 +1,6 @@
-import { getTranslatableText } from '@/entrypoints/main/dom';
+import { getTranslatableText, isStrongReadableLeaf } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
-import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
+import { getContentFilterDecision, shouldKeepReadableDescendantsInSkipSelf } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import {
@@ -242,6 +242,13 @@ function getContentFilterSkip(element: Element, context: TranslationTargetContex
             return { policy: 'hard-skip', role: 'ui', reason: `content-filter:${current.tagName.toLowerCase()}:skip-subtree` };
         }
         if (decision === 'skip-self') {
+            if (
+                isStrongReadableLeaf(element, context.grabOptions?.scanContext)
+                && shouldKeepReadableDescendantsInSkipSelf(current)
+            ) {
+                current = current.parentElement;
+                continue;
+            }
             return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${current.tagName.toLowerCase()}:skip-self` };
         }
         current = current.parentElement;

@@ -1,0 +1,22 @@
+{
+  "name": "Substack comments keep single and multi-paragraph comment bodies",
+  "url": "https://newsletter.kentbeck.com/p/hey-n00b-we-didnt-hire-you-to-complete/comments",
+  "scope": "smart",
+  "html": "substack-comments.html",
+  "contentRoot": ".comment-list-items",
+  "include": [
+    "edl-comment",
+    "metalmonkey-first",
+    "metalmonkey-second",
+    "metalmonkey-third"
+  ],
+  "textIncludes": [
+    "Footnote: the company culture",
+    "Human relationships and all that."
+  ],
+  "textExcludes": [
+    "Liked by Kent Beck",
+    "Reply",
+    "Share"
+  ]
+}

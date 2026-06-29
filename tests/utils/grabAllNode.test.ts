@@ -547,19 +547,19 @@ describe('grabAllNode', () => {
     expect(ids).toContain('after')
   })
 
-  it('does not leak generic descendants from skip-self blocks', () => {
+  it('keeps strong readable leaves inside skip-self blocks without leaking actions', () => {
     document.body.innerHTML = `
-      <section>
+      <section class="reader-comment">
         <p id="body">This readable paragraph sits inside a mixed container with enough text to translate safely.</p>
-        <a id="share" href="/share">Share</a>
+        <button id="share" type="button">Share</button>
       </section>
     `
 
     const ids = grabAllNode(document.body, {
-      contentFilter: (element) => element.tagName.toLowerCase() === 'section' ? 'skip-self' : 'keep'
+      contentFilter: getContentFilterDecision
     }).map((node) => node.id)
 
-    expect(ids).not.toContain('body')
+    expect(ids).toContain('body')
     expect(ids).not.toContain('share')
   })
 

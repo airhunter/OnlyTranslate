@@ -56,6 +56,21 @@ export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
 }
 
+export function shouldKeepReadableDescendantsInSkipSelf(element: Element): boolean {
+    const metrics = getBlockMetrics(element);
+    if (metrics.textLength === 0 || !hasReadableParagraphDescendant(element)) return false;
+
+    const structuralHint = getElementStructuralSignalText(element);
+    const hint = structuralHint;
+
+    if (isTagCluster(element, hint, metrics)) return false;
+    if (isAuthorOrBylineBlock(hint, metrics)) return false;
+    if (isPromoOrCtaBlock(element, hint, metrics)) return false;
+    if (isRelatedBlock(element, hint, structuralHint, metrics)) return false;
+
+    return isShareBlock(element, hint, metrics);
+}
+
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (isReadableParagraphLeaf(element, metrics)) return false;
     const hasShareSignal = SHARE_PATTERN.test(hint)
@@ -72,6 +87,11 @@ function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): bo
     if (metrics.buttonCount > 0 && metrics.shortInteractiveCount > 0 && metrics.longParagraphCount <= 1) return true;
     return metrics.longParagraphCount === 0
         && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
+}
+
+function hasReadableParagraphDescendant(element: Element): boolean {
+    return Array.from(element.querySelectorAll('p, blockquote, li, figcaption'))
+        .some(item => isReadableParagraphLeaf(item, getBlockMetrics(item)));
 }
 
 function isTagCluster(element: Element, hint: string, metrics: BlockMetrics): boolean {
