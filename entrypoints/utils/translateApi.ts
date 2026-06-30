@@ -4,16 +4,32 @@
  */
 
 import { enqueueTranslation, clearTranslationQueue } from './translateQueue';
+import {
+  clearBatchTranslationQueue,
+  DEFAULT_BATCH_TRANSLATION_OPTIONS,
+  enqueueBatchTranslation
+} from './batchTranslateQueue';
 import browser from 'webextension-polyfill';
 import { config } from './config';
 import { cache } from './cache';
 import { storage } from '@wxt-dev/storage';
 import { resolveTranslationDirection } from './translationDirection';
 import { t } from './i18n';
+import { customModelString, defaultOption, services, servicesType } from './option';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
 const MAX_RETRY_DELAY = 30000;
+const BATCH_TRANSLATION_SERVICES = new Set<string>([
+  services.openai,
+  services.moonshot,
+  services.jieyue,
+  services.siliconCloud,
+  services.openrouter,
+  services.grok,
+  services.deepseek,
+  services.newapi,
+]);
 
 let cancellationGeneration = 0;
 const inFlightTranslations = new Map<string, Promise<string>>();
@@ -80,6 +96,56 @@ function buildInFlightTranslationKey(
   ]);
 }
 
+function resolveCurrentModel(): string {
+  const service = config.service;
+  if (service.startsWith('custom_')) {
+    const provider = config.customProviders?.find(provider => provider.id === service);
+    return provider?.model === customModelString ? provider.customModel : (provider?.model ?? '');
+  }
+  return config.model?.[service] === customModelString
+    ? config.customModel?.[service] ?? ''
+    : config.model?.[service] ?? '';
+}
+
+function buildBatchTranslationKey(context: string, sourceLang: string, targetLang: string): string {
+  const service = config.service;
+  return JSON.stringify([
+    service,
+    resolveCurrentModel(),
+    config.customModel?.[service] ?? '',
+    config.style ?? '',
+    sourceLang,
+    targetLang,
+    context
+  ]);
+}
+
+function isDefaultPromptForBatch(): boolean {
+  const prompt = config.user_role?.[config.service];
+  return !prompt || prompt === defaultOption.user_role;
+}
+
+function supportsBatchTranslation(): boolean {
+  const service = config.service;
+  return service.startsWith('custom_')
+    || BATCH_TRANSLATION_SERVICES.has(service);
+}
+
+export function canUseBatchTranslationForCurrentConfig(allowBatch: boolean | undefined = true): boolean {
+  return Boolean(allowBatch)
+    && servicesType.isAI(config.service)
+    && supportsBatchTranslation()
+    && isDefaultPromptForBatch();
+}
+
+function shouldUseBatchTranslation(
+  allowBatch: boolean | undefined,
+  safeOrigin: string
+): boolean {
+  return canUseBatchTranslationForCurrentConfig(allowBatch)
+    && safeOrigin.length <= DEFAULT_BATCH_TRANSLATION_OPTIONS.maxCharacters;
+}
+
 /**
  * 翻译API的统一入口
  * 所有翻译请求都应该通过此函数发送，以便集中管理队列和重试逻辑
@@ -95,6 +161,7 @@ export async function translateText(origin: string, context: string = document.t
     retryDelay = 1000, 
     timeout = 45000,
     useCache = config.useCache,
+    allowBatch = false,
   } = options;
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
@@ -131,65 +198,88 @@ export async function translateText(origin: string, context: string = document.t
   // 保存配置以确保计数持久化
   storage.setItem('local:config', JSON.stringify(config));
 
-  // 使用队列处理翻译请求
   const requestGeneration = cancellationGeneration;
-  const translationPromise = enqueueTranslation(async () => {
-    // 创建翻译任务
+
+  const executeSingleTranslation = (text: string): Promise<string> => enqueueTranslation(async () => {
     const translationTask = async (retryCount: number = 0): Promise<string> => {
       try {
         assertNotCancelled(requestGeneration);
-        // 发送翻译请求给background脚本处理
         const response = await Promise.race([
           browser.runtime.sendMessage({
             context,
-            origin: safeOrigin,
+            origin: text,
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
           }),
-          new Promise<never>((_, reject) => 
+          new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
           )
         ]);
         assertNotCancelled(requestGeneration);
         const result = normalizeRuntimeTranslationResult(response);
 
-        // 如果翻译结果为空或与原文完全相同，直接返回原文
-        if (!result || result === safeOrigin) {
-          return safeOrigin;
-        }
-
-        // 缓存翻译结果
-        if (useCache) {
-          cache.localSet(safeOrigin, result, direction.targetLang);
-        }
-
-        return result;
+        return !result || result === text ? text : result;
       } catch (error) {
         if (isTranslationCancelledError(error)) {
           throw error;
         }
 
-        // 处理错误，根据重试策略决定是否重试
         if (retryCount < maxRetries) {
           if (isDev) {
             console.log(`[翻译API] 翻译失败，${retryCount + 1}/${maxRetries} 次重试，原因:`, error);
           }
-          
-          // 等待一段时间后重试
+
           await new Promise(resolve => setTimeout(resolve, getRetryDelay(retryCount, retryDelay)));
           return translationTask(retryCount + 1);
         }
-        
-        // 超过最大重试次数，抛出异常
+
         throw error;
       }
     };
 
-    // 开始执行翻译任务
     return translationTask();
   });
 
-  const trackedPromise = translationPromise.finally(() => {
+  const executeBatchTranslation = (texts: string[]): Promise<string[]> => enqueueTranslation(async () => {
+    assertNotCancelled(requestGeneration);
+    const response = await Promise.race([
+      browser.runtime.sendMessage({
+        type: 'BATCH_TRANSLATION',
+        origins: texts,
+        context,
+        sourceLang: direction.sourceLang,
+        targetLang: direction.targetLang,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
+      )
+    ]);
+    assertNotCancelled(requestGeneration);
+
+    if (!Array.isArray(response) || response.length !== texts.length || !response.every(item => typeof item === 'string' && item.trim().length > 0)) {
+      throw new Error('Invalid batch translation response');
+    }
+
+    return response;
+  });
+
+  const translationPromise = shouldUseBatchTranslation(allowBatch, safeOrigin)
+    ? enqueueBatchTranslation({
+      key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang),
+      origin: safeOrigin,
+      executeBatch: executeBatchTranslation,
+      executeSingle: executeSingleTranslation
+    })
+    : executeSingleTranslation(safeOrigin);
+
+  const cacheAwarePromise = translationPromise.then(result => {
+    if (useCache && result && result !== safeOrigin) {
+      cache.localSet(safeOrigin, result, direction.targetLang);
+    }
+    return result;
+  });
+
+  const trackedPromise = cacheAwarePromise.finally(() => {
     if (inFlightTranslations.get(inFlightKey) === trackedPromise) {
       inFlightTranslations.delete(inFlightKey);
     }
@@ -209,6 +299,7 @@ export function cancelAllTranslations() {
   cancellationGeneration += 1;
   inFlightTranslations.clear();
   clearTranslationQueue();
+  clearBatchTranslationQueue(new TranslationCancelledError());
 }
 
 /**
@@ -223,4 +314,6 @@ export interface TranslateOptions {
   timeout?: number;
   /** 是否使用缓存 */
   useCache?: boolean;
+  /** 是否允许普通网页批量翻译请求进入内部 batch 队列 */
+  allowBatch?: boolean;
 } 

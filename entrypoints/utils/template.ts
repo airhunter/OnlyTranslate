@@ -35,6 +35,43 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
     })
 }
 
+export function commonBatchMsgTemplate(origins: string[], targetLang = config.to) {
+    let model = config.model[config.service];
+    let customModel = config.customModel[config.service];
+
+    if (config.service.startsWith('custom_')) {
+        const provider = config.customProviders?.find(p => p.id === config.service);
+        if (provider) {
+            model = provider.model;
+            customModel = provider.customModel;
+        }
+    }
+
+    model = model === customModelString ? customModel : model;
+    model = model.replace(/（.*）/g, "");
+
+    return JSON.stringify({
+        'model': model,
+        "temperature": 0.3,
+        'messages': [
+            {
+                'role': 'system',
+                'content': 'You are a precise translation engine. Return only valid JSON.'
+            },
+            {
+                'role': 'user',
+                'content': [
+                    `Translate each string in this JSON array into ${targetLang}.`,
+                    'Return a JSON array of strings with the same length and order.',
+                    'Do not merge, omit, reorder, explain, or add notes.',
+                    'If a string contains tokens like __ONLY_TRANSLATE_INLINE_0_abc__, preserve each token exactly once and do not translate or alter it.',
+                    JSON.stringify(origins)
+                ].join('\n')
+            },
+        ]
+    })
+}
+
 // deepseek
 export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
     // 检测是否使用自定义模型

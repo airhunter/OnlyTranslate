@@ -13,7 +13,11 @@ import {
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
 
 function isTranslationMessage(message: any): boolean {
-    return typeof message?.origin === 'string' && message.origin.trim().length > 0;
+    if (typeof message?.origin === 'string' && message.origin.trim().length > 0) return true;
+    return message?.type === 'BATCH_TRANSLATION'
+        && Array.isArray(message.origins)
+        && message.origins.length > 0
+        && message.origins.every((origin: unknown) => typeof origin === 'string' && origin.trim().length > 0);
 }
 
 /**

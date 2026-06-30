@@ -1,10 +1,11 @@
 import {method, urls} from "../utils/constant";
-import {commonMsgTemplate} from "../utils/template";
+import {commonBatchMsgTemplate, commonMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import { services } from "../utils/option";
 import { t } from "@/entrypoints/utils/i18n";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { isBatchTranslationMessage, logBatchTranslationRequest, parseBatchTranslationContent } from "./batch";
 
 function normalizeOpenAICompatibleUrl(url: string): string {
     let normalizedUrl = url || '';
@@ -49,10 +50,17 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
             headers.append('X-Title', 'OnlyTranslate');
         }
 
+        const isBatch = isBatchTranslationMessage(message);
+        if (isBatch) {
+            logBatchTranslationRequest(config.service, message.origins);
+        }
+
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: commonMsgTemplate(message.origin, message.targetLang)
+            body: isBatch
+                ? commonBatchMsgTemplate(message.origins, message.targetLang)
+                : commonMsgTemplate(message.origin, message.targetLang)
         });
 
         if (!resp.ok) {
@@ -60,7 +68,10 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
         }
 
         const result = await resp.json();
-        return contentPostHandler(result.choices[0].message.content);
+        const content = result.choices[0].message.content;
+        return isBatch
+            ? parseBatchTranslationContent(content, message.origins.length)
+            : contentPostHandler(content);
     } catch (error) {
         console.error('API调用失败:', error);
         throw error;

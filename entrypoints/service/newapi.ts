@@ -1,9 +1,10 @@
 import { method, urls } from "../utils/constant";
-import {commonMsgTemplate, deepseekMsgTemplate} from "../utils/template";
+import {commonBatchMsgTemplate, commonMsgTemplate} from "../utils/template";
 import { config } from "@/entrypoints/utils/config";
 import { contentPostHandler } from "@/entrypoints/utils/check";
 import { t } from "@/entrypoints/utils/i18n";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { isBatchTranslationMessage, logBatchTranslationRequest, parseBatchTranslationContent } from "./batch";
 
 async function newapi(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
@@ -29,10 +30,17 @@ async function newapi(message: TranslationServiceMessage): Promise<TranslationSe
             url += '/v1/chat/completions';
         }
 
+        const isBatch = isBatchTranslationMessage(message);
+        if (isBatch) {
+            logBatchTranslationRequest(config.service, message.origins);
+        }
+
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: commonMsgTemplate(message.origin, message.targetLang)
+            body: isBatch
+                ? commonBatchMsgTemplate(message.origins, message.targetLang)
+                : commonMsgTemplate(message.origin, message.targetLang)
         });
 
         if (!resp.ok) {
@@ -42,7 +50,10 @@ async function newapi(message: TranslationServiceMessage): Promise<TranslationSe
         const result = await resp.json();
 
         if (result.choices && result.choices.length > 0) {
-            return contentPostHandler(result.choices[0].message.content);
+            const content = result.choices[0].message.content;
+            return isBatch
+                ? parseBatchTranslationContent(content, message.origins.length)
+                : contentPostHandler(content);
         }
 
         throw new Error(t('runtime.upstreamNoContent'));

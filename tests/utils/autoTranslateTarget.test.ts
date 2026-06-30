@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mockCanUseBatchTranslationForCurrentConfig = vi.hoisted(() => vi.fn(() => false))
 const mockConfig = vi.hoisted(() => ({
   translationScope: 'smart',
   on: true,
@@ -19,6 +20,7 @@ vi.mock('@/entrypoints/utils/config', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
+  canUseBatchTranslationForCurrentConfig: mockCanUseBatchTranslationForCurrentConfig,
   cancelAllTranslations: vi.fn(),
   isTranslationCancelledError: vi.fn((error: unknown) => {
     return error instanceof Error && error.name === 'TranslationCancelledError'
@@ -71,6 +73,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.to = 'zh-Hans'
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(false)
     vi.clearAllMocks()
     vi.mocked(shouldTranslateText).mockReturnValue(true)
     vi.useRealTimers()
@@ -90,6 +93,91 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(translateText).toHaveBeenCalledWith('Start action', document.title)
     expect(button.innerText).toBe('开始操作')
+  })
+
+  it('allows batching only for automatic webpage translation targets', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Batch Translation Queue</h1>
+          <p>Teams use automatic webpage translation to process several readable paragraphs.</p>
+          <p>The queue can combine compatible requests without changing page insertion behavior.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(vi.mocked(translateText).mock.calls.some(([, , options]) => options?.allowBatch === true)).toBe(true)
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('starts initial automatic targets without waiting for visibility when batch is supported', async () => {
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Batch Translation Queue</h1>
+          <p>Automatic webpage translation should send collected page targets into the batch queue.</p>
+          <p>It should not wait for every paragraph to become visible one at a time.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(translateText).toHaveBeenCalled()
+      expect(vi.mocked(translateText).mock.calls.every(([, , options]) => options?.allowBatch === true)).toBe(true)
+    } finally {
+      restoreOriginalContent()
+    }
   })
 
   it('collects visible detail text after an expandable card opens outside the primary content root', () => {
