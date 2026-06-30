@@ -26,8 +26,8 @@ interface BatchGroup {
 
 export const DEFAULT_BATCH_TRANSLATION_OPTIONS: Required<BatchTranslationQueueOptions> = {
   batchDelay: 40,
-  maxItems: 8,
-  maxCharacters: 12000
+  maxItems: 4,
+  maxCharacters: 6000
 };
 
 const groups = new Map<string, BatchGroup>();

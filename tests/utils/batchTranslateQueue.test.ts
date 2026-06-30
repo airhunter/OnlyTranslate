@@ -112,7 +112,7 @@ describe('batch translation queue', () => {
     expect(executeSingle).toHaveBeenCalledTimes(1)
   })
 
-  it('caps default batches at eight items', async () => {
+  it('caps default batches at four items', async () => {
     const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin}`))
     const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)
     const origins = Array.from({ length: 12 }, (_, index) => `Paragraph ${index + 1}`)
@@ -127,13 +127,14 @@ describe('batch translation queue', () => {
     await vi.advanceTimersByTimeAsync(40)
 
     await expect(Promise.all(results)).resolves.toEqual(origins.map(origin => `译:${origin}`))
-    expect(executeBatch).toHaveBeenCalledTimes(2)
-    expect(executeBatch).toHaveBeenNthCalledWith(1, origins.slice(0, 8))
-    expect(executeBatch).toHaveBeenNthCalledWith(2, origins.slice(8))
+    expect(executeBatch).toHaveBeenCalledTimes(3)
+    expect(executeBatch).toHaveBeenNthCalledWith(1, origins.slice(0, 4))
+    expect(executeBatch).toHaveBeenNthCalledWith(2, origins.slice(4, 8))
+    expect(executeBatch).toHaveBeenNthCalledWith(3, origins.slice(8))
     expect(executeSingle).not.toHaveBeenCalled()
   })
 
-  it('keeps several article-sized paragraphs together by default', async () => {
+  it('splits article-sized paragraphs by the compact default character budget', async () => {
     const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin.length}`))
     const executeSingle = vi.fn(async (origin: string) => `单:${origin.length}`)
     const origins = Array.from({ length: 5 }, (_, index) => `${index}`.padEnd(2000, 'x'))
@@ -154,8 +155,9 @@ describe('batch translation queue', () => {
       '译:2000',
       '译:2000'
     ])
-    expect(executeBatch).toHaveBeenCalledTimes(1)
-    expect(executeBatch).toHaveBeenCalledWith(origins)
+    expect(executeBatch).toHaveBeenCalledTimes(2)
+    expect(executeBatch).toHaveBeenNthCalledWith(1, origins.slice(0, 3))
+    expect(executeBatch).toHaveBeenNthCalledWith(2, origins.slice(3))
     expect(executeSingle).not.toHaveBeenCalled()
   })
 

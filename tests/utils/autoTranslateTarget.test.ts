@@ -138,9 +138,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
   })
 
-  it('starts initial automatic targets without waiting for visibility when batch is supported', async () => {
+  it('keeps initial automatic targets visibility-gated when batch is supported', async () => {
+    const observedTargets: Element[] = []
     class PassiveIntersectionObserver {
-      observe() {}
+      observe(target: Element) {
+        observedTargets.push(target)
+      }
       unobserve() {}
       disconnect() {}
       takeRecords() {
@@ -173,8 +176,8 @@ describe('resolveAutoTranslateTarget behavior', () => {
       autoTranslateEnglishPage('smart')
       await new Promise(resolve => setTimeout(resolve, 0))
 
-      expect(translateText).toHaveBeenCalled()
-      expect(vi.mocked(translateText).mock.calls.every(([, , options]) => options?.allowBatch === true)).toBe(true)
+      expect(observedTargets.length).toBeGreaterThan(0)
+      expect(translateText).not.toHaveBeenCalled()
     } finally {
       restoreOriginalContent()
     }

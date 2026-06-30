@@ -22,7 +22,6 @@ import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/mai
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
 import {
-    canUseBatchTranslationForCurrentConfig,
     isTranslationCancelledError,
     translateText,
     cancelAllTranslations,
@@ -238,8 +237,6 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     if (!nodes.length) return;
 
     setAutoTranslating(true);
-    const shouldEagerBatchInitialTargets = canUseBatchTranslationForCurrentConfig(true);
-
     const translateAutoTarget = (node: Element, activeObserver?: IntersectionObserver) => {
         if (!(node instanceof HTMLElement)) return;
 
@@ -279,15 +276,10 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         threshold: 0.1 // 只要出现10%就开始翻译
     });
 
-    // 对支持 batch 的普通网页翻译，初始目标直接进入批量队列，避免可视区逐个触发导致无法合批。
-    if (shouldEagerBatchInitialTargets) {
-        nodes.forEach(node => translateAutoTarget(node));
-    } else {
-        // 开始观察所有节点
-        nodes.forEach(node => {
-            translationState.observer?.observe(node);
-        });
-    }
+    // 开始观察所有节点，让首屏内容优先进入翻译队列；支持 batch 的服务仍可合并同一批可视节点。
+    nodes.forEach(node => {
+        translationState.observer?.observe(node);
+    });
 
     const observeTranslationNodes = (nodes: Element[]) => {
         nodes.forEach(node => translationState.observer?.observe(node));
