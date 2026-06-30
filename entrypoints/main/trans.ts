@@ -44,7 +44,9 @@ import {
     TRANSLATED_ID_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
 
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
+// 刻意不监听 style：内联 style 是动画/过渡产生 mutation 风暴的主要来源，且对“是否需要翻译”几乎没有信号价值；
+// 内容显隐由 class / hidden / aria-* 覆盖即可。
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'hidden', 'aria-hidden', 'aria-expanded'];
 const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
 
 const translationState = {
@@ -291,61 +293,72 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         nodes.forEach(node => translationState.observer?.observe(node));
     };
 
-    const pendingDynamicRoots = new Set<Element>();
+    // 单次 flush 最多处理的变更根节点数量。动画 / 框架重渲染的页面会在一帧内产生成百上千条 mutation，
+    // 必须给待处理集合封顶，避免主线程被无界的扫描任务压垮。
+    const MAX_PENDING_MUTATION_ROOTS = 32;
+    const pendingMutationRoots = new Set<Element>();
     let dynamicScanTimer: number | null = null;
 
-    const scheduleDynamicScan = (root: Element) => {
-        invalidateScanCache(activeGrabOptions.scanContext, root);
+    // 真正昂贵的作用域判定（invalidateScanCache / getDynamicTranslationScanRoot / 作用域回溯）全部推迟到防抖
+    // flush 中执行，并对处理数量封顶。否则会在 MutationObserver 回调里逐条同步执行 querySelectorAll('*') 与
+    // closest() 选择器链——在高频 DOM 变更的页面上这会让主线程持续 100% 卡死。
+    function flushDynamicScans(): void {
+        dynamicScanTimer = null;
+        const roots = Array.from(pendingMutationRoots);
+        pendingMutationRoots.clear();
+
+        const scanRoots = new Set<Element>();
+        roots.forEach(root => {
+            invalidateScanCache(activeGrabOptions.scanContext, root);
+            if (isManagedTranslationNode(root)) return;
+            const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
+            if (!scanRoot) return;
+            if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
+            scanRoots.add(scanRoot);
+        });
+
+        scanRoots.forEach(scanRoot => {
+            observeTranslationNodes(
+                collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
+            );
+        });
+    }
+
+    // 回调里只做最廉价的过滤与收集：跳过自身注入的受管节点，其余加入待处理集合并触发防抖。
+    const enqueueMutationRoot = (root: Element): void => {
+        if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) return;
         if (isManagedTranslationNode(root)) return;
-        const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
-        if (!scanRoot) return;
-        if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
-
-        pendingDynamicRoots.add(scanRoot);
-        if (dynamicScanTimer !== null) return;
-
-        dynamicScanTimer = window.setTimeout(() => {
-            dynamicScanTimer = null;
-            const roots = Array.from(pendingDynamicRoots);
-            pendingDynamicRoots.clear();
-
-            roots.forEach(scanRoot => {
-                observeTranslationNodes(
-                    collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
-                );
-            });
-        }, 120);
+        pendingMutationRoots.add(root);
+        if (dynamicScanTimer === null) {
+            dynamicScanTimer = window.setTimeout(flushDynamicScans, 150);
+        }
     };
 
     // 创建 MutationObserver 监听 DOM 变化
     translationState.mutationObserver = new MutationObserver((mutations) => {
         if (!translationState.isAutoTranslating) return;
 
-        mutations.forEach(mutation => {
+        for (const mutation of mutations) {
+            // 集合已满则停止本批处理，剩余变更会在后续 mutation 中被重新捕获，避免在卡死页面上空转。
+            if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) break;
+
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
-                    if (node instanceof Element) {
-                        scheduleDynamicScan(node);
-                    }
+                    if (node instanceof Element) enqueueMutationRoot(node);
                 });
-                return;
+                continue;
             }
 
             if (mutation.type === 'attributes' && mutation.target instanceof Element) {
-                scheduleDynamicScan(mutation.target);
-                if (mutation.target.parentElement) {
-                    scheduleDynamicScan(mutation.target.parentElement);
-                }
-                return;
+                enqueueMutationRoot(mutation.target);
+                continue;
             }
 
             if (mutation.type === 'characterData') {
                 const parent = mutation.target.parentElement;
-                if (parent) {
-                    scheduleDynamicScan(parent);
-                }
+                if (parent) enqueueMutationRoot(parent);
             }
-        });
+        }
     });
 
     // 监听整个 body 的变化
