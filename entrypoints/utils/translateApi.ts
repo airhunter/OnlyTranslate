@@ -3,7 +3,12 @@
  * 整合翻译队列管理，作为翻译函数和后台翻译服务之间的中间层
  */
 
-import { enqueueTranslation, clearTranslationQueue } from './translateQueue';
+import {
+  enqueueTranslation,
+  clearTranslationQueue,
+  hasForegroundTranslationWork,
+  type TranslationPriority
+} from './translateQueue';
 import {
   clearBatchTranslationQueue,
   DEFAULT_BATCH_TRANSLATION_OPTIONS,
@@ -140,6 +145,8 @@ export function canUseBatchTranslationForCurrentConfig(allowBatch: boolean | und
     && isDefaultPromptForBatch();
 }
 
+export { hasForegroundTranslationWork };
+
 function shouldUseBatchTranslation(
   allowBatch: boolean | undefined,
   safeOrigin: string
@@ -164,6 +171,7 @@ export async function translateText(origin: string, context: string = document.t
     timeout = 45000,
     useCache = config.useCache,
     allowBatch = false,
+    priority = 'normal',
   } = options;
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
@@ -240,7 +248,7 @@ export async function translateText(origin: string, context: string = document.t
     };
 
     return translationTask();
-  });
+  }, { priority });
 
   const executeBatchTranslation = (texts: string[]): Promise<string[]> => enqueueTranslation(async () => {
     assertNotCancelled(requestGeneration);
@@ -263,14 +271,15 @@ export async function translateText(origin: string, context: string = document.t
     }
 
     return response;
-  });
+  }, { priority });
 
   const translationPromise = shouldUseBatchTranslation(allowBatch, safeOrigin)
     ? enqueueBatchTranslation({
       key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang),
       origin: safeOrigin,
       executeBatch: executeBatchTranslation,
-      executeSingle: executeSingleTranslation
+      executeSingle: executeSingleTranslation,
+      priority
     })
     : executeSingleTranslation(safeOrigin);
 
@@ -318,4 +327,6 @@ export interface TranslateOptions {
   useCache?: boolean;
   /** 是否允许普通网页批量翻译请求进入内部 batch 队列 */
   allowBatch?: boolean;
+  /** 翻译请求优先级：可视区为 high，后台预热为 background */
+  priority?: TranslationPriority;
 } 

@@ -185,6 +185,35 @@ describe('batch translation queue', () => {
     expect(executeSingle).toHaveBeenCalledTimes(2)
   })
 
+  it('does not batch foreground and background requests together', async () => {
+    const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin}`))
+    const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)
+
+    const foreground = enqueueBatchTranslation({
+      key: 'openai:gpt:en:zh',
+      origin: 'Visible paragraph',
+      executeBatch,
+      executeSingle,
+      priority: 'high'
+    })
+    const background = enqueueBatchTranslation({
+      key: 'openai:gpt:en:zh',
+      origin: 'Background paragraph',
+      executeBatch,
+      executeSingle,
+      priority: 'background'
+    })
+
+    await vi.advanceTimersByTimeAsync(40)
+
+    await expect(Promise.all([foreground, background])).resolves.toEqual([
+      '单:Visible paragraph',
+      '单:Background paragraph'
+    ])
+    expect(executeBatch).not.toHaveBeenCalled()
+    expect(executeSingle).toHaveBeenCalledTimes(2)
+  })
+
   it('splits groups by maxItems and maxCharacters', async () => {
     const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin}`))
     const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)

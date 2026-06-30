@@ -7,7 +7,20 @@ import { config } from './config';
 
 // 队列状态
 let activeTranslations = 0; // 当前活跃的翻译任务数量
-let pendingTranslations: Array<() => Promise<unknown>> = []; // 等待执行的翻译任务队列
+let activeBackgroundTranslations = 0; // 当前活跃的后台翻译任务数量
+
+export type TranslationPriority = 'high' | 'normal' | 'background';
+
+export interface EnqueueTranslationOptions {
+  priority?: TranslationPriority;
+}
+
+interface PendingTranslationTask {
+  run: () => Promise<unknown>;
+  priority: TranslationPriority;
+}
+
+let pendingTranslations: PendingTranslationTask[] = []; // 等待执行的翻译任务队列
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -22,16 +35,56 @@ function logQueueStatus(event: string) {
   console.debug('[OnlyTranslate][translation-queue]', event, getQueueStatus());
 }
 
+function normalizePriority(priority: TranslationPriority | undefined): TranslationPriority {
+  return priority ?? 'normal';
+}
+
+function hasPendingForegroundTranslations(): boolean {
+  return pendingTranslations.some(task => task.priority !== 'background');
+}
+
+export function hasForegroundTranslationWork(): boolean {
+  return activeTranslations > activeBackgroundTranslations || hasPendingForegroundTranslations();
+}
+
+function canStartPriority(priority: TranslationPriority): boolean {
+  const maxConcurrent = getMaxConcurrentTranslations();
+  if (activeTranslations >= maxConcurrent) return false;
+
+  if (priority !== 'background') return true;
+
+  if (hasPendingForegroundTranslations()) return false;
+  if (activeBackgroundTranslations >= 1) return false;
+  if (maxConcurrent > 1 && activeTranslations >= maxConcurrent - 1) return false;
+
+  return true;
+}
+
+function startTask(task: PendingTranslationTask): void {
+  activeTranslations++;
+  if (task.priority === 'background') {
+    activeBackgroundTranslations++;
+  }
+  logQueueStatus('started');
+  task.run().catch(() => {
+    // 错误已在任务内部处理，这里仅防止未捕获的 Promise 异常。
+  });
+}
+
 /**
  * 添加翻译任务到队列
  * @param translationTask 翻译任务函数, 需要返回Promise
  * @returns 返回一个Promise，当任务执行完成时resolve
  */
-export function enqueueTranslation<T>(translationTask: () => Promise<T>): Promise<T> {
+export function enqueueTranslation<T>(
+  translationTask: () => Promise<T>,
+  options: EnqueueTranslationOptions = {}
+): Promise<T> {
+  const priority = normalizePriority(options.priority);
+
   return new Promise((resolve, reject) => {
     // 创建任务包装器，在任务完成后处理队列状态
     const taskWrapper = async () => {
-      
       try {
         // 执行实际的翻译任务
         const result = await translationTask();
@@ -43,39 +96,54 @@ export function enqueueTranslation<T>(translationTask: () => Promise<T>): Promis
       } finally {
         // 无论成功失败，都需要减少活跃任务计数并处理队列
         activeTranslations--;
+        if (priority === 'background') {
+          activeBackgroundTranslations--;
+        }
         logQueueStatus('finished');
         processQueue();
-        
       }
     };
 
+    const pendingTask: PendingTranslationTask = {
+      run: taskWrapper,
+      priority
+    };
+
     // 将任务添加到队列
-    if (activeTranslations < getMaxConcurrentTranslations()) {
+    if (canStartPriority(priority)) {
       // 直接执行任务
-      activeTranslations++;
-      logQueueStatus('started');
-      taskWrapper();
+      startTask(pendingTask);
     } else {
-      pendingTranslations.push(taskWrapper);
+      pendingTranslations.push(pendingTask);
       logQueueStatus('queued');
     }
   });
+}
+
+function takeNextRunnableTask(): PendingTranslationTask | undefined {
+  const priorityOrder: TranslationPriority[] = ['high', 'normal', 'background'];
+
+  for (const priority of priorityOrder) {
+    if (!canStartPriority(priority)) continue;
+    const index = pendingTranslations.findIndex(task => task.priority === priority);
+    if (index >= 0) {
+      const [task] = pendingTranslations.splice(index, 1);
+      return task;
+    }
+  }
+
+  return undefined;
 }
 
 /**
  * 处理队列中的下一个任务
  */
 function processQueue() {
-  // 如果有等待的任务，并且活跃任务数量未达到上限，执行下一个任务
-  if (pendingTranslations.length > 0 && activeTranslations < getMaxConcurrentTranslations()) {
-    const nextTask = pendingTranslations.shift();
-    if (nextTask) {
-      activeTranslations++;
-      logQueueStatus('dequeued-started');
-      nextTask().catch(() => {
-        // 错误已在任务内部处理，这里仅防止未捕获的Promise异常
-      });
-    }
+  while (pendingTranslations.length > 0) {
+    const nextTask = takeNextRunnableTask();
+    if (!nextTask) return;
+    logQueueStatus('dequeued-started');
+    startTask(nextTask);
   }
 }
 
@@ -96,9 +164,13 @@ export function clearTranslationQueue() {
  */
 export function getQueueStatus() {
   const maxConcurrent = getMaxConcurrentTranslations();
+  const pendingBackgroundTranslations = pendingTranslations.filter(task => task.priority === 'background').length;
   return {
     activeTranslations,
+    activeBackgroundTranslations,
     pendingTranslations: pendingTranslations.length,
+    pendingBackgroundTranslations,
+    pendingForegroundTranslations: pendingTranslations.length - pendingBackgroundTranslations,
     maxConcurrent: maxConcurrent,
     isQueueFull: activeTranslations >= maxConcurrent,
     totalTasksInProcess: activeTranslations + pendingTranslations.length

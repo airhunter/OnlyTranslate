@@ -1,3 +1,5 @@
+import type { TranslationPriority } from './translateQueue';
+
 export interface BatchTranslationQueueOptions {
   batchDelay?: number;
   maxItems?: number;
@@ -9,6 +11,7 @@ export interface BatchTranslationRequest {
   origin: string;
   executeBatch: (origins: string[]) => Promise<string[]>;
   executeSingle: (origin: string) => Promise<string>;
+  priority?: TranslationPriority;
 }
 
 interface PendingBatchItem extends BatchTranslationRequest {
@@ -17,7 +20,9 @@ interface PendingBatchItem extends BatchTranslationRequest {
 }
 
 interface BatchGroup {
+  groupKey: string;
   key: string;
+  priority: TranslationPriority;
   items: PendingBatchItem[];
   totalCharacters: number;
   timer: ReturnType<typeof setTimeout>;
@@ -40,6 +45,14 @@ function resolveOptions(options: BatchTranslationQueueOptions = {}): Required<Ba
     maxItems: options.maxItems ?? DEFAULT_BATCH_TRANSLATION_OPTIONS.maxItems,
     maxCharacters: options.maxCharacters ?? DEFAULT_BATCH_TRANSLATION_OPTIONS.maxCharacters
   };
+}
+
+function resolvePriority(priority: TranslationPriority | undefined): TranslationPriority {
+  return priority ?? 'normal';
+}
+
+function buildGroupKey(key: string, priority: TranslationPriority): string {
+  return JSON.stringify([priority, key]);
 }
 
 function extractProtectedInlineTokens(value: string): string[] {
@@ -86,20 +99,24 @@ function isCancellationError(error: unknown): boolean {
 }
 
 function createGroup(item: PendingBatchItem, options: Required<BatchTranslationQueueOptions>): BatchGroup {
+  const priority = resolvePriority(item.priority);
+  const groupKey = buildGroupKey(item.key, priority);
   const group: BatchGroup = {
+    groupKey,
     key: item.key,
+    priority,
     items: [item],
     totalCharacters: item.origin.length,
     options,
-    timer: setTimeout(() => flushGroup(item.key), options.batchDelay)
+    timer: setTimeout(() => flushGroup(groupKey), options.batchDelay)
   };
-  groups.set(item.key, group);
+  groups.set(groupKey, group);
   return group;
 }
 
 function scheduleGroupFlush(group: BatchGroup): void {
   clearTimeout(group.timer);
-  group.timer = setTimeout(() => flushGroup(group.key), group.options.batchDelay);
+  group.timer = setTimeout(() => flushGroup(group.groupKey), group.options.batchDelay);
 }
 
 function canJoinGroup(group: BatchGroup, item: PendingBatchItem): boolean {
@@ -166,6 +183,7 @@ export function enqueueBatchTranslation(
   rawOptions?: BatchTranslationQueueOptions
 ): Promise<string> {
   const options = resolveOptions(rawOptions);
+  const priority = resolvePriority(request.priority);
 
   if (request.origin.length > options.maxCharacters) {
     return request.executeSingle(request.origin);
@@ -174,18 +192,19 @@ export function enqueueBatchTranslation(
   return new Promise((resolve, reject) => {
     const item: PendingBatchItem = {
       ...request,
+      priority,
       resolve,
       reject
     };
 
-    const group = groups.get(item.key);
+    const group = groups.get(buildGroupKey(item.key, priority));
     if (!group) {
       createGroup(item, options);
       return;
     }
 
     if (!canJoinGroup(group, item)) {
-      flushGroup(group.key);
+      flushGroup(group.groupKey);
       createGroup(item, options);
       return;
     }
@@ -194,7 +213,7 @@ export function enqueueBatchTranslation(
     group.totalCharacters += item.origin.length;
 
     if (group.items.length >= group.options.maxItems) {
-      flushGroup(group.key);
+      flushGroup(group.groupKey);
       return;
     }
 
