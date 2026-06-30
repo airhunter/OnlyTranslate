@@ -32,6 +32,7 @@ export const DEFAULT_BATCH_TRANSLATION_OPTIONS: Required<BatchTranslationQueueOp
 
 const groups = new Map<string, BatchGroup>();
 const isDev = process.env.NODE_ENV === 'development';
+const PROTECTED_INLINE_TOKEN_PATTERN = /__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g;
 
 function resolveOptions(options: BatchTranslationQueueOptions = {}): Required<BatchTranslationQueueOptions> {
   return {
@@ -41,10 +42,41 @@ function resolveOptions(options: BatchTranslationQueueOptions = {}): Required<Ba
   };
 }
 
-function validateBatchResults(results: string[], expectedCount: number): boolean {
+function extractProtectedInlineTokens(value: string): string[] {
+  return value.match(PROTECTED_INLINE_TOKEN_PATTERN) ?? [];
+}
+
+function hasSameProtectedInlineTokens(origin: string, result: string): boolean {
+  const originTokens = extractProtectedInlineTokens(origin);
+  const resultTokens = extractProtectedInlineTokens(result);
+  if (originTokens.length !== resultTokens.length) return false;
+
+  const remaining = new Map<string, number>();
+  originTokens.forEach(token => {
+    remaining.set(token, (remaining.get(token) ?? 0) + 1);
+  });
+
+  for (const token of resultTokens) {
+    const count = remaining.get(token);
+    if (!count) return false;
+    if (count === 1) {
+      remaining.delete(token);
+    } else {
+      remaining.set(token, count - 1);
+    }
+  }
+
+  return remaining.size === 0;
+}
+
+function validateBatchResults(results: string[], origins: string[]): boolean {
   return Array.isArray(results)
-    && results.length === expectedCount
-    && results.every(result => typeof result === 'string' && result.trim().length > 0);
+    && results.length === origins.length
+    && results.every((result, index) => {
+      return typeof result === 'string'
+        && result.trim().length > 0
+        && hasSameProtectedInlineTokens(origins[index], result);
+    });
 }
 
 function isCancellationError(error: unknown): boolean {
@@ -103,8 +135,9 @@ async function flushItems(items: PendingBatchItem[]): Promise<void> {
         characters: items.reduce((total, item) => total + item.origin.length, 0)
       });
     }
-    const results = await items[0].executeBatch(items.map(item => item.origin));
-    if (!validateBatchResults(results, items.length)) {
+    const origins = items.map(item => item.origin);
+    const results = await items[0].executeBatch(origins);
+    if (!validateBatchResults(results, origins)) {
       if (isDev) console.debug('[OnlyTranslate][batch-translation]', 'fallback-invalid-result', { items: items.length });
       await fallbackSingles(items);
       return;

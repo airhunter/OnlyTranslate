@@ -52,6 +52,7 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
 
     return JSON.stringify({
         'model': model,
+        // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
         "temperature": 0.3,
         'messages': [
             {

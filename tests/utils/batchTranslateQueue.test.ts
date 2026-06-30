@@ -216,6 +216,35 @@ describe('batch translation queue', () => {
     expect(executeSingle).toHaveBeenCalledTimes(2)
   })
 
+  it('falls back to single requests when batch responses alter protected inline tokens', async () => {
+    const executeBatch = vi.fn(async () => [
+      '打开 __ONLY_TRANSLATE_INLINE_0_changed__ 继续。',
+      '世界 __ONLY_TRANSLATE_INLINE_1_xyz__'
+    ])
+    const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)
+
+    const first = enqueueBatchTranslation({
+      key: 'k',
+      origin: 'Open __ONLY_TRANSLATE_INLINE_0_abc__ before continuing.',
+      executeBatch,
+      executeSingle
+    })
+    const second = enqueueBatchTranslation({
+      key: 'k',
+      origin: 'World __ONLY_TRANSLATE_INLINE_1_xyz__',
+      executeBatch,
+      executeSingle
+    })
+
+    await vi.advanceTimersByTimeAsync(40)
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      '单:Open __ONLY_TRANSLATE_INLINE_0_abc__ before continuing.',
+      '单:World __ONLY_TRANSLATE_INLINE_1_xyz__'
+    ])
+    expect(executeSingle).toHaveBeenCalledTimes(2)
+  })
+
   it('rejects pending items when the queue is cleared before flush', async () => {
     const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin}`))
     const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)
