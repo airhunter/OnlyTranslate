@@ -3,6 +3,7 @@ import {commonMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import {t} from "@/entrypoints/utils/i18n";
+import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 /**
@@ -11,6 +12,7 @@ import type { TranslationServiceMessage, TranslationServiceResult } from "./type
  * 支持模型：grok-3-beta, grok-3-fast-beta, grok-3-mini-beta, grok-3-mini-fast-beta
  */
 async function grok(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
     try {
         const headers = new Headers({
             'Content-Type': 'application/json',

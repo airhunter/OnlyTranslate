@@ -3,9 +3,11 @@ import {method} from "../utils/constant";
 import {minimaxTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 async function minimax(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
     // 构建请求头
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');

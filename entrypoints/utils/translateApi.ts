@@ -121,8 +121,10 @@ function buildBatchTranslationKey(context: string, sourceLang: string, targetLan
 }
 
 function isDefaultPromptForBatch(): boolean {
-  const prompt = config.user_role?.[config.service];
-  return !prompt || prompt === defaultOption.user_role;
+  const userPrompt = config.user_role?.[config.service];
+  const systemPrompt = config.system_role?.[config.service];
+  return (!userPrompt || userPrompt === defaultOption.user_role)
+    && (!systemPrompt || systemPrompt === defaultOption.system_role);
 }
 
 function supportsBatchTranslation(): boolean {

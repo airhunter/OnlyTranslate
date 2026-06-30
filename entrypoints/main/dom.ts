@@ -1,7 +1,6 @@
 import { keepSelectorCompatFn, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { html } from 'js-beautify';
-import { shouldKeepReadableDescendantsInSkipSelf } from "@/entrypoints/utils/contentFilter";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
     getCachedContentFilterDecision,
@@ -863,15 +862,10 @@ export function grabNode(node: Node | null | undefined, options: GrabAllNodeOpti
 
 function hasContentFilterSkipSelfAncestor(node: Element, options: GrabAllNodeOptions): boolean {
     if (!options.contentFilter) return false;
-    const canKeepReadableLeaf = isStrongReadableLeaf(node, options.scanContext);
 
     let parent = node.parentElement;
     while (parent) {
         if (getCachedContentFilterDecision(options.scanContext, parent, options.contentFilter) === 'skip-self') {
-            if (canKeepReadableLeaf && shouldKeepReadableDescendantsInSkipSelf(parent)) {
-                parent = parent.parentElement;
-                continue;
-            }
             return true;
         }
         parent = parent.parentElement;

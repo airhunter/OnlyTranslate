@@ -1,4 +1,4 @@
-import type { TranslationServiceMessage } from './types';
+import type { BatchTranslationServiceMessage, TranslationServiceMessage } from './types';
 
 function isDevelopmentRuntime(): boolean {
     return process.env.NODE_ENV === 'development';
@@ -77,7 +77,7 @@ export function parseBatchTranslationContent(content: string, expectedCount: num
     return translations;
 }
 
-export function isBatchTranslationMessage(message: TranslationServiceMessage): message is TranslationServiceMessage & { origins: string[] } {
+export function isBatchTranslationMessage(message: TranslationServiceMessage): message is BatchTranslationServiceMessage {
     return message.type === 'BATCH_TRANSLATION'
         && Array.isArray(message.origins)
         && message.origins.length > 0

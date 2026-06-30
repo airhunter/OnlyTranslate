@@ -15,6 +15,7 @@ const mockConfig = vi.hoisted(() => ({
   } as Record<string, string>,
   customModel: {} as Record<string, string>,
   style: 1,
+  system_role: {} as Record<string, string>,
   user_role: {} as Record<string, string>
 }))
 
@@ -64,6 +65,7 @@ describe('translateText', () => {
     }
     mockConfig.customModel = {}
     mockConfig.style = 1
+    mockConfig.system_role = {}
     mockConfig.user_role = {}
     mockEnqueueTranslation.mockImplementation((task: () => Promise<string>) => task())
     mockCacheLocalGet.mockReturnValue(null)
@@ -216,6 +218,19 @@ describe('translateText', () => {
   it('does not batch when the current AI prompt is customized', async () => {
     mockConfig.user_role = {
       openai: 'Custom prompt {{origin}}'
+    }
+
+    const first = translateText('Hello', 'Example', { allowBatch: true, useCache: false })
+    const second = translateText('World', 'Example', { allowBatch: true, useCache: false })
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['译文', '译文'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
+  })
+
+  it('does not batch when the current AI system prompt is customized', async () => {
+    mockConfig.system_role = {
+      openai: 'Custom system prompt'
     }
 
     const first = translateText('Hello', 'Example', { allowBatch: true, useCache: false })

@@ -1,9 +1,11 @@
 import {method} from "../utils/constant";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 async function google(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
     const targetLang = message.targetLang || config.to;
     const params: Record<string, string | number> = {
         client: 'gtx', sl: config.from, tl: targetLang, dt: 't', strip: 1, nonced: 1,

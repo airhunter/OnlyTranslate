@@ -74,7 +74,7 @@ describe('OpenAI-compatible batch service adapters', () => {
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       targetLang: 'zh-Hans'
-    } as any)).resolves.toEqual(['你好', '世界'])
+    })).resolves.toEqual(['你好', '世界'])
 
     expect(mockCommonBatchMsgTemplate).toHaveBeenCalledWith(['Hello', 'World'], 'zh-Hans')
     expect(mockDeepseekMsgTemplate).not.toHaveBeenCalled()
@@ -87,7 +87,7 @@ describe('OpenAI-compatible batch service adapters', () => {
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       targetLang: 'zh-Hans'
-    } as any)).resolves.toEqual(['你好', '世界'])
+    })).resolves.toEqual(['你好', '世界'])
 
     expect(mockCommonBatchMsgTemplate).toHaveBeenCalledWith(['Hello', 'World'], 'zh-Hans')
     expect(mockCommonMsgTemplate).not.toHaveBeenCalled()

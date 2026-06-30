@@ -3,10 +3,12 @@ import {geminiMsgTemplate} from "../utils/template";
 import {customModelString} from "../utils/option";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 
 async function gemini(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
 
     let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
 

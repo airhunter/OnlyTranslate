@@ -109,7 +109,7 @@ describe('common OpenAI-compatible service adapter', () => {
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       targetLang: 'zh-Hans'
-    } as any)).resolves.toEqual(['你好', '世界'])
+    })).resolves.toEqual(['你好', '世界'])
 
     expect(mockCommonBatchMsgTemplate).toHaveBeenCalledWith(['Hello', 'World'], 'zh-Hans')
     expect(mockCommonMsgTemplate).not.toHaveBeenCalled()
@@ -136,7 +136,7 @@ describe('common OpenAI-compatible service adapter', () => {
         type: 'BATCH_TRANSLATION',
         origins: ['Hello', 'World!'],
         targetLang: 'zh-Hans'
-      } as any)).resolves.toEqual(['你好', '世界'])
+      })).resolves.toEqual(['你好', '世界'])
 
       expect(consoleInfo).toHaveBeenCalledWith('[OnlyTranslate][batch-translation]', 'request', {
         service: 'openai',
@@ -167,7 +167,7 @@ describe('common OpenAI-compatible service adapter', () => {
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       targetLang: 'zh-Hans'
-    } as any)).resolves.toEqual(['你好', '世界'])
+    })).resolves.toEqual(['你好', '世界'])
   })
 
   it('parses batch arrays wrapped in a translations object', async () => {
@@ -188,7 +188,7 @@ describe('common OpenAI-compatible service adapter', () => {
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       targetLang: 'zh-Hans'
-    } as any)).resolves.toEqual(['你好', '世界'])
+    })).resolves.toEqual(['你好', '世界'])
   })
 
   it('rejects malformed batch responses so callers can fall back to single translation', async () => {
@@ -211,7 +211,7 @@ describe('common OpenAI-compatible service adapter', () => {
         type: 'BATCH_TRANSLATION',
         origins: ['Hello', 'World'],
         targetLang: 'zh-Hans'
-      } as any)).rejects.toThrow('Batch translation result count mismatch')
+      })).rejects.toThrow('Batch translation result count mismatch')
     } finally {
       consoleError.mockRestore()
     }

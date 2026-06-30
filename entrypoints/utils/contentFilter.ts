@@ -81,21 +81,6 @@ export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
 }
 
-export function shouldKeepReadableDescendantsInSkipSelf(element: Element): boolean {
-    const metrics = getBlockMetrics(element);
-    if (metrics.textLength === 0 || !hasReadableParagraphDescendant(element)) return false;
-
-    const structuralHint = getElementStructuralSignalText(element);
-    const hint = structuralHint;
-
-    if (isTagCluster(element, hint, metrics)) return false;
-    if (isAuthorOrBylineBlock(hint, metrics)) return false;
-    if (isPromoOrCtaBlock(element, hint, metrics)) return false;
-    if (isRelatedBlock(element, hint, structuralHint, metrics)) return false;
-
-    return isShareBlock(element, hint, metrics);
-}
-
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (isReadableParagraphLeaf(element, metrics)) return false;
     const hasShareSignal = SHARE_PATTERN.test(hint)
