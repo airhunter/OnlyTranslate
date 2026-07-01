@@ -3,6 +3,7 @@ import { arsTechnicaProfile } from './arsTechnica';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { cnnProfile } from './cnn';
 import { decryptProfile } from './decrypt';
+import { devinDocsProfile } from './devinDocs';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
@@ -67,6 +68,7 @@ export const siteProfiles: SiteProfile[] = [
     huggingFaceProfile,
     asteriskProfile,
     arsTechnicaProfile,
+    devinDocsProfile,
     claudeNagdyProfile,
     decryptProfile,
     ziggitProfile
