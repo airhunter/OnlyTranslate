@@ -1,7 +1,11 @@
 import type { SiteProfile } from './types';
 
 const UPDATE_CONTENT_SELECTOR = '[data-component-part="update-content"]';
-const UPDATE_NOTE_SELECTOR = `${UPDATE_CONTENT_SELECTOR} li, ${UPDATE_CONTENT_SELECTOR} p`;
+const UPDATE_NOTE_SELECTOR = [
+    `${UPDATE_CONTENT_SELECTOR} li`,
+    `${UPDATE_CONTENT_SELECTOR} p`,
+    `${UPDATE_CONTENT_SELECTOR} [data-as="p"]`
+].join(', ');
 const CHANGELOG_METADATA_SELECTOR = [
     '#header',
     '#page-context-menu',
@@ -10,7 +14,6 @@ const CHANGELOG_METADATA_SELECTOR = [
     '[data-component-part="accordion-button"]',
     '[data-component-part="accordion-title"]',
     '[data-component-part="accordion-title-container"]',
-    '[data-as="p"]',
     'details.accordion',
     'summary'
 ].join(', ');
@@ -83,10 +86,22 @@ function getDevinChangelogNoteTarget(node: Element): Element | null {
 
 function shouldSkipDevinChangelogNode(node: Element): boolean {
     if (node.closest(CHANGELOG_METADATA_SELECTOR)) return true;
+    if (isDevinChangelogLabel(node)) return true;
     if (node.matches('h1, h2, h3, h4, h5, h6') && node.closest(UPDATE_CONTENT_SELECTOR)) return true;
     if (node.closest('.update-container') && !node.closest(UPDATE_CONTENT_SELECTOR)) return true;
 
     return false;
+}
+
+function isDevinChangelogLabel(node: Element): boolean {
+    const paragraph = node.closest(`${UPDATE_CONTENT_SELECTOR} [data-as="p"]`);
+    if (!paragraph) return false;
+    if (paragraph.children.length !== 1) return false;
+
+    const child = paragraph.firstElementChild;
+    if (child?.tagName.toLowerCase() !== 'strong') return false;
+
+    return getNormalizedText(paragraph) === getNormalizedText(child);
 }
 
 function isDevinChangelogWrapper(node: Element): boolean {
