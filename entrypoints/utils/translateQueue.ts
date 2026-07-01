@@ -24,10 +24,20 @@ let pendingTranslations: PendingTranslationTask[] = []; // 等待执行的翻译
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
+const RESERVED_FOREGROUND_TRANSLATION_SLOTS = 2;
 
 // 获取最大并发翻译数量
 function getMaxConcurrentTranslations(): number {
   return config.maxConcurrentTranslations || 6; // 默认值为6
+}
+
+export function getBackgroundTranslationSlotLimit(maxConcurrent: number = getMaxConcurrentTranslations()): number {
+  const reservedForegroundSlots = Math.min(
+    RESERVED_FOREGROUND_TRANSLATION_SLOTS,
+    Math.max(0, maxConcurrent - 1)
+  );
+
+  return Math.max(1, maxConcurrent - reservedForegroundSlots);
 }
 
 function logQueueStatus(event: string) {
@@ -53,9 +63,10 @@ function canStartPriority(priority: TranslationPriority): boolean {
 
   if (priority !== 'background') return true;
 
+  const backgroundSlotLimit = getBackgroundTranslationSlotLimit(maxConcurrent);
   if (hasPendingForegroundTranslations()) return false;
-  if (activeBackgroundTranslations >= 1) return false;
-  if (maxConcurrent > 1 && activeTranslations >= maxConcurrent - 1) return false;
+  if (activeBackgroundTranslations >= backgroundSlotLimit) return false;
+  if (activeTranslations >= backgroundSlotLimit) return false;
 
   return true;
 }

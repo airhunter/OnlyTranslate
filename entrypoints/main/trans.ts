@@ -21,6 +21,7 @@ import { throttle } from "@/entrypoints/utils/common";
 import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
+import { getBackgroundTranslationSlotLimit } from "@/entrypoints/utils/translateQueue";
 import {
     isTranslationCancelledError,
     translateText,
@@ -295,6 +296,7 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     });
 
     let backgroundCursor = 0;
+    let activeBackgroundAutoTranslations = 0;
     const takeNextBackgroundNode = (): Element | null => {
         while (backgroundCursor < nodes.length) {
             const node = nodes[backgroundCursor++];
@@ -314,17 +316,21 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         translationState.backgroundTimer = null;
         if (!translationState.isAutoTranslating) return;
 
-        const node = takeNextBackgroundNode();
-        if (!node) return;
+        while (activeBackgroundAutoTranslations < getBackgroundTranslationSlotLimit()) {
+            const node = takeNextBackgroundNode();
+            if (!node) return;
 
-        void translateAutoTarget(node, translationState.observer ?? undefined, {
-            allowBatch: true,
-            priority: 'background'
-        }).finally(() => {
-            if (translationState.isAutoTranslating) {
-                scheduleBackgroundTranslation();
-            }
-        });
+            activeBackgroundAutoTranslations++;
+            void translateAutoTarget(node, translationState.observer ?? undefined, {
+                allowBatch: true,
+                priority: 'background'
+            }).finally(() => {
+                activeBackgroundAutoTranslations--;
+                if (translationState.isAutoTranslating) {
+                    scheduleBackgroundTranslation();
+                }
+            });
+        }
     };
 
     scheduleBackgroundTranslation(BACKGROUND_TRANSLATION_START_DELAY);

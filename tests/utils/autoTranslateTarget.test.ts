@@ -11,6 +11,7 @@ const mockConfig = vi.hoisted(() => ({
   to: 'zh-Hans',
   bidirectionalTranslation: false,
   bidirectionalTarget: 'en',
+  maxConcurrentTranslations: 6,
   model: {} as Record<string, string>,
   token: {} as Record<string, string>,
   customProviders: []
@@ -75,6 +76,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.to = 'zh-Hans'
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
+    mockConfig.maxConcurrentTranslations = 6
     mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(false)
     mockHasForegroundTranslationWork.mockReturnValue(false)
     vi.clearAllMocks()
@@ -207,6 +209,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
 
     let resolveTranslation!: (value: string) => void
+    mockConfig.maxConcurrentTranslations = 3
     mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
     vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
     vi.stubGlobal('MutationObserver', NoopMutationObserver)
@@ -292,6 +295,54 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(vi.mocked(translateText).mock.calls.some(([, , options]) => {
         return options?.allowBatch === true && options.priority === 'background'
       })).toBe(true)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
+  })
+
+  it('submits multiple non-visible background translations with reserved foreground capacity', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockReturnValue(new Promise(() => {}))
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Background Translation Window</h1>
+          <p>The first hidden paragraph should enter the background queue.</p>
+          <p>The second hidden paragraph should enter the background queue.</p>
+          <p>The third hidden paragraph should enter the background queue.</p>
+          <p>The fourth hidden paragraph should enter the background queue.</p>
+          <p>The fifth hidden paragraph should wait for a reserved foreground slot.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(vi.mocked(translateText).mock.calls.filter(([, , options]) => {
+        return options?.priority === 'background'
+      })).toHaveLength(4)
     } finally {
       restoreOriginalContent()
       vi.useRealTimers()

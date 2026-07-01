@@ -52,33 +52,67 @@ describe('translateQueue priority scheduling', () => {
     expect(events).toEqual(['active-start', 'foreground-start', 'background-start'])
   })
 
-  it('keeps background work to one reserved slot', async () => {
-    mockConfig.maxConcurrentTranslations = 3
+  it('uses remaining slots for background work while reserving foreground capacity', async () => {
+    mockConfig.maxConcurrentTranslations = 6
     const events: string[] = []
-    let finishFirst!: () => void
+    const finishBackground: Array<() => void> = []
+    let finishForeground!: () => void
 
-    const first = enqueueTranslation(() => new Promise<string>(resolve => {
-      events.push('background-1-start')
-      finishFirst = () => resolve('background-1')
-    }), { priority: 'background' })
-    const second = enqueueTranslation(async () => {
-      events.push('background-2-start')
-      return 'background-2'
-    }, { priority: 'background' })
+    const backgrounds = Array.from({ length: 5 }, (_, index) => enqueueTranslation(() => new Promise<string>(resolve => {
+      events.push(`background-${index + 1}-start`)
+      finishBackground[index] = () => resolve(`background-${index + 1}`)
+    }), { priority: 'background' }))
 
     await Promise.resolve()
 
-    expect(events).toEqual(['background-1-start'])
+    expect(events).toEqual([
+      'background-1-start',
+      'background-2-start',
+      'background-3-start',
+      'background-4-start'
+    ])
     expect(getQueueStatus()).toMatchObject({
-      activeTranslations: 1,
-      activeBackgroundTranslations: 1,
+      activeTranslations: 4,
+      activeBackgroundTranslations: 4,
       pendingTranslations: 1,
       pendingBackgroundTranslations: 1
     })
 
-    finishFirst()
-    await expect(first).resolves.toBe('background-1')
-    await expect(second).resolves.toBe('background-2')
-    expect(events).toEqual(['background-1-start', 'background-2-start'])
+    const foreground = enqueueTranslation(() => new Promise<string>(resolve => {
+      events.push('foreground-start')
+      finishForeground = () => resolve('foreground')
+    }), { priority: 'high' })
+
+    await Promise.resolve()
+
+    expect(events).toEqual([
+      'background-1-start',
+      'background-2-start',
+      'background-3-start',
+      'background-4-start',
+      'foreground-start'
+    ])
+    expect(getQueueStatus()).toMatchObject({
+      activeTranslations: 5,
+      activeBackgroundTranslations: 4,
+      pendingTranslations: 1,
+      pendingBackgroundTranslations: 1
+    })
+
+    finishForeground()
+    await expect(foreground).resolves.toBe('foreground')
+
+    finishBackground[0]()
+    await expect(backgrounds[0]).resolves.toBe('background-1')
+    await Promise.resolve()
+
+    expect(events).toEqual([
+      'background-1-start',
+      'background-2-start',
+      'background-3-start',
+      'background-4-start',
+      'foreground-start',
+      'background-5-start'
+    ])
   })
 })
