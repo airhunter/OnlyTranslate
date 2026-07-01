@@ -22,7 +22,6 @@ import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/mai
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
 import {
-    hasForegroundTranslationWork,
     isTranslationCancelledError,
     translateText,
     cancelAllTranslations,
@@ -314,11 +313,6 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     const runBackgroundTranslation = (): void => {
         translationState.backgroundTimer = null;
         if (!translationState.isAutoTranslating) return;
-
-        if (hasForegroundTranslationWork()) {
-            scheduleBackgroundTranslation();
-            return;
-        }
 
         const node = takeNextBackgroundNode();
         if (!node) return;

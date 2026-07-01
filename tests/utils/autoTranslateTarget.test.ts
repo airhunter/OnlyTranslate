@@ -253,6 +253,51 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
   })
 
+  it('submits background translations even while foreground work is active', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    mockHasForegroundTranslationWork.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('后台译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Background Translation Priority</h1>
+          <p>The hidden paragraph should still enter the background queue.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(vi.mocked(translateText).mock.calls.some(([, , options]) => {
+        return options?.allowBatch === true && options.priority === 'background'
+      })).toBe(true)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
+  })
+
   it('collects visible detail text after an expandable card opens outside the primary content root', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ynarwal.github.io/how-llms-work/'),
