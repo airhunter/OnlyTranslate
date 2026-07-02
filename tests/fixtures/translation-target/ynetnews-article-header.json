@@ -1,0 +1,33 @@
+{
+  "name": "Ynetnews article keeps title and subtitle outside article body",
+  "url": "https://www.ynetnews.com/business/article/rjeij9cgge",
+  "scope": "smart",
+  "html": "ynetnews-article-header.html",
+  "include": [
+    "article-title",
+    "article-subtitle",
+    "body-para-1",
+    "body-para-2",
+    "body-para-3"
+  ],
+  "exclude": [
+    "article-author",
+    "article-date",
+    "add-comment",
+    "related-topics",
+    "tag-high-tech",
+    "comments-title",
+    "new-comment"
+  ],
+  "textIncludes": [
+    "Immunai uses AI to hunt for cancer",
+    "Multi-project collaboration, running through 2027",
+    "Immunai, a leading AI biotechnology company focused"
+  ],
+  "textExcludes": [
+    "ynet Global",
+    "Related Topics",
+    "Add a comment",
+    "Comments"
+  ]
+}

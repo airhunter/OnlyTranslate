@@ -22,6 +22,8 @@ const directSet = new Set([
 ]);
 
 const directTextRunHostSet = new Set(['li', 'dd', 'blockquote', 'figcaption']);
+const mediaAdjacentDirectTextRunHostSet = new Set(['article', 'section', 'div']);
+const mediaAdjacentDirectTextBoundarySet = new Set(['figure', 'picture']);
 const legacyInlineFlowHostSet = new Set(['font']);
 
 const legacyInlineFlowBlockedAncestorSelector = [
@@ -442,9 +444,11 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
 
     const { host, directChild, kind } = context;
     const hostTag = host.tagName.toLowerCase();
+    const requiresMediaBoundary = mediaAdjacentDirectTextRunHostSet.has(hostTag);
     if (shouldSkipDirectTextHost(host, hostTag)) return false;
     if (host.closest(`.${translationContentClass}, [${translatedAttr}="true"]`)) return false;
     if (hasContentFilterSkipSelfAncestor(host, options)) return false;
+    if (requiresMediaBoundary && isInsideLegacyInlineFlowBlockedArea(host)) return false;
     if (kind === 'mixed-block' && !hasDirectBlockBoundary(host)) return false;
     if (kind === 'legacy-inline-flow' && !shouldUseLegacyInlineFlowHost(host, options)) return false;
 
@@ -452,6 +456,7 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
         ? findLegacyInlineFlowRun(host, directChild)
         : findDirectTextRun(host, directChild);
     if (!run) return false;
+    if (requiresMediaBoundary && !isDirectTextRunAdjacentToMediaBlock(run)) return false;
 
     const runWrapper = run.find(child => child instanceof Element && isDirectTextTargetElement(child)) as Element | undefined;
     if (runWrapper) return runWrapper;
@@ -460,7 +465,7 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
 }
 
 function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
-    if (node instanceof Element && directTextRunHostSet.has(node.tagName.toLowerCase())) {
+    if (node instanceof Element && isMixedBlockTextRunHost(node)) {
         return { host: node, directChild: null, kind: 'mixed-block' };
     }
 
@@ -471,7 +476,7 @@ function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
     let current: Node | null = node;
     while (current?.parentNode) {
         const parent = current.parentNode as Node | null;
-        if (parent instanceof Element && directTextRunHostSet.has(parent.tagName.toLowerCase())) {
+        if (parent instanceof Element && isMixedBlockTextRunHost(parent)) {
             return {
                 host: parent,
                 directChild: current as ChildNode,
@@ -489,6 +494,11 @@ function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
     }
 
     return null;
+}
+
+function isMixedBlockTextRunHost(node: Element): boolean {
+    const tag = node.tagName.toLowerCase();
+    return directTextRunHostSet.has(tag) || mediaAdjacentDirectTextRunHostSet.has(tag);
 }
 
 function hasDirectBlockBoundary(host: Element): boolean {
@@ -625,6 +635,36 @@ function isInsideLegacyInlineFlowBlockedArea(host: Element): boolean {
     } catch {
         return false;
     }
+}
+
+function isDirectTextRunAdjacentToMediaBlock(run: ChildNode[]): boolean {
+    const first = run[0];
+    const last = run[run.length - 1];
+    if (!first || !last) return false;
+
+    return isMediaAdjacentTextBoundary(findMeaningfulSibling(first, 'previous')) ||
+        isMediaAdjacentTextBoundary(findMeaningfulSibling(last, 'next'));
+}
+
+function findMeaningfulSibling(node: ChildNode, direction: 'previous' | 'next'): ChildNode | null {
+    let sibling = direction === 'previous' ? node.previousSibling : node.nextSibling;
+
+    while (sibling) {
+        if (sibling.nodeType === Node.COMMENT_NODE || isWhitespaceTextNode(sibling)) {
+            sibling = direction === 'previous' ? sibling.previousSibling : sibling.nextSibling;
+            continue;
+        }
+
+        return sibling;
+    }
+
+    return null;
+}
+
+function isMediaAdjacentTextBoundary(node: ChildNode | null): boolean {
+    if (!(node instanceof Element)) return false;
+
+    return mediaAdjacentDirectTextBoundarySet.has(node.tagName.toLowerCase());
 }
 
 function hasOnlyLegacyInlineFlowChildren(host: Element): boolean {

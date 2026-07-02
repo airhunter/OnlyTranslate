@@ -85,6 +85,11 @@ describe('site profile registry', () => {
     expect(selectCompatFn['devin.ai']).toBeTypeOf('function')
   })
 
+  it('registers Ynetnews article profile', () => {
+    expect(selectCompatFn['ynetnews.com']).toBeTypeOf('function')
+    expect(supplementalCompatFn['ynetnews.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

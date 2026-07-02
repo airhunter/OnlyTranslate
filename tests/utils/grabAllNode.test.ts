@@ -257,6 +257,28 @@ describe('grabAllNode', () => {
     expect(target.textContent).not.toContain('Filter Verdict')
   })
 
+  it('wraps direct prose that follows a block figure in an article body', () => {
+    document.body.innerHTML = `
+      <article id="story">
+        <div id="article-body">
+          <figure id="equipment-figure">
+            <img src="/equipment.jpg" alt="Manufacturing equipment">
+            <figcaption>FOMD system installed at the peptide manufacturing facility.</figcaption>
+          </figure>
+          Recently, demand for APIs has shifted from traditional high-volume small molecules to a broader need across biologics, peptides, oligonucleotides, viral vectors, and more.
+        </div>
+      </article>
+    `
+
+    const directText = document.querySelector('#equipment-figure')?.nextSibling as Text
+    const target = grabNode(directText) as HTMLElement
+
+    expect(target.getAttribute(DIRECT_TEXT_TARGET_ATTR)).toBe('true')
+    expect(target.parentElement?.id).toBe('article-body')
+    expect(target.textContent).toContain('Recently, demand for APIs has shifted')
+    expect(target.textContent).not.toContain('FOMD system installed')
+  })
+
   it('wraps legacy font inline flow into br-separated direct text targets', () => {
     document.body.innerHTML = `
       <article>

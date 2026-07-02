@@ -1,0 +1,29 @@
+{
+  "name": "GEN article keeps prose after embedded figures",
+  "url": "https://www.genengnews.com/topics/bioprocessing/peptistar-began-operation-of-the-asahi-kasei-fo-md-system-at-manufacturing-scale/",
+  "scope": "smart",
+  "html": "genengnews-figure-paragraph.html",
+  "contentRootContains": [
+    "#post-334535"
+  ],
+  "include": [
+    "article-title",
+    "lead",
+    "facility-caption",
+    "freeze-drying",
+    "overview-caption",
+    "future"
+  ],
+  "exclude": [
+    "related-title"
+  ],
+  "textIncludes": [
+    "Recently, demand for APIs has shifted from traditional",
+    "Asahi Kasei's system for forward osmosis",
+    "Asahi Kasei says it looks forward"
+  ],
+  "textExcludes": [
+    "Advertisement should not become article text",
+    "Related Articles"
+  ]
+}

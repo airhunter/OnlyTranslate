@@ -28,6 +28,7 @@ import type {
 } from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
+import { ynetNewsProfile } from './ynetNews';
 import { ziggitProfile } from './ziggit';
 
 export type {
@@ -73,6 +74,7 @@ export const siteProfiles: SiteProfile[] = [
     devinDocsProfile,
     claudeNagdyProfile,
     decryptProfile,
+    ynetNewsProfile,
     ziggitProfile
 ];
 
