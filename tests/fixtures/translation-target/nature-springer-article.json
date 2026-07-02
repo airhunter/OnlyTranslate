@@ -1,0 +1,51 @@
+{
+  "name": "Nature Springer article keeps abstract and summary prose",
+  "url": "https://www.nature.com/articles/s43856-026-01747-8",
+  "scope": "smart",
+  "html": "nature-springer-article.html",
+  "contentRootExcludes": [
+    "#Abs1-content",
+    "#Abs2-content"
+  ],
+  "include": [
+    "article-title",
+    "Abs1",
+    "Abs2",
+    "plain-summary",
+    "Sec2",
+    "methods-overview",
+    "Sec3",
+    "methods-history"
+  ],
+  "exclude": [
+    "article-authors",
+    "article-citation",
+    "references",
+    "reference-one",
+    "rightslink",
+    "rights-copy",
+    "article-info",
+    "citation",
+    "share-title",
+    "share-description"
+  ],
+  "textIncludes": [
+    "In vitro development of the Autonomous Colonoscope Robot System",
+    "In the field of colonoscopy",
+    "ACRS was trained using insertion data",
+    "Of the automated insertions at Level 3 or higher",
+    "The autonomous colonoscope robot system demonstrated",
+    "This plain language summary explains",
+    "After an overview of system hardware"
+  ],
+  "textExcludes": [
+    "Keiichiro Kume",
+    "Communications Medicine 6",
+    "References",
+    "Researcher A. A related article",
+    "Rights and permissions",
+    "Open Access This article is licensed",
+    "About this article",
+    "Share this article"
+  ]
+}

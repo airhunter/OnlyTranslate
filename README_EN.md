@@ -91,17 +91,25 @@ OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead), w
 
 ```bash
 # Install dependencies
-pnpm install
+corepack pnpm install
 
 # Development mode for Chrome
-pnpm dev
+corepack pnpm dev
 
 # Build
-pnpm build
+corepack pnpm build
 
 # Package zip
-pnpm zip
+corepack pnpm zip
 ```
+
+This project declares its pnpm version in `package.json`. Prefer
+`corepack pnpm ...` so scripts use the package manager version and local
+dependencies expected by the project.
+
+For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode.
+For production builds, load `.output/chrome-mv3`. Avoid mixing the two output
+directories.
 
 Tech stack: [WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript, Manifest V3.
 

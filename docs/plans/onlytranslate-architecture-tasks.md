@@ -7,7 +7,9 @@ absorbing useful architecture patterns from both projects.
 ## Summary
 
 `read-frog` is useful mainly as a reference for computed-style based layout
-handling, AI context-aware translation, batching, and subtitle processing.
+handling, batching, and subtitle processing. Its AI context-aware translation
+approach was evaluated, but OnlyTranslate should not adopt it as a product
+feature for now because the visible quality gain was weak and inconsistent.
 
 `kiss-translator` is useful mainly as a reference for rule schema design:
 decomposing site behavior into orthogonal fields such as roots, targets, ignore
@@ -36,7 +38,12 @@ The two most important lessons for OnlyTranslate are:
     whole code links preserved in translated copies.
 - [ ] P1: Subtitle cleaning, deduplication, and segmentation
 - [ ] P1: Batch translation queue with fallback
-- [ ] P1: AI context-aware translation
+- [ ] P1: Generic content-root sibling reading-region recovery
+- [x] P1: AI context-aware translation evaluation
+  - Decision: do not implement as a product feature for now.
+  - Reason: the observed quality improvement was not reliably visible, while
+    the added prompt/context complexity introduced translation regressions and
+    extra maintenance surface.
 - [ ] P2: Site rule dataization and remote subscription
 
 ## P0: Generic Bilingual Insertion Layout Strategy
@@ -212,6 +219,47 @@ Site profiles can opt into it when that tradeoff is desirable.
 - Existing rich-text translation behavior does not regress.
 - Run `pnpm test:content`.
 
+## P1: Generic Content-Root Sibling Reading-Region Recovery
+
+Status: TODO.
+
+### Background
+
+Nature/Springer article pages exposed a generic weakness in smart translation
+scope detection: `findMainContent` can select the densest descendant as the
+content root and leave sibling reading regions, such as abstracts or plain
+language summaries, outside the scan root. A site profile now fixes the current
+Springer Nature article structure, but the same pattern can appear on other
+long-form pages with a lead/summary section beside the main body container.
+
+### Proposed Approach
+
+Keep the Springer Nature site profile as the narrow stopgap. Separately design a
+generic recovery pass that can attach high-confidence sibling reading sections
+around the selected content root without pulling in references, comments,
+recommendations, navigation, or share modules.
+
+Candidate signals:
+
+- Sibling or near-sibling sections before the content root with strong prose
+  evidence and titles such as Abstract, Summary, Introduction, Overview, or
+  Plain language summary.
+- Low link density and low interactive density.
+- Explicit exclusion of metadata-heavy siblings such as References, Related
+  articles, Comments, Rights and permissions, About this article, and share
+  boxes.
+- A conservative cap on recovered sibling count and total text length.
+
+### Acceptance Criteria
+
+- Add fixture coverage for at least one generic long-form page where the chosen
+  content root excludes an abstract/summary sibling.
+- The sibling abstract/summary prose is included in smart mode.
+- References, comments, recommendations, share boxes, and article metadata stay
+  excluded.
+- Existing adversarial content-root and supplemental fixtures stay green.
+- Run `pnpm test:content`.
+
 ## P1: Subtitle Cleaning, Deduplication, and Segmentation
 
 ### Background
@@ -307,14 +355,27 @@ individual requests.
 - Batch failure falls back to individual translation.
 - Add queue tests around deduplication, fallback, and parse mismatch.
 
-## P1: AI Context-aware Translation
+## P1: AI Context-aware Translation Evaluation
+
+Status: Evaluated and declined for now.
 
 ### Background
 
 OnlyTranslate currently passes mostly `document.title` as context. `read-frog`
 uses page title, page content, summaries, and subtitle context to improve LLM
-translation quality. This fits OnlyTranslate's core mission if kept lightweight
-and low-UI.
+translation quality. We tested a simpler OnlyTranslate-shaped variant that used
+non-AI page metadata and nearby page text, and also discussed deeper summary
+generation.
+
+The result was not strong enough to justify shipping the feature. The visible
+translation quality improvement was subtle and inconsistent. In comparison,
+changing the model or asking the same model to translate again often produced a
+similar level of variation.
+
+The downside was concrete: more complicated prompts could make the output more
+literal, local context could pollute title/body translations, cache keys and
+configuration migration became more complex, and the feature was hard to explain
+to users in a way that matched its actual benefit.
 
 ### Reference Code
 
@@ -327,27 +388,27 @@ and low-UI.
 - read-frog summary logic:
   `/Users/wuwenjie/Documents/IdeaProjects/read-frog/src/utils/content/summary.ts`
 
-### Proposed Approach
+### Decision
 
-Introduce a lightweight context object:
+Do not implement AI context-aware webpage translation as a product feature now.
+Do not add a user-facing switch, hidden mode, automatic summary call, automatic
+term glossary, or default DOM-derived context injection.
 
-- `pageTitle`
-- `contentSnippet`
-- optional `contentSummary`
-- optional `subtitleContext`
+This is a "not now" decision, not a permanent ban. Revisit only if there is a
+clear quality benchmark showing a stable improvement over ordinary model
+variance and retry variance.
 
-Keep this internal at first. Avoid adding a complex settings surface. Summary
-generation should be cached so repeated translations on the same page do not
-burn extra tokens.
+### Revisit Criteria
 
-Non-LLM services should ignore the extra context.
-
-### Acceptance Criteria
-
-- LLM requests can receive structured context.
-- Non-LLM services are unaffected.
-- Summary/context cache avoids repeated generation.
-- Add tests for context propagation and cache behavior.
+- Use a fixed evaluation set of real webpages and models.
+- Compare baseline prompt, retry variance, model variance, and context-aware
+  prompt results side by side.
+- Require improvements that are visible in normal reading, not only in isolated
+  examples.
+- Prove the prompt does not introduce title pollution, context leakage, or more
+  literal Chinese word order.
+- Keep any future design opt-in at the prompt level unless the quality gain is
+  large enough to justify UI and maintenance cost.
 
 ## P2: Site Rule Dataization and Remote Subscription
 
@@ -408,8 +469,7 @@ Recommended remaining order:
 
 1. Subtitle cleaning and segmentation.
 2. Batch translation queue.
-3. AI context-aware translation.
-4. Rule dataization and remote subscription.
+3. Rule dataization and remote subscription.
 
 This keeps the next work focused on visible quality and reliability before
-expanding larger systems such as batching, context, or remote rules.
+expanding larger systems such as batching or remote rules.

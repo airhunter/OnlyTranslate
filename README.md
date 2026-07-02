@@ -89,17 +89,23 @@ OnlyTranslate 基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/F
 
 ```bash
 # 安装依赖
-pnpm install
+corepack pnpm install
 
 # 开发模式（Chrome）
-pnpm dev
+corepack pnpm dev
 
 # 构建
-pnpm build
+corepack pnpm build
 
 # 打包 zip
-pnpm zip
+corepack pnpm zip
 ```
+
+本项目在 `package.json` 中声明了 pnpm 版本。建议使用 `corepack pnpm ...`
+运行脚本，确保使用项目声明的包管理器版本和本地依赖。
+
+开发模式请在 Chrome 开发者模式中加载 `.output/chrome-mv3-dev`；生产构建请加载
+`.output/chrome-mv3`。不要混用两个输出目录。
 
 技术栈：[WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript，Manifest V3。
 
