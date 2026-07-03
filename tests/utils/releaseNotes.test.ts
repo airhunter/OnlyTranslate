@@ -41,7 +41,7 @@ describe('release notes utilities', () => {
 
   it('keeps the latest release note localized for every supported locale', () => {
     const latest = releaseNotes[0]
-    expect(latest.version).toBe('0.7.0')
+    expect(latest.version).toBe('0.8.0')
 
     for (const locale of releaseNoteLocales) {
       const localizedNote = latest.notes[locale]

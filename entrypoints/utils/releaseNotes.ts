@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.8.0',
+    notes: {
+      'zh-CN': {
+        title: '批量翻译与正文识别升级',
+        items: [
+          '新增网页批量翻译队列，支持合并请求、失败回退和取消处理，长页面翻译更稳。',
+          '恢复“可视区优先、后台继续”的翻译调度，先翻当前看到的内容，再持续处理页面其他区域。',
+          '优化长文档扫描性能，减少动态页面和整页翻译时的卡顿、卡死和重复计算。',
+          '修复多类新闻、论文、更新日志页面的标题、摘要、导语和图文混排正文漏翻问题。'
+        ]
+      },
+      'en-US': {
+        title: 'Batch Translation and Article Detection Upgrade',
+        items: [
+          'Added a batch translation queue for webpages with request merging, failure fallback, and cancellation handling for more reliable long-page translation.',
+          'Restored viewport-first scheduling with background continuation, translating what you see first while the rest of the page keeps progressing.',
+          'Improved long-document scanning performance to reduce stalls, freezes, and repeated work on dynamic pages and full-page translation.',
+          'Fixed missed titles, abstracts, summaries, leads, and image-wrapped article paragraphs across news, research, and changelog pages.'
+        ]
+      },
+      'zh-TW': {
+        title: '批量翻譯與正文識別升級',
+        items: [
+          '新增網頁批量翻譯佇列，支援合併請求、失敗回退和取消處理，長頁面翻譯更穩。',
+          '恢復「可視區優先、背景繼續」的翻譯調度，先翻目前看到的內容，再持續處理頁面其他區域。',
+          '優化長文件掃描效能，減少動態頁面和整頁翻譯時的卡頓、卡死和重複計算。',
+          '修復多類新聞、論文、更新日誌頁面的標題、摘要、導語和圖文混排正文漏翻問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'バッチ翻訳と本文検出を強化',
+        items: [
+          'Web ページ向けのバッチ翻訳キューを追加し、リクエスト統合、失敗時のフォールバック、キャンセル処理により長いページの翻訳が安定しました。',
+          '表示中の範囲を優先しつつバックグラウンドで続きを翻訳するスケジューリングを復元し、今見ている内容から先に翻訳されます。',
+          '長い文書のスキャン性能を改善し、動的ページや全ページ翻訳での停止、固まり、重複計算を減らしました。',
+          'ニュース、論文、更新履歴ページで、タイトル、要約、リード文、画像付き本文段落が翻訳されない問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.7.0',
     notes: {
       'zh-CN': {
