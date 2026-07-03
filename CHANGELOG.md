@@ -1,5 +1,33 @@
 # Changelog
 
+# [0.8.0](https://github.com/airhunter/OnlyTranslate/compare/v0.7.0...v0.8.0) (2026-07-03)
+
+
+### Bug Fixes
+
+* **content:** 优先调度可视区翻译 ([e7e454b](https://github.com/airhunter/OnlyTranslate/commit/e7e454b1b77bd33d52d2d0b74b87e21c24991b7e))
+* **content:** 修复 Springer Nature 文章标题和摘要翻译 ([cba4729](https://github.com/airhunter/OnlyTranslate/commit/cba472944c1e27a946e67e2f412c923b7bf56cf5))
+* **content:** 修复动作控件污染容器导致正文漏翻 ([970bbbe](https://github.com/airhunter/OnlyTranslate/commit/970bbbe315692e1ce57fb4c6a53f6bcef90aee40))
+* **content:** 修复图文混排与 ynet 标题漏翻 ([0f0d859](https://github.com/airhunter/OnlyTranslate/commit/0f0d85947669eeed801f2ecfc58a64c896ac9be8))
+* **content:** 恢复前导阅读兄弟区域 ([98fb598](https://github.com/airhunter/OnlyTranslate/commit/98fb598ef0640ec28e66796b4683353f651aa8aa))
+* **content:** 恢复批量翻译首屏优先 ([eaf34a3](https://github.com/airhunter/OnlyTranslate/commit/eaf34a3bf89f9f0a8c0d0041e9ab47929bcb10dc))
+* **content:** 恢复非可视区后台翻译 ([863e397](https://github.com/airhunter/OnlyTranslate/commit/863e397dc991dd475863661278dfe4e351d4cdd9))
+* **content:** 提升后台翻译并发 ([add77c6](https://github.com/airhunter/OnlyTranslate/commit/add77c63725230eda3436f50cb47d6e63079adab))
+* **content:** 翻译 Devin 更新日志段落正文 ([9ff5a88](https://github.com/airhunter/OnlyTranslate/commit/9ff5a88327f9a1c350ec27bac9d4f14953a61742))
+* **content:** 跳过 Devin 更新日志元信息 ([3029c2f](https://github.com/airhunter/OnlyTranslate/commit/3029c2f5674c64e584e2855175bdbc3ac7198bd7))
+* **service:** 修复批量翻译配置与消息类型 ([d9ce92e](https://github.com/airhunter/OnlyTranslate/commit/d9ce92e2c1b1bcd5e9a643774661b81500ae89a8))
+* **service:** 校验批量翻译占位符 ([f13664f](https://github.com/airhunter/OnlyTranslate/commit/f13664f9de8763910ebd82493e95f18d2f7ae10e))
+
+
+### Features
+
+* **service:** 支持网页批量翻译队列 ([680ab1e](https://github.com/airhunter/OnlyTranslate/commit/680ab1eaecc60b9279e0d33ac46705a11b8a4f7a))
+
+
+### Performance Improvements
+
+* **content:** 修复长文档整页翻译卡死与正文漏翻 ([a293781](https://github.com/airhunter/OnlyTranslate/commit/a293781efe09da0bd2bfdb03f609dec62e4df787))
+
 # [0.7.0](https://github.com/airhunter/OnlyTranslate/compare/v0.6.0...v0.7.0) (2026-06-28)
 
 
