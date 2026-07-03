@@ -1,6 +1,7 @@
 import { config } from "@/entrypoints/utils/config";
 import { t } from "@/entrypoints/utils/i18n";
-import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { assertSingleTranslationMessage } from "./types";
+import type { SingleTranslationServiceMessage, TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 type ChromeTranslationAvailabilityStatus = 'available' | 'downloadable' | 'downloading' | 'unavailable' | 'not-supported';
 
@@ -51,7 +52,7 @@ async function waitForOffscreenReady(timeout: number = 5000): Promise<void> {
 }
 
 // 在 background script 中使用 offscreen API 处理翻译
-async function translateWithOffscreen(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+async function translateWithOffscreen(message: SingleTranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
         // 确保 offscreen 文档存在
         await ensureOffscreenDocument();
@@ -129,6 +130,7 @@ async function ensureOffscreenDocument() {
 
 // 主翻译函数
 export default async function chromeTranslator(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
     // console.log('Chrome Translator 收到消息:', message);
 
     const text = message.origin;

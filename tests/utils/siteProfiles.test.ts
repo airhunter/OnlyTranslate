@@ -81,6 +81,15 @@ describe('site profile registry', () => {
     expect(afterBilingualAppendCompatFn['huggingface.co']).toBeTypeOf('function')
   })
 
+  it('registers Devin Docs changelog profile', () => {
+    expect(selectCompatFn['devin.ai']).toBeTypeOf('function')
+  })
+
+  it('registers Ynetnews article profile', () => {
+    expect(selectCompatFn['ynetnews.com']).toBeTypeOf('function')
+    expect(supplementalCompatFn['ynetnews.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

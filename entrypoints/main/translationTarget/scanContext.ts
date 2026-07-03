@@ -1,4 +1,4 @@
-import type { ContentFilterDecision } from '@/entrypoints/utils/contentFilter';
+import { invalidateContentFilterCache, type ContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import type { ContentUnitDecision } from '@/entrypoints/utils/contentUnitClassifier';
 import {
     getProseEvidence,
@@ -124,17 +124,31 @@ export function resetScanBudget(context: ScanContext | undefined, budget: ScanBu
     context.budgetUsage[budget] = 0;
 }
 
+// 单次失效最多遍历的后代数量。对超大子树（例如 body 顶层容器变更）只清理根节点本身，避免 querySelectorAll('*')
+// 全量遍历 DOM 拖垮主线程；其余后代会在自身发生变更时再被失效。
+const MAX_INVALIDATION_DESCENDANTS = 2000;
+
+function deleteScanCacheEntry(context: ScanContext, element: Element): void {
+    context.normalizedText.delete(element);
+    context.contentFilter.delete(element);
+    context.contentUnit.delete(element);
+    context.proseEvidence.delete(element);
+    context.visibility.delete(element);
+    context.uiSubtree.delete(element);
+    // contentFilter 模块内的按元素记忆化与 scanContext 缓存生命周期一致，需一并失效。
+    invalidateContentFilterCache(element);
+}
+
 export function invalidateScanCache(context: ScanContext | undefined, root: Element): void {
     if (!context) return;
 
-    const elements = [root, ...Array.from(root.querySelectorAll<Element>('*'))];
-    for (const element of elements) {
-        context.normalizedText.delete(element);
-        context.contentFilter.delete(element);
-        context.contentUnit.delete(element);
-        context.proseEvidence.delete(element);
-        context.visibility.delete(element);
-        context.uiSubtree.delete(element);
+    deleteScanCacheEntry(context, root);
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let processed = 0;
+    while (walker.nextNode()) {
+        deleteScanCacheEntry(context, walker.currentNode as Element);
+        if (++processed >= MAX_INVALIDATION_DESCENDANTS) break;
     }
 }
 

@@ -16,6 +16,31 @@ const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
+// getBlockMetrics 对每个元素都要做多次全子树 querySelectorAll，并对每个段落级后代再算一次 prose evidence，
+// 单次调用就是 O(子树) ~ O(子树²)。而 hasContentFilterSkipSelfAncestor / findDirectTextRunTarget 会为每个候选节点
+// 一路回溯到根，逐个祖先触发 getContentFilterDecision，等于把整棵树的 block metrics 反复重算。
+// 在 docs.devin.ai/changelog 这类长文档（数千节点）上这会退化成超线性，直接把主线程冻死数分钟。
+// 这些信号都是元素结构的纯函数，在一次扫描内 DOM 基本稳定，因此按元素做记忆化即可把总开销压回线性。
+const blockMetricsCache = new WeakMap<Element, BlockMetrics>();
+const proseEvidenceCache = new WeakMap<Element, ProseEvidence>();
+const normalizedTextCache = new WeakMap<Element, string>();
+
+function getCachedProseEvidence(element: Element): ProseEvidence {
+    const cached = proseEvidenceCache.get(element);
+    if (cached) return cached;
+    const evidence = getProseEvidence(element);
+    proseEvidenceCache.set(element, evidence);
+    return evidence;
+}
+
+// 与 scanContext.invalidateScanCache 对齐：当某个元素子树发生变化、需要重新扫描时，
+// 必须同步清掉这里的按元素缓存，否则动态重扫会读到过期的 block metrics。
+export function invalidateContentFilterCache(element: Element): void {
+    blockMetricsCache.delete(element);
+    proseEvidenceCache.delete(element);
+    normalizedTextCache.delete(element);
+}
+
 interface BlockMetrics {
     text: string;
     textLength: number;
@@ -56,27 +81,16 @@ export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
 }
 
-export function shouldKeepReadableDescendantsInSkipSelf(element: Element): boolean {
-    const metrics = getBlockMetrics(element);
-    if (metrics.textLength === 0 || !hasReadableParagraphDescendant(element)) return false;
-
-    const structuralHint = getElementStructuralSignalText(element);
-    const hint = structuralHint;
-
-    if (isTagCluster(element, hint, metrics)) return false;
-    if (isAuthorOrBylineBlock(hint, metrics)) return false;
-    if (isPromoOrCtaBlock(element, hint, metrics)) return false;
-    if (isRelatedBlock(element, hint, structuralHint, metrics)) return false;
-
-    return isShareBlock(element, hint, metrics);
-}
-
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (isReadableParagraphLeaf(element, metrics)) return false;
     const hasShareSignal = SHARE_PATTERN.test(hint)
         || SHARE_PATTERN.test(metrics.interactiveSignalText)
         || metrics.hasSocialLinks;
     if (!hasShareSignal) return false;
+    // 真正的分享条是紧凑的交互控件；若容器内含有可读段落/列表正文，则它是内容区而非分享控件。
+    // 否则像 docs.devin.ai/changelog 这种短文档：整页内容区因为夹带一个社交链接 + 大量版本徽章/下载按钮、
+    // 且无长段落（longParagraphCount=0），会被整体误判为分享块 skip-self，导致正文被大面积漏翻。
+    if (hasReadableParagraphDescendant(element)) return false;
     if (
         metrics.proseEvidence.strength === 'strong'
         && !SHARE_PATTERN.test(metrics.interactiveSignalText)
@@ -165,8 +179,17 @@ function isReadableParagraphLeaf(element: Element, metrics: BlockMetrics): boole
 }
 
 function getBlockMetrics(element: Element): BlockMetrics {
+    const cached = blockMetricsCache.get(element);
+    if (cached) return cached;
+
+    const metrics = computeBlockMetrics(element);
+    blockMetricsCache.set(element, metrics);
+    return metrics;
+}
+
+function computeBlockMetrics(element: Element): BlockMetrics {
     const text = getNormalizedText(element);
-    const proseEvidence = getProseEvidence(element);
+    const proseEvidence = getCachedProseEvidence(element);
     const textLength = text.length;
     const links = Array.from(element.querySelectorAll('a'));
     const buttons = Array.from(element.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]'));
@@ -185,7 +208,7 @@ function getBlockMetrics(element: Element): BlockMetrics {
         ...(proseEvidence.strength === 'strong' && proseEvidence.isParagraphLike ? [element] : []),
         ...Array.from(element.querySelectorAll('p, blockquote, figcaption, div'))
             .filter(item => {
-                const evidence = getProseEvidence(item);
+                const evidence = getCachedProseEvidence(item);
                 return evidence.strength === 'strong' && evidence.isParagraphLike;
             })
     ];
@@ -212,5 +235,9 @@ function getElementStructuralSignalText(element: Element): string {
 }
 
 function getNormalizedText(element: Element): string {
-    return element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const cached = normalizedTextCache.get(element);
+    if (cached !== undefined) return cached;
+    const text = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    normalizedTextCache.set(element, text);
+    return text;
 }

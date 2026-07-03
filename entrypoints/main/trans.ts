@@ -21,7 +21,13 @@ import { throttle } from "@/entrypoints/utils/common";
 import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
-import { isTranslationCancelledError, translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { getBackgroundTranslationSlotLimit } from "@/entrypoints/utils/translateQueue";
+import {
+    isTranslationCancelledError,
+    translateText,
+    cancelAllTranslations,
+    type TranslateOptions
+} from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
@@ -38,11 +44,16 @@ import {
     TRANSLATED_ID_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
 
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
+// 刻意不监听 style：内联 style 是动画/过渡产生 mutation 风暴的主要来源，且对“是否需要翻译”几乎没有信号价值；
+// 内容显隐由 class / hidden / aria-* 覆盖即可。
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'hidden', 'aria-hidden', 'aria-expanded'];
 const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
+const BACKGROUND_TRANSLATION_START_DELAY = 1000;
+const BACKGROUND_TRANSLATION_INTERVAL = 250;
 
 const translationState = {
     hoverTimer: undefined as ReturnType<typeof setTimeout> | undefined,
+    backgroundTimer: null as ReturnType<typeof setTimeout> | null,
     htmlSet: new Set<string>(),
     originalContents: new Map<string, string>(),
     isAutoTranslating: false,
@@ -64,13 +75,22 @@ function clearHoverTimer(): void {
     }
 }
 
+function clearBackgroundTranslationTimer(): void {
+    if (translationState.backgroundTimer !== null) {
+        clearTimeout(translationState.backgroundTimer);
+        translationState.backgroundTimer = null;
+    }
+}
+
 interface AutoTranslateTarget {
     contentRoot: Element;
     nodes: Element[];
     grabOptions?: GrabAllNodeOptions;
 }
 
-interface BilingualTranslationOptions {
+type TranslationRequestOptions = Pick<TranslateOptions, 'allowBatch' | 'priority'>;
+
+interface BilingualTranslationOptions extends TranslationRequestOptions {
     removeExisting?: boolean;
 }
 
@@ -189,6 +209,7 @@ export function restoreOriginalContent() {
         translationState.mutationObserver.disconnect();
         translationState.mutationObserver = null;
     }
+    clearBackgroundTranslationTimer();
     
     // 6. 重置所有翻译相关的状态
     setAutoTranslating(false);
@@ -227,107 +248,163 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     if (!nodes.length) return;
 
     setAutoTranslating(true);
+    const translateAutoTarget = (
+        node: Element,
+        activeObserver?: IntersectionObserver,
+        requestOptions: TranslationRequestOptions = { allowBatch: true, priority: 'high' }
+    ): Promise<void> => {
+        if (!(node instanceof HTMLElement)) return Promise.resolve();
+
+        // 去重
+        if (node.hasAttribute(TRANSLATED_ATTR)) return Promise.resolve();
+
+        // 为节点分配唯一ID
+        const nodeId = `fr-node-${translationState.nodeIdCounter++}`;
+        node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
+
+        // 保存原始内容
+        originalContents.set(nodeId, node.innerHTML);
+
+        // 标记为已翻译
+        node.setAttribute(TRANSLATED_ATTR, 'true');
+
+        const translation = config.display === styles.bilingualTranslation
+            ? handleBilingualTranslation(node, false, { removeExisting: false, ...requestOptions })
+            : handleSingleTranslation(node, false, requestOptions);
+
+        // 停止观察该节点
+        activeObserver?.unobserve(node);
+        return translation;
+    };
 
     // 创建观察器
     translationState.observer = new IntersectionObserver((entries, activeObserver) => {
         entries.forEach(entry => {
             if (entry.isIntersecting && translationState.isAutoTranslating) {
-                const node = entry.target;
-                if (!(node instanceof HTMLElement)) return;
-
-                // 去重
-                if (node.hasAttribute(TRANSLATED_ATTR)) return;
-                
-                // 为节点分配唯一ID
-                const nodeId = `fr-node-${translationState.nodeIdCounter++}`;
-                node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
-                
-                // 保存原始内容
-                originalContents.set(nodeId, node.innerHTML);
-                
-                // 标记为已翻译
-                node.setAttribute(TRANSLATED_ATTR, 'true');
-
-                if (config.display === styles.bilingualTranslation) {
-                    handleBilingualTranslation(node, false, { removeExisting: false });
-                } else {
-                    handleSingleTranslation(node, false);
-                }
-
-                // 停止观察该节点
-                activeObserver.unobserve(node);
+                void translateAutoTarget(entry.target, activeObserver, { allowBatch: true, priority: 'high' });
             }
         });
     }, {
         root: null,
-        rootMargin: '50px',
-        threshold: 0.1 // 只要出现10%就开始翻译
+        rootMargin: '400px',
+        threshold: 0.1 // 只要进入近可视区域就开始翻译
     });
 
-    // 开始观察所有节点
+    // 开始观察所有节点，让首屏内容优先进入翻译队列；支持 batch 的服务仍可合并同一批可视节点。
     nodes.forEach(node => {
         translationState.observer?.observe(node);
     });
+
+    let backgroundCursor = 0;
+    let activeBackgroundAutoTranslations = 0;
+    const takeNextBackgroundNode = (): Element | null => {
+        while (backgroundCursor < nodes.length) {
+            const node = nodes[backgroundCursor++];
+            if (node instanceof HTMLElement && !node.hasAttribute(TRANSLATED_ATTR)) {
+                return node;
+            }
+        }
+        return null;
+    };
+
+    const scheduleBackgroundTranslation = (delay = BACKGROUND_TRANSLATION_INTERVAL): void => {
+        if (translationState.backgroundTimer !== null) return;
+        translationState.backgroundTimer = setTimeout(runBackgroundTranslation, delay);
+    };
+
+    const runBackgroundTranslation = (): void => {
+        translationState.backgroundTimer = null;
+        if (!translationState.isAutoTranslating) return;
+
+        while (activeBackgroundAutoTranslations < getBackgroundTranslationSlotLimit()) {
+            const node = takeNextBackgroundNode();
+            if (!node) return;
+
+            activeBackgroundAutoTranslations++;
+            void translateAutoTarget(node, translationState.observer ?? undefined, {
+                allowBatch: true,
+                priority: 'background'
+            }).finally(() => {
+                activeBackgroundAutoTranslations--;
+                if (translationState.isAutoTranslating) {
+                    scheduleBackgroundTranslation();
+                }
+            });
+        }
+    };
+
+    scheduleBackgroundTranslation(BACKGROUND_TRANSLATION_START_DELAY);
 
     const observeTranslationNodes = (nodes: Element[]) => {
         nodes.forEach(node => translationState.observer?.observe(node));
     };
 
-    const pendingDynamicRoots = new Set<Element>();
+    // 单次 flush 最多处理的变更根节点数量。动画 / 框架重渲染的页面会在一帧内产生成百上千条 mutation，
+    // 必须给待处理集合封顶，避免主线程被无界的扫描任务压垮。
+    const MAX_PENDING_MUTATION_ROOTS = 32;
+    const pendingMutationRoots = new Set<Element>();
     let dynamicScanTimer: number | null = null;
 
-    const scheduleDynamicScan = (root: Element) => {
-        invalidateScanCache(activeGrabOptions.scanContext, root);
+    // 真正昂贵的作用域判定（invalidateScanCache / getDynamicTranslationScanRoot / 作用域回溯）全部推迟到防抖
+    // flush 中执行，并对处理数量封顶。否则会在 MutationObserver 回调里逐条同步执行 querySelectorAll('*') 与
+    // closest() 选择器链——在高频 DOM 变更的页面上这会让主线程持续 100% 卡死。
+    function flushDynamicScans(): void {
+        dynamicScanTimer = null;
+        const roots = Array.from(pendingMutationRoots);
+        pendingMutationRoots.clear();
+
+        const scanRoots = new Set<Element>();
+        roots.forEach(root => {
+            invalidateScanCache(activeGrabOptions.scanContext, root);
+            if (isManagedTranslationNode(root)) return;
+            const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
+            if (!scanRoot) return;
+            if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
+            scanRoots.add(scanRoot);
+        });
+
+        scanRoots.forEach(scanRoot => {
+            observeTranslationNodes(
+                collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
+            );
+        });
+    }
+
+    // 回调里只做最廉价的过滤与收集：跳过自身注入的受管节点，其余加入待处理集合并触发防抖。
+    const enqueueMutationRoot = (root: Element): void => {
+        if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) return;
         if (isManagedTranslationNode(root)) return;
-        const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
-        if (!scanRoot) return;
-        if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
-
-        pendingDynamicRoots.add(scanRoot);
-        if (dynamicScanTimer !== null) return;
-
-        dynamicScanTimer = window.setTimeout(() => {
-            dynamicScanTimer = null;
-            const roots = Array.from(pendingDynamicRoots);
-            pendingDynamicRoots.clear();
-
-            roots.forEach(scanRoot => {
-                observeTranslationNodes(
-                    collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
-                );
-            });
-        }, 120);
+        pendingMutationRoots.add(root);
+        if (dynamicScanTimer === null) {
+            dynamicScanTimer = window.setTimeout(flushDynamicScans, 150);
+        }
     };
 
     // 创建 MutationObserver 监听 DOM 变化
     translationState.mutationObserver = new MutationObserver((mutations) => {
         if (!translationState.isAutoTranslating) return;
 
-        mutations.forEach(mutation => {
+        for (const mutation of mutations) {
+            // 集合已满则停止本批处理，剩余变更会在后续 mutation 中被重新捕获，避免在卡死页面上空转。
+            if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) break;
+
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
-                    if (node instanceof Element) {
-                        scheduleDynamicScan(node);
-                    }
+                    if (node instanceof Element) enqueueMutationRoot(node);
                 });
-                return;
+                continue;
             }
 
             if (mutation.type === 'attributes' && mutation.target instanceof Element) {
-                scheduleDynamicScan(mutation.target);
-                if (mutation.target.parentElement) {
-                    scheduleDynamicScan(mutation.target.parentElement);
-                }
-                return;
+                enqueueMutationRoot(mutation.target);
+                continue;
             }
 
             if (mutation.type === 'characterData') {
                 const parent = mutation.target.parentElement;
-                if (parent) {
-                    scheduleDynamicScan(parent);
-                }
+                if (parent) enqueueMutationRoot(parent);
             }
-        });
+        }
     });
 
     // 监听整个 body 的变化
@@ -396,7 +473,7 @@ export function handleBilingualTranslation(
     node: HTMLElement,
     slide: boolean,
     options: BilingualTranslationOptions = {}
-) {
+): Promise<void> {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
     // 如果已经翻译过，250ms 后删除翻译结果
@@ -404,41 +481,41 @@ export function handleBilingualTranslation(
     if (bilingualNode) {
         if (options.removeExisting === false) {
             translationState.htmlSet.delete(nodeOuterHTML);
-            return;
+            return Promise.resolve();
         }
         if (slide) {
             translationState.htmlSet.delete(nodeOuterHTML);
-            return;
+            return Promise.resolve();
         }
         let spinner = insertLoadingSpinner(bilingualNode as HTMLElement, true);
-        setTimeout(() => {
+        return new Promise(resolve => setTimeout(() => {
             spinner.remove();
             const content = searchClassName(bilingualNode as HTMLElement, BILINGUAL_CONTENT_CLASS);
             if (content && content instanceof HTMLElement) content.remove();
             (bilingualNode as HTMLElement).classList.remove(BILINGUAL_WRAPPER_CLASS);
             translationState.htmlSet.delete(nodeOuterHTML);
-        }, 250);
-        return;
+            resolve();
+        }, 250));
     }
 
     // 检查是否有缓存
     let cached = cache.localGet(originText);
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
-        setTimeout(() => {
+        return new Promise(resolve => setTimeout(() => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
             bilingualAppendChild(node, cached);
-        }, 250);
-        return;
+            resolve();
+        }, 250));
     }
 
     // 翻译
-    bilingualTranslate(node, nodeOuterHTML);
+    return bilingualTranslate(node, nodeOuterHTML, options);
 }
 
 // 单语翻译
-export function handleSingleTranslation(node: HTMLElement, slide: boolean) {
+export function handleSingleTranslation(node: HTMLElement, slide: boolean, options: TranslationRequestOptions = {}): Promise<void> {
     let nodeOuterHTML = node.outerHTML;
     let outerHTMLCache = cache.localGet(node.outerHTML);
 
@@ -446,7 +523,7 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean) {
     if (outerHTMLCache) {
         // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
         let spinner = insertLoadingSpinner(node, true);
-        setTimeout(() => {
+        return new Promise(resolve => setTimeout(() => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
 
@@ -455,31 +532,31 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean) {
             if (fn) fn(node, outerHTMLCache);
             else node.outerHTML = outerHTMLCache;
 
-        }, 250);
-        return;
+            resolve();
+        }, 250));
     }
 
-    singleTranslate(node);
+    return singleTranslate(node, options);
 }
 
 
-function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
+function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: TranslationRequestOptions = {}): Promise<void> {
     const plainOrigin = getTranslatableText(node);
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
     const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
     if (!shouldTranslateText(plainOrigin)) {
         clearUnfinishedAutoTranslation(node);
-        return;
+        return Promise.resolve();
     }
 
     if (!origin?.trim()) {
         clearUnfinishedAutoTranslation(node);
-        return;
+        return Promise.resolve();
     }
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    translateText(origin, document.title)
+    return translateText(origin, document.title, options)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -490,7 +567,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, document.title);
+                text = await translateText(plainOrigin, document.title, options);
             }
             bilingualAppendChild(node, text);
         })
@@ -506,11 +583,11 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string) {
 }
 
 
-export function singleTranslate(node: HTMLElement) {
+export function singleTranslate(node: HTMLElement, options: TranslationRequestOptions = {}): Promise<void> {
     const translatableText = getTranslatableText(node);
     if (!shouldTranslateText(translatableText)) {
         clearUnfinishedAutoTranslation(node);
-        return;
+        return Promise.resolve();
     }
 
     let origin = servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node);
@@ -519,12 +596,12 @@ export function singleTranslate(node: HTMLElement) {
     }
     if (!origin) {
         clearUnfinishedAutoTranslation(node);
-        return;
+        return Promise.resolve();
     }
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    translateText(origin, document.title)
+    return translateText(origin, document.title, options)
         .then((text: string) => {
             spinner.remove();
             

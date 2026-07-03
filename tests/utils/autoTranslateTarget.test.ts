@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mockCanUseBatchTranslationForCurrentConfig = vi.hoisted(() => vi.fn(() => false))
+const mockHasForegroundTranslationWork = vi.hoisted(() => vi.fn(() => false))
 const mockConfig = vi.hoisted(() => ({
   translationScope: 'smart',
   on: true,
@@ -9,6 +11,7 @@ const mockConfig = vi.hoisted(() => ({
   to: 'zh-Hans',
   bidirectionalTranslation: false,
   bidirectionalTarget: 'en',
+  maxConcurrentTranslations: 6,
   model: {} as Record<string, string>,
   token: {} as Record<string, string>,
   customProviders: []
@@ -19,7 +22,9 @@ vi.mock('@/entrypoints/utils/config', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
+  canUseBatchTranslationForCurrentConfig: mockCanUseBatchTranslationForCurrentConfig,
   cancelAllTranslations: vi.fn(),
+  hasForegroundTranslationWork: mockHasForegroundTranslationWork,
   isTranslationCancelledError: vi.fn((error: unknown) => {
     return error instanceof Error && error.name === 'TranslationCancelledError'
   }),
@@ -71,6 +76,9 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.to = 'zh-Hans'
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
+    mockConfig.maxConcurrentTranslations = 6
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(false)
+    mockHasForegroundTranslationWork.mockReturnValue(false)
     vi.clearAllMocks()
     vi.mocked(shouldTranslateText).mockReturnValue(true)
     vi.useRealTimers()
@@ -90,6 +98,255 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(translateText).toHaveBeenCalledWith('Start action', document.title)
     expect(button.innerText).toBe('开始操作')
+  })
+
+  it('allows batching only for automatic webpage translation targets', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Batch Translation Queue</h1>
+          <p>Teams use automatic webpage translation to process several readable paragraphs.</p>
+          <p>The queue can combine compatible requests without changing page insertion behavior.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(vi.mocked(translateText).mock.calls.some(([, , options]) => {
+        return options?.allowBatch === true && options.priority === 'high'
+      })).toBe(true)
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('keeps initial automatic targets visibility-gated when batch is supported', async () => {
+    const observedTargets: Element[] = []
+    class PassiveIntersectionObserver {
+      observe(target: Element) {
+        observedTargets.push(target)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Batch Translation Queue</h1>
+          <p>Automatic webpage translation should send collected page targets into the batch queue.</p>
+          <p>It should not wait for every paragraph to become visible one at a time.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(observedTargets.length).toBeGreaterThan(0)
+      expect(translateText).not.toHaveBeenCalled()
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('starts non-visible initial targets as one-at-a-time background translations', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    let resolveTranslation!: (value: string) => void
+    mockConfig.maxConcurrentTranslations = 3
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockReturnValue(new Promise(resolve => {
+      resolveTranslation = resolve
+    }))
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Background Translation Queue</h1>
+          <p>The first hidden paragraph can be translated after visible work is idle.</p>
+          <p>The second hidden paragraph waits until the first background task finishes.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.advanceTimersByTimeAsync(1000)
+
+      const backgroundCalls = vi.mocked(translateText).mock.calls.filter(([, , options]) => {
+        return options?.priority === 'background'
+      })
+      expect(backgroundCalls).toHaveLength(1)
+      expect(backgroundCalls[0][2]).toMatchObject({
+        allowBatch: true,
+        priority: 'background'
+      })
+
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(vi.mocked(translateText).mock.calls.filter(([, , options]) => {
+        return options?.priority === 'background'
+      })).toHaveLength(1)
+
+      resolveTranslation('后台译文')
+      await vi.advanceTimersByTimeAsync(250)
+
+      expect(vi.mocked(translateText).mock.calls.filter(([, , options]) => {
+        return options?.priority === 'background'
+      })).toHaveLength(2)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
+  })
+
+  it('submits background translations even while foreground work is active', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    mockHasForegroundTranslationWork.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('后台译文')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Background Translation Priority</h1>
+          <p>The hidden paragraph should still enter the background queue.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(vi.mocked(translateText).mock.calls.some(([, , options]) => {
+        return options?.allowBatch === true && options.priority === 'background'
+      })).toBe(true)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
+  })
+
+  it('submits multiple non-visible background translations with reserved foreground capacity', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(true)
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockReturnValue(new Promise(() => {}))
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Background Translation Window</h1>
+          <p>The first hidden paragraph should enter the background queue.</p>
+          <p>The second hidden paragraph should enter the background queue.</p>
+          <p>The third hidden paragraph should enter the background queue.</p>
+          <p>The fourth hidden paragraph should enter the background queue.</p>
+          <p>The fifth hidden paragraph should wait for a reserved foreground slot.</p>
+        </article>
+      </main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(vi.mocked(translateText).mock.calls.filter(([, , options]) => {
+        return options?.priority === 'background'
+      })).toHaveLength(4)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
   })
 
   it('collects visible detail text after an expandable card opens outside the primary content root', () => {

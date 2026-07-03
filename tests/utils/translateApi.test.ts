@@ -8,7 +8,15 @@ const mockCacheLocalSet = vi.hoisted(() => vi.fn())
 const mockResolveTranslationDirection = vi.hoisted(() => vi.fn())
 const mockConfig = vi.hoisted(() => ({
   count: 0,
-  useCache: true
+  useCache: true,
+  service: 'openai',
+  model: {
+    openai: 'gpt-5-mini'
+  } as Record<string, string>,
+  customModel: {} as Record<string, string>,
+  style: 1,
+  system_role: {} as Record<string, string>,
+  user_role: {} as Record<string, string>
 }))
 
 vi.mock('webextension-polyfill', () => ({
@@ -51,6 +59,14 @@ import { resolveTranslationDirection } from '../../entrypoints/utils/translation
 describe('translateText', () => {
   beforeEach(() => {
     mockConfig.count = 0
+    mockConfig.service = 'openai'
+    mockConfig.model = {
+      openai: 'gpt-5-mini'
+    }
+    mockConfig.customModel = {}
+    mockConfig.style = 1
+    mockConfig.system_role = {}
+    mockConfig.user_role = {}
     mockEnqueueTranslation.mockImplementation((task: () => Promise<string>) => task())
     mockCacheLocalGet.mockReturnValue(null)
     mockResolveTranslationDirection.mockReturnValue({
@@ -60,6 +76,7 @@ describe('translateText', () => {
     })
     mockSendMessage.mockResolvedValue('译文')
     vi.clearAllMocks()
+    vi.useRealTimers()
   })
 
   it('returns blank text without sending a translation request', async () => {
@@ -141,5 +158,111 @@ describe('translateText', () => {
 
     await expect(translation).resolves.toBe('最终译文')
     vi.useRealTimers()
+  })
+
+  it('does not batch by default', async () => {
+    const first = translateText('Hello', 'Example', { useCache: false })
+    const second = translateText('World', 'Example', { useCache: false })
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['译文', '译文'])
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      origin: 'Hello'
+    }))
+    expect(mockSendMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      origin: 'World'
+    }))
+    expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
+  })
+
+  it('batches concurrent supported AI requests when allowBatch is true', async () => {
+    vi.useFakeTimers()
+    mockSendMessage.mockResolvedValueOnce(['你好', '世界'])
+
+    const first = translateText('Hello', 'Example', { allowBatch: true })
+    const second = translateText('World', 'Example', { allowBatch: true })
+
+    await vi.advanceTimersByTimeAsync(40)
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['你好', '世界'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+    expect(mockSendMessage).toHaveBeenCalledWith({
+      type: 'BATCH_TRANSLATION',
+      origins: ['Hello', 'World'],
+      context: 'Example',
+      sourceLang: 'en',
+      targetLang: 'zh-Hans'
+    })
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '你好', 'zh-Hans')
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('World', '世界', 'zh-Hans')
+  })
+
+  it('does not batch cache hits', async () => {
+    vi.useFakeTimers()
+    mockCacheLocalGet.mockImplementation((origin: string) => origin === 'Hello' ? '缓存译文' : null)
+    mockSendMessage.mockResolvedValueOnce('世界')
+
+    const first = translateText('Hello', 'Example', { allowBatch: true })
+    const second = translateText('World', 'Example', { allowBatch: true })
+
+    await vi.advanceTimersByTimeAsync(40)
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['缓存译文', '世界'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      origin: 'World'
+    }))
+  })
+
+  it('does not batch when the current AI prompt is customized', async () => {
+    mockConfig.user_role = {
+      openai: 'Custom prompt {{origin}}'
+    }
+
+    const first = translateText('Hello', 'Example', { allowBatch: true, useCache: false })
+    const second = translateText('World', 'Example', { allowBatch: true, useCache: false })
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['译文', '译文'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
+  })
+
+  it('does not batch when the current AI system prompt is customized', async () => {
+    mockConfig.system_role = {
+      openai: 'Custom system prompt'
+    }
+
+    const first = translateText('Hello', 'Example', { allowBatch: true, useCache: false })
+    const second = translateText('World', 'Example', { allowBatch: true, useCache: false })
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['译文', '译文'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
+  })
+
+  it('falls back to single translations when a batch request fails', async () => {
+    vi.useFakeTimers()
+    mockSendMessage
+      .mockRejectedValueOnce(new Error('bad batch'))
+      .mockResolvedValueOnce('你好')
+      .mockResolvedValueOnce('世界')
+
+    const first = translateText('Hello', 'Example', { allowBatch: true, useCache: false })
+    const second = translateText('World', 'Example', { allowBatch: true, useCache: false })
+
+    await vi.advanceTimersByTimeAsync(40)
+
+    await expect(Promise.all([first, second])).resolves.toEqual(['你好', '世界'])
+    expect(mockSendMessage).toHaveBeenCalledTimes(3)
+    expect(mockSendMessage).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      type: 'BATCH_TRANSLATION'
+    }))
+    expect(mockSendMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      origin: 'Hello'
+    }))
+    expect(mockSendMessage).toHaveBeenNthCalledWith(3, expect.objectContaining({
+      origin: 'World'
+    }))
   })
 })

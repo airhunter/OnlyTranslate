@@ -4,11 +4,13 @@ import {commonMsgTemplate} from "../utils/template";
 import CryptoJS from 'crypto-js';
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
+import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 
 
 // 文档参考：https://open.bigmodel.cn/dev/api#nosdk
 async function zhipu(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
+    assertSingleTranslationMessage(message);
     // 智谱根据 token 获取 secret（签名密钥） 和 expiration
     let token = config.token[services.zhipu];
     let secret, expiration;

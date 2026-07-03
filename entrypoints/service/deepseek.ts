@@ -1,9 +1,10 @@
 import { method, urls } from "../utils/constant";
-import { deepseekMsgTemplate } from "../utils/template";
+import { commonBatchMsgTemplate, deepseekMsgTemplate } from "../utils/template";
 import { config } from "@/entrypoints/utils/config";
 import { contentPostHandler } from "@/entrypoints/utils/check";
 import { t } from "@/entrypoints/utils/i18n";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { isBatchTranslationMessage, logBatchTranslationRequest, parseBatchTranslationContent } from "./batch";
 
 async function deepseek(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
@@ -14,10 +15,17 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
 
         const url = config.proxy[config.service] || urls[config.service];
 
+        const isBatch = isBatchTranslationMessage(message);
+        if (isBatch) {
+            logBatchTranslationRequest(config.service, message.origins);
+        }
+
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: deepseekMsgTemplate(message.origin, message.targetLang)
+            body: isBatch
+                ? commonBatchMsgTemplate(message.origins, message.targetLang)
+                : deepseekMsgTemplate(message.origin, message.targetLang)
         });
 
         if (!resp.ok) {
@@ -25,7 +33,10 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
         }
 
         const result = await resp.json();
-        return contentPostHandler(result.choices[0].message.content);
+        const content = result.choices[0].message.content;
+        return isBatch
+            ? parseBatchTranslationContent(content, message.origins.length)
+            : contentPostHandler(content);
     } catch (error) {
         console.error('API调用失败:', error);
         throw error;

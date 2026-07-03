@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -12,7 +12,6 @@ const serviceFiles = [
   'deepseek.ts',
   'gemini.ts',
   'google.ts',
-  'grok.ts',
   'microsoft.ts',
   'minimax.ts',
   'newapi.ts',
@@ -28,5 +27,12 @@ describe('service adapter type boundaries', () => {
       expect(source, file).not.toMatch(/\bPromise<any>\b/)
       expect(source, file).not.toMatch(/ServiceFunction\s*=\s*\(message:\s*any\)\s*=>\s*Promise<any>/)
     }
+  })
+
+  it('does not keep a standalone Grok adapter because Grok routes through the OpenAI-compatible adapter', () => {
+    const serviceSource = readFileSync(resolve(process.cwd(), 'entrypoints/service/_service.ts'), 'utf8')
+
+    expect(serviceSource).not.toMatch(/from\s+['"]\.\/grok['"]/)
+    expect(existsSync(resolve(process.cwd(), 'entrypoints/service/grok.ts'))).toBe(false)
   })
 })

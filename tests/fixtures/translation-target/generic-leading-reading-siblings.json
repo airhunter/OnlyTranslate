@@ -1,0 +1,50 @@
+{
+  "name": "generic smart scope recovers leading reading siblings before dense body",
+  "url": "https://example.com/articles/sibling-reading-regions",
+  "scope": "smart",
+  "html": "nature-springer-article.html",
+  "contentRootExcludes": [
+    "#Abs1-content",
+    "#Abs2-content"
+  ],
+  "include": [
+    "Abs1",
+    "Abs2",
+    "plain-summary",
+    "Sec2",
+    "methods-overview",
+    "Sec3",
+    "methods-history"
+  ],
+  "exclude": [
+    "article-authors",
+    "article-citation",
+    "references",
+    "reference-one",
+    "rightslink",
+    "rights-copy",
+    "article-info",
+    "citation",
+    "share-title",
+    "share-description"
+  ],
+  "textIncludes": [
+    "In the field of colonoscopy",
+    "ACRS was trained using insertion data",
+    "Of the automated insertions at Level 3 or higher",
+    "The autonomous colonoscope robot system demonstrated",
+    "This plain language summary explains",
+    "After an overview of system hardware"
+  ],
+  "textExcludes": [
+    "Keiichiro Kume",
+    "Communications Medicine 6",
+    "References",
+    "Researcher A. A related article",
+    "Rights and permissions",
+    "Open Access This article is licensed",
+    "About this article",
+    "Share this article",
+    "Anyone you share"
+  ]
+}

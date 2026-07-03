@@ -3,10 +3,12 @@ import { arsTechnicaProfile } from './arsTechnica';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { cnnProfile } from './cnn';
 import { decryptProfile } from './decrypt';
+import { devinDocsProfile } from './devinDocs';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { mediumProfile } from './medium';
+import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
 import { realPythonProfile } from './realPython';
 import { redditProfile } from './reddit';
@@ -26,6 +28,7 @@ import type {
 } from './types';
 import { xProfile } from './x';
 import { youtubeProfile } from './youtube';
+import { ynetNewsProfile } from './ynetNews';
 import { ziggitProfile } from './ziggit';
 
 export type {
@@ -65,10 +68,13 @@ export const siteProfiles: SiteProfile[] = [
     simonWillisonProfile,
     hackerNewsProfile,
     huggingFaceProfile,
+    natureProfile,
     asteriskProfile,
     arsTechnicaProfile,
+    devinDocsProfile,
     claudeNagdyProfile,
     decryptProfile,
+    ynetNewsProfile,
     ziggitProfile
 ];
 

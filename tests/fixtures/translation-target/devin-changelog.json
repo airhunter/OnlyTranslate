@@ -1,0 +1,54 @@
+{
+  "name": "Devin changelog translates release notes without metadata labels",
+  "url": "https://docs.devin.ai/desktop/changelog",
+  "scope": "smart",
+  "html": "devin-changelog.html",
+  "contentRoot": "#content-container",
+  "include": [
+    "note-usage",
+    "note-settings",
+    "note-bash",
+    "note-mcp",
+    "bugfix-summary",
+    "series-summary",
+    "note-plugin"
+  ],
+  "exclude": [
+    "division",
+    "page-title",
+    "page-description",
+    "version-label",
+    "version-date",
+    "product-label",
+    "cli-label",
+    "download-title",
+    "older-version-label",
+    "older-version-date",
+    "fixed-heading",
+    "older-download-title",
+    "bugfix-version-label",
+    "bugfix-version-date",
+    "bugfix-download-title",
+    "series-version-label",
+    "series-version-date",
+    "devin-local-label",
+    "series-download-title"
+  ],
+  "textIncludes": [
+    "Devin ACU usage is now displayed in the client.",
+    "Fixed settings and extensions migration for Windows system-wide installs.",
+    "Made MCP registry parsing more tolerant of old and inconsistent schemas.",
+    "Various bug fixes and improvements.",
+    "The 3.2 series brings Devin Local enhancements and continued Devin Desktop polish."
+  ],
+  "textExcludes": [
+    "Releases",
+    "Changelog",
+    "Release notes for Devin Desktop",
+    "June 23, 2026",
+    "Devin Desktop CLI and Devin Local",
+    "Download 3.2.23",
+    "Download 3.2.28",
+    "Download 3.2.16"
+  ]
+}
