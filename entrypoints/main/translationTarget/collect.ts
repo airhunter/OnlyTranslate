@@ -5,6 +5,7 @@ import { getMainDomain } from '@/entrypoints/utils/domain';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
 import { findMainContent } from '@/entrypoints/utils/contentDetector';
+import { getStructuralHint } from '@/entrypoints/utils/proseSignals';
 import { decideTranslationTarget, isExpandableReadingContainer, isOpenExpandableReadingContainer, isVisibleForTranslation } from './decision';
 import {
     cloneScanStats,
@@ -16,6 +17,12 @@ import {
     type TranslationTargetStats
 } from './scanContext';
 import type { TranslationTargetCandidate, TranslationTargetContext, TranslationTargetDecision } from './types';
+
+const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
+const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
+const LEADING_READING_TARGET_SELECTOR = 'h1, h2, h3, h4, p, li, blockquote, figcaption';
+const MAX_RECOVERED_LEADING_SIBLINGS = 4;
+const MAX_RECOVERED_LEADING_TEXT = 5000;
 
 export interface AutoTranslationTargetResult {
     contentRoot: Element;
@@ -236,14 +243,146 @@ function collectGenericSupplementalReadingTargets(
     context: TranslationTargetContext,
     siteTargets: Element[]
 ): Element[] {
-    return collectHighConfidenceReadingUnits(root, {
-        scanContext: context.grabOptions?.scanContext,
-        scanBudget: 'supplemental',
-        candidateOnly: true,
-        pruneUiSubtrees: true
-    })
+    return [
+        ...collectContentRootSiblingReadingTargets(context),
+        ...collectHighConfidenceReadingUnits(root, {
+            scanContext: context.grabOptions?.scanContext,
+            scanBudget: 'supplemental',
+            candidateOnly: true,
+            pruneUiSubtrees: true
+        })
+    ]
         .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+function collectContentRootSiblingReadingTargets(context: TranslationTargetContext): Element[] {
+    if (context.mode !== 'smart') return [];
+    if (context.contentRoot === document.body) return [];
+
+    const units = collectLeadingReadingSiblingUnits(context);
+    const targets = units.flatMap(unit => collectLeadingReadingSiblingTargets(unit, context));
+
+    return Array.from(new Set(targets));
+}
+
+function collectLeadingReadingSiblingUnits(context: TranslationTargetContext): Element[] {
+    const scanContext = context.grabOptions?.scanContext;
+    const contentRootTextLength = getCachedNormalizedText(scanContext, context.contentRoot).length;
+    const maxRecoveredTextLength = Math.min(
+        MAX_RECOVERED_LEADING_TEXT,
+        Math.max(2000, contentRootTextLength * 0.8)
+    );
+    const units: Element[] = [];
+    let recoveredTextLength = 0;
+
+    for (const anchor of getContentRootSiblingAnchors(context.contentRoot)) {
+        for (const sibling of getPreviousElementSiblings(anchor)) {
+            if (units.length >= MAX_RECOVERED_LEADING_SIBLINGS) return units;
+            if (units.some(unit => unit === sibling || unit.contains(sibling) || sibling.contains(unit))) continue;
+            if (!isRecoverableLeadingReadingSibling(sibling, context)) continue;
+
+            const textLength = getCachedNormalizedText(scanContext, sibling).length;
+            if (units.length > 0 && recoveredTextLength + textLength > maxRecoveredTextLength) continue;
+
+            units.push(sibling);
+            recoveredTextLength += textLength;
+        }
+    }
+
+    return units;
+}
+
+function getContentRootSiblingAnchors(contentRoot: Element): Element[] {
+    const anchors: Element[] = [];
+    let current: Element | null = contentRoot;
+    let depth = 0;
+
+    while (current && current !== document.body && depth < 3) {
+        anchors.push(current);
+        current = current.parentElement;
+        depth += 1;
+    }
+
+    return anchors;
+}
+
+function getPreviousElementSiblings(anchor: Element): Element[] {
+    const siblings: Element[] = [];
+    let current = anchor.previousElementSibling;
+
+    while (current) {
+        siblings.push(current);
+        current = current.previousElementSibling;
+    }
+
+    return siblings.reverse();
+}
+
+function isRecoverableLeadingReadingSibling(unit: Element, context: TranslationTargetContext): boolean {
+    const tag = unit.tagName.toLowerCase();
+    if (['nav', 'aside', 'footer', 'form', 'dialog'].includes(tag)) return false;
+    if (unit.contains(context.contentRoot) || context.contentRoot.contains(unit)) return false;
+
+    const scanContext = context.grabOptions?.scanContext;
+    const decision = getCachedContentFilterDecision(scanContext, unit, getContentFilterDecision);
+    if (decision !== 'keep') return false;
+
+    const signalText = getLeadingReadingSiblingSignalText(unit);
+    if (LEADING_READING_SIBLING_NEGATIVE_PATTERN.test(signalText)) return false;
+    if (!LEADING_READING_SIBLING_LABEL_PATTERN.test(signalText)) return false;
+
+    const evidence = getCachedProseEvidence(scanContext, unit);
+    if (evidence.textLength < 80) return false;
+    if (evidence.linkDensity > 0.35 || evidence.interactiveDensity > 0.35) return false;
+    if (evidence.strength === 'none' && !evidence.hasParagraphDescendant) return false;
+
+    return collectLeadingReadingSiblingTargets(unit, context).length > 0;
+}
+
+function getLeadingReadingSiblingSignalText(unit: Element): string {
+    const headingText = Array.from(unit.querySelectorAll('h1, h2, h3'))
+        .slice(0, 3)
+        .map(heading => heading.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+        .join(' ');
+
+    return [
+        getStructuralHint(unit),
+        unit.getAttribute('data-title') ?? '',
+        unit.getAttribute('aria-label') ?? '',
+        headingText
+    ].join(' ');
+}
+
+function collectLeadingReadingSiblingTargets(unit: Element, context: TranslationTargetContext): Element[] {
+    return getLeadingReadingTargetCandidates(unit)
+        .filter(target => isRecoverableLeadingReadingTarget(target, unit, context));
+}
+
+function getLeadingReadingTargetCandidates(unit: Element): Element[] {
+    const targets = Array.from(unit.querySelectorAll<Element>(LEADING_READING_TARGET_SELECTOR));
+    if (unit.matches(LEADING_READING_TARGET_SELECTOR)) targets.unshift(unit);
+    return targets;
+}
+
+function isRecoverableLeadingReadingTarget(target: Element, unit: Element, context: TranslationTargetContext): boolean {
+    if (target !== unit && target.closest('nav, aside, footer, form, dialog, [aria-hidden="true"], .notranslate, [translate="no"]')) return false;
+
+    const scanContext = context.grabOptions?.scanContext;
+    const decision = getCachedContentFilterDecision(scanContext, target, getContentFilterDecision);
+    if (decision === 'skip-subtree') return false;
+
+    const text = getCachedNormalizedText(scanContext, target);
+    if (text.length < 3) return false;
+    if (LEADING_READING_SIBLING_NEGATIVE_PATTERN.test(`${getStructuralHint(target)} ${text}`)) return false;
+
+    const tag = target.tagName.toLowerCase();
+    if (/^h[1-4]$/.test(tag)) return text.length <= 240;
+
+    const evidence = getCachedProseEvidence(scanContext, target);
+    return evidence.strength !== 'none'
+        && evidence.linkDensity <= 0.35
+        && evidence.interactiveDensity <= 0.35;
 }
 
 function shouldUseProfileFastPath(profileTargets: Element[], context: TranslationTargetContext): boolean {

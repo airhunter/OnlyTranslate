@@ -37,8 +37,13 @@ The two most important lessons for OnlyTranslate are:
     `a:has(code)` is not a global default; profiles can add it if a site needs
     whole code links preserved in translated copies.
 - [ ] P1: Subtitle cleaning, deduplication, and segmentation
-- [ ] P1: Batch translation queue with fallback
-- [ ] P1: Generic content-root sibling reading-region recovery
+- [x] P1: Batch translation queue with fallback
+  - Done in `680ab1e feat(service): 支持网页批量翻译队列`.
+  - Hardened by `d9ce92e fix(service): 修复批量翻译配置与消息类型`
+    and `f13664f fix(service): 校验批量翻译占位符`.
+- [x] P1: Generic content-root sibling reading-region recovery
+  - Done by adding a conservative smart-mode supplemental recovery pass for
+    high-confidence leading reading siblings around the selected content root.
 - [x] P1: AI context-aware translation evaluation
   - Decision: do not implement as a product feature for now.
   - Reason: the observed quality improvement was not reliably visible, while
@@ -221,7 +226,7 @@ Site profiles can opt into it when that tradeoff is desirable.
 
 ## P1: Generic Content-Root Sibling Reading-Region Recovery
 
-Status: TODO.
+Status: Done.
 
 ### Background
 
@@ -306,6 +311,8 @@ Then evaluate the manager layer:
 - Existing video subtitle tests pass.
 
 ## P1: Batch Translation Queue with Fallback
+
+Status: Done.
 
 ### Background
 
