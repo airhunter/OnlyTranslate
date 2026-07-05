@@ -15,6 +15,7 @@ import { redditProfile } from './reddit';
 import { simonWillisonProfile } from './simonWillison';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
+import { substackProfile } from './substack';
 import type {
     AfterBilingualAppendCompatFn,
     ExpandTargetCompatFn,
@@ -66,6 +67,7 @@ export const siteProfiles: SiteProfile[] = [
     realPythonProfile,
     redditProfile,
     simonWillisonProfile,
+    substackProfile,
     hackerNewsProfile,
     huggingFaceProfile,
     natureProfile,

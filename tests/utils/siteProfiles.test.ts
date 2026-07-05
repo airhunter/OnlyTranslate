@@ -90,6 +90,12 @@ describe('site profile registry', () => {
     expect(supplementalCompatFn['ynetnews.com']).toBeTypeOf('function')
   })
 
+  it('registers Substack discussion profile', () => {
+    expect(selectCompatFn['substack.com']).toBeTypeOf('function')
+    expect(supplementalCompatFn['substack.com']).toBeTypeOf('function')
+    expect(siteProfileExpandTargetFns['substack.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

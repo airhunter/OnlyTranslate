@@ -27,7 +27,6 @@ export function collectDynamicTranslationNodes(
 ): Element[] {
     invalidateScanCache(grabOptions.scanContext, root);
     if (isManagedTranslationNode(root)) return [];
-    if (isObviousUiSubtree(grabOptions.scanContext, root)) return [];
 
     const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, grabOptions);
     if (!scanRoot || !isInTranslationScope(scanRoot, contentRoot, scope, grabOptions)) return [];
@@ -120,7 +119,6 @@ export function getDynamicTranslationScanRoot(
     grabOptions: GrabAllNodeOptions = {}
 ): Element | null {
     if (isManagedTranslationNode(root)) return null;
-    if (isObviousUiSubtree(grabOptions.scanContext, root)) return null;
 
     const context: TranslationTargetContext = {
         mode: grabOptions.siteCompatMode ?? (scope === 'full' ? 'full' : 'smart'),
@@ -128,11 +126,30 @@ export function getDynamicTranslationScanRoot(
         contentRoot,
         grabOptions
     };
+    let profileScanRoot: Element | null | undefined;
+    const getProfileScanRoot = (): Element | null => {
+        if (profileScanRoot === undefined) {
+            profileScanRoot = findProfileTranslationScopeRoot(root, context);
+        }
+        return profileScanRoot;
+    };
+
+    if (isObviousUiSubtree(grabOptions.scanContext, root)) {
+        const scanRoot = getProfileScanRoot();
+        return scanRoot && isInTranslationScope(scanRoot, contentRoot, scope, grabOptions)
+            ? scanRoot
+            : null;
+    }
+
     const profileSkip = getCurrentSiteProfile()?.skipTarget?.(root, context);
     if (profileSkip && profileSkip.policy === 'hard-skip' && profileSkip.role !== 'layout') return null;
 
     if (scope !== 'full' && !contentRoot.contains(root)) {
-        return isInTranslationScope(root, contentRoot, scope, grabOptions) ? root : null;
+        if (isInTranslationScope(root, contentRoot, scope, grabOptions)) return root;
+        const scanRoot = getProfileScanRoot();
+        return scanRoot && isInTranslationScope(scanRoot, contentRoot, scope, grabOptions)
+            ? scanRoot
+            : null;
     }
 
     if (isLikelyReadingCandidate(root)) return root;
@@ -143,6 +160,29 @@ export function getDynamicTranslationScanRoot(
     }
 
     return root;
+}
+
+function findProfileTranslationScopeRoot(root: Element, context: TranslationTargetContext): Element | null {
+    const profile = getCurrentSiteProfile();
+    if (!profile) return null;
+
+    let current: Element | null = root;
+    while (current && current !== document.body) {
+        const skip = profile.skipTarget?.(current, context);
+        if (skip && skip.policy === 'hard-skip' && skip.role !== 'layout') {
+            current = current.parentElement;
+            continue;
+        }
+
+        if (profile.allowTarget?.(current, context)) return current;
+
+        const expanded = profile.expandTarget?.(current, context);
+        if (Array.isArray(expanded) && expanded.length > 0) return current;
+
+        current = current.parentElement;
+    }
+
+    return null;
 }
 
 function getCurrentSiteProfile() {

@@ -1181,6 +1181,460 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(ids).not.toContain('like')
   })
 
+  it('collects Substack comment paragraphs inserted outside the initial article content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="substack-post-page">
+        <article id="post-body" class="post">
+          <h1>Why Jet Engines Aren't Made In China</h1>
+          <p data-fr-translated="true">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+        </article>
+        <section id="discussion" class="single-post-section comments-section">
+          <h4>Discussion about this post</h4>
+          <div class="comment-list">
+            <div class="comment-list-items">
+              <div class="comment">
+                <div id="comment-johnny" role="article" aria-label="Comment by Johnny Ducati" class="comment-content">
+                  <div class="comment-meta">
+                    <a href="https://substack.com/profile/johnny">Johnny Ducati</a>
+                    <span>May 17</span>
+                    <button type="button">Liked by Aakash Japi</button>
+                  </div>
+                  <div class="comment-body expanded">
+                    <p id="johnny-first">When I was a young guy, I reconditioned fixtures to finish grind the root of turbine blades for General Electric.</p>
+                    <p id="johnny-second">The blades and vanes themselves are like works of art, and the investment casting process leaves the internal passages incredibly slick.</p>
+                  </div>
+                  <div class="comment-actions">
+                    <button id="johnny-like" type="button">Like (40)</button>
+                    <button id="johnny-reply" type="button">Reply</button>
+                    <a id="johnny-share" href="/share">Share</a>
+                  </div>
+                </div>
+              </div>
+              <div class="comment">
+                <div id="comment-matthew" role="article" aria-label="Comment by Matthew Green" class="comment-content">
+                  <div class="comment-meta">
+                    <a href="https://substack.com/profile/matthew">Matthew Green</a>
+                    <span>May 13</span>
+                  </div>
+                  <div class="comment-body expanded">
+                    <p id="matthew-first">Ok, this is very interesting. I have some questions:</p>
+                    <p id="matthew-second">You repeatedly say that China has failed but then proceed to say that they are about a decade behind.</p>
+                  </div>
+                  <div class="comment-actions">
+                    <button id="matthew-reply" type="button">Reply</button>
+                    <a id="matthew-share" href="/share">Share</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#discussion')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('johnny-first')
+    expect(ids).toContain('johnny-second')
+    expect(ids).toContain('matthew-first')
+    expect(ids).toContain('matthew-second')
+    expect(ids).not.toContain('comment-johnny')
+    expect(ids).not.toContain('comment-matthew')
+    expect(ids).not.toContain('johnny-like')
+    expect(ids).not.toContain('johnny-reply')
+    expect(ids).not.toContain('johnny-share')
+    expect(ids).not.toContain('matthew-reply')
+    expect(ids).not.toContain('matthew-share')
+  })
+
+  it('collects Substack restack paragraphs after switching discussion tabs', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="substack-post-page">
+        <article id="post-body" class="post">
+          <h1>Why Jet Engines Aren't Made In China</h1>
+          <p data-fr-translated="true">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+        </article>
+        <section id="discussion" class="single-post-section comments-section">
+          <h4>Discussion about this post</h4>
+          <div class="tab-list">
+            <button type="button">Comments</button>
+            <button type="button">Restacks</button>
+          </div>
+          <div id="restacks-panel" class="restacks-list">
+            <article id="restack-noah" class="restack-item">
+              <div class="restack-meta">
+                <a href="https://www.noahpinion.blog/">Noah Smith</a>
+                <span>Jun 1</span>
+                <button id="noah-subscribe" type="button">Subscribe</button>
+              </div>
+              <div class="restack-body">
+                <p id="noah-first">An underrated reason for the success of Chinese technology policy is that a lot of their best technology is just the Electric Tech Stack.</p>
+                <p id="noah-second">The Electric Tech Stack is what Western nations are missing.</p>
+              </div>
+              <div class="restack-actions">
+                <button id="noah-like" type="button">38</button>
+                <button id="noah-reply" type="button">2</button>
+                <button id="noah-repost" type="button">4</button>
+                <button id="noah-share" type="button">Share</button>
+              </div>
+            </article>
+            <article id="restack-aakash" class="restack-item">
+              <div class="restack-meta">
+                <a href="https://aakash.substack.com/">Aakash Japi</a>
+                <span>2d</span>
+                <button id="aakash-subscribe" type="button">Subscribe</button>
+              </div>
+              <div class="restack-body">
+                <p id="aakash-first">Looks like a recruiter for Chinese aerospace is posting engineering jobs:</p>
+                <p id="aakash-link">reddit.com/r/aerospace/...</p>
+                <p id="aakash-second">They must have taken my article to heart.</p>
+              </div>
+              <div class="restack-actions">
+                <button id="aakash-like" type="button">4</button>
+                <button id="aakash-reply" type="button">1</button>
+                <button id="aakash-repost" type="button">1</button>
+                <button id="aakash-share" type="button">Share</button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#restacks-panel')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('noah-first')
+    expect(ids).toContain('noah-second')
+    expect(ids).toContain('aakash-first')
+    expect(ids).toContain('aakash-second')
+    expect(ids).not.toContain('aakash-link')
+    expect(ids).not.toContain('restack-noah')
+    expect(ids).not.toContain('restack-aakash')
+    expect(ids).not.toContain('noah-subscribe')
+    expect(ids).not.toContain('noah-like')
+    expect(ids).not.toContain('noah-reply')
+    expect(ids).not.toContain('noah-repost')
+    expect(ids).not.toContain('noah-share')
+    expect(ids).not.toContain('aakash-subscribe')
+    expect(ids).not.toContain('aakash-like')
+    expect(ids).not.toContain('aakash-reply')
+    expect(ids).not.toContain('aakash-repost')
+    expect(ids).not.toContain('aakash-share')
+  })
+
+  it('collects Substack note restacks when the comments-section wrapper is replaced', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="substack-post-page">
+        <article id="post-body" class="post">
+          <h1>Why Jet Engines Aren't Made In China</h1>
+          <p data-fr-translated="true">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+        </article>
+        <div id="discussion-shell" class="pencraft pc-display-flex pc-flexDirection-column pc-gap-16 pc-paddingTop-32 pc-paddingBottom-32 pc-reset">
+          <h4>Discussion about this post</h4>
+          <div class="pencraft pc-display-flex pc-flexDirection-column pc-position-relative pc-minWidth-0 pc-reset">
+            <div class="pencraft pc-display-flex pc-gap-4 pc-padding-4 pc-reset" role="tablist">
+              <button id="note-comments-tab" type="button" role="tab" aria-selected="false">Comments</button>
+              <button id="note-restacks-tab" type="button" role="tab" aria-selected="true">Restacks</button>
+            </div>
+          </div>
+          <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-16 pc-paddingTop-16 pc-reset container">
+            <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-16 pc-reset">
+              <div id="note-noah" role="article" aria-label="Note" class="pencraft pc-display-flex pc-flexDirection-column pc-position-relative pc-reset feedItem-ONDKv3 feedItem-p_SCsv">
+                <div class="pencraft pc-display-flex pc-flexDirection-column pc-reset pencraft pc-gap-8 pc-reset">
+                  <div class="pencraft pc-gap-12 pc-reset pencraft pc-display-flex pc-flexDirection-column pc-reset feedUnit-NTpfyQ hasAvatar-XDSVUi">
+                    <div class="pencraft pc-display-flex pc-gap-12 pc-alignItems-flex-start pc-reset">
+                      <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-8 pc-minWidth-0 pc-reset flex-grow-rzmknG">
+                        <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-12 pc-reset">
+                          <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-4 pc-reset">
+                            <div class="pencraft pc-display-flex pc-minWidth-0 pc-gap-8 pc-alignItems-center pc-justifyContent-space-between pc-reset">
+                              <span id="note-noah-author">Noah Smith</span>
+                              <button id="note-noah-subscribe" type="button">Subscribe</button>
+                            </div>
+                            <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-4 pc-position-relative pc-reset">
+                              <div class="pencraft pc-display-flex pc-flexDirection-column pc-reset feedCommentBody-UWho7S">
+                                <div class="pencraft pc-reset color-primary-zABazT line-height-20-t4M0El font-text-qe4AeH size-15-Psle70 weight-regular-mUq6Gb reset-IxiVJZ feedCommentBodyInner-AOzMIC">
+                                  <div class="ProseMirror FeedProseMirror">
+                                    <p id="note-noah-first">An underrated reason for the success of Chinese technology policy is that a lot of their best technology is just the Electric Tech Stack.</p>
+                                    <p id="note-noah-second">The Electric Tech Stack is what Western nations are missing.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="pencraft pc-display-flex pc-gap-16 pc-reset">
+                            <button id="note-noah-like" type="button">38</button>
+                            <button id="note-noah-reply" type="button">2</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="note-aakash" role="article" aria-label="Note" class="pencraft pc-display-flex pc-flexDirection-column pc-position-relative pc-reset feedItem-ONDKv3 feedItem-p_SCsv">
+                <div class="pencraft pc-display-flex pc-flexDirection-column pc-reset feedCommentBody-UWho7S">
+                  <div class="pencraft pc-reset feedCommentBodyInner-AOzMIC">
+                    <div class="ProseMirror FeedProseMirror">
+                      <p id="note-aakash-first">Looks like a recruiter for Chinese aerospace is posting engineering jobs:</p>
+                      <p id="note-aakash-link">reddit.com/r/aerospace/...</p>
+                      <p id="note-aakash-second">They must have taken my article to heart.</p>
+                    </div>
+                  </div>
+                </div>
+                <button id="note-aakash-subscribe" type="button">Subscribe</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#note-restacks-tab')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const scanRoot = getDynamicTranslationScanRoot(
+      document.querySelector('#note-restacks-tab')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(scanRoot).toBe(document.querySelector('#discussion-shell'))
+    expect(ids).toContain('note-noah-first')
+    expect(ids).toContain('note-noah-second')
+    expect(ids).toContain('note-aakash-first')
+    expect(ids).toContain('note-aakash-second')
+    expect(ids).not.toContain('note-aakash-link')
+    expect(ids).not.toContain('note-noah')
+    expect(ids).not.toContain('note-aakash')
+    expect(ids).not.toContain('note-noah-author')
+    expect(ids).not.toContain('note-noah-subscribe')
+    expect(ids).not.toContain('note-noah-like')
+    expect(ids).not.toContain('note-noah-reply')
+    expect(ids).not.toContain('note-aakash-subscribe')
+  })
+
+  it('promotes Substack discussion tab mutations to scan visible comments and restacks', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="substack-post-page">
+        <article id="post-body" class="post">
+          <h1>Why Jet Engines Aren't Made In China</h1>
+          <p data-fr-translated="true">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+        </article>
+        <section id="discussion" class="post-comments">
+          <h4>Discussion about this post</h4>
+          <div class="tab-list" role="tablist">
+            <button id="comments-tab" type="button" role="tab" aria-selected="true">Comments</button>
+            <button id="restacks-tab" type="button" role="tab" aria-selected="false">Restacks</button>
+          </div>
+          <div class="comment-list">
+            <div class="comment-list-items">
+              <div class="comment">
+                <div role="article" aria-label="Comment by Johnny Ducati" class="comment-content">
+                  <div class="comment-meta">
+                    <a href="https://substack.com/profile/johnny">Johnny Ducati</a>
+                    <button id="comment-subscribe" type="button">Subscribe</button>
+                  </div>
+                  <div class="comment-body expanded">
+                    <p id="tab-comment-first">The blades and vanes themselves are like works of art, and the investment casting process leaves the internal passages incredibly slick.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="restacks-list">
+            <article class="restack-item">
+              <div class="restack-meta">
+                <a href="https://www.noahpinion.blog/">Noah Smith</a>
+                <button id="restack-subscribe" type="button">Subscribe</button>
+              </div>
+              <div class="restack-body">
+                <p id="tab-restack-first">An underrated reason for the success of Chinese technology policy is that a lot of their best technology is just the Electric Tech Stack.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#comments-tab')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const scanRoot = getDynamicTranslationScanRoot(
+      document.querySelector('#comments-tab')!,
+      document.querySelector('#post-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(scanRoot).toBe(document.querySelector('#discussion'))
+    expect(ids).toContain('tab-comment-first')
+    expect(ids).toContain('tab-restack-first')
+    expect(ids).not.toContain('comment-subscribe')
+    expect(ids).not.toContain('restack-subscribe')
+  })
+
+  it('collects visible Substack comments during the initial smart translation pass', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="substack-post-page">
+        <article id="post-body" class="post">
+          <h1 id="post-title">Why Jet Engines Aren't Made In China</h1>
+          <p id="post-intro">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+          <p id="post-second">A high-pressure turbine blade in a modern jet engine is expected to sit in gas hotter than lava while sustaining a consistent centrifugal load.</p>
+          <p id="post-third">Achieving these requirements has made it one of the most complex manufacturing outputs in the world, because materials, casting, cooling, inspection, and certification all interact.</p>
+          <p id="post-fourth">Established manufacturers still only reach limited yield on the hardest components, and a new entrant would spend years learning process knowledge that cannot be read from a blueprint.</p>
+        </article>
+        <section id="discussion" class="post-comments">
+          <h4>Discussion about this post</h4>
+          <div class="tab-list" role="tablist">
+            <button id="initial-comments-tab" type="button" role="tab" aria-selected="true">Comments</button>
+            <button id="initial-restacks-tab" type="button" role="tab" aria-selected="false">Restacks</button>
+          </div>
+          <div class="comment-list">
+            <div class="comment-list-items">
+              <div class="comment">
+                <div id="initial-comment-card" role="article" aria-label="Comment by Johnny Ducati" class="comment-content">
+                  <div class="comment-meta">
+                    <a href="https://substack.com/profile/johnny">Johnny Ducati</a>
+                    <span>May 17</span>
+                    <button id="initial-comment-subscribe" type="button">Subscribe</button>
+                  </div>
+                  <div class="comment-body expanded">
+                    <p id="initial-comment-first">When I was a young guy, I reconditioned fixtures to finish grind the root of turbine blades for General Electric.</p>
+                    <p id="initial-comment-second">The blades and vanes themselves are like works of art, and the investment casting process leaves the internal passages incredibly slick.</p>
+                  </div>
+                  <div class="comment-actions">
+                    <button id="initial-comment-like" type="button">Like (40)</button>
+                    <button id="initial-comment-reply" type="button">Reply</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map(node => node.id)
+
+    expect(ids).toContain('post-title')
+    expect(ids).toContain('initial-comment-first')
+    expect(ids).toContain('initial-comment-second')
+    expect(ids).not.toContain('initial-comment-card')
+    expect(ids).not.toContain('initial-comment-subscribe')
+    expect(ids).not.toContain('initial-comment-like')
+    expect(ids).not.toContain('initial-comment-reply')
+  })
+
+  it('collects visible Substack comments from the current comments-section root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <div aria-label="Post" role="main" class="single-post-container">
+        <div class="single-post">
+          <article id="post-body" class="typography newsletter-post post">
+            <h1 id="real-post-title" class="post-title published">Why Jet Engines Aren't Made In China</h1>
+            <div class="available-content">
+              <div class="body markup">
+                <p id="real-post-intro">Jet engines are a low-margin market focused on long-term reliability where manufacturing quality and consistency are paramount.</p>
+                <p id="real-post-second">A high-pressure turbine blade in a modern jet engine is expected to sit in gas hotter than lava while sustaining a consistent centrifugal load.</p>
+                <p id="real-post-third">Achieving these requirements has made it one of the most complex manufacturing outputs in the world, because materials, casting, cooling, inspection, and certification all interact.</p>
+                <p id="real-post-fourth">Established manufacturers still only reach limited yield on the hardest components, and a new entrant would spend years learning process knowledge that cannot be read from a blueprint.</p>
+              </div>
+            </div>
+          </article>
+          <div class="pencraft pc-display-flex pc-flexDirection-column pc-gap-16 pc-paddingTop-32 pc-paddingBottom-32 pc-reset">
+            <h4>Discussion about this post</h4>
+            <div class="pencraft pc-display-flex pc-flexDirection-column pc-position-relative pc-minWidth-0 pc-reset bg-primary-zk6FDl outline-detail-vcQLyr pc-borderRadius-sm overflow-hidden-WdpwT6">
+              <button id="real-comments-tab" type="button" class="pencraft segment-j4TeZ4">Comments</button>
+              <button id="real-restacks-tab" type="button" class="pencraft segment-j4TeZ4">Restacks</button>
+            </div>
+            <div id="real-discussion" class="single-post-section comments-section">
+              <div class="comment-list post-page-root-comment-list">
+                <div class="comment-list-items">
+                  <div class="comment">
+                    <div id="real-comment-card" class="pencraft pc-display-flex pc-gap-12 pc-paddingBottom-12 pc-reset comment-content">
+                      <div class="pencraft pc-display-flex pc-flexDirection-column pc-reset flex-grow-rzmknG">
+                        <div class="pencraft pc-display-flex pc-reset">
+                          <span id="real-comment-author">Johnny Ducati</span>
+                          <span id="real-comment-date">May 17</span>
+                          <button id="real-comment-menu" type="button">More</button>
+                        </div>
+                        <div class="comment-body expanded">
+                          <p id="real-comment-first">When I was a young guy, I reconditioned fixtures to finish grind the root of turbine blades for General Electric.</p>
+                          <p id="real-comment-second">The blades and vanes themselves are like works of art, and the investment casting process leaves the internal passages incredibly slick.</p>
+                        </div>
+                        <div class="pencraft pc-display-flex pc-gap-16 pc-paddingTop-8 pc-justifyContent-flex-start pc-alignItems-center pc-reset comment-actions withShareButton-hQzuEn">
+                          <a id="real-comment-like" href="/like">Like (40)</a>
+                          <a id="real-comment-reply" href="/reply">Reply</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map(node => node.id)
+
+    expect(ids).toContain('real-post-title')
+    expect(ids).toContain('real-comment-first')
+    expect(ids).toContain('real-comment-second')
+    expect(ids).not.toContain('real-comment-card')
+    expect(ids).not.toContain('real-comment-author')
+    expect(ids).not.toContain('real-comment-menu')
+    expect(ids).not.toContain('real-comment-like')
+    expect(ids).not.toContain('real-comment-reply')
+  })
+
   it('collects newly revealed nodes from dynamic content regions', () => {
     document.body.innerHTML = `
       <main id="content-root">
@@ -1222,6 +1676,41 @@ describe('resolveAutoTranslateTarget behavior', () => {
     )
 
     expect(nodes.map(node => node.id)).toContain('revealed')
+  })
+
+  it('does not expand site profiles for dynamic roots already inside the smart content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main id="content-root">
+        <article id="article">
+          <p id="dynamic-readable">This newly inserted article paragraph already lives inside the smart content root and should not need profile expansion.</p>
+        </article>
+      </main>
+    `
+
+    const originalQuerySelectorAll = Element.prototype.querySelectorAll
+    let profileExpansionQueries = 0
+    Element.prototype.querySelectorAll = function querySelectorAllWithProfileCounter(this: Element, selectors: string) {
+      if (selectors.includes('feedCommentBody')) profileExpansionQueries++
+      return originalQuerySelectorAll.call(this, selectors)
+    } as typeof Element.prototype.querySelectorAll
+
+    try {
+      const scanRoot = getDynamicTranslationScanRoot(
+        document.querySelector('#dynamic-readable')!,
+        document.querySelector('#content-root')!,
+        'smart',
+        { siteCompatMode: 'smart' }
+      )
+
+      expect(scanRoot).toBe(document.querySelector('#dynamic-readable'))
+      expect(profileExpansionQueries).toBe(0)
+    } finally {
+      Element.prototype.querySelectorAll = originalQuerySelectorAll
+    }
   })
 
   it('ignores dynamic nodes outside smart content root', () => {
