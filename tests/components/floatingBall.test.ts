@@ -34,7 +34,7 @@ describe('FloatingBall', () => {
     setLocale('zh-CN')
   })
 
-  it('opens a docked toolbar beside the recall entry before running page translation actions', async () => {
+  it('keeps primary translation separate from toolbar expansion controls', async () => {
     const onTranslationToggle = vi.fn()
     const onScopeChanged = vi.fn()
     const onSettingsClick = vi.fn()
@@ -60,16 +60,18 @@ describe('FloatingBall', () => {
     await nextTick()
     await trigger.trigger('click')
 
-    expect(onTranslationToggle).not.toHaveBeenCalled()
+    expect(onTranslationToggle).toHaveBeenCalledWith(true)
     expect(onPositionChanged).not.toHaveBeenCalled()
+    expect(wrapper.get('.fr-floating-ball [data-testid="floating-toolbar"]').classes()).not.toContain('floating-toolbar--open')
+
+    await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
+
+    expect(onTranslationToggle).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="floating-toolbar-translate"]').exists()).toBe(false)
     expect(wrapper.get('.fr-floating-ball [data-testid="floating-toolbar"]').classes()).toContain('floating-toolbar--open')
-    expect(wrapper.text()).toContain('翻译')
     expect(wrapper.text()).toContain('识文')
     expect(wrapper.text()).toContain('DeepSeek')
     expect(wrapper.text()).toContain('更多')
-
-    await wrapper.get('[data-testid="floating-toolbar-translate"]').trigger('click')
-    expect(onTranslationToggle).toHaveBeenCalledWith(true)
 
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('mousedown', { button: 0, clientX: 120, clientY: 120 })
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('click')
@@ -97,10 +99,12 @@ describe('FloatingBall', () => {
     wrapper.unmount()
   })
 
-  it('uses detached capsule styling and keeps more secondary after translating', async () => {
+  it('uses detached capsule styling and keeps settings secondary after primary translation', async () => {
     const wrapper = mount(FloatingBall, {
       attachTo: document.body
     })
+
+    await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
 
     const trigger = wrapper.get('[data-testid="floating-ball-trigger"]')
     await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
@@ -111,12 +115,10 @@ describe('FloatingBall', () => {
     const toolbar = wrapper.get('[data-testid="floating-toolbar"]')
     expect(toolbar.classes()).toContain('floating-toolbar--detached')
 
-    await wrapper.get('[data-testid="floating-toolbar-translate"]').trigger('click')
-
-    const translateButton = wrapper.get('[data-testid="floating-toolbar-translate"]')
     const moreButton = wrapper.get('[data-testid="floating-toolbar-more"]')
 
-    expect(translateButton.classes()).toContain('toolbar-button--restore')
+    expect(wrapper.find('[data-testid="floating-toolbar-translate"]').exists()).toBe(false)
+    expect(wrapper.get('.fr-floating-ball').classes()).toContain('is-translating')
     expect(moreButton.classes()).toContain('toolbar-button--secondary')
     expect(moreButton.classes()).not.toContain('toolbar-button--restore')
 
@@ -132,47 +134,37 @@ describe('FloatingBall', () => {
       attachTo: document.body
     })
 
-    const trigger = wrapper.get('[data-testid="floating-ball-trigger"]')
-    await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
-    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
-    await nextTick()
-    await trigger.trigger('click')
+    await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
 
     ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(true)
     await nextTick()
 
     expect(onTranslationToggle).not.toHaveBeenCalled()
-    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').classes()).toContain('toolbar-button--restore')
-    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').text()).toContain('还原')
+    expect(wrapper.get('.fr-floating-ball').classes()).toContain('is-translating')
+    expect(wrapper.find('.check-mark').exists()).toBe(true)
 
     ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(false)
     await nextTick()
 
     expect(onTranslationToggle).not.toHaveBeenCalled()
-    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').classes()).not.toContain('toolbar-button--restore')
-    expect(wrapper.get('[data-testid="floating-toolbar-translate"]').text()).toContain('翻译')
+    expect(wrapper.get('.fr-floating-ball').classes()).not.toContain('is-translating')
+    expect(wrapper.find('.check-mark').exists()).toBe(false)
 
     wrapper.unmount()
   })
 
-  it('closes the toolbar when the recall entry is clicked again', async () => {
+  it('closes the toolbar when the expansion entry is clicked again', async () => {
     const wrapper = mount(FloatingBall, {
       attachTo: document.body
     })
 
-    const trigger = wrapper.get('[data-testid="floating-ball-trigger"]')
+    const moreTrigger = wrapper.get('[data-testid="floating-ball-more-trigger"]')
     const toolbar = wrapper.get('[data-testid="floating-toolbar"]')
 
-    await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
-    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
-    await nextTick()
-    await trigger.trigger('click')
+    await moreTrigger.trigger('click')
     expect(toolbar.classes()).toContain('floating-toolbar--open')
 
-    await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
-    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
-    await nextTick()
-    await trigger.trigger('click')
+    await moreTrigger.trigger('click')
     expect(toolbar.classes()).not.toContain('floating-toolbar--open')
 
     wrapper.unmount()
@@ -180,10 +172,12 @@ describe('FloatingBall', () => {
 
   it('persists side and vertical offset after dragging the recall entry', async () => {
     const onPositionChanged = vi.fn()
+    const onTranslationToggle = vi.fn()
 
     const wrapper = mount(FloatingBall, {
       props: {
-        onPositionChanged
+        onPositionChanged,
+        onTranslationToggle
       },
       attachTo: document.body
     })
@@ -208,8 +202,10 @@ describe('FloatingBall', () => {
     })
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 760, clientY: 260, bubbles: true }))
     document.dispatchEvent(new MouseEvent('mouseup', { clientX: 760, clientY: 260, bubbles: true }))
+    await wrapper.get('[data-testid="floating-ball-trigger"]').trigger('click')
 
     expect(onPositionChanged).toHaveBeenCalledWith('right', 220)
+    expect(onTranslationToggle).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })

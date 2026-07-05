@@ -20,16 +20,6 @@
     >
       <button
         type="button"
-        class="toolbar-button toolbar-button--primary"
-        :class="{ 'toolbar-button--restore': isTranslating }"
-        data-testid="floating-toolbar-translate"
-        @click="toggleTranslation"
-      >
-        {{ isTranslating ? t('runtime.floatingToolbar.restore') : t('runtime.floatingToolbar.translate') }}
-      </button>
-
-      <button
-        type="button"
         class="scope-toggle"
         :data-scope="activeScope"
         data-testid="floating-toolbar-scope"
@@ -80,12 +70,23 @@
 
     <button
       type="button"
-      class="floating-ball-trigger"
-      data-testid="floating-ball-trigger"
+      class="floating-ball-more-trigger"
+      data-testid="floating-ball-more-trigger"
       :aria-expanded="isToolbarOpen"
       :aria-label="t('runtime.floatingToolbar.open')"
-      @mousedown="startDrag"
+      @mousedown.stop
       @click.stop="toggleToolbar"
+    >
+      <span aria-hidden="true">···</span>
+    </button>
+
+    <button
+      type="button"
+      class="floating-ball-trigger"
+      data-testid="floating-ball-trigger"
+      :aria-label="isTranslating ? t('runtime.floatingToolbar.restore') : t('runtime.floatingToolbar.translate')"
+      @mousedown="startDrag"
+      @click.stop="togglePrimaryTranslation"
     >
       <svg class="floating-ball-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
         <path fill="none" d="M0 0h24v24H0z"></path>
@@ -387,6 +388,14 @@ const toggleTranslation = () => {
   setTranslationState(!isTranslating.value);
 };
 
+const togglePrimaryTranslation = () => {
+  if (suppressNextClick.value) {
+    suppressNextClick.value = false;
+    return;
+  }
+  toggleTranslation();
+};
+
 const toggleTranslationFromExternal = () => {
   toggleTranslation();
 };
@@ -458,7 +467,10 @@ defineExpose({
 .fr-floating-ball {
   position: fixed;
   z-index: 9999;
-  width: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
   height: 42px;
   user-select: none;
   touch-action: none;
@@ -473,8 +485,52 @@ defineExpose({
   --fr-done-line: #b8ead7;
 }
 
+.fr-floating-ball[data-position="right"] {
+  flex-direction: row;
+}
+
+.fr-floating-ball[data-position="left"] {
+  flex-direction: row-reverse;
+}
+
 .fr-floating-ball.dragging {
   transition: none;
+}
+
+.floating-ball-more-trigger {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #d8e2ee;
+  border-radius: 50%;
+  color: #4c586d;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 20px rgba(23, 32, 51, 0.10);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.floating-ball-more-trigger:hover {
+  border-color: var(--fr-sky-line);
+  color: var(--fr-sky-deep);
+  background: var(--fr-sky-soft);
+  transform: translateY(-1px);
+}
+
+.floating-ball-more-trigger:active {
+  transform: scale(0.96);
+}
+
+.floating-ball-more-trigger[aria-expanded="true"] {
+  border-color: var(--fr-sky);
+  color: var(--fr-sky-deep);
+  background: #ffffff;
 }
 
 .floating-ball-trigger {
