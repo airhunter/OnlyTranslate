@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.9.0',
+    notes: {
+      'zh-CN': {
+        title: '悬浮翻译入口更顺手',
+        items: [
+          '点击页面小圆球现在会直接翻译或还原当前页面，常用操作不用再移动到长工具条末端。',
+          '新增独立的“更多”入口，用来展开翻译范围、服务切换和设置，避免和主翻译动作混在一起。',
+          '优化悬浮入口在左右两侧的排列，小圆球始终贴近屏幕边缘，拖动后的点击也会更稳。',
+          '修复 Substack 文章下方 Comments 和 Restacks 切换后评论、转发内容漏翻的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'A Smoother Floating Translation Entry',
+        items: [
+          'Clicking the floating page button now translates or restores the current page directly, so the everyday action no longer requires reaching across the long toolbar.',
+          'Added a separate More entry for translation scope, service switching, and settings, keeping the primary translation action distinct.',
+          'Improved the left/right layout of the floating entry so the round button stays close to the screen edge and clicks after dragging feel more reliable.',
+          'Fixed missed translations for Substack Comments and Restacks after switching between the two discussion tabs.'
+        ]
+      },
+      'zh-TW': {
+        title: '懸浮翻譯入口更順手',
+        items: [
+          '點擊頁面小圓球現在會直接翻譯或還原目前頁面，常用操作不用再移到長工具列末端。',
+          '新增獨立的「更多」入口，用來展開翻譯範圍、服務切換和設定，避免和主要翻譯動作混在一起。',
+          '優化懸浮入口在左右兩側的排列，小圓球始終貼近螢幕邊緣，拖動後的點擊也會更穩。',
+          '修復 Substack 文章下方 Comments 和 Restacks 切換後評論、轉發內容漏翻的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'フローティング翻訳入口をより使いやすく',
+        items: [
+          'ページ上の丸いフローティングボタンをクリックすると、現在のページを直接翻訳または復元できるようになりました。',
+          '翻訳範囲、サービス切り替え、設定を開くための独立した More 入口を追加し、主な翻訳操作と分けました。',
+          '左右どちらに置いても丸いボタンが画面端に近い位置を保つよう、フローティング入口の並びを改善しました。',
+          'Substack の Comments と Restacks を切り替えた後に、コメントやリスタック本文が翻訳されない問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.8.0',
     notes: {
       'zh-CN': {
