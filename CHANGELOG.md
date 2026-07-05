@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.9.0](https://github.com/airhunter/OnlyTranslate/compare/v0.8.0...v0.9.0) (2026-07-05)
+
+
+### Bug Fixes
+
+* **content:** 修复 Substack 评论与转发翻译 ([e8e0810](https://github.com/airhunter/OnlyTranslate/commit/e8e08105e371e049182eab83226f2ed316e3cf7f))
+
+
+### Features
+
+* **ui:** 优化悬浮球主动作与工具条入口 ([dc63f0a](https://github.com/airhunter/OnlyTranslate/commit/dc63f0aa36960e50f7db44aca3690a09f8a448b5))
+
 # [0.8.0](https://github.com/airhunter/OnlyTranslate/compare/v0.7.0...v0.8.0) (2026-07-03)
 
 
