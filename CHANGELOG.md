@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/airhunter/OnlyTranslate/compare/v0.9.0...v0.9.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ui:** 优化悬浮球展开入口图标 ([e40f145](https://github.com/airhunter/OnlyTranslate/commit/e40f145e0360a3c3d23047ec7cec9173dee90977))
+
 # [0.9.0](https://github.com/airhunter/OnlyTranslate/compare/v0.8.0...v0.9.0) (2026-07-05)
 
 
