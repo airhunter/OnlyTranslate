@@ -77,7 +77,17 @@
       @mousedown.stop
       @click.stop="toggleToolbar"
     >
-      <span aria-hidden="true">···</span>
+      <svg
+        class="floating-ball-more-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle cx="5" cy="12" r="1.9" fill="currentColor"></circle>
+        <circle cx="12" cy="12" r="1.9" fill="currentColor"></circle>
+        <circle cx="19" cy="12" r="1.9" fill="currentColor"></circle>
+      </svg>
     </button>
 
     <button
@@ -510,10 +520,13 @@ defineExpose({
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 8px 20px rgba(23, 32, 51, 0.10);
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1;
   transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.floating-ball-more-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .floating-ball-more-trigger:hover {

@@ -170,6 +170,19 @@ describe('FloatingBall', () => {
     wrapper.unmount()
   })
 
+  it('renders the toolbar expansion entry as an icon-only button', () => {
+    const wrapper = mount(FloatingBall, {
+      attachTo: document.body
+    })
+
+    const moreTrigger = wrapper.get('[data-testid="floating-ball-more-trigger"]')
+
+    expect(moreTrigger.text().trim()).toBe('')
+    expect(moreTrigger.find('.floating-ball-more-icon').exists()).toBe(true)
+
+    wrapper.unmount()
+  })
+
   it('persists side and vertical offset after dragging the recall entry', async () => {
     const onPositionChanged = vi.fn()
     const onTranslationToggle = vi.fn()
