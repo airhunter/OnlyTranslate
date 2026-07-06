@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '0.9.1',
+    notes: {
+      'zh-CN': {
+        title: '悬浮入口图标修正',
+        items: [
+          '修正悬浮翻译入口旁的“更多”按钮图标，不再显示成像占位头像一样的怪异圆点。',
+          '更多入口现在使用清晰的三点图标，和右侧主翻译按钮的职责区分更明确。',
+          '优化小圆按钮里的图标尺寸和显示方式，减少页面悬浮控件的视觉干扰。'
+        ]
+      },
+      'en-US': {
+        title: 'Floating Entry Icon Fix',
+        items: [
+          'Fixed the More button beside the floating translation entry so it no longer looks like an odd placeholder avatar.',
+          'The More entry now uses a clear three-dot icon, making it easier to distinguish from the primary translate button.',
+          'Improved the icon sizing and rendering inside the small round button to reduce visual noise on the page.'
+        ]
+      },
+      'zh-TW': {
+        title: '懸浮入口圖示修正',
+        items: [
+          '修正懸浮翻譯入口旁的「更多」按鈕圖示，不再顯示得像奇怪的佔位頭像。',
+          '更多入口現在使用清楚的三點圖示，和右側主要翻譯按鈕的用途區分更明確。',
+          '優化小圓按鈕中的圖示尺寸和顯示方式，減少頁面懸浮控制項的視覺干擾。'
+        ]
+      },
+      'ja-JP': {
+        title: 'フローティング入口のアイコン修正',
+        items: [
+          'フローティング翻訳入口の横にある「More」ボタンが、不自然なプレースホルダー画像のように見える問題を修正しました。',
+          'More 入口は分かりやすい三点アイコンになり、右側のメイン翻訳ボタンとの役割がより明確になりました。',
+          '小さな丸ボタン内のアイコンサイズと表示を調整し、ページ上の視覚的な違和感を減らしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.9.0',
     notes: {
       'zh-CN': {
