@@ -1,0 +1,9 @@
+{
+  "name": "Jacob Gold posts keep each custom content child as a separate translation target",
+  "url": "https://jacob.gold/posts/programmers-need-to-start-meditating-now/",
+  "scope": "smart",
+  "html": "jacob-gold-post.html",
+  "include": ["title", "date", "intro", "flow", "switching", "productive", "settle", "meditate", "reason"],
+  "exclude": ["post-content", "discuss"],
+  "textExcludes": ["Discuss on Hacker News"]
+}

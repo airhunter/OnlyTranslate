@@ -76,6 +76,10 @@ describe('site profile registry', () => {
     expect(selectCompatFn['arstechnica.com']).toBeTypeOf('function')
   })
 
+  it('registers Jacob Gold article profile', () => {
+    expect(selectCompatFn['jacob.gold']).toBeTypeOf('function')
+  })
+
   it('registers Hugging Face blog article profile', () => {
     expect(selectCompatFn['huggingface.co']).toBeTypeOf('function')
     expect(afterBilingualAppendCompatFn['huggingface.co']).toBeTypeOf('function')
