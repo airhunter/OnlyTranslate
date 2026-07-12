@@ -29,7 +29,9 @@ async function claude(message: TranslationServiceMessage): Promise<TranslationSe
         }
 
         const result = await resp.json();
-        return result.content[0].text;
+        const textBlock = result.content.find((block: { type?: string }) => block.type === 'text');
+        if (!textBlock?.text) throw new Error(t('runtime.upstreamNoContent'));
+        return textBlock.text;
     } catch (error) {
         console.error('Claude API 调用失败:', error);
         throw error;

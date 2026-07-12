@@ -28,6 +28,7 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
     return JSON.stringify({
         'model': model,
         "temperature": 1.0,
+        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -54,6 +55,7 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
         'model': model,
         // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
         "temperature": 0.3,
+        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {
                 'role': 'system',
@@ -89,8 +91,11 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
         model: string;
         messages: Array<{ role: 'system' | 'user'; content: string }>;
         temperature?: number;
+        thinking: { type: 'enabled' | 'disabled' };
+        reasoning_effort?: 'high';
     } = {
         'model': model,
+        thinking: { type: config.thinking?.[config.service] ? 'enabled' : 'disabled' },
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -100,6 +105,9 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
     // 如果不是 deepseek-reasoner 模型,则添加 temperature
     if (model !== 'deepseek-reasoner') {
         payload.temperature = 0.7;
+    }
+    if (config.thinking?.[config.service]) {
+        payload.reasoning_effort = 'high';
     }
 
     return JSON.stringify(payload);
@@ -111,6 +119,11 @@ export function geminiMsgTemplate(origin: string, targetLang = config.to) {
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({
+        "generationConfig": {
+            "thinkingConfig": {
+                "thinkingBudget": config.thinking?.[config.service] ? 1024 : 0
+            }
+        },
         "contents": [
             {"role": "user", "parts": [{"text": user}]},
         ]
@@ -132,6 +145,9 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to) {
         model: model,
         max_tokens: 4096,
         stream: false,
+        thinking: config.thinking?.[config.service]
+            ? { type: 'enabled', budget_tokens: 1024 }
+            : { type: 'disabled' },
         system: system,
         messages: [
             {role: "user", content: user},
@@ -149,7 +165,7 @@ export function tongyiMsgTemplate(origin: string, targetLang = config.to) {
 
         return JSON.stringify({
             "model": model,
-            "enable_thinking": false,
+            "enable_thinking": config.thinking?.[config.service] === true,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -207,6 +223,7 @@ export function minimaxTemplate(origin: string, targetLang = config.to) {
         model: "MiniMax-Text-01",
         stream: false,
         temperature: 0.7,
+        thinking: { type: config.thinking?.[config.service] ? 'adaptive' : 'disabled' },
         messages: [
             {role: 'system', content: system},
             {role: 'user', content: user},
