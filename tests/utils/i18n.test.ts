@@ -23,4 +23,18 @@ describe('i18n', () => {
     expect(t('options.interaction.scopeToggleTip')).toContain('当前翻译范围')
     expect(t('popup.fullPageShortcut')).toBe('页面翻译')
   })
+
+  it('provides subtitle runway status messages in every supported locale', () => {
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      setLocale(locale)
+      for (const key of [
+        'video.subtitleTranslationStarting',
+        'video.subtitleTranslationBuffered',
+        'video.subtitleTranslationFailed',
+      ]) {
+        expect(t(key), `${locale}:${key}`).not.toBe(key)
+      }
+      expect(t('video.subtitleTranslationCatchingUp', { seconds: 12 })).toContain('12')
+    }
+  })
 })

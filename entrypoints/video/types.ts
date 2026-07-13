@@ -31,9 +31,12 @@ export interface SubtitleTranslationJob {
     entries: SubtitleTranslationEntry[]
 }
 
+export type SubtitleTranslationLane = 'foreground' | 'prefetch'
+
 export interface SubtitleTranslationResult {
     id: string
     translatedText: string
+    cacheable?: boolean
 }
 
 export type SubtitleFormat = 'youtube-xml' | 'youtube-json3' | 'youtube-json3-scrolling' | 'vtt'

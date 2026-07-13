@@ -42,6 +42,12 @@ The two most important lessons for OnlyTranslate are:
     duplicate/progressive-redraw cleanup, CJK-aware segmentation, playback-window
     translation scheduling, track/session invalidation, active YouTube track fetching
     with POT/CC fallback, subtitle-only low-reasoning requests, and regression tests.
+- [x] P1: LLM subtitle catch-up and private cross-session cache
+  - Implemented on `codex/feat/subtitle-reliability`; offline target-video
+    acceptance is complete, while live-provider/browser acceptance remains pending.
+  - Added segmenter v2, foreground/prefetch translation lanes, bounded partial
+    fallback, context-bound private subtitle caching, and separate translation
+    runway status.
 - [x] P1: Batch translation queue with fallback
   - Done in `680ab1e feat(service): 支持网页批量翻译队列`.
   - Hardened by `d9ce92e fix(service): 修复批量翻译配置与消息类型`
@@ -352,8 +358,10 @@ Status: Implemented. Automated verification complete; live-model A/B pending.
   or context-ID results before falling back to isolated source-text requests.
 - Use the effective YouTube track language (`tlang || lang`), or detect once from
   the ordered batch when track metadata is unavailable.
-- Keep subtitle translations session-only so identical short text in different
-  contexts cannot reuse the old global source-text cache.
+- Do not reuse the old global source-text cache for subtitles. Cross-session
+  reuse must use the subtitle-only cache, whose hashed identity includes the
+  timeline position, neighboring source context, provider/model/prompt identity,
+  and segmentation/context versions.
 - A seek starts a new scheduler epoch immediately. The old request may finish but
   is aborted locally, cannot start new fallback requests, and cannot write back.
 - Do not add AI segmentation, transcript summaries, conversation history,
@@ -386,6 +394,77 @@ Status: Implemented. Automated verification complete; live-model A/B pending.
 - A live-model blind comparison and P95 latency measurement require configured
   provider credentials and remain a manual pre-release acceptance step; no quality
   or latency win is claimed from mocked tests alone.
+
+## P1: LLM Subtitle Catch-up and Private Cross-session Cache
+
+Status: Implemented. Offline target-video acceptance complete; live-provider and
+browser acceptance pending.
+
+### Implemented Scope
+
+- Segmenter v2 completes the current group before an overflow, performs one
+  conservative tail rebalance per continuous region, and splits an intrinsically
+  long source cue into adjacent display slices without dropping its text.
+- Playback scheduling uses non-overlapping foreground and prefetch lanes. The
+  foreground lane targets 12 seconds of playable coverage at high priority; the
+  prefetch lane targets 30 seconds in the background, subject to the 15/45-second
+  runway watermarks and fixed request limits.
+- Structured LLM translation remains a single low-reasoning request. If the
+  response protocol fails, bounded per-lane workers commit successful isolated
+  translations immediately; degraded isolated results are not persisted.
+- The subtitle-only cache uses extension-private `chrome.storage.local`, hashed
+  context-sensitive segment identities, a fixed 30-day TTL, and bounded LRU
+  cleanup. A background alarm prunes at the next expiry and coalesces writes from
+  multiple tabs before enforcing the global limits. The cache follows the existing
+  switch, bypasses persistent storage in incognito windows, and is removed by the
+  existing global cache-clear action.
+- Subtitle acquisition and translation progress remain separate states. The
+  YouTube shortcut reports preparation, catch-up, buffered, and degraded phases
+  without pausing playback or silently switching to machine translation.
+
+### Target-video Offline Acceptance Record
+
+The benchmark uses the captured English scrolling-ASR JSON3 track from YouTube
+video `cyH24CHTlHA`. The source file is intentionally outside the repository;
+its SHA-256 is
+`5114EE301204F1601B63B0DBEBAE6449A85858F1F39C59CA703D45CA853346B8` so a future
+run can confirm it is measuring the same input.
+
+On 2026-07-13, the current parser plus segmenter v2 produced:
+
+| Metric | Result | Required |
+| --- | ---: | ---: |
+| Parsed cues | 675 | Informational |
+| Segments | 336 | `< 400` |
+| Median segment duration | 4.579 s | `>= 4 s` |
+| Timeline overlaps | 0 | `0` |
+| Segments longer than 10 s | 0 | `0` |
+| Non-CJK segments longer than 20 words | 0 | `0` |
+
+At the resumed-playback anchor around 13:00, applying the foreground limits to
+the sorted timeline selected three targets covering 14.721 seconds and 274 source
+characters. This clears the 12-second foreground coverage target while staying
+well below the 12-target and 1,500-target-character limits. The focused
+segmenter suite passed all 15 tests.
+
+### Automated and Manual Acceptance Boundary
+
+This record covers the deterministic parser/segmenter fixture measurement plus
+the focused segmenter and scheduler suites. All 14 scheduler tests pass,
+including the fixed 20-second delayed-LLM simulation: after the first foreground
+response, the two-lane scheduler sustains two minutes of simulated continuous
+playback without falling behind the current position. Translator, cache,
+lifecycle, and status coverage is included in the repository suite. The final
+`pnpm verify` run passed all 461 tests, and the Chrome MV3 production build
+completed successfully.
+
+The deterministic delay simulation validates runway accounting and lane refill;
+it does not prove live provider latency or browser integration. A
+configured-browser run is still required to confirm two minutes of uninterrupted
+real playback after the first response, no request on a cache-hit reopen at the
+watched position, and the visual/accessibility behavior of the four-language
+status UI. No live-network latency or browser cache-hit claim is made by this
+offline record.
 
 ## P1: Batch Translation Queue with Fallback
 

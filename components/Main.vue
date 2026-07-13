@@ -486,9 +486,20 @@ async function clearCache() {
     cacheLoading.value = true;
     cacheStatus.value = 'idle';
 
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    if (!tabs[0]?.id) throw new Error('No active tab found');
-    await browser.tabs.sendMessage(tabs[0].id, { message: 'clearCache' });
+    const [tabs, subtitleCacheResponse] = await Promise.all([
+      browser.tabs.query({ active: true, currentWindow: true }),
+      browser.runtime.sendMessage({ type: 'CLEAR_VIDEO_SUBTITLE_CACHE' }),
+    ]);
+    const subtitleCacheResult = subtitleCacheResponse as { success?: boolean; error?: string };
+    if (!subtitleCacheResult?.success) {
+      throw new Error(subtitleCacheResult?.error || 'Failed to clear video subtitle cache');
+    }
+    if (tabs[0]?.id) {
+      await browser.tabs.sendMessage(tabs[0].id, { message: 'clearCache' }).catch(error => {
+        // Restricted/internal pages have no content script or page cache to clear.
+        console.warn('Skipped active-page cache clear:', error);
+      });
+    }
 
     cacheStatus.value = 'success';
   } catch (error) {

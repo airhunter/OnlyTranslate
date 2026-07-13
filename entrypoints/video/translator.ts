@@ -2,6 +2,7 @@ import browser from 'webextension-polyfill'
 import type {
     SubtitleTranslationEntry,
     SubtitleTranslationJob,
+    SubtitleTranslationLane,
     SubtitleTranslationResult,
 } from './types'
 import { SUBTITLE_TRANSLATION_PROMPT_VERSION } from '@/entrypoints/service/subtitle'
@@ -32,6 +33,12 @@ interface SubtitleTranslationDirection {
     sourceLanguage: string
     targetLanguage: string
     shouldTranslate: boolean
+}
+
+export interface SubtitleTranslationOptions {
+    signal?: AbortSignal
+    lane: SubtitleTranslationLane
+    onPartialResult?: (result: SubtitleTranslationResult) => void
 }
 
 function normalizeLanguage(language?: string): string {
@@ -94,6 +101,31 @@ function createAbortError(): Error {
     return error
 }
 
+function withAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+    if (!signal) return promise
+
+    return new Promise<T>((resolve, reject) => {
+        let settled = false
+        const finish = (callback: () => void) => {
+            if (settled) return
+            settled = true
+            signal.removeEventListener('abort', handleAbort)
+            callback()
+        }
+        const handleAbort = () => finish(() => reject(createAbortError()))
+
+        if (signal.aborted) {
+            handleAbort()
+            return
+        }
+        signal.addEventListener('abort', handleAbort, { once: true })
+        promise.then(
+            value => finish(() => resolve(value)),
+            error => finish(() => reject(error)),
+        )
+    })
+}
+
 function withTimeout<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         let settled = false
@@ -150,9 +182,10 @@ function validateRuntimeResults(
 
 async function requestStructuredBatch(
     job: SubtitleTranslationJob,
+    lane: SubtitleTranslationLane,
     signal?: AbortSignal,
 ): Promise<SubtitleTranslationResult[]> {
-    const response = await enqueueTranslation(
+    const response = await withAbort(enqueueTranslation(
         () => {
             if (signal?.aborted) throw createAbortError()
             return withTimeout(browser.runtime.sendMessage({
@@ -163,8 +196,8 @@ async function requestStructuredBatch(
                 fastMode: true,
             }), signal)
         },
-        { priority: 'high' },
-    )
+        { priority: lane === 'foreground' ? 'high' : 'background' },
+    ), signal)
     return validateRuntimeResults(response, job)
 }
 
@@ -217,26 +250,58 @@ async function requestSingleSubtitle(
     }
 }
 
-async function fallbackToSingles(
+async function translateWithSingles(
     job: SubtitleTranslationJob,
-    signal?: AbortSignal,
+    options: SubtitleTranslationOptions,
+    cacheable: boolean,
 ): Promise<SubtitleTranslationResult[]> {
+    const { signal, lane, onPartialResult } = options
     if (signal?.aborted) return []
     const targets = targetEntries(job)
-    const settled = await Promise.allSettled(targets.map(entry => enqueueTranslation(
-        () => requestSingleSubtitle(entry, job, 0, signal),
-        { priority: 'high' },
-    )))
+    const results: Array<SubtitleTranslationResult | undefined> = new Array(targets.length)
+    const workerCount = Math.min(lane === 'foreground' ? 2 : 1, targets.length)
+    const priority = lane === 'foreground' ? 'high' : 'background'
+    let nextTargetIndex = 0
 
-    return settled.flatMap((result, index) => result.status === 'fulfilled' && result.value.trim()
-        ? [{ id: targets[index].id, translatedText: result.value.trim() }]
-        : [])
+    const runWorker = async () => {
+        while (!signal?.aborted) {
+            const targetIndex = nextTargetIndex++
+            if (targetIndex >= targets.length) return
+            const entry = targets[targetIndex]
+
+            try {
+                const translatedText = await withAbort(enqueueTranslation(
+                    () => requestSingleSubtitle(entry, job, 0, signal),
+                    { priority },
+                ), signal)
+                if (signal?.aborted || !translatedText.trim()) return
+
+                const result: SubtitleTranslationResult = {
+                    id: entry.id,
+                    translatedText: translatedText.trim(),
+                    cacheable,
+                }
+                results[targetIndex] = result
+                try {
+                    onPartialResult?.(result)
+                } catch {
+                    // A consumer callback must not turn a successful translation into a retry.
+                }
+            } catch {
+                if (signal?.aborted) return
+            }
+        }
+    }
+
+    await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
+    return results.filter((result): result is SubtitleTranslationResult => Boolean(result))
 }
 
 export async function translateSubtitleBatch(
     rawJob: SubtitleTranslationJob,
-    signal?: AbortSignal,
+    options: SubtitleTranslationOptions = { lane: 'foreground' },
 ): Promise<SubtitleTranslationResult[]> {
+    const { signal, lane } = options
     const direction = resolveSubtitleDirection(rawJob)
     const job: SubtitleTranslationJob = {
         ...rawJob,
@@ -249,19 +314,21 @@ export async function translateSubtitleBatch(
         return targetEntries(job).map(entry => ({
             id: entry.id,
             translatedText: entry.text,
+            cacheable: true,
         }))
     }
 
     if (canUseStructuredSubtitleTranslation()) {
         try {
-            return await requestStructuredBatch(job, signal)
+            const results = await requestStructuredBatch(job, lane, signal)
+            return results.map(result => ({ ...result, cacheable: true }))
         } catch {
             if (signal?.aborted) return []
-            return fallbackToSingles(job, signal)
+            return translateWithSingles(job, options, false)
         }
     }
 
-    return fallbackToSingles(job, signal)
+    return translateWithSingles(job, options, true)
 }
 
 export { SUBTITLE_TRANSLATION_PROMPT_VERSION }

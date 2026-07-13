@@ -9,6 +9,12 @@ import {
     preloadChromeTranslationModel
 } from "@/entrypoints/service/chrome-translator";
 import { isSubtitleBatchTranslationMessage } from '@/entrypoints/service/subtitle'
+import {
+    clearVideoSubtitleCache,
+    pruneVideoSubtitleCache,
+    videoSubtitleCacheInternals,
+} from '@/entrypoints/video/cache'
+import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -75,6 +81,23 @@ export default defineBackground({
     },
     main() {
         const isContextMenuSupported = !!browser.contextMenus
+        const videoSubtitleCacheMaintenance = new VideoSubtitleCacheMaintenance({
+            alarms: browser.alarms,
+            prune: () => pruneVideoSubtitleCache(),
+            cacheKeyPrefix: videoSubtitleCacheInternals.cacheKeyPrefix,
+            onError: error => console.warn('Video subtitle cache maintenance failed:', error),
+        })
+
+        browser.alarms.onAlarm.addListener((alarm: { name: string }) => {
+            void videoSubtitleCacheMaintenance.handleAlarm(alarm.name)
+        })
+        browser.storage.onChanged.addListener((
+            changes: Record<string, { newValue?: unknown }>,
+            areaName: string,
+        ) => {
+            videoSubtitleCacheMaintenance.handleStorageChanges(changes, areaName)
+        })
+        void videoSubtitleCacheMaintenance.runNow()
 
         browser.runtime.onInstalled.addListener((details: any) => {
             void syncReleaseNotesInstallState(
@@ -195,6 +218,15 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any) => {
+            if (message?.type === 'CLEAR_VIDEO_SUBTITLE_CACHE') {
+                return clearVideoSubtitleCache()
+                    .then(removed => ({ success: true, removed }))
+                    .catch((error: unknown) => ({
+                        success: false,
+                        error: error instanceof Error ? error.message : String(error),
+                    }));
+            }
+
             // 处理输入框翻译请求
             if (message?.type === 'inputBoxTranslation') {
                 return translateWithMicrosoftInBackground(message.text, message.targetLang)

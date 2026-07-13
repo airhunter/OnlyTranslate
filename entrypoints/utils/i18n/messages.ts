@@ -67,7 +67,11 @@ export const messages = {
       subtitleWaitingCc: '只译：正在等待 YouTube 字幕',
       subtitleReady: '只译：字幕已就绪',
       subtitleNoTrack: '只译：该视频没有可用字幕',
-      subtitleLoadFailed: '只译：字幕未加载，请点击 YouTube 字幕按钮重试'
+      subtitleLoadFailed: '只译：字幕未加载，请点击 YouTube 字幕按钮重试',
+      subtitleTranslationStarting: '正在准备翻译',
+      subtitleTranslationCatchingUp: '正在追赶翻译，已准备未来 {seconds} 秒',
+      subtitleTranslationBuffered: '翻译已跟上',
+      subtitleTranslationFailed: '翻译失败，当前显示原文'
     },
     runtime: {
       retry: '重试',
@@ -460,7 +464,11 @@ export const messages = {
       subtitleWaitingCc: 'OnlyTranslate: waiting for YouTube captions',
       subtitleReady: 'OnlyTranslate: subtitles ready',
       subtitleNoTrack: 'OnlyTranslate: no subtitles available for this video',
-      subtitleLoadFailed: 'OnlyTranslate: subtitles did not load; click YouTube CC to retry'
+      subtitleLoadFailed: 'OnlyTranslate: subtitles did not load; click YouTube CC to retry',
+      subtitleTranslationStarting: 'Preparing subtitle translation',
+      subtitleTranslationCatchingUp: 'Catching up; {seconds} seconds ready ahead',
+      subtitleTranslationBuffered: 'Translation has caught up',
+      subtitleTranslationFailed: 'Translation failed; showing the original text'
     },
     runtime: {
       retry: 'Retry',
@@ -853,7 +861,11 @@ export const messages = {
       subtitleWaitingCc: '只譯：正在等待 YouTube 字幕',
       subtitleReady: '只譯：字幕已就緒',
       subtitleNoTrack: '只譯：此影片沒有可用字幕',
-      subtitleLoadFailed: '只譯：字幕未載入，請點擊 YouTube 字幕按鈕重試'
+      subtitleLoadFailed: '只譯：字幕未載入，請點擊 YouTube 字幕按鈕重試',
+      subtitleTranslationStarting: '正在準備翻譯',
+      subtitleTranslationCatchingUp: '正在追趕翻譯，已準備未來 {seconds} 秒',
+      subtitleTranslationBuffered: '翻譯已跟上',
+      subtitleTranslationFailed: '翻譯失敗，目前顯示原文'
     },
     runtime: {
       retry: '重試',
@@ -1246,7 +1258,11 @@ export const messages = {
       subtitleWaitingCc: 'OnlyTranslate: YouTube 字幕を待機中',
       subtitleReady: 'OnlyTranslate: 字幕の準備が完了しました',
       subtitleNoTrack: 'OnlyTranslate: この動画には利用可能な字幕がありません',
-      subtitleLoadFailed: 'OnlyTranslate: 字幕を読み込めません。YouTube の字幕ボタンを押して再試行してください'
+      subtitleLoadFailed: 'OnlyTranslate: 字幕を読み込めません。YouTube の字幕ボタンを押して再試行してください',
+      subtitleTranslationStarting: '字幕翻訳を準備しています',
+      subtitleTranslationCatchingUp: '翻訳を追いつかせています。今後 {seconds} 秒を準備済みです',
+      subtitleTranslationBuffered: '翻訳が再生に追いつきました',
+      subtitleTranslationFailed: '翻訳に失敗したため、原文を表示しています'
     },
     runtime: {
       retry: '再試行',
