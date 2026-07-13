@@ -7,6 +7,7 @@ import { devinDocsProfile } from './devinDocs';
 import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
+import { jacobGoldProfile } from './jacobGold';
 import { mediumProfile } from './medium';
 import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
@@ -70,6 +71,7 @@ export const siteProfiles: SiteProfile[] = [
     substackProfile,
     hackerNewsProfile,
     huggingFaceProfile,
+    jacobGoldProfile,
     natureProfile,
     asteriskProfile,
     arsTechnicaProfile,

@@ -37,6 +37,17 @@ const global = {
 }
 
 describe('options i18n render', () => {
+  it.each([
+    ['zh-CN', '思考模式'],
+    ['en-US', 'Thinking mode'],
+    ['zh-TW', '思考模式'],
+    ['ja-JP', '思考モード']
+  ])('localizes the per-service thinking setting for %s', (locale, label) => {
+    const i18n = createAppI18n(locale as 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP')
+    expect(i18n.global.t('options.service.thinkingMode')).toBe(label)
+    expect(i18n.global.t('options.service.thinkingModeTip')).not.toBe('options.service.thinkingModeTip')
+  })
+
   it('renders AI settings without i18n message compiler errors', () => {
     const wrapper = mount(AISettingsGroup, { global })
     expect(wrapper.text()).toContain('核心 Prompt 调试台')

@@ -51,6 +51,7 @@ export function commonMsgTemplate(origin: string, targetLang = config.to, fastMo
     const payload: Record<string, unknown> = {
         'model': model,
         "temperature": 1.0,
+        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -79,6 +80,7 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
         'model': model,
         // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
         "temperature": 0.3,
+        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {
                 'role': 'system',
@@ -118,6 +120,7 @@ export function commonSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
     const payload: Record<string, unknown> = {
         model,
         temperature: 0.2,
+        reasoning_effort: config.thinking?.[config.service] ? 'medium' : 'none',
         messages: [
             { role: 'system', content: prompt.system },
             { role: 'user', content: prompt.user },
@@ -147,9 +150,11 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to, fast
         model: string;
         messages: Array<{ role: 'system' | 'user'; content: string }>;
         temperature?: number;
-        thinking?: { type: 'disabled' };
+        thinking: { type: 'enabled' | 'disabled' };
+        reasoning_effort?: 'high';
     } = {
         'model': model,
+        thinking: { type: config.thinking?.[config.service] ? 'enabled' : 'disabled' },
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -162,6 +167,8 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to, fast
     }
     if (fastMode) {
         payload.thinking = { type: 'disabled' };
+    } else if (config.thinking?.[config.service]) {
+        payload.reasoning_effort = 'high';
     }
 
     return JSON.stringify(payload);
@@ -176,6 +183,11 @@ export function geminiMsgTemplate(origin: string, targetLang = config.to, fastMo
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const payload: Record<string, unknown> = {
+        "generationConfig": {
+            "thinkingConfig": {
+                "thinkingBudget": config.thinking?.[config.service] ? 1024 : 0
+            }
+        },
         "contents": [
             {"role": "user", "parts": [{"text": user}]},
         ]
@@ -203,6 +215,9 @@ export function geminiSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
     const prompt = buildSubtitleTranslationPrompt(job)
     const generationConfig: Record<string, unknown> = {
         responseMimeType: 'application/json',
+        thinkingConfig: {
+            thinkingBudget: config.thinking?.[config.service] ? 1024 : 0,
+        },
     }
 
     if (fastMode && /^gemini-2\.5-/i.test(model)) {
@@ -237,6 +252,9 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to) {
         model: model,
         max_tokens: 4096,
         stream: false,
+        thinking: config.thinking?.[config.service]
+            ? { type: 'enabled', budget_tokens: 1024 }
+            : { type: 'disabled' },
         system: system,
         messages: [
             {role: "user", content: user},
@@ -272,7 +290,7 @@ export function tongyiMsgTemplate(origin: string, targetLang = config.to) {
 
         return JSON.stringify({
             "model": model,
-            "enable_thinking": false,
+            "enable_thinking": config.thinking?.[config.service] === true,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -330,6 +348,7 @@ export function minimaxTemplate(origin: string, targetLang = config.to) {
         model: "MiniMax-Text-01",
         stream: false,
         temperature: 0.7,
+        thinking: { type: config.thinking?.[config.service] ? 'adaptive' : 'disabled' },
         messages: [
             {role: 'system', content: system},
             {role: 'user', content: user},

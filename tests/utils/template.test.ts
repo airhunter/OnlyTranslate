@@ -71,10 +71,10 @@ describe('translation templates', () => {
     expect(payload.temperature).toBeUndefined()
   })
 
-  it('does not alter normal webpage OpenAI requests', () => {
+  it('uses the configured default reasoning mode for normal webpage OpenAI requests', () => {
     const payload = JSON.parse(commonMsgTemplate('Hello', 'zh-Hans'))
 
-    expect(payload.reasoning_effort).toBeUndefined()
+    expect(payload.reasoning_effort).toBe('none')
     expect(payload.temperature).toBe(1)
   })
 

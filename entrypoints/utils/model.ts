@@ -4,6 +4,10 @@ interface IMapping {
     [key: string]: string;
 }
 
+interface IBooleanMapping {
+    [key: string]: boolean;
+}
+
 // 内包，存储额外信息
 interface IExtra {
     [key: string]: {
@@ -43,6 +47,7 @@ export class Config {
     robot_id: IMapping;  // 机器人 ID（兼容 coze）
     system_role: IMapping;
     user_role: IMapping;
+    thinking: IBooleanMapping; // 各 AI 服务是否启用思考模式
     count: number;  // 翻译次数
     theme: string;  // 主题模式：'auto' | 'light' | 'dark'
     uiLocale: string; // 界面语言：'auto' | 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP'
@@ -95,6 +100,7 @@ export class Config {
         this.robot_id = {};
         this.system_role = systemRoleFactory();
         this.user_role = userRoleFactory();
+        this.thinking = {};
         this.count = 0;
         this.theme = 'auto';  // 默认跟随系统
         this.uiLocale = 'auto'; // 默认跟随浏览器

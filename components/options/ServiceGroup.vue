@@ -205,6 +205,19 @@
               </div>
             </template>
 
+            <div v-if="usesThinking(service.id)" class="provider-form-row">
+              <div class="provider-form-label">
+                {{ t('options.service.thinkingMode') }}
+                <el-tooltip :content="t('options.service.thinkingModeTip')" placement="top">
+                  <el-icon class="info-icon"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+              <div class="provider-form-control provider-form-control--inline">
+                <el-switch :model-value="isThinkingEnabled(service.id)" @update:model-value="setThinkingEnabled(service.id, $event)" />
+                <span class="toggle-status">{{ isThinkingEnabled(service.id) ? t('options.service.enabled') : t('options.service.notEnabled') }}</span>
+              </div>
+            </div>
+
             <!-- 统一测试连接按钮 -->
             <div class="provider-form-row">
               <div class="provider-form-label">{{ t('options.service.connectionTest') }}</div>
@@ -263,7 +276,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import { customModelString, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
@@ -501,6 +514,12 @@ const isConfigured = (service: string) => isServiceConfigured(service, config.va
 const usesToken = (service: string) => servicesType.isUseToken(service)
 const usesModel = (service: string) => servicesType.isUseModel(service)
 const usesProxy = (service: string) => servicesType.isUseProxy(service)
+const usesThinking = (service: string) => servicesType.isAI(service)
+const isThinkingEnabled = (service: string) => config.value.thinking?.[service] === true
+const setThinkingEnabled = (service: string, value: string | number | boolean) => {
+  if (!config.value.thinking) config.value.thinking = {}
+  config.value.thinking[service] = value === true
+}
 const canFetchModels = (service: string) => canFetchProviderModels(service)
 const getModelOptions = (service: string) => state.modelOptions[service] || getStaticModelOptions(service)
 

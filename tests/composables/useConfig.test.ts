@@ -32,6 +32,7 @@ vi.mock('../../entrypoints/utils/model', () => ({
     robot_id = {}
     system_role = {}
     user_role = {}
+    thinking = {}
     count = 0
     theme = 'auto'
     useCache = true
@@ -71,6 +72,7 @@ describe('useConfig', () => {
     expect(config.value.service).toBe('microsoft')
     expect(config.value.theme).toBe('auto')
     expect(config.value.display).toBe(1)
+    expect(config.value.thinking).toEqual({})
   })
 
   it('loadConfig parses and applies stored config', async () => {
