@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.0.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.0：字幕翻译全面升级',
+        items: [
+          '重构视频字幕翻译流程，自动清理重复与滚动字幕，并结合上下文智能分段，让连续对话的译文更完整、更自然。',
+          '新增播放感知调度、前台追赶和后台预取，拖动进度或连续播放时能更快补齐当前字幕，接口异常时也会自动回退。',
+          '新增隐私友好的本地字幕缓存，相同视频可复用已翻译片段；缓存最多保留 30 天，支持一键清空，隐身窗口不会读写。',
+          '新增按翻译服务控制思考模式，并继续修复部分文章段落漏翻，让网页与字幕翻译更容易在质量和速度之间取舍。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.0: A Major Subtitle Upgrade',
+        items: [
+          'Rebuilt the video subtitle pipeline to clean up duplicate and scrolling captions and segment dialogue with surrounding context for more complete, natural translations.',
+          'Added playback-aware scheduling, foreground catch-up, and background prefetch so current captions fill in faster after seeking or during continuous playback, with graceful fallback on service errors.',
+          'Added a privacy-friendly local subtitle cache that reuses translated segments for the same video; entries last up to 30 days, can be cleared with one click, and are never used in incognito windows.',
+          'Added per-service reasoning controls and fixed additional missed article paragraphs, making it easier to balance translation quality and speed across webpages and subtitles.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.0：字幕翻譯全面升級',
+        items: [
+          '重構影片字幕翻譯流程，自動清理重複與捲動字幕，並結合上下文智慧分段，讓連續對話的譯文更完整、更自然。',
+          '新增播放感知調度、前景追趕和背景預取，拖動進度或連續播放時能更快補齊當前字幕，介面異常時也會自動回退。',
+          '新增隱私友善的本機字幕快取，相同影片可重複使用已翻譯片段；快取最多保留 30 天，支援一鍵清空，無痕視窗不會讀寫。',
+          '新增依翻譯服務控制思考模式，並繼續修復部分文章段落漏翻，讓網頁與字幕翻譯更容易在品質和速度之間取舍。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.0：字幕翻訳を全面的に強化',
+        items: [
+          '動画字幕の翻訳パイプラインを再構築し、重複やスクロール式字幕を自動的に整理した上で、周辺の文脈を使って会話を分割し、より完全で自然な訳文を生成します。',
+          '再生状況に応じたスケジューリング、表示中字幕の追い上げ、バックグラウンドの先読みを追加し、シーク後や連続再生中でも現在の字幕を素早く補完し、サービスエラー時は自動的にフォールバックします。',
+          '同じ動画の翻訳済み区間を再利用できる、プライバシーに配慮したローカル字幕キャッシュを追加しました。保存期間は最長 30 日で、ワンクリックで消去でき、シークレットウィンドウでは使用されません。',
+          '翻訳サービスごとの思考モード設定を追加し、一部の記事段落が翻訳されない問題も修正し、Web ページと字幕の品質と速度のバランスを調整しやすくしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '0.9.1',
     notes: {
       'zh-CN': {
