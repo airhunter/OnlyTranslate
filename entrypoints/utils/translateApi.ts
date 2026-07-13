@@ -84,7 +84,8 @@ function buildInFlightTranslationKey(
   origin: string,
   context: string,
   sourceLang: string,
-  targetLang: string
+  targetLang: string,
+  fastMode: boolean,
 ): string {
   const service = config.service;
   const model = config.model?.[service] ?? '';
@@ -96,6 +97,7 @@ function buildInFlightTranslationKey(
     config.style ?? '',
     sourceLang,
     targetLang,
+    fastMode,
     context,
     origin
   ]);
@@ -112,7 +114,7 @@ function resolveCurrentModel(): string {
     : config.model?.[service] ?? '';
 }
 
-function buildBatchTranslationKey(context: string, sourceLang: string, targetLang: string): string {
+function buildBatchTranslationKey(context: string, sourceLang: string, targetLang: string, fastMode: boolean): string {
   const service = config.service;
   return JSON.stringify([
     service,
@@ -121,6 +123,7 @@ function buildBatchTranslationKey(context: string, sourceLang: string, targetLan
     config.style ?? '',
     sourceLang,
     targetLang,
+    fastMode,
     context
   ]);
 }
@@ -172,6 +175,7 @@ export async function translateText(origin: string, context: string = document.t
     useCache = config.useCache,
     allowBatch = false,
     priority = 'normal',
+    fastMode = false,
   } = options;
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
@@ -188,7 +192,13 @@ export async function translateText(origin: string, context: string = document.t
     return origin;
   }
 
-  const inFlightKey = buildInFlightTranslationKey(safeOrigin, context, direction.sourceLang, direction.targetLang);
+  const inFlightKey = buildInFlightTranslationKey(
+    safeOrigin,
+    context,
+    direction.sourceLang,
+    direction.targetLang,
+    fastMode,
+  );
   const inFlight = inFlightTranslations.get(inFlightKey);
   if (inFlight) return inFlight;
 
@@ -220,6 +230,7 @@ export async function translateText(origin: string, context: string = document.t
             origin: text,
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
+            ...(fastMode ? { fastMode: true } : {}),
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
@@ -259,6 +270,7 @@ export async function translateText(origin: string, context: string = document.t
         context,
         sourceLang: direction.sourceLang,
         targetLang: direction.targetLang,
+        ...(fastMode ? { fastMode: true } : {}),
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
@@ -275,7 +287,7 @@ export async function translateText(origin: string, context: string = document.t
 
   const translationPromise = shouldUseBatchTranslation(allowBatch, safeOrigin)
     ? enqueueBatchTranslation({
-      key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang),
+      key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang, fastMode),
       origin: safeOrigin,
       executeBatch: executeBatchTranslation,
       executeSingle: executeSingleTranslation,
@@ -329,4 +341,6 @@ export interface TranslateOptions {
   allowBatch?: boolean;
   /** 翻译请求优先级：可视区为 high，后台预热为 background */
   priority?: TranslationPriority;
+  /** 低延迟翻译模式：服务适配器应关闭或压低 Thinking/Reasoning */
+  fastMode?: boolean;
 } 

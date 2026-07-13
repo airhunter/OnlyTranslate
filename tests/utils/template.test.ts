@@ -1,21 +1,55 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockConfig = vi.hoisted(() => ({
   service: 'openai',
   model: {
-    openai: 'gpt-5-mini'
+    openai: 'gpt-5-mini',
+    deepseek: 'deepseek-reasoner',
+    gemini: 'gemini-2.5-flash',
+    claude: 'claude-sonnet-4-0'
   } as Record<string, string>,
   customModel: {} as Record<string, string>,
-  customProviders: []
+  customProviders: [],
+  system_role: {} as Record<string, string>,
+  user_role: {} as Record<string, string>
 }))
 
 vi.mock('@/entrypoints/utils/config', () => ({
   config: mockConfig
 }))
 
-import { commonBatchMsgTemplate } from '@/entrypoints/utils/template'
+import {
+    commonBatchMsgTemplate,
+    commonMsgTemplate,
+    commonSubtitleBatchMsgTemplate,
+    claudeSubtitleBatchMsgTemplate,
+    deepseekMsgTemplate,
+    geminiMsgTemplate,
+    geminiSubtitleBatchMsgTemplate,
+} from '@/entrypoints/utils/template'
+import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
+
+const subtitleJob: SubtitleTranslationJob = {
+  trackKey: 'youtube|video|en|||',
+  sessionId: '1',
+  title: 'Example video',
+  sourceLanguage: 'en',
+  targetLanguage: 'zh-Hans',
+  promptVersion: 'subtitle-context-v1',
+  entries: [
+    { id: 'context', role: 'context', text: 'Sarah tested it.' },
+    { id: 'target', role: 'target', text: 'She said it worked.' },
+  ],
+}
 
 describe('translation templates', () => {
+  beforeEach(() => {
+    mockConfig.service = 'openai'
+    mockConfig.model.openai = 'gpt-5-mini'
+    mockConfig.model.deepseek = 'deepseek-reasoner'
+    mockConfig.model.gemini = 'gemini-2.5-flash'
+  })
+
   it('tells batch translation to preserve protected inline placeholders', () => {
     const payload = JSON.parse(commonBatchMsgTemplate([
       'Open __ONLY_TRANSLATE_INLINE_0_abc__ before continuing.'
@@ -28,5 +62,79 @@ describe('translation templates', () => {
     expect(userContent).toContain('__ONLY_TRANSLATE_INLINE_')
     expect(userContent).toContain('preserve')
     expect(userContent).toContain('exactly once')
+  })
+
+  it('uses low reasoning effort for fast OpenAI reasoning-model requests', () => {
+    const payload = JSON.parse(commonMsgTemplate('Hello', 'zh-Hans', true))
+
+    expect(payload.reasoning_effort).toBe('low')
+    expect(payload.temperature).toBeUndefined()
+  })
+
+  it('does not alter normal webpage OpenAI requests', () => {
+    const payload = JSON.parse(commonMsgTemplate('Hello', 'zh-Hans'))
+
+    expect(payload.reasoning_effort).toBeUndefined()
+    expect(payload.temperature).toBe(1)
+  })
+
+  it('switches DeepSeek subtitle requests out of reasoner mode', () => {
+    mockConfig.service = 'deepseek'
+
+    const single = JSON.parse(deepseekMsgTemplate('Hello', 'zh-Hans', true))
+    const batch = JSON.parse(commonBatchMsgTemplate(['Hello', 'World'], 'zh-Hans', true))
+
+    expect(single).toMatchObject({
+      model: 'deepseek-chat',
+      thinking: { type: 'disabled' },
+    })
+    expect(batch).toMatchObject({
+      model: 'deepseek-chat',
+      thinking: { type: 'disabled' },
+    })
+  })
+
+  it('disables Gemini 2.5 Flash thinking for fast subtitle requests', () => {
+    mockConfig.service = 'gemini'
+
+    const payload = JSON.parse(geminiMsgTemplate('Hello', 'zh-Hans', true))
+
+    expect(payload.generationConfig).toEqual({
+      thinkingConfig: { thinkingBudget: 0 },
+    })
+  })
+
+  it('builds a low-reasoning structured OpenAI subtitle request', () => {
+    const payload = JSON.parse(commonSubtitleBatchMsgTemplate(subtitleJob, true))
+    const user = JSON.parse(payload.messages[1].content)
+
+    expect(payload.reasoning_effort).toBe('low')
+    expect(payload.temperature).toBeUndefined()
+    expect(payload.messages[0].content).toContain('Context entries are read-only')
+    expect(user).toMatchObject({
+      videoTitle: 'Example video',
+      sourceLanguage: 'en',
+      targetLanguage: 'zh-Hans',
+      entries: subtitleJob.entries,
+    })
+  })
+
+  it('uses native structured subtitle payloads for Gemini and Claude', () => {
+    mockConfig.service = 'gemini'
+    const gemini = JSON.parse(geminiSubtitleBatchMsgTemplate(subtitleJob, true))
+    expect(gemini.generationConfig).toEqual({
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+    })
+    expect(gemini.systemInstruction.parts[0].text).toContain('untrusted data')
+
+    mockConfig.service = 'claude'
+    const claude = JSON.parse(claudeSubtitleBatchMsgTemplate(subtitleJob))
+    expect(claude).toMatchObject({
+      model: 'claude-sonnet-4-0',
+      temperature: 0.2,
+    })
+    expect(claude.thinking).toBeUndefined()
+    expect(claude.system).toContain('untrusted data')
   })
 })

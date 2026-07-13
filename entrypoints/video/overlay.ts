@@ -1,4 +1,4 @@
-import type { SubtitleCue } from './parser'
+import type { SubtitleSegment } from './types'
 import { config } from '@/entrypoints/utils/config'
 
 const OVERLAY_ID = 'fr-subtitle-overlay'
@@ -6,16 +6,15 @@ const OVERLAY_ID = 'fr-subtitle-overlay'
 export class SubtitleOverlay {
     private container: HTMLElement | null = null
     private video: HTMLVideoElement | null = null
-    private cues: SubtitleCue[] = []
+    private segments: SubtitleSegment[] = []
     private rafId: number | null = null
-    private lastCueKey: string | null = null  // 避免每帧重复 DOM 操作
+    private lastRenderKey: string | null = null
     private mountTarget: HTMLElement | undefined
-    private originalMountPosition: string | undefined  // undefined = 未修改过
+    private originalMountPosition: string | undefined
 
-    /** 在视频容器内创建字幕层，开始时间轴循环 */
     mount(video: HTMLVideoElement, mountTarget: HTMLElement) {
-        this.video = video
         this.cleanup()
+        this.video = video
 
         const overlay = document.createElement('div')
         overlay.id = OVERLAY_ID
@@ -31,9 +30,7 @@ export class SubtitleOverlay {
             'max-width:94%',
         ].join(';')
 
-        // 确保挂载目标有定位上下文，记录原始内联 position 以便 cleanup 还原
-        const computedPos = window.getComputedStyle(mountTarget).position
-        if (computedPos === 'static') {
+        if (window.getComputedStyle(mountTarget).position === 'static') {
             this.originalMountPosition = mountTarget.style.position
             mountTarget.style.position = 'relative'
         }
@@ -44,10 +41,10 @@ export class SubtitleOverlay {
         this.startLoop()
     }
 
-    /** 更新全部字幕数据（解析完成 / 翻译进度更新时调用） */
-    setCues(cues: SubtitleCue[]) {
-        this.cues = cues
-        this.lastCueKey = null   // 强制刷新一次显示
+    setSegments(segments: SubtitleSegment[]) {
+        this.segments = segments
+        this.lastRenderKey = null
+        this.render(this.findSegment(this.video?.currentTime ?? -1))
     }
 
     show() {
@@ -58,7 +55,6 @@ export class SubtitleOverlay {
         if (this.container) this.container.style.display = 'none'
     }
 
-    /** 停止渲染并移除 DOM，还原挂载目标的原始 position */
     cleanup() {
         if (this.rafId !== null) {
             cancelAnimationFrame(this.rafId)
@@ -69,83 +65,87 @@ export class SubtitleOverlay {
             this.mountTarget.style.position = this.originalMountPosition
         }
         this.container = null
-        this.cues = []
-        this.lastCueKey = null
+        this.video = null
+        this.segments = []
+        this.lastRenderKey = null
         this.mountTarget = undefined
         this.originalMountPosition = undefined
     }
 
-    // ── 内部方法 ──────────────────────────────────────────────────────────────
-
     private startLoop() {
         const tick = () => {
             if (!this.video || !this.container) return
-            const t = this.video.currentTime
-            const cue = this.findCue(t)
-            const key = cue ? `${cue.start}~${cue.end}` : ''
+            const segment = this.findSegment(this.video.currentTime)
+            const key = segment
+                ? `${segment.id}|${segment.status}|${segment.translatedText ?? ''}`
+                : ''
 
-            if (key !== this.lastCueKey) {
-                this.lastCueKey = key
-                this.render(cue)
+            if (key !== this.lastRenderKey) {
+                this.lastRenderKey = key
+                this.render(segment)
             }
             this.rafId = requestAnimationFrame(tick)
         }
         this.rafId = requestAnimationFrame(tick)
     }
 
-    private findCue(time: number): SubtitleCue | null {
-        // 二分找到第一个 start <= time 且 end > time 的 cue，
-        // 继续向后扫描以处理 YouTube 滚动字幕的 overlap cue（取最后一条）
-        let lo = 0, hi = this.cues.length - 1, result: SubtitleCue | null = null
-        while (lo <= hi) {
-            const mid = (lo + hi) >>> 1
-            const cue = this.cues[mid]
-            if (time < cue.start) {
-                hi = mid - 1
-            } else if (time >= cue.end) {
-                lo = mid + 1
+    private findSegment(time: number): SubtitleSegment | null {
+        let left = 0
+        let right = this.segments.length - 1
+        while (left <= right) {
+            const mid = (left + right) >>> 1
+            const segment = this.segments[mid]
+            if (time < segment.start) {
+                right = mid - 1
+            } else if (time >= segment.end) {
+                left = mid + 1
             } else {
-                result = cue
-                lo = mid + 1  // 继续往后找是否有更晚开始的 overlap cue
+                return segment
             }
         }
-        return result
+        return null
     }
 
-    private render(cue: SubtitleCue | null) {
-        if (!this.container) return
-        this.container.replaceChildren()
-        if (!cue) return
-
-        const isBilingual = config.display === 1   // 1 = 双语对照
-        const hasTranslation = !!cue.translatedText
-
-        const lineStyle = [
+    private createLine(text: string, original = false): HTMLDivElement {
+        const line = document.createElement('div')
+        line.style.cssText = [
             'display:block',
             'background:rgba(8,8,8,0.80)',
             'color:#fff',
             'padding:4px 14px',
             'border-radius:4px',
-            'font-size:22px',
+            `font-size:${original ? '18px' : '22px'}`,
             'line-height:1.65',
             'white-space:pre-wrap',
             'word-break:break-word',
             'text-align:center',
             'margin-bottom:4px',
-        ].join(';')
+            original ? 'opacity:0.75' : '',
+        ].filter(Boolean).join(';')
+        line.textContent = text
+        return line
+    }
 
-        const originalStyle = lineStyle + ';opacity:0.75;font-size:18px'
+    private render(segment: SubtitleSegment | null) {
+        if (!this.container) return
+        this.container.replaceChildren()
+        if (!segment) return
 
-        if (isBilingual && cue.text) {
-            const div = document.createElement('div')
-            div.style.cssText = originalStyle
-            div.textContent = cue.text
-            this.container.appendChild(div)
+        const translatedText = segment.status === 'translated'
+            && segment.translatedText
+            && segment.translatedText.trim() !== segment.sourceText.trim()
+            ? segment.translatedText
+            : undefined
+        const bilingual = config.display === 1
+
+        if (bilingual && translatedText) {
+            this.container.append(
+                this.createLine(segment.sourceText, true),
+                this.createLine(translatedText),
+            )
+            return
         }
 
-        const mainDiv = document.createElement('div')
-        mainDiv.style.cssText = lineStyle
-        mainDiv.textContent = hasTranslation ? cue.translatedText! : cue.text
-        this.container.appendChild(mainDiv)
+        this.container.appendChild(this.createLine(translatedText ?? segment.sourceText))
     }
 }

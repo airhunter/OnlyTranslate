@@ -1,11 +1,15 @@
 import {method, urls} from "../utils/constant";
-import {commonBatchMsgTemplate, commonMsgTemplate} from "../utils/template";
+import {commonBatchMsgTemplate, commonMsgTemplate, commonSubtitleBatchMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {contentPostHandler} from "@/entrypoints/utils/check";
 import { services } from "../utils/option";
 import { t } from "@/entrypoints/utils/i18n";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 import { isBatchTranslationMessage, logBatchTranslationRequest, parseBatchTranslationContent } from "./batch";
+import {
+    isSubtitleBatchTranslationMessage,
+    parseSubtitleTranslationContent,
+} from './subtitle'
 
 function normalizeOpenAICompatibleUrl(url: string): string {
     let normalizedUrl = url || '';
@@ -50,7 +54,13 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
             headers.append('X-Title', 'OnlyTranslate');
         }
 
+        const isSubtitleBatch = isSubtitleBatchTranslationMessage(message)
         const isBatch = isBatchTranslationMessage(message);
+        if (isSubtitleBatch) {
+            logBatchTranslationRequest(config.service, message.job.entries
+                .filter(entry => entry.role === 'target')
+                .map(entry => entry.text))
+        }
         if (isBatch) {
             logBatchTranslationRequest(config.service, message.origins);
         }
@@ -58,9 +68,11 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: isBatch
-                ? commonBatchMsgTemplate(message.origins, message.targetLang)
-                : commonMsgTemplate(message.origin, message.targetLang)
+            body: isSubtitleBatch
+                ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
+                : isBatch
+                    ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
+                    : commonMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {
@@ -69,6 +81,7 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
 
         const result = await resp.json();
         const content = result.choices[0].message.content;
+        if (isSubtitleBatch) return parseSubtitleTranslationContent(content, message.job)
         return isBatch
             ? parseBatchTranslationContent(content, message.origins.length)
             : contentPostHandler(content);

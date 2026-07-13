@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
 
 const mockCommonMsgTemplate = vi.hoisted(() => vi.fn(() => '{"messages":[]}'))
 const mockCommonBatchMsgTemplate = vi.hoisted(() => vi.fn(() => '{"messages":[{"role":"user","content":"batch"}]}'))
+const mockCommonSubtitleBatchMsgTemplate = vi.hoisted(() => vi.fn(() => '{"messages":[{"role":"user","content":"subtitle-batch"}]}'))
 const mockContentPostHandler = vi.hoisted(() => vi.fn((content: string) => `clean:${content}`))
 const mockConfig = vi.hoisted(() => ({
   service: 'openai',
@@ -29,7 +31,8 @@ vi.mock('@/entrypoints/utils/constant', () => ({
 
 vi.mock('@/entrypoints/utils/template', () => ({
   commonMsgTemplate: mockCommonMsgTemplate,
-  commonBatchMsgTemplate: mockCommonBatchMsgTemplate
+  commonBatchMsgTemplate: mockCommonBatchMsgTemplate,
+  commonSubtitleBatchMsgTemplate: mockCommonSubtitleBatchMsgTemplate
 }))
 
 vi.mock('@/entrypoints/utils/check', () => ({
@@ -48,6 +51,20 @@ vi.mock('@/entrypoints/utils/i18n', () => ({
 }))
 
 import common from '@/entrypoints/service/common'
+
+const subtitleJob: SubtitleTranslationJob = {
+  trackKey: 'youtube:video-1:en',
+  sessionId: 'session-1',
+  title: 'Test video',
+  sourceLanguage: 'en',
+  targetLanguage: 'zh-Hans',
+  promptVersion: 'subtitle-context-v1',
+  entries: [
+    { id: 'segment-0', role: 'context', text: 'Sarah called yesterday.' },
+    { id: 'segment-1', role: 'target', text: 'She said it was ready.' },
+    { id: 'segment-2', role: 'target', text: 'So I picked it up.' }
+  ]
+}
 
 describe('common OpenAI-compatible service adapter', () => {
   const fetchMock = vi.fn()
@@ -79,7 +96,7 @@ describe('common OpenAI-compatible service adapter', () => {
       targetLang: 'zh-Hans'
     })).resolves.toBe('clean:translated content')
 
-    expect(mockCommonMsgTemplate).toHaveBeenCalledWith('Hello world', 'zh-Hans')
+    expect(mockCommonMsgTemplate).toHaveBeenCalledWith('Hello world', 'zh-Hans', undefined)
     expect(mockContentPostHandler).toHaveBeenCalledWith('translated content')
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
@@ -111,8 +128,50 @@ describe('common OpenAI-compatible service adapter', () => {
       targetLang: 'zh-Hans'
     })).resolves.toEqual(['你好', '世界'])
 
-    expect(mockCommonBatchMsgTemplate).toHaveBeenCalledWith(['Hello', 'World'], 'zh-Hans')
+    expect(mockCommonBatchMsgTemplate).toHaveBeenCalledWith(['Hello', 'World'], 'zh-Hans', undefined)
     expect(mockCommonMsgTemplate).not.toHaveBeenCalled()
+  })
+
+  it('uses the subtitle batch template, forwards fast mode, and parses native chat content', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: '[{"id":"segment-1","translation":"\u5979\u8bf4\u5df2\u7ecf\u51c6\u5907\u597d\u4e86\u3002"},{"id":"segment-2","translation":"\u6240\u4ee5\u6211\u628a\u5b83\u53d6\u4e86\u56de\u6765\u3002"}]'
+            }
+          }
+        ]
+      })
+    })
+
+    await expect(common({
+      type: 'SUBTITLE_BATCH_TRANSLATION',
+      job: subtitleJob,
+      fastMode: true
+    })).resolves.toEqual([
+      { id: 'segment-1', translatedText: '\u5979\u8bf4\u5df2\u7ecf\u51c6\u5907\u597d\u4e86\u3002' },
+      { id: 'segment-2', translatedText: '\u6240\u4ee5\u6211\u628a\u5b83\u53d6\u4e86\u56de\u6765\u3002' }
+    ])
+
+    expect(mockCommonSubtitleBatchMsgTemplate).toHaveBeenCalledWith(subtitleJob, true)
+    expect(mockCommonBatchMsgTemplate).not.toHaveBeenCalled()
+    expect(mockCommonMsgTemplate).not.toHaveBeenCalled()
+    expect(mockContentPostHandler).not.toHaveBeenCalled()
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe('{"messages":[{"role":"user","content":"subtitle-batch"}]}')
+  })
+
+  it('forwards subtitle fast mode to the request template', async () => {
+    await common({
+      origin: 'Fast subtitle',
+      targetLang: 'zh-Hans',
+      fastMode: true
+    })
+
+    expect(mockCommonMsgTemplate).toHaveBeenCalledWith('Fast subtitle', 'zh-Hans', true)
   })
 
   it('logs batch request stats in development', async () => {

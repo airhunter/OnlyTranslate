@@ -1,9 +1,32 @@
 // 消息模板工具
 import {customModelString, defaultOption, services} from "./option";
 import {config} from "@/entrypoints/utils/config";
+import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
+import { buildSubtitleTranslationPrompt } from '@/entrypoints/service/subtitle'
 
 // openai 格式的消息模板（通用模板）
-export function commonMsgTemplate(origin: string, targetLang = config.to) {
+function isOpenAIReasoningModel(model: string): boolean {
+    return /^(?:gpt-5|o\d(?:-|$))/i.test(model)
+}
+
+function applyFastTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
+    if (!fastMode) return
+
+    if (config.service === services.deepseek) {
+        if (model === 'deepseek-reasoner') {
+            payload.model = 'deepseek-chat'
+        }
+        payload.thinking = { type: 'disabled' }
+        return
+    }
+
+    if (isOpenAIReasoningModel(model)) {
+        delete payload.temperature
+        payload.reasoning_effort = 'low'
+    }
+}
+
+export function commonMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
     // 检测是否使用自定义模型
     let model = config.model[config.service];
     let customModel = config.customModel[config.service];
@@ -25,17 +48,19 @@ export function commonMsgTemplate(origin: string, targetLang = config.to) {
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
-    return JSON.stringify({
+    const payload: Record<string, unknown> = {
         'model': model,
         "temperature": 1.0,
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
         ]
-    })
+    }
+    applyFastTranslationMode(payload, model, fastMode)
+    return JSON.stringify(payload)
 }
 
-export function commonBatchMsgTemplate(origins: string[], targetLang = config.to) {
+export function commonBatchMsgTemplate(origins: string[], targetLang = config.to, fastMode = false) {
     let model = config.model[config.service];
     let customModel = config.customModel[config.service];
 
@@ -50,7 +75,7 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
     model = model === customModelString ? customModel : model;
     model = model.replace(/（.*）/g, "");
 
-    return JSON.stringify({
+    const payload: Record<string, unknown> = {
         'model': model,
         // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
         "temperature": 0.3,
@@ -70,11 +95,40 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
                 ].join('\n')
             },
         ]
-    })
+    }
+    applyFastTranslationMode(payload, model, fastMode)
+    return JSON.stringify(payload)
+}
+
+export function commonSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fastMode = true) {
+    let model = config.model[config.service]
+    let customModel = config.customModel[config.service]
+
+    if (config.service.startsWith('custom_')) {
+        const provider = config.customProviders?.find(provider => provider.id === config.service)
+        if (provider) {
+            model = provider.model
+            customModel = provider.customModel
+        }
+    }
+
+    model = model === customModelString ? customModel : model
+    model = model.replace(/（.*）/g, '')
+    const prompt = buildSubtitleTranslationPrompt(job)
+    const payload: Record<string, unknown> = {
+        model,
+        temperature: 0.2,
+        messages: [
+            { role: 'system', content: prompt.system },
+            { role: 'user', content: prompt.user },
+        ],
+    }
+    applyFastTranslationMode(payload, model, fastMode)
+    return JSON.stringify(payload)
 }
 
 // deepseek
-export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
+export function deepseekMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
     // 检测是否使用自定义模型
     let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
 
@@ -85,10 +139,15 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
+    if (fastMode && model === 'deepseek-reasoner') {
+        model = 'deepseek-chat'
+    }
+
     const payload: {
         model: string;
         messages: Array<{ role: 'system' | 'user'; content: string }>;
         temperature?: number;
+        thinking?: { type: 'disabled' };
     } = {
         'model': model,
         'messages': [
@@ -101,19 +160,65 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to) {
     if (model !== 'deepseek-reasoner') {
         payload.temperature = 0.7;
     }
+    if (fastMode) {
+        payload.thinking = { type: 'disabled' };
+    }
 
     return JSON.stringify(payload);
 }
 
 // gemini
-export function geminiMsgTemplate(origin: string, targetLang = config.to) {
+export function geminiMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
+    const model = config.model[config.service] === customModelString
+        ? config.customModel[config.service]
+        : config.model[config.service]
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
-    return JSON.stringify({
+    const payload: Record<string, unknown> = {
         "contents": [
             {"role": "user", "parts": [{"text": user}]},
         ]
+    }
+
+    if (fastMode && /^gemini-2\.5-/i.test(model)) {
+        payload.generationConfig = {
+            thinkingConfig: {
+                thinkingBudget: /pro/i.test(model) ? 128 : 0,
+            },
+        }
+    } else if (fastMode && /^gemini-3/i.test(model)) {
+        payload.generationConfig = {
+            thinkingConfig: { thinkingLevel: 'minimal' },
+        }
+    }
+
+    return JSON.stringify(payload)
+}
+
+export function geminiSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fastMode = true) {
+    const model = config.model[config.service] === customModelString
+        ? config.customModel[config.service]
+        : config.model[config.service]
+    const prompt = buildSubtitleTranslationPrompt(job)
+    const generationConfig: Record<string, unknown> = {
+        responseMimeType: 'application/json',
+    }
+
+    if (fastMode && /^gemini-2\.5-/i.test(model)) {
+        generationConfig.thinkingConfig = {
+            thinkingBudget: /pro/i.test(model) ? 128 : 0,
+        }
+    } else if (fastMode && /^gemini-3/i.test(model)) {
+        generationConfig.thinkingConfig = { thinkingLevel: 'minimal' }
+    }
+
+    return JSON.stringify({
+        systemInstruction: { parts: [{ text: prompt.system }] },
+        contents: [
+            { role: 'user', parts: [{ text: prompt.user }] },
+        ],
+        generationConfig,
     })
 }
 
@@ -136,6 +241,24 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to) {
         messages: [
             {role: "user", content: user},
         ]
+    })
+}
+
+export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob) {
+    let model = config.model[services.claude]
+    if (model === 'claude-3-5-haiku') model = 'claude-3-5-haiku-20241022'
+    else if (model === 'claude-3-5-sonnet') model = 'claude-3-5-sonnet-20241022'
+    else if (model === 'claude-3-opus') model = 'claude-3-opus-20240229'
+
+    const prompt = buildSubtitleTranslationPrompt(job)
+    return JSON.stringify({
+        model,
+        max_tokens: 4096,
+        temperature: 0.2,
+        system: prompt.system,
+        messages: [
+            { role: 'user', content: prompt.user },
+        ],
     })
 }
 

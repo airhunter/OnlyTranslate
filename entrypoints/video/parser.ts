@@ -1,132 +1,322 @@
-export interface SubtitleCue {
-    start: number           // 开始时间（秒）
-    end: number             // 结束时间（秒）
-    text: string            // 原文
-    translatedText?: string // 译文（翻译后填入）
+import type { ParsedSubtitle, SubtitleCue, SubtitleFormat } from './types'
+
+interface YouTubeSegment {
+    utf8?: string
+    tOffsetMs?: number
 }
 
-// ── YouTube timedtext XML ─────────────────────────────────────────────────────
-// 格式：<transcript><text start="0.5" dur="2.3">Hello</text></transcript>
-export function parseYouTubeXML(xmlText: string): SubtitleCue[] {
-    try {
-        const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
-        if (doc.querySelector('parsererror')) return []
-        const raw: SubtitleCue[] = []
-        doc.querySelectorAll('text').forEach(node => {
-            const start = parseFloat(node.getAttribute('start') || '0')
-            const dur   = parseFloat(node.getAttribute('dur')   || '0')
-            const text  = decodeEntities(node.textContent || '').trim()
-            if (text) raw.push({ start, end: start + dur, text })
-        })
-        // YouTube timedtext 会产生时间重叠的 cue（滚动字幕效果），
-        // 合并重叠 cue 使碎片句回归完整，减少翻译时的上下文割裂
-        return mergeOverlappingCues(raw)
-    } catch {
-        return []
-    }
+interface YouTubeEvent {
+    tStartMs?: number
+    dDurationMs?: number
+    segs?: YouTubeSegment[]
+    aAppend?: number
+    wWinId?: number
+    wpWinPosId?: number
 }
 
-/** 合并时间上有重叠的相邻 cue，文本以空格拼接，时间取并集 */
-function mergeOverlappingCues(cues: SubtitleCue[]): SubtitleCue[] {
-    if (!cues.length) return cues
-    const merged: SubtitleCue[] = [{ ...cues[0] }]
-    for (let i = 1; i < cues.length; i++) {
-        const prev = merged[merged.length - 1]
-        const cur  = cues[i]
-        if (cur.start < prev.end) {
-            // 重叠：合并文本，延伸结束时间
-            prev.text = prev.text + ' ' + cur.text
-            prev.end  = Math.max(prev.end, cur.end)
-        } else {
-            merged.push({ ...cur })
-        }
-    }
-    return merged
-}
+const PROGRESSIVE_REDRAW_WINDOW_SECONDS = 0.4
+const CJK_EDGE_PATTERN = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/
 
-// ── WebVTT ────────────────────────────────────────────────────────────────────
-export function parseVTT(vttText: string): SubtitleCue[] {
-    const cues: SubtitleCue[] = []
-    // 统一换行符，按空行分割 cue 块
-    const blocks = vttText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n\n+/)
-
-    for (const block of blocks) {
-        const lines = block.trim().split('\n')
-        // 找到包含 --> 的时间行
-        const timeLine = lines.find(l => l.includes('-->'))
-        if (!timeLine) continue
-
-        const [startStr, endStr] = timeLine.split('-->').map(s => s.trim().split(/\s/)[0])
-        const start = vttTimeToSeconds(startStr)
-        const end   = vttTimeToSeconds(endStr)
-
-        // 时间行之后的行为字幕文本（去掉 VTT 内联标签）
-        const textLines = lines
-            .slice(lines.indexOf(timeLine) + 1)
-            .map(l => stripVttTags(l))
-            .filter(l => l.trim())
-
-        const text = textLines.join(' ').trim()
-        if (text) cues.push({ start, end, text })
-    }
-    return cues
-}
-
-// ── 辅助函数 ──────────────────────────────────────────────────────────────────
-function vttTimeToSeconds(t: string): number {
-    if (!t) return 0
-    const parts = t.split(':')
-    if (parts.length === 3) {
-        return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
-    } else if (parts.length === 2) {
-        return parseInt(parts[0]) * 60 + parseFloat(parts[1])
-    }
-    return parseFloat(t) || 0
-}
-
-function stripVttTags(text: string): string {
-    // 去掉 <c.color>, <00:00:00.000>, <i>, <b> 等 VTT 标签
-    return text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&')
-}
+export type { SubtitleCue } from './types'
 
 function decodeEntities(text: string): string {
     try {
         const doc = new DOMParser().parseFromString(text, 'text/html')
         return doc.documentElement.textContent || text
     } catch {
-        return text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+        return text
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&#39;/g, "'")
+            .replace(/&quot;/g, '"')
     }
 }
 
-// ── YouTube timedtext JSON3 ───────────────────────────────────────────────────
-// 格式：{"events":[{"tStartMs":0,"dDurationMs":5000,"segs":[{"utf8":"Hello"}]},...]}
-export function parseYouTubeJSON3(jsonText: string): SubtitleCue[] {
-    try {
-        const data = JSON.parse(jsonText)
-        if (!data.events) return []
-        const cues: SubtitleCue[] = []
-        for (const event of data.events) {
-            if (!event.segs) continue
-            const text = event.segs.map((s: { utf8?: string }) => s.utf8 || '').join('').trim()
-            if (!text || text === '\n') continue
-            const start = (event.tStartMs || 0) / 1000
-            const end   = start + (event.dDurationMs || 0) / 1000
-            cues.push({ start, end, text })
+export function normalizeSubtitleText(text: string): string {
+    return decodeEntities(String(text ?? ''))
+        .replace(/\u200B/g, '')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
+function normalizeJsonSegmentText(text: string): string {
+    const source = decodeEntities(String(text ?? '')).replace(/\u200B/g, '').replace(/\u00A0/g, ' ')
+    const hasLeadingSpace = /^\s/.test(source)
+    const hasTrailingSpace = /\s$/.test(source)
+    const core = source.replace(/\s+/g, ' ').trim()
+    if (!core) return ''
+    return `${hasLeadingSpace ? ' ' : ''}${core}${hasTrailingSpace ? ' ' : ''}`
+}
+
+function shouldInsertSpace(left: string, right: string): boolean {
+    const leftChar = left.at(-1) ?? ''
+    const rightChar = right[0] ?? ''
+    if (!leftChar || !rightChar || /\s/.test(leftChar) || /\s/.test(rightChar)) return false
+    if (CJK_EDGE_PATTERN.test(leftChar) || CJK_EDGE_PATTERN.test(rightChar)) return false
+    return /[\p{L}\p{N}]/u.test(leftChar) && /[\p{L}\p{N}]/u.test(rightChar)
+}
+
+function joinSegmentTexts(segments: YouTubeSegment[]): string {
+    let result = ''
+    for (const segment of segments) {
+        const text = normalizeJsonSegmentText(segment.utf8 ?? '')
+        if (!text) continue
+        if (result && shouldInsertSpace(result, text)) result += ' '
+        result += text
+    }
+    return normalizeSubtitleText(result)
+}
+
+function arePrefixRelated(left: string, right: string): boolean {
+    const normalizedLeft = normalizeSubtitleText(left).toLocaleLowerCase()
+    const normalizedRight = normalizeSubtitleText(right).toLocaleLowerCase()
+    return normalizedLeft === normalizedRight
+        || normalizedLeft.startsWith(normalizedRight)
+        || normalizedRight.startsWith(normalizedLeft)
+}
+
+function collapseRelatedCues(input: SubtitleCue[]): SubtitleCue[] {
+    const cues = input
+        .filter(cue => cue.text && Number.isFinite(cue.start) && Number.isFinite(cue.end) && cue.end > cue.start)
+        .sort((a, b) => a.start - b.start || a.end - b.end)
+
+    const result: SubtitleCue[] = []
+    for (const cue of cues) {
+        const current = { ...cue, text: normalizeSubtitleText(cue.text) }
+        const previous = result[result.length - 1]
+        if (!previous) {
+            result.push(current)
+            continue
         }
-        return cues
+
+        const closeInTime = current.start <= previous.end + PROGRESSIVE_REDRAW_WINDOW_SECONDS
+        if (closeInTime && arePrefixRelated(previous.text, current.text)) {
+            const longerText = current.text.length >= previous.text.length ? current.text : previous.text
+            previous.text = longerText
+            previous.start = Math.min(previous.start, current.start)
+            previous.end = Math.max(previous.end, current.end)
+            continue
+        }
+
+        result.push(current)
+    }
+    return result
+}
+
+export function parseYouTubeXML(xmlText: string): SubtitleCue[] {
+    try {
+        const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
+        if (doc.querySelector('parsererror')) return []
+        const cues: SubtitleCue[] = []
+        doc.querySelectorAll('text').forEach(node => {
+            const start = Number.parseFloat(node.getAttribute('start') || '0')
+            const duration = Number.parseFloat(node.getAttribute('dur') || '0')
+            const text = normalizeSubtitleText(node.textContent || '')
+            if (text && Number.isFinite(start) && Number.isFinite(duration) && duration > 0) {
+                cues.push({ start, end: start + duration, text })
+            }
+        })
+        return collapseRelatedCues(cues)
     } catch {
         return []
     }
 }
 
-/**
- * 自动检测字幕格式
- */
-export function detectSubtitleFormat(url: string, data: string): 'youtube-xml' | 'youtube-json3' | 'vtt' | null {
+function vttTimeToSeconds(value: string): number {
+    if (!value) return Number.NaN
+    const parts = value.split(':')
+    if (parts.length === 3) {
+        return Number.parseInt(parts[0]) * 3600 + Number.parseInt(parts[1]) * 60 + Number.parseFloat(parts[2])
+    }
+    if (parts.length === 2) {
+        return Number.parseInt(parts[0]) * 60 + Number.parseFloat(parts[1])
+    }
+    return Number.parseFloat(value)
+}
+
+function stripVttTags(text: string): string {
+    return text.replace(/<[^>]+>/g, '')
+}
+
+export function parseVTT(vttText: string): SubtitleCue[] {
+    const cues: SubtitleCue[] = []
+    const blocks = vttText.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split(/\n\n+/)
+
+    for (const block of blocks) {
+        const lines = block.trim().split('\n')
+        const timeLineIndex = lines.findIndex(line => line.includes('-->'))
+        if (timeLineIndex < 0) continue
+
+        const [startPart, endPart] = lines[timeLineIndex].split('-->')
+        const start = vttTimeToSeconds(startPart.trim().split(/\s/)[0])
+        const end = vttTimeToSeconds(endPart.trim().split(/\s/)[0])
+        const text = normalizeSubtitleText(
+            lines.slice(timeLineIndex + 1).map(stripVttTags).join(' '),
+        )
+
+        if (text && Number.isFinite(start) && Number.isFinite(end) && end > start) {
+            cues.push({ start, end, text })
+        }
+    }
+    return collapseRelatedCues(cues)
+}
+
+function parseYouTubeEvents(jsonText: string): YouTubeEvent[] {
+    try {
+        const data = JSON.parse(jsonText) as { events?: YouTubeEvent[] }
+        return Array.isArray(data.events) ? data.events : []
+    } catch {
+        return []
+    }
+}
+
+function normalizeYouTubeEvents(events: YouTubeEvent[]): YouTubeEvent[] {
+    const normalized: YouTubeEvent[] = []
+    let previousVisibleKey = ''
+
+    for (const event of events) {
+        const segs = (event.segs ?? []).map(segment => ({
+            ...segment,
+            utf8: normalizeJsonSegmentText(segment.utf8 ?? ''),
+        }))
+        const text = joinSegmentTexts(segs)
+        const key = `${event.tStartMs ?? 0}|${event.dDurationMs ?? 0}|${text}`
+
+        if (text && key === previousVisibleKey) continue
+        normalized.push({ ...event, segs })
+        previousVisibleKey = text ? key : ''
+    }
+    return normalized
+}
+
+function getEventEndMs(events: YouTubeEvent[], index: number): number {
+    const event = events[index]
+    const start = event.tStartMs ?? 0
+    const duration = event.dDurationMs ?? 0
+    if (duration > 0) return start + duration
+    const nextStart = events.slice(index + 1).find(next => (next.tStartMs ?? 0) > start)?.tStartMs
+    return nextStart ?? start + 2000
+}
+
+function getVisibleEventEndMs(events: YouTubeEvent[], index: number): number {
+    const event = events[index]
+    const start = event.tStartMs ?? 0
+    const defaultEnd = getEventEndMs(events, index)
+    const timedBreak = (event.segs ?? []).find(segment => {
+        const text = normalizeSubtitleText(segment.utf8 ?? '')
+        return !text && (segment.tOffsetMs ?? 0) > 0
+    })?.tOffsetMs
+    return timedBreak === undefined ? defaultEnd : Math.min(defaultEnd, start + timedBreak)
+}
+
+function parseStandardJson3Events(events: YouTubeEvent[]): SubtitleCue[] {
+    const cues: SubtitleCue[] = []
+    for (let index = 0; index < events.length; index++) {
+        const event = events[index]
+        const text = joinSegmentTexts(event.segs ?? [])
+        if (!text) continue
+        const startMs = event.tStartMs ?? 0
+        const endMs = getVisibleEventEndMs(events, index)
+        if (endMs > startMs) cues.push({ start: startMs / 1000, end: endMs / 1000, text })
+    }
+    return collapseRelatedCues(cues)
+}
+
+function parseScrollingJson3Events(events: YouTubeEvent[]): SubtitleCue[] {
+    const cues: SubtitleCue[] = []
+    let bufferText = ''
+    let bufferStartMs = 0
+    let bufferEndMs = 0
+
+    const flush = () => {
+        const text = normalizeSubtitleText(bufferText)
+        if (text && bufferEndMs > bufferStartMs) {
+            cues.push({ start: bufferStartMs / 1000, end: bufferEndMs / 1000, text })
+        }
+        bufferText = ''
+        bufferStartMs = 0
+        bufferEndMs = 0
+    }
+
+    for (let index = 0; index < events.length; index++) {
+        const event = events[index]
+        const text = joinSegmentTexts(event.segs ?? [])
+        const startMs = event.tStartMs ?? 0
+        const endMs = getVisibleEventEndMs(events, index)
+
+        if (event.aAppend === 1 && !text) {
+            if (bufferText) bufferEndMs = Math.max(bufferEndMs, endMs)
+            flush()
+            continue
+        }
+        if (!text) continue
+
+        if (!bufferText) bufferStartMs = startMs
+        if (bufferText && shouldInsertSpace(bufferText, text)) bufferText += ' '
+        bufferText += text
+        bufferEndMs = Math.max(bufferEndMs, endMs)
+    }
+    flush()
+    return collapseRelatedCues(cues)
+}
+
+function isScrollingJson3(events: YouTubeEvent[]): boolean {
+    return events.some(event => event.wWinId !== undefined && event.aAppend === 1)
+}
+
+export function parseYouTubeJSON3(jsonText: string): SubtitleCue[] {
+    const events = normalizeYouTubeEvents(parseYouTubeEvents(jsonText))
+    return isScrollingJson3(events)
+        ? parseScrollingJson3Events(events)
+        : parseStandardJson3Events(events)
+}
+
+export function detectSubtitleFormat(
+    url: string,
+    data: string,
+): 'youtube-xml' | 'youtube-json3' | 'vtt' | null {
     if (data.trimStart().startsWith('WEBVTT')) return 'vtt'
-    if (url.match(/\.vtt(\?|#|$)/i)) return 'vtt'
+    if (/\.vtt(?:\?|#|$)/i.test(url)) return 'vtt'
     if (data.trimStart().startsWith('{')) return 'youtube-json3'
     if (data.includes('<transcript') || data.includes('<text ')) return 'youtube-xml'
     if (url.includes('/api/timedtext')) return 'youtube-xml'
     return null
+}
+
+function getSourceLanguage(url: string): string | undefined {
+    try {
+        const parsed = new URL(url, window.location.href)
+        if (!parsed.pathname.includes('/api/timedtext')) return undefined
+        return parsed.searchParams.get('tlang')
+            || parsed.searchParams.get('lang')
+            || undefined
+    } catch {
+        return undefined
+    }
+}
+
+export function parseSubtitleData(url: string, data: string): ParsedSubtitle | null {
+    const detectedFormat = detectSubtitleFormat(url, data)
+    if (!detectedFormat) return null
+
+    let cues: SubtitleCue[]
+    let format: SubtitleFormat = detectedFormat
+    if (detectedFormat === 'youtube-json3') {
+        const events = normalizeYouTubeEvents(parseYouTubeEvents(data))
+        const scrolling = isScrollingJson3(events)
+        cues = scrolling ? parseScrollingJson3Events(events) : parseStandardJson3Events(events)
+        format = scrolling ? 'youtube-json3-scrolling' : 'youtube-json3'
+    } else if (detectedFormat === 'youtube-xml') {
+        cues = parseYouTubeXML(data)
+    } else {
+        cues = parseVTT(data)
+    }
+
+    return {
+        cues,
+        format,
+        sourceLanguage: getSourceLanguage(url),
+    }
 }

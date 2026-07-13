@@ -1,13 +1,15 @@
 import {services} from "../utils/option";
 import {method, urls} from "../utils/constant";
-import {claudeMsgTemplate} from "../utils/template";
+import {claudeMsgTemplate, claudeSubtitleBatchMsgTemplate} from "../utils/template";
 import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
 import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { isSubtitleBatchTranslationMessage, parseSubtitleTranslationContent } from './subtitle'
 
 async function claude(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
-    assertSingleTranslationMessage(message);
+    const isSubtitleBatch = isSubtitleBatchTranslationMessage(message)
+    if (!isSubtitleBatch) assertSingleTranslationMessage(message);
     // 构建请求头
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
@@ -21,7 +23,9 @@ async function claude(message: TranslationServiceMessage): Promise<TranslationSe
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: claudeMsgTemplate(message.origin, message.targetLang)
+            body: isSubtitleBatch
+                ? claudeSubtitleBatchMsgTemplate(message.job)
+                : claudeMsgTemplate(message.origin, message.targetLang)
         });
 
         if (!resp.ok) {
@@ -29,7 +33,15 @@ async function claude(message: TranslationServiceMessage): Promise<TranslationSe
         }
 
         const result = await resp.json();
-        return result.content[0].text;
+        const contentBlock = Array.isArray(result?.content)
+            ? result.content.find((block: { type?: string; text?: unknown }) => typeof block?.text === 'string'
+                && (!block.type || block.type === 'text'))
+            : undefined
+        const content = typeof contentBlock?.text === 'string' ? contentBlock.text : ''
+        if (!content.trim()) throw new Error(t('runtime.upstreamNoContent'))
+        return isSubtitleBatch
+            ? parseSubtitleTranslationContent(content, message.job)
+            : content;
     } catch (error) {
         console.error('Claude API 调用失败:', error);
         throw error;

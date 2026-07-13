@@ -8,12 +8,14 @@ import {
     checkChromeTranslationAvailability,
     preloadChromeTranslationModel
 } from "@/entrypoints/service/chrome-translator";
+import { isSubtitleBatchTranslationMessage } from '@/entrypoints/service/subtitle'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
 
 function isTranslationMessage(message: any): boolean {
     if (typeof message?.origin === 'string' && message.origin.trim().length > 0) return true;
+    if (isSubtitleBatchTranslationMessage(message)) return true;
     return message?.type === 'BATCH_TRANSLATION'
         && Array.isArray(message.origins)
         && message.origins.length > 0

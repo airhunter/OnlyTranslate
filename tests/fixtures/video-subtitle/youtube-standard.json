@@ -1,0 +1,29 @@
+{
+  "events": [
+    {
+      "tStartMs": 0,
+      "dDurationMs": 1000,
+      "segs": [{ "utf8": "Hello\u200B" }, { "utf8": " world" }]
+    },
+    {
+      "tStartMs": 0,
+      "dDurationMs": 1000,
+      "segs": [{ "utf8": "Hello" }, { "utf8": " world" }],
+      "pPenId": 2
+    },
+    {
+      "tStartMs": 1500,
+      "dDurationMs": 2000,
+      "segs": [{ "utf8": "Timed text" }, { "utf8": "", "tOffsetMs": 500 }]
+    },
+    {
+      "tStartMs": 4000,
+      "segs": [{ "utf8": "Missing duration" }]
+    },
+    {
+      "tStartMs": 5500,
+      "dDurationMs": 500,
+      "segs": [{ "utf8": "Next" }]
+    }
+  ]
+}

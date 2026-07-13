@@ -176,6 +176,19 @@ describe('translateText', () => {
     expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
   })
 
+  it('forwards fast mode only when explicitly requested', async () => {
+    await translateText('Fast subtitle', 'Video title', {
+      fastMode: true,
+      useCache: false
+    })
+
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      origin: 'Fast subtitle',
+      context: 'Video title',
+      fastMode: true
+    }))
+  })
+
   it('batches concurrent supported AI requests when allowBatch is true', async () => {
     vi.useFakeTimers()
     mockSendMessage.mockResolvedValueOnce(['你好', '世界'])

@@ -62,7 +62,12 @@ export const messages = {
       subtitleTranslation: '字幕翻译',
       subtitleButton: '只译：字幕翻译',
       subtitleButtonOn: '只译：字幕翻译（开）',
-      subtitleButtonOff: '只译：字幕翻译（关）'
+      subtitleButtonOff: '只译：字幕翻译（关）',
+      subtitleLoading: '只译：正在加载字幕',
+      subtitleWaitingCc: '只译：正在等待 YouTube 字幕',
+      subtitleReady: '只译：字幕已就绪',
+      subtitleNoTrack: '只译：该视频没有可用字幕',
+      subtitleLoadFailed: '只译：字幕未加载，请点击 YouTube 字幕按钮重试'
     },
     runtime: {
       retry: '重试',
@@ -450,7 +455,12 @@ export const messages = {
       subtitleTranslation: 'Subtitle translation',
       subtitleButton: 'OnlyTranslate: subtitle translation',
       subtitleButtonOn: 'OnlyTranslate: subtitle translation (on)',
-      subtitleButtonOff: 'OnlyTranslate: subtitle translation (off)'
+      subtitleButtonOff: 'OnlyTranslate: subtitle translation (off)',
+      subtitleLoading: 'OnlyTranslate: loading subtitles',
+      subtitleWaitingCc: 'OnlyTranslate: waiting for YouTube captions',
+      subtitleReady: 'OnlyTranslate: subtitles ready',
+      subtitleNoTrack: 'OnlyTranslate: no subtitles available for this video',
+      subtitleLoadFailed: 'OnlyTranslate: subtitles did not load; click YouTube CC to retry'
     },
     runtime: {
       retry: 'Retry',
@@ -838,7 +848,12 @@ export const messages = {
       subtitleTranslation: '字幕翻譯',
       subtitleButton: '只譯：字幕翻譯',
       subtitleButtonOn: '只譯：字幕翻譯（開）',
-      subtitleButtonOff: '只譯：字幕翻譯（關）'
+      subtitleButtonOff: '只譯：字幕翻譯（關）',
+      subtitleLoading: '只譯：正在載入字幕',
+      subtitleWaitingCc: '只譯：正在等待 YouTube 字幕',
+      subtitleReady: '只譯：字幕已就緒',
+      subtitleNoTrack: '只譯：此影片沒有可用字幕',
+      subtitleLoadFailed: '只譯：字幕未載入，請點擊 YouTube 字幕按鈕重試'
     },
     runtime: {
       retry: '重試',
@@ -1226,7 +1241,12 @@ export const messages = {
       subtitleTranslation: '字幕翻訳',
       subtitleButton: 'OnlyTranslate: 字幕翻訳',
       subtitleButtonOn: 'OnlyTranslate: 字幕翻訳（オン）',
-      subtitleButtonOff: 'OnlyTranslate: 字幕翻訳（オフ）'
+      subtitleButtonOff: 'OnlyTranslate: 字幕翻訳（オフ）',
+      subtitleLoading: 'OnlyTranslate: 字幕を読み込み中',
+      subtitleWaitingCc: 'OnlyTranslate: YouTube 字幕を待機中',
+      subtitleReady: 'OnlyTranslate: 字幕の準備が完了しました',
+      subtitleNoTrack: 'OnlyTranslate: この動画には利用可能な字幕がありません',
+      subtitleLoadFailed: 'OnlyTranslate: 字幕を読み込めません。YouTube の字幕ボタンを押して再試行してください'
     },
     runtime: {
       retry: '再試行',

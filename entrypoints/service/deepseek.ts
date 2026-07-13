@@ -1,10 +1,11 @@
 import { method, urls } from "../utils/constant";
-import { commonBatchMsgTemplate, deepseekMsgTemplate } from "../utils/template";
+import { commonBatchMsgTemplate, commonSubtitleBatchMsgTemplate, deepseekMsgTemplate } from "../utils/template";
 import { config } from "@/entrypoints/utils/config";
 import { contentPostHandler } from "@/entrypoints/utils/check";
 import { t } from "@/entrypoints/utils/i18n";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 import { isBatchTranslationMessage, logBatchTranslationRequest, parseBatchTranslationContent } from "./batch";
+import { isSubtitleBatchTranslationMessage, parseSubtitleTranslationContent } from './subtitle'
 
 async function deepseek(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
@@ -15,7 +16,13 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
 
         const url = config.proxy[config.service] || urls[config.service];
 
+        const isSubtitleBatch = isSubtitleBatchTranslationMessage(message)
         const isBatch = isBatchTranslationMessage(message);
+        if (isSubtitleBatch) {
+            logBatchTranslationRequest(config.service, message.job.entries
+                .filter(entry => entry.role === 'target')
+                .map(entry => entry.text))
+        }
         if (isBatch) {
             logBatchTranslationRequest(config.service, message.origins);
         }
@@ -23,9 +30,11 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: isBatch
-                ? commonBatchMsgTemplate(message.origins, message.targetLang)
-                : deepseekMsgTemplate(message.origin, message.targetLang)
+            body: isSubtitleBatch
+                ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
+                : isBatch
+                    ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
+                    : deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {
@@ -34,6 +43,7 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
 
         const result = await resp.json();
         const content = result.choices[0].message.content;
+        if (isSubtitleBatch) return parseSubtitleTranslationContent(content, message.job)
         return isBatch
             ? parseBatchTranslationContent(content, message.origins.length)
             : contentPostHandler(content);

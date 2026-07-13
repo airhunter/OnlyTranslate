@@ -36,7 +36,12 @@ The two most important lessons for OnlyTranslate are:
   - Global defaults intentionally protect `code, kbd, samp, var, math, .math`.
     `a:has(code)` is not a global default; profiles can add it if a site needs
     whole code links preserved in translated copies.
-- [ ] P1: Subtitle cleaning, deduplication, and segmentation
+- [x] P1: Subtitle cleaning, deduplication, segmentation, and playback-aware scheduling
+  - Done on `codex/feat/subtitle-reliability`.
+  - Added deterministic JSON3/XML/VTT normalization, scrolling-ASR handling,
+    duplicate/progressive-redraw cleanup, CJK-aware segmentation, playback-window
+    translation scheduling, track/session invalidation, active YouTube track fetching
+    with POT/CC fallback, subtitle-only low-reasoning requests, and regression tests.
 - [x] P1: Batch translation queue with fallback
   - Done in `680ab1e feat(service): 支持网页批量翻译队列`.
   - Hardened by `d9ce92e fix(service): 修复批量翻译配置与消息类型`
@@ -267,6 +272,8 @@ Candidate signals:
 
 ## P1: Subtitle Cleaning, Deduplication, and Segmentation
 
+Status: Done.
+
 ### Background
 
 OnlyTranslate already supports video subtitle translation, but YouTube json3 /
@@ -309,6 +316,76 @@ Then evaluate the manager layer:
 - Repeated YouTube subtitle events do not render duplicate translations.
 - Short pauses merge naturally; long pauses split naturally.
 - Existing video subtitle tests pass.
+
+### Implemented Result
+
+- Subtitle parsing now normalizes visible text and timing while preserving JSON3
+  timing breaks, and handles standard JSON3, scrolling ASR, YouTube XML, and VTT.
+- Exact duplicate events and nearby progressive redraws collapse before
+  segmentation; unrelated overlapping XML cues remain independent.
+- Translation segments use deterministic pause, punctuation, length, CJK, and
+  duration limits, with one translation mapped to one display interval.
+- Subtitle translation uses a dedicated context-aware batch protocol for supported
+  LLMs, prioritizes the current playback window after playback and seek changes,
+  and invalidates stale work after session, track, and navigation changes.
+- Subtitle requests opt into a low-latency mode that disables or minimizes model
+  reasoning where supported, without changing normal webpage translation requests.
+- YouTube subtitles now start without requiring a manual CC click: the page-world
+  bridge reads the selected player track and fetches JSON3 directly, retries with
+  an available POT token, then enables native CC once as the final capture fallback.
+- The player button exposes loading, waiting-for-CC, ready, no-track, and failed
+  states; timedtext fallback is retried once after playback has had time to settle.
+- Stale timedtext responses whose video ID no longer matches the SPA page are ignored.
+- Focused parser, segmenter, scheduler, track identity, and overlay tests were
+  added. `pnpm verify` passes.
+
+## P1: Context-aware Video Subtitle Translation
+
+Status: Implemented. Automated verification complete; live-model A/B pending.
+
+### Decision
+
+- Translate at most five consecutive timeline positions in one structured request.
+- Supply up to two preceding and one following source-only segments as read-only
+  context; never feed generated translations back as context.
+- Use stable segment IDs and reject missing, duplicate, extra, reordered, empty,
+  or context-ID results before falling back to isolated source-text requests.
+- Use the effective YouTube track language (`tlang || lang`), or detect once from
+  the ordered batch when track metadata is unavailable.
+- Keep subtitle translations session-only so identical short text in different
+  contexts cannot reuse the old global source-text cache.
+- A seek starts a new scheduler epoch immediately. The old request may finish but
+  is aborted locally, cannot start new fallback requests, and cannot write back.
+- Do not add AI segmentation, transcript summaries, conversation history,
+  glossary extraction, a setting, or extra thinking/reasoning.
+
+### Provider Matrix
+
+| Provider family | Context-aware structured batch |
+| --- | --- |
+| OpenAI-compatible, including dynamic custom providers with default prompts | Yes |
+| DeepSeek and NewAPI | Yes |
+| Gemini | Yes |
+| Claude | Yes |
+| Google, Microsoft, DeepL, and Chrome Translator | No; existing source-text path |
+| Zhipu and MiniMax | No; safe source-text fallback |
+| Any provider with a customized system or user prompt | No; preserve the custom prompt path |
+
+### Acceptance Record
+
+- Added a fixed nine-category quality fixture covering pronouns, ellipsis,
+  dependent clauses, polysemy, terminology, dialogue, repeated short text, CJK
+  ASR, and title prompt injection.
+- Added scheduler tests for chronological selection, read-only context, gaps,
+  character limits, partial results, failure handling, and immediate seek epochs.
+- Added protocol and adapter tests for prompt isolation, batch language detection,
+  strict ID validation, session-only operation, partial fallback success, and the
+  OpenAI-compatible, DeepSeek, NewAPI, Gemini, and Claude response shapes.
+- Automated tests prove zero context-ID output and zero stale-generation writes.
+- `pnpm verify` passes: Vue TypeScript compilation plus 55 test files and 417 tests.
+- A live-model blind comparison and P95 latency measurement require configured
+  provider credentials and remain a manual pre-release acceptance step; no quality
+  or latency win is claimed from mocked tests alone.
 
 ## P1: Batch Translation Queue with Fallback
 
@@ -474,9 +551,7 @@ Completed P0 foundation work:
 
 Recommended remaining order:
 
-1. Subtitle cleaning and segmentation.
-2. Batch translation queue.
-3. Rule dataization and remote subscription.
+1. Rule dataization and remote subscription.
 
-This keeps the next work focused on visible quality and reliability before
-expanding larger systems such as batching or remote rules.
+The translation-quality and batching foundations are complete. The remaining
+item is intentionally deferred until the internal rule schema has stabilized.

@@ -1,50 +1,45 @@
 import { detectPlatform, getAllSubtitlePatterns } from './platforms'
-import { detectSubtitleFormat, parseYouTubeXML, parseYouTubeJSON3, parseVTT, type SubtitleCue } from './parser'
+import { parseSubtitleData } from './parser'
+import { buildSubtitleSegments } from './segmenter'
+import { SubtitleTranslationScheduler } from './scheduler'
 import { SubtitleOverlay } from './overlay'
-import { translateText } from '@/entrypoints/utils/translateApi'
+import type { SubtitleSegment } from './types'
+import { buildSubtitleTrackKey, isSubtitleTrackForPage } from './track'
+import { translateSubtitleBatch } from './translator'
 import { config } from '@/entrypoints/utils/config'
 import { t } from '@/entrypoints/utils/i18n'
 
-// ── 常量 ──────────────────────────────────────────────────────────────────────
 const EVENT_TYPE = 'fr-subtitle-inject'
-const BATCH_SIZE = 5          // 每批翻译的句子组数
-const MERGE_GAP_MS  = 600    // 相邻 cue 间隔 < 此值（毫秒）则合并为同一句
-const MAX_WORDS     = 20     // 单组超过此词数强制断开
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
+type SubtitleLoadStatus = 'idle' | 'loading' | 'fetching' | 'waiting-cc' | 'ready' | 'no-track' | 'failed'
 
-// ── 类型 ──────────────────────────────────────────────────────────────────────
-interface SentenceGroup {
-    cues: SubtitleCue[]
-    text: string
-}
-
-// ── 模块状态 ──────────────────────────────────────────────────────────────────
 const overlay = new SubtitleOverlay()
+let scheduler: SubtitleTranslationScheduler | null = null
 let listenerAttached = false
-let processingUrl = ''   // 去重：同一字幕 URL 只翻译一次
+let navigationWatchAttached = false
+let processingTrackKey = ''
+let activeTrackKey = ''
+let sessionGeneration = 0
 let subtitleEnabled = true
+let subtitleLoadStatus: SubtitleLoadStatus = 'idle'
+let currentSegments: SubtitleSegment[] = []
+let currentVideo: HTMLVideoElement | null = null
+let currentSourceLanguage: string | undefined
 
-// ── 公开入口 ──────────────────────────────────────────────────────────────────
-
-/** 由 content.ts 调用，初始化视频字幕翻译 */
 export function initVideoSubtitle() {
-    console.log('[FR] initVideoSubtitle called, enableVideoSubtitle=', config.enableVideoSubtitle, 'hostname=', window.location.hostname)
     if (!config.enableVideoSubtitle) return
-    // 拦截脚本已由 WXT 以 MAIN world content script 形式在 document_start 注入，
-    // 此处只需推送动态配置并开始监听消息。
-    sendConfig()
     attachMessageListener()
     watchNavigation()
-    // 在 YouTube 上立即挂载快捷按钮，无需等待字幕捕获
-    if (window.location.hostname.includes('youtube.com')) {
-        console.log('[FR] on YouTube, calling mountQuickButton')
-        mountQuickButton()
-    }
+    sendConfig()
+    if (isYouTubeHost()) mountQuickButton()
+    requestYouTubeSubtitle()
 }
 
-// ── 私有实现 ──────────────────────────────────────────────────────────────────
+function isYouTubeHost(): boolean {
+    return window.location.hostname.includes('youtube.com')
+        || window.location.hostname.includes('youtubekids.com')
+}
 
-/** 向注入脚本发送字幕 URL 正则列表（动态更新，覆盖注入脚本内置的默认规则） */
 function sendConfig() {
     window.postMessage({
         eventType: EVENT_TYPE,
@@ -53,160 +48,182 @@ function sendConfig() {
     }, '*')
 }
 
-/** 监听来自注入脚本的 postMessage */
+function requestYouTubeSubtitle() {
+    if (!subtitleEnabled || !isYouTubeHost()) return
+    setSubtitleLoadStatus('loading')
+    window.postMessage({
+        eventType: EVENT_TYPE,
+        type: 'youtube-auto-fetch',
+    }, '*')
+}
+
+function cancelYouTubeSubtitleRequest() {
+    if (!isYouTubeHost()) return
+    window.postMessage({
+        eventType: EVENT_TYPE,
+        type: 'youtube-auto-cancel',
+    }, '*')
+}
+
 function attachMessageListener() {
     if (listenerAttached) return
     listenerAttached = true
 
-    window.addEventListener('message', async (event) => {
+    window.addEventListener('message', event => {
         if (event.source !== window) return
-        const msg = event.data
-        if (!msg || msg.eventType !== EVENT_TYPE) return
-
-        if (msg.type === 'subtitle-captured') {
-            const { url, data } = msg
-            if (!url || !data) return
-            if (!subtitleEnabled) return
-            // 同一 URL 不重复处理
-            if (url === processingUrl) return
-            processingUrl = url
-            try {
-                await handleSubtitleData(url, data)
-            } finally {
-                processingUrl = ''
-            }
+        const message = event.data
+        if (!message || message.eventType !== EVENT_TYPE) return
+        if (message.type === 'youtube-subtitle-status') {
+            handleYouTubeSubtitleStatus(message)
+            return
         }
+        if (message.type !== 'subtitle-captured') return
+        if (!subtitleEnabled || !message.url || !message.data) return
+        handleSubtitleData(String(message.url), String(message.data))
     })
 }
 
-/** 解析字幕 → 初始化 overlay → 批量翻译 */
-async function handleSubtitleData(url: string, rawData: string) {
-    const format = detectSubtitleFormat(url, rawData)
-    if (!format) return
+function handleYouTubeSubtitleStatus(message: { status?: string; videoId?: string }) {
+    if (!subtitleEnabled || !isStatusForCurrentVideo(message.videoId)) return
+    const allowedStatuses: SubtitleLoadStatus[] = [
+        'loading', 'fetching', 'waiting-cc', 'no-track', 'failed',
+    ]
+    if (allowedStatuses.includes(message.status as SubtitleLoadStatus)) {
+        setSubtitleLoadStatus(message.status as SubtitleLoadStatus)
+    }
+}
 
-    const cues: SubtitleCue[] =
-        format === 'youtube-xml'   ? parseYouTubeXML(rawData) :
-        format === 'youtube-json3' ? parseYouTubeJSON3(rawData) :
-        parseVTT(rawData)
+function isStatusForCurrentVideo(videoId?: string): boolean {
+    if (!videoId) return true
+    try {
+        const currentVideoId = new URL(window.location.href).searchParams.get('v')
+        return !currentVideoId || currentVideoId === videoId
+    } catch {
+        return true
+    }
+}
 
-    if (!cues.length) return
+function setSubtitleLoadStatus(status: SubtitleLoadStatus) {
+    subtitleLoadStatus = status
+    updateQuickButton()
+}
+
+function handleSubtitleData(url: string, rawData: string) {
+    if (!isSubtitleTrackForPage(url)) return
+    const trackKey = buildSubtitleTrackKey(url)
+    if (trackKey === activeTrackKey) {
+        if (currentSegments.length) setSubtitleLoadStatus('ready')
+        return
+    }
+    if (trackKey === processingTrackKey) return
+
+    const parsed = parseSubtitleData(url, rawData)
+    if (!parsed?.cues.length) {
+        setSubtitleLoadStatus('failed')
+        return
+    }
+    const segments = buildSubtitleSegments(parsed.cues, parsed.sourceLanguage)
+    if (!segments.length) {
+        setSubtitleLoadStatus('failed')
+        return
+    }
 
     const video = findVideo()
-    if (!video) return
+    if (!video) {
+        setSubtitleLoadStatus('failed')
+        return
+    }
 
-    const mountTarget = findMountTarget(video)
-    overlay.mount(video, mountTarget)
-    overlay.setCues([...cues])   // 先用原文渲染，避免空白等待
+    processingTrackKey = trackKey
+    beginNewSession()
+    processingTrackKey = trackKey
 
+    currentVideo = video
+    currentSegments = segments
+    currentSourceLanguage = parsed.sourceLanguage
+    activeTrackKey = trackKey
+    const generation = sessionGeneration
+
+    overlay.mount(video, findMountTarget(video))
+    overlay.setSegments(currentSegments)
     hideNativeSubtitle()
     mountQuickButton()
-
-    // 分批翻译，边翻译边更新 overlay
-    await translateCuesBatched(cues, () => overlay.setCues([...cues]))
+    scheduler = createScheduler(generation)
+    scheduler.start()
+    processingTrackKey = ''
+    setSubtitleLoadStatus('ready')
 }
 
-/**
- * 按时间间隔合并相邻 cue：
- * - 相邻两条 cue 的间隔 < MERGE_GAP_MS → 合并为同一句（说话中的正常停顿）
- * - 间隔 ≥ MERGE_GAP_MS 或词数超过 MAX_WORDS → 断开（句子之间的自然停顿）
- * 这样"united states"等跨 cue 短语能被合并进同一组，避免词级切断的翻译错误。
- */
-function mergeByTimeGap(cues: SubtitleCue[]): SentenceGroup[] {
-    const groups: SentenceGroup[] = []
-    let current: SubtitleCue[] = []
-
-    const flush = (arr: SubtitleCue[]) => groups.push({
-        cues: [...arr],
-        text: arr.map(c => c.text).join(' ').replace(/\s+/g, ' ').trim(),
+function createScheduler(generation: number): SubtitleTranslationScheduler {
+    return new SubtitleTranslationScheduler({
+        video: currentVideo!,
+        segments: currentSegments,
+        trackKey: activeTrackKey,
+        sessionId: String(generation),
+        title: getVideoTitle(),
+        sourceLanguage: currentSourceLanguage,
+        targetLanguage: config.to,
+        translateBatch: translateSubtitleBatch,
+        onUpdate: () => {
+            if (generation === sessionGeneration && subtitleEnabled) {
+                overlay.setSegments([...currentSegments])
+            }
+        },
     })
-
-    for (let i = 0; i < cues.length; i++) {
-        current.push(cues[i])
-        const next = cues[i + 1]
-        const wordCount = current.reduce((n, c) => n + c.text.split(/\s+/).length, 0)
-        const gapMs = next ? (next.start - cues[i].end) * 1000 : Infinity
-        const bigGap = !next || gapMs >= MERGE_GAP_MS
-        const tooLong = wordCount >= MAX_WORDS
-
-        if (bigGap || tooLong) {
-            if (tooLong && !bigGap && current.length > 1) {
-                // 词数超限但下一条紧跟（小间隔）→ 末尾 cue 进位到下一组，
-                // 避免碎片句（如 "but the seeds"）因超限被孤立
-                const carryOver = current.pop()!
-                flush(current)
-                current = [carryOver]
-            } else {
-                flush(current)
-                current = []
-            }
-        }
-    }
-    if (current.length) flush(current)
-    return groups
 }
 
-/**
- * 将 cue 按时间间隔合并为句子组后批量翻译。
- * 组内所有 cue 共享同一译文，消除跨 cue 词级切断问题。
- */
-async function translateCuesBatched(cues: SubtitleCue[], onProgress: () => void) {
-    const groups = mergeByTimeGap(cues)
-    const instruction =
-        'Video subtitle segments. Translate each [N] line. ' +
-        'Return the same number of [N] lines, no extra explanation.\n\n'
-
-    for (let i = 0; i < groups.length; i += BATCH_SIZE) {
-        const batch = groups.slice(i, i + BATCH_SIZE)
-
-        const prevContext = i > 0
-            ? `[context: ...${groups[i - 1].text.split(' ').slice(-8).join(' ')}]\n`
-            : ''
-
-        const joined = instruction + prevContext
-            + batch.map((g, j) => `[${j + 1}] ${g.text}`).join('\n')
-
-        try {
-            const translated = await translateText(joined, document.title)
-            const map = new Map<number, string>()
-            for (const line of translated.split('\n')) {
-                const m = line.match(/^\[(\d+)\]\s*(.*)/)
-                if (m) map.set(parseInt(m[1]), m[2].trim())
-            }
-            batch.forEach((group, j) => {
-                const translation = map.get(j + 1) || group.text
-                group.cues.forEach(cue => { cue.translatedText = translation })
-            })
-        } catch {
-            batch.forEach(group => {
-                group.cues.forEach(cue => { cue.translatedText = cue.text })
-            })
-        }
-
-        onProgress()
-    }
+function beginNewSession() {
+    sessionGeneration++
+    scheduler?.stop()
+    scheduler = null
+    restoreNativeSubtitle()
+    overlay.cleanup()
+    processingTrackKey = ''
+    activeTrackKey = ''
+    currentSegments = []
+    currentVideo = null
+    currentSourceLanguage = undefined
+    setSubtitleLoadStatus('idle')
 }
 
-// ── YouTube 工具栏快捷按钮 ─────────────────────────────────────────────────────
+function getVideoTitle(): string {
+    return document.title.replace(/\s+-\s+YouTube\s*$/i, '').trim()
+}
 
-/**
- * 在 YouTube 播放器右侧控制栏注入一个翻译开关按钮。
- * 点击可切换字幕翻译的显示/隐藏，不影响原生字幕。
- */
+function disableCurrentSession() {
+    sessionGeneration++
+    cancelYouTubeSubtitleRequest()
+    scheduler?.stop()
+    scheduler = null
+    overlay.hide()
+    restoreNativeSubtitle()
+    updateQuickButton()
+}
+
+function resumeCurrentSession() {
+    if (!currentVideo?.isConnected || !currentSegments.length) {
+        requestYouTubeSubtitle()
+        return
+    }
+    sessionGeneration++
+    hideNativeSubtitle()
+    overlay.show()
+    scheduler = createScheduler(sessionGeneration)
+    scheduler.start()
+    setSubtitleLoadStatus('ready')
+}
+
 function mountQuickButton() {
-    console.log('[FR] mountQuickButton called, existing=', !!document.getElementById(QUICK_BTN_ID))
-    if (document.getElementById(QUICK_BTN_ID)) return
+    if (!isYouTubeHost() || document.getElementById(QUICK_BTN_ID)) return
 
-    // YouTube 右侧控制栏，等待其出现
-    console.log('[FR] waiting for .ytp-right-controls, current=', document.querySelector('.ytp-right-controls'))
-    waitForElement('.ytp-right-controls', (controls) => {
-        console.log('[FR] .ytp-right-controls found, inserting button')
+    waitForElement('.ytp-right-controls', controls => {
         if (document.getElementById(QUICK_BTN_ID)) return
 
-        const btn = document.createElement('button')
-        btn.id = QUICK_BTN_ID
-        btn.title = t('video.subtitleButton')
-        btn.setAttribute('aria-label', t('video.subtitleTranslation'))
-        btn.style.cssText = [
+        const button = document.createElement('button')
+        button.id = QUICK_BTN_ID
+        button.title = t('video.subtitleButton')
+        button.setAttribute('aria-label', t('video.subtitleTranslation'))
+        button.style.cssText = [
             'background:transparent',
             'border:none',
             'cursor:pointer',
@@ -214,134 +231,167 @@ function mountQuickButton() {
             'height:100%',
             'display:inline-flex',
             'align-items:center',
+            'position:relative',
             'opacity:0.9',
             'vertical-align:top',
         ].join(';')
-
-        btn.appendChild(buildBtnSvg(subtitleEnabled))
-
-        btn.addEventListener('click', () => {
+        button.addEventListener('click', () => {
             subtitleEnabled = !subtitleEnabled
-            btn.replaceChildren(buildBtnSvg(subtitleEnabled))
-            btn.title = subtitleEnabled ? t('video.subtitleButtonOn') : t('video.subtitleButtonOff')
-            if (subtitleEnabled) {
-                hideNativeSubtitle()
-                overlay.show()
-            } else {
-                overlay.hide()
-                restoreNativeSubtitle()
-            }
+            updateQuickButton()
+            if (subtitleEnabled) resumeCurrentSession()
+            else disableCurrentSession()
         })
 
-        // 插入到右侧控制栏最左边
-        controls.prepend(btn)
+        controls.prepend(button)
+        updateQuickButton()
     })
 }
 
-function buildBtnSvg(active: boolean): SVGElement {
-    const ns = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(ns, 'svg')
+function updateQuickButton() {
+    const button = document.getElementById(QUICK_BTN_ID) as HTMLButtonElement | null
+    if (!button) return
+
+    const visibleStatus = subtitleEnabled ? subtitleLoadStatus : 'disabled'
+    button.dataset.subtitleStatus = visibleStatus
+    button.title = getQuickButtonTitle(visibleStatus)
+    button.setAttribute('aria-label', button.title)
+    button.replaceChildren(buildBtnSvg(getQuickButtonColor(visibleStatus)), buildStatusDot(visibleStatus))
+}
+
+function getQuickButtonTitle(status: SubtitleLoadStatus | 'disabled'): string {
+    if (status === 'disabled') return t('video.subtitleButtonOff')
+    if (status === 'loading' || status === 'fetching') return t('video.subtitleLoading')
+    if (status === 'waiting-cc') return t('video.subtitleWaitingCc')
+    if (status === 'ready') return t('video.subtitleReady')
+    if (status === 'no-track') return t('video.subtitleNoTrack')
+    if (status === 'failed') return t('video.subtitleLoadFailed')
+    return t('video.subtitleButtonOn')
+}
+
+function getQuickButtonColor(status: SubtitleLoadStatus | 'disabled'): string {
+    if (status === 'loading' || status === 'fetching' || status === 'waiting-cc') return '#f6c344'
+    if (status === 'failed') return '#ff5c5c'
+    if (status === 'no-track' || status === 'disabled') return 'rgba(255,255,255,0.35)'
+    return '#fff'
+}
+
+function buildStatusDot(status: SubtitleLoadStatus | 'disabled'): HTMLSpanElement {
+    const dot = document.createElement('span')
+    const colors: Partial<Record<SubtitleLoadStatus, string>> = {
+        loading: '#f6c344',
+        fetching: '#f6c344',
+        'waiting-cc': '#f6c344',
+        ready: '#42d392',
+        'no-track': '#999',
+        failed: '#ff5c5c',
+    }
+    const color = colors[status as SubtitleLoadStatus]
+    dot.setAttribute('aria-hidden', 'true')
+    dot.style.cssText = [
+        'position:absolute',
+        'right:3px',
+        'bottom:8px',
+        'width:6px',
+        'height:6px',
+        'border-radius:50%',
+        `background:${color || 'transparent'}`,
+        `box-shadow:${color ? '0 0 0 1px rgba(0,0,0,0.45)' : 'none'}`,
+    ].join(';')
+    return dot
+}
+
+function buildBtnSvg(color: string): SVGElement {
+    const namespace = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(namespace, 'svg')
     svg.setAttribute('viewBox', '0 0 24 24')
     svg.setAttribute('width', '22')
     svg.setAttribute('height', '22')
-    svg.setAttribute('fill', active ? '#fff' : 'rgba(255,255,255,0.35)')
+    svg.setAttribute('fill', color)
     svg.style.transition = 'fill 0.2s ease'
-    const path = document.createElementNS(ns, 'path')
-    // Material Design "translate" icon
+    const path = document.createElementNS(namespace, 'path')
     path.setAttribute('d', 'M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z')
     svg.appendChild(path)
     return svg
 }
 
-/** 轮询等待目标元素出现 */
-function waitForElement(selector: string, callback: (el: Element) => void, maxMs = 10000) {
-    const el = document.querySelector(selector)
-    if (el) { callback(el); return }
+function waitForElement(selector: string, callback: (element: Element) => void, maxMs = 10000) {
+    const existing = document.querySelector(selector)
+    if (existing) {
+        callback(existing)
+        return
+    }
 
     const start = Date.now()
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
         const found = document.querySelector(selector)
         if (found) {
-            clearInterval(timer)
+            window.clearInterval(timer)
             callback(found)
         } else if (Date.now() - start > maxMs) {
-            clearInterval(timer)
+            window.clearInterval(timer)
         }
     }, 300)
 }
 
-// ── DOM 工具 ──────────────────────────────────────────────────────────────────
-
 function findVideo(): HTMLVideoElement | null {
     const platform = detectPlatform(window.location.hostname)
-    if (platform.videoSelector) {
-        const v = document.querySelector<HTMLVideoElement>(platform.videoSelector)
-        if (v) return v
-    }
-    return document.querySelector<HTMLVideoElement>('video')
+    return document.querySelector<HTMLVideoElement>(platform.videoSelector)
+        || document.querySelector<HTMLVideoElement>('video')
 }
 
 function findMountTarget(video: HTMLVideoElement): HTMLElement {
     const platform = detectPlatform(window.location.hostname)
     if (platform.containerSelector) {
-        const el = document.querySelector<HTMLElement>(platform.containerSelector)
-        if (el) return el
+        const container = document.querySelector<HTMLElement>(platform.containerSelector)
+        if (container) return container
     }
-    return (video.parentElement as HTMLElement) || document.body
+    return video.parentElement || document.body
 }
 
 function hideNativeSubtitle() {
-    const platform = detectPlatform(window.location.hostname)
-    if (!platform.hideNativeSelector) return
-    // 用 display:none 彻底隐藏，visibility:hidden 仍占位且有时被 YouTube 重置
-    // 隐藏前将原始内联 display 值存入 data- 属性，供还原时使用
-    document.querySelectorAll<HTMLElement>(platform.hideNativeSelector)
-        .forEach(el => {
-            el.dataset.frOrigDisplay = el.style.display
-            el.style.setProperty('display', 'none', 'important')
-        })
+    const selector = detectPlatform(window.location.hostname).hideNativeSelector
+    if (!selector) return
+    document.querySelectorAll<HTMLElement>(selector).forEach(element => {
+        if (element.dataset.frOrigDisplay === undefined) {
+            element.dataset.frOrigDisplay = element.style.display
+        }
+        element.style.setProperty('display', 'none', 'important')
+    })
 }
 
 function restoreNativeSubtitle() {
-    const platform = detectPlatform(window.location.hostname)
-    if (!platform.hideNativeSelector) return
-    document.querySelectorAll<HTMLElement>(platform.hideNativeSelector)
-        .forEach(el => {
-            const orig = el.dataset.frOrigDisplay
-            if (orig !== undefined) {
-                el.style.display = orig
-                delete el.dataset.frOrigDisplay
-            } else {
-                el.style.removeProperty('display')
-            }
-        })
+    const selector = detectPlatform(window.location.hostname).hideNativeSelector
+    if (!selector) return
+    document.querySelectorAll<HTMLElement>(selector).forEach(element => {
+        const original = element.dataset.frOrigDisplay
+        if (original !== undefined) {
+            element.style.display = original
+            delete element.dataset.frOrigDisplay
+        } else {
+            element.style.removeProperty('display')
+        }
+    })
 }
 
-// ── SPA 导航监听 ──────────────────────────────────────────────────────────────
-
 function watchNavigation() {
-    let lastUrl = location.href
+    if (navigationWatchAttached) return
+    navigationWatchAttached = true
+    let lastUrl = window.location.href
 
     const onUrlChange = () => {
-        const cur = location.href
-        if (cur !== lastUrl) {
-            lastUrl = cur
-            overlay.cleanup()
-            document.getElementById(QUICK_BTN_ID)?.remove()
-            processingUrl = ''
-            subtitleEnabled = true
-            restoreNativeSubtitle()
-            // SPA 导航到视频页时重新挂载按钮
-            if (window.location.hostname.includes('youtube.com')) {
-                mountQuickButton()
-            }
+        const currentUrl = window.location.href
+        if (currentUrl === lastUrl) return
+        lastUrl = currentUrl
+        beginNewSession()
+        document.getElementById(QUICK_BTN_ID)?.remove()
+        subtitleEnabled = true
+        if (isYouTubeHost()) {
+            mountQuickButton()
+            requestYouTubeSubtitle()
         }
     }
 
     window.addEventListener('yt-navigate-finish', onUrlChange)
-
-    const titleEl = document.querySelector('title')
-    if (titleEl) {
-        new MutationObserver(onUrlChange).observe(titleEl, { childList: true })
-    }
+    const title = document.querySelector('title')
+    if (title) new MutationObserver(onUrlChange).observe(title, { childList: true })
 }

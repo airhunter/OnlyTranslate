@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "tStartMs": 0,
+      "dDurationMs": 300,
+      "wpWinPosId": 1,
+      "segs": [{ "utf8": "The" }]
+    },
+    {
+      "tStartMs": 200,
+      "dDurationMs": 400,
+      "wpWinPosId": 1,
+      "segs": [{ "utf8": "The United" }]
+    },
+    {
+      "tStartMs": 500,
+      "dDurationMs": 900,
+      "wpWinPosId": 1,
+      "segs": [{ "utf8": "The United States" }]
+    }
+  ]
+}

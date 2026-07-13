@@ -1,0 +1,30 @@
+{
+  "events": [
+    {
+      "tStartMs": 0,
+      "dDurationMs": 400,
+      "wWinId": 1,
+      "segs": [{ "utf8": "Hello" }]
+    },
+    {
+      "tStartMs": 400,
+      "dDurationMs": 100,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [{ "utf8": "\n" }]
+    },
+    {
+      "tStartMs": 1000,
+      "dDurationMs": 400,
+      "wWinId": 1,
+      "segs": [{ "utf8": "World" }]
+    },
+    {
+      "tStartMs": 1400,
+      "dDurationMs": 100,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [{ "utf8": "\n" }]
+    }
+  ]
+}
