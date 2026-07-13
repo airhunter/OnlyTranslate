@@ -1,5 +1,19 @@
 # Changelog
 
+# [1.0.0](https://github.com/airhunter/OnlyTranslate/compare/v0.9.1...v1.0.0) (2026-07-13)
+
+
+### Bug Fixes
+
+* **content:** 修复 Jacob Gold 文章未逐段翻译 ([23fa3e4](https://github.com/airhunter/OnlyTranslate/commit/23fa3e4ec00c9d147f76ddadf0205f2c794d49f4))
+
+
+### Features
+
+* **service:** 增加按服务配置的思考模式 ([5672ae7](https://github.com/airhunter/OnlyTranslate/commit/5672ae7f6ea8dc7c174e5d95dc53b7f5a505ed9d))
+* **video:** 提升字幕翻译可靠性与上下文质量 ([91a5d09](https://github.com/airhunter/OnlyTranslate/commit/91a5d0909d5e456f09a4fafd5f5e74337cb55885))
+* **video:** 增加字幕本地缓存 ([bb5f39c](https://github.com/airhunter/OnlyTranslate/commit/bb5f39c89fffb194d65b996eb89c58c8b0a44431))
+
 ## [0.9.1](https://github.com/airhunter/OnlyTranslate/compare/v0.9.0...v0.9.1) (2026-07-06)
 
 
