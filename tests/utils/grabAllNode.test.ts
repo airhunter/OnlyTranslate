@@ -120,6 +120,32 @@ describe('grabAllNode', () => {
     expect(host.querySelector('a')).toBeNull()
   })
 
+  it('keeps MathJax v3 inline containers inside the complete paragraph', () => {
+    document.body.innerHTML = `
+      <p id="math-paragraph">Kaplan found <mjx-container jax="CHTML"><mjx-math aria-hidden="true"></mjx-math><mjx-assistive-mml><math><mi>N</mi><mo>proportional to</mo><mi>C</mi></math></mjx-assistive-mml></mjx-container> and concluded that model size should grow faster than dataset size.</p>
+    `
+
+    const node = document.querySelector('#math-paragraph') as HTMLElement
+    const math = node.querySelector('mjx-container') as HTMLElement
+    const targets = grabAllNode(document.body)
+    const result = getTranslatableTextWithProtectedInline(node)
+    const placeholder = result.protectedInlines[0].placeholder
+
+    expect(grabNode(node)).toBe(node)
+    expect(targets).toContain(node)
+    expect(result.protectedInlines).toHaveLength(1)
+    expect(result.text).toBe(`Kaplan found ${placeholder} and concluded that model size should grow faster than dataset size.`)
+
+    const fragment = renderTextWithProtectedInline(
+      `Kaplan 得出 ${placeholder}，并认为模型规模的增长速度应快于数据集规模。`,
+      result.protectedInlines
+    )
+    const host = document.createElement('span')
+    host.append(fragment as DocumentFragment)
+
+    expect(host.querySelector('mjx-container')?.outerHTML).toBe(math.outerHTML)
+  })
+
   it('returns null when protected inline placeholders are missing', () => {
     document.body.innerHTML = `
       <p id="intro">Run <code>npm install</code>.</p>

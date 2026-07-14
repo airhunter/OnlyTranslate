@@ -1,0 +1,35 @@
+<main>
+  <article class="post-single">
+    <header>
+      <h1>Scaling Laws, Carefully</h1>
+    </header>
+    <section class="post-content">
+      <p>
+        Kaplan and Chinchilla compare how model size, dataset size, and training compute should grow.
+        This introductory paragraph provides enough readable article context for smart translation.
+      </p>
+      <figure>
+        <img src="scaling-laws.png" alt="Test loss scaling-law plots">
+        <figcaption>Test loss as a power law in compute, dataset size, and parameters.</figcaption>
+      </figure>
+      <p id="compute-optimal-paragraph" class="has-jax">
+        The most influential and, in hindsight, most contested conclusion was the compute-optimal
+        allocation. Kaplan et al. found
+        <mjx-container jax="CHTML">
+          <mjx-math class="MJX-TEX" aria-hidden="true"></mjx-math>
+          <mjx-assistive-mml>
+            <math><msub><mi>N</mi><mtext>opt</mtext></msub><mo>proportional to</mo><msup><mi>C</mi><mn>0.73</mn></msup></math>
+          </mjx-assistive-mml>
+        </mjx-container>
+        and concluded that model size should grow faster than dataset size. Concretely, for a 10x
+        increase in compute they suggested scaling the model size by ~5.5x but the training tokens
+        by only ~1.8x. The Chinchilla paper would later overturn this recommendation, arguing that
+        it leaves large models badly <em>undertrained</em>.
+      </p>
+      <p>
+        Another useful analysis approximates the number of training FLOPs needed from model size
+        and dataset size. Each multiply-add is counted as about two floating-point operations.
+      </p>
+    </section>
+  </article>
+</main>

@@ -1,0 +1,12 @@
+{
+  "name": "lilianweng rendered inline math keeps the complete surrounding paragraph",
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "scope": "smart",
+  "html": "lilianweng-rendered-inline-math.html",
+  "include": [
+    "compute-optimal-paragraph"
+  ],
+  "textIncludes": [
+    "The Chinchilla paper would later overturn this recommendation"
+  ]
+}

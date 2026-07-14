@@ -44,7 +44,7 @@ const inlineOnlyTextBlockSet = new Set([
     'p', 'blockquote', 'figcaption'
 ]);
 
-const defaultKeepSelector = 'code, kbd, samp, var, math, .math';
+const defaultKeepSelector = 'code, kbd, samp, var, math, .math, mjx-container';
 
 export interface ProtectedInlinePlaceholder {
     placeholder: string;
@@ -223,7 +223,7 @@ function isHTMLElementNode(node: Node | null | undefined): node is HTMLElement {
 export const inlineSet = new Set([
     'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
     'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
-    'img', 'br', 'wbr', 'svg'
+    'img', 'br', 'wbr', 'svg', 'mjx-container'
 ]);
 
 // 传入父节点，返回所有需要翻译的 DOM 元素数组
@@ -242,8 +242,12 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
                 if (!(node instanceof Element)) return NodeFilter.FILTER_SKIP;
 
                 markScannedElement(options.scanContext);
-
                 const tag = node.tagName.toLowerCase();
+
+                if (tag === 'mjx-container') {
+                    markSkippedSubtree(options.scanContext);
+                    return NodeFilter.FILTER_REJECT;
+                }
 
                 const contentFilterDecision = options.contentFilter
                     ? getCachedContentFilterDecision(options.scanContext, node, options.contentFilter)
