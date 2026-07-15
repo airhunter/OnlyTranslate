@@ -10,7 +10,7 @@
           :key="item.key"
           class="nav-item"
           :class="{ 'nav-item--active': activePanel === item.key }"
-          @click="activePanel = item.key"
+          @click="selectPanel(item.key)"
         >
           {{ t(item.labelKey) }}
         </button>
@@ -19,12 +19,13 @@
       <!-- Content area -->
       <main class="options-content">
         <div class="content-panel">
-          <OnboardingCard v-if="activePanel === 'service'" @navigate="handleNavigate" />
+          <OnboardingCard v-if="activePanel === 'service'" />
           <ServiceGroup v-if="activePanel === 'service'" />
           <AppearanceGroup v-if="activePanel === 'appearance'" />
           <InteractionGroup v-if="activePanel === 'interaction'" />
           <AISettingsGroup v-if="activePanel === 'ai'" />
           <GeneralGroup v-if="activePanel === 'general'" />
+          <HelpGroup v-if="activePanel === 'help'" />
           <AboutGroup v-if="activePanel === 'about'" />
         </div>
       </main>
@@ -44,7 +45,9 @@ import AppearanceGroup from '@/components/options/AppearanceGroup.vue'
 import InteractionGroup from '@/components/options/InteractionGroup.vue'
 import AISettingsGroup from '@/components/options/AISettingsGroup.vue'
 import GeneralGroup from '@/components/options/GeneralGroup.vue'
+import HelpGroup from '@/components/options/HelpGroup.vue'
 import AboutGroup from '@/components/options/AboutGroup.vue'
+import { resolveOptionsRoute, type OptionsPanel } from '@/entrypoints/utils/help'
 import '../../styles/theme.css'
 import '../../styles/settings-row.css'
 import 'element-plus/theme-chalk/base.css'
@@ -67,7 +70,8 @@ watch(() => config.value.uiLocale, (value) => {
   locale.value = resolveLocale(value || 'auto')
 })
 
-const activePanel = ref('service')
+const initialRoute = resolveOptionsRoute(window.location.search)
+const activePanel = ref<OptionsPanel>(initialRoute.panel)
 
 const navItems = [
   { key: 'service', labelKey: 'options.nav.service' },
@@ -75,10 +79,11 @@ const navItems = [
   { key: 'interaction', labelKey: 'options.nav.interaction' },
   { key: 'ai', labelKey: 'options.nav.ai' },
   { key: 'general', labelKey: 'options.nav.general' },
+  { key: 'help', labelKey: 'options.nav.help' },
   { key: 'about', labelKey: 'options.nav.about' },
-]
+] satisfies Array<{ key: OptionsPanel; labelKey: string }>
 
-const handleNavigate = (panel: string) => {
+const selectPanel = (panel: OptionsPanel) => {
   activePanel.value = panel
 }
 </script>

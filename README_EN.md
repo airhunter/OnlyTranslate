@@ -4,38 +4,44 @@
 
 [中文](./README.md) | English
 
-OnlyTranslate is a browser extension focused on translation. It supports smart reading translation, full-page translation, selection/hover translation, and video subtitle translation.
-
-It is designed to quietly bridge the language gap while you read foreign-language pages, instead of turning the whole page into another tool you have to manage.
+OnlyTranslate is a browser extension designed for a focused reading experience. It translates main web content, full pages, selected or hovered text, input fields, and video subtitles while preserving the page's original structure and reading flow as much as possible.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
 
----
+<p align="center">
+  <img src="./public/help/popup-overview.png" alt="OnlyTranslate extension popup" width="360">
+</p>
 
-## Features
+## Quick Start
 
-- **Smart reading translation**: The recommended default for web pages. It focuses on articles, comments, and main reading content, reducing noise from surrounding page elements.
-- **Full-page translation**: A broader translation mode for documentation, forums, tool pages, and pages where you explicitly want to see more translated content.
-- **Selection and hover translation**: Select text or hover over it to get a quick translation, useful for checking words, short phrases, and sentence meaning.
-- **Video subtitle translation**: Automatically captures and translates subtitles on platforms such as YouTube, Udemy, and Coursera, with bilingual subtitle display.
-- **Bilingual / translation-only display**: Switch between reading styles based on whether you want context or immersion.
-- **Multiple translation engines**: Includes quick presets for 20+ engines, including OpenAI, DeepSeek, Google Translate, Microsoft Translator, DeepL, and more.
-- **Custom gateway pool**: Add multiple OpenAI-compatible custom endpoints for local models, company gateways, or self-hosted services.
-- **Privacy first**: All settings are stored locally. No user data is collected.
-- **Completely free**: Open source and non-commercial.
+1. Install OnlyTranslate from the [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi), then open a regular webpage you want to translate.
+2. Select the OnlyTranslate icon in the browser toolbar and choose an available translation service. No-setup services such as Microsoft Translator and Google Translate can be used immediately; AI services require their corresponding API keys.
+3. For your first translation, try **Bilingual + Smart**, then select **Translate current page**. Select **Restore original** whenever you want to undo the translation.
 
----
+The **Help** link at the bottom of the popup opens searchable instructions for translation modes, selection and hover translation, input fields, video subtitles, service setup, and common issues. The guide is bundled with the extension and is available offline.
 
-## Translation Scope
+## Core Features
 
-OnlyTranslate provides two web-page translation scopes:
+- **Smart / full-page translation**: Smart mode focuses on articles, comments, and the main reading area. Full-page mode covers more visible text on documentation, forums, and tool pages.
+- **Bilingual / translation-only display**: Keep the original text for comparison and language learning, or show only the translation for a cleaner reading flow.
+- **Multiple ways to translate**: Start from the extension popup, the floating page toolbar, a keyboard shortcut, or the context menu.
+- **Selection, hover, and input-field translation**: Translate selected content, text under the pointer, or text entered into webpage input fields with a configurable trigger.
+- **Video subtitle translation**: Captures source subtitles on supported sites, translates them in context-aware segments, and shows bilingual subtitles. Playback-aware scheduling and local caching reduce waiting and repeated requests.
+- **Flexible translation services**: Includes presets for Microsoft Translator, Google Translate, Chrome's built-in translator, DeepL, OpenAI, DeepSeek, Gemini, Claude, and more, plus OpenAI Chat Completions-compatible gateways.
+- **Advanced AI settings**: Control thinking mode separately for each service and configure a default target language with an optional reverse-translation language.
+- **Built-in user guide**: Searchable offline instructions and interface screenshots are available in Simplified Chinese, English, Traditional Chinese, and Japanese.
 
-- **Smart**: Best for articles, posts, comments, and long-form reading. It tries to find the main reading area and keeps the translation focused.
-- **Full page**: Best for documentation, admin pages, tool sites, and information-dense pages. It translates more visible content while preserving the original page structure and interactions.
+## Choosing a Translation Scope
 
----
+- **Smart**: Best for articles, blogs, posts, comments, and long-form reading. It prioritizes the main reading area and reduces noise from menus and navigation.
+- **Full page**: Best for documentation, admin pages, forums, tool sites, and information-dense pages. It translates more visible content while preserving the original page structure and interactions as much as possible.
+
+If Smart mode misses content, switch to Full page and translate again. For dynamically loaded content, scroll it into view and trigger translation again.
 
 ## Supported Platforms
+
+Web translation works on most regular webpages. Browser internal pages, extension stores, security-restricted pages, and some embedded content may prevent extensions from running.
 
 | Platform | Subtitle Translation | Web Translation |
 |----------|----------------------|-----------------|
@@ -43,49 +49,30 @@ OnlyTranslate provides two web-page translation scopes:
 | Udemy | Yes | Yes |
 | Coursera | Yes | Yes |
 | Khan Academy | Yes | Yes |
-| General webpages | - | Yes |
+| General webpages | — | Yes |
 
----
+Subtitle translation requires a readable source subtitle track provided by the video.
 
-## Origin And Improvements
+## Privacy and Cost
 
-OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead), with focused improvements in the following areas:
-
-| | FluentRead | OnlyTranslate |
-|---|---|---|
-| Video subtitle translation | Not supported | YouTube, Udemy, Coursera, and more |
-| Web translation scope | Mostly full-page translation | Smart / full-page scope switch |
-| Product focus | Feature-rich, including some less frequently used options | Focused on core translation workflows, with redundant options removed |
-| Settings experience | Many options and a higher setup cost | A redesigned minimal settings experience, including a dynamic "My Services" panel and multiple custom endpoints |
-
-**Main additions:**
-
-- Real-time video subtitle translation with automatic subtitle capture, sentence-by-sentence translation, and bilingual overlay display.
-- Smart / full-page translation scope switching, balancing focused reading and complete-page translation.
-- Subtitle segment merging based on speech pauses for better translation quality.
-
-**Main simplifications:**
-
-- Less frequently used features were removed to keep the extension clean.
-- Settings were reorganized to make the extension easier to use out of the box.
-- The "My Services" panel hides unused translation services and reduces configuration clutter.
-
----
+- OnlyTranslate itself is free and open source. It does not collect usage data for the project, and settings are stored locally in your browser.
+- When you use an online translation service, the text being translated is sent to the provider you selected and is subject to that provider's privacy policy.
+- Chrome's built-in translation runs locally in the browser, but availability depends on the Chrome version, language pair, and local model state.
+- Some online services require an API key and may charge according to their own terms. OnlyTranslate does not manage provider accounts, quotas, or billing.
+- Translations and video subtitles may be cached locally to reduce repeated requests. You can remove them at any time with **Clear cache** at the bottom of the popup.
 
 ## Installation
 
-**Chrome Web Store:**
+### Chrome Web Store
 
 [OnlyTranslate - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
 
-**Manual installation in developer mode:**
+### Manual Installation
 
 1. Download the latest `.zip` package from [Releases](https://github.com/airhunter/OnlyTranslate/releases) and unzip it.
 2. Open Chrome and go to `chrome://extensions/`.
-3. Enable "Developer mode" in the top-right corner.
-4. Click "Load unpacked" and select the unzipped extension directory.
-
----
+3. Enable **Developer mode** in the top-right corner.
+4. Select **Load unpacked** and choose the unzipped extension directory.
 
 ## Development
 
@@ -96,28 +83,27 @@ corepack pnpm install
 # Development mode for Chrome
 corepack pnpm dev
 
-# Build
-corepack pnpm build
+# Type checking and the full test suite
+corepack pnpm verify
 
-# Package zip
+# Build and package
+corepack pnpm build
 corepack pnpm zip
 ```
 
-This project declares its pnpm version in `package.json`. Prefer
-`corepack pnpm ...` so scripts use the package manager version and local
-dependencies expected by the project.
+The project declares its pnpm version in `package.json`. Prefer `corepack pnpm ...` so scripts use the package manager version and local dependencies expected by the project.
 
-For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode.
-For production builds, load `.output/chrome-mv3`. Avoid mixing the two output
-directories.
+For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode. For production builds, load `.output/chrome-mv3`. Avoid mixing the two output directories.
 
 Tech stack: [WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript, Manifest V3.
 
-## Acknowledgements
+## Feedback
 
-This project is based on [FluentRead](https://github.com/Bistutu/FluentRead). Thanks to the original author and all contributors for their open-source work.
+If translation does not start, a page is only partially translated, or subtitles do not appear, check the built-in guide first. If the issue persists, report it through [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues).
 
----
+## Origin
+
+OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead). It keeps the core webpage translation experience while adding video subtitle translation, Smart / Full page scope switching, and a more focused settings experience. Thanks to the original author and all contributors for their open-source work.
 
 ## License
 

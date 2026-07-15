@@ -10,6 +10,24 @@ interface TestConnectionConfig {
   customProviders?: CustomProvider[];
 }
 
+export type ConnectionTestCode =
+  | "success"
+  | "unsupported"
+  | "missing-token"
+  | "missing-url"
+  | "auth-failed"
+  | "not-found"
+  | "request-failed"
+  | "timeout"
+  | "network-error";
+
+export interface ConnectionTestResult {
+  success: boolean;
+  code: ConnectionTestCode;
+  translatedText?: string;
+  detail?: string;
+}
+
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "未知错误";
 }
@@ -33,7 +51,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 export async function testConnection(
   service: string,
   config: TestConnectionConfig
-): Promise<{ success: boolean; message: string }> {
+): Promise<ConnectionTestResult> {
   const timeout = 10000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -51,20 +69,20 @@ export async function testConnection(
       return await testDeepL(config, controller.signal);
     }
 
-    return { success: false, message: "暂不支持测试此服务的连接" };
+    return { success: false, code: "unsupported" };
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
-async function testMicrosoft(signal: AbortSignal): Promise<{ success: boolean; message: string }> {
+async function testMicrosoft(signal: AbortSignal): Promise<ConnectionTestResult> {
   try {
     const authResp = await fetch("https://edge.microsoft.com/translate/auth", {
       signal,
     });
 
     if (!authResp.ok) {
-      return { success: false, message: `获取认证令牌失败: ${authResp.status} ${authResp.statusText}` };
+      return { success: false, code: "request-failed", detail: `${authResp.status} ${authResp.statusText}` };
     }
 
     const jwtToken = await authResp.text();
@@ -84,21 +102,25 @@ async function testMicrosoft(signal: AbortSignal): Promise<{ success: boolean; m
 
     if (!translateResp.ok) {
       const errorBody = await translateResp.text();
-      return { success: false, message: `翻译请求失败: ${translateResp.status} ${translateResp.statusText} ${errorBody}` };
+      return {
+        success: false,
+        code: "request-failed",
+        detail: `${translateResp.status} ${translateResp.statusText} ${errorBody}`.trim(),
+      };
     }
 
     const result = await translateResp.json() as unknown;
     const firstItem = Array.isArray(result) ? asRecord(result[0]) : null;
     const translations = firstItem?.translations;
     const firstTranslation = Array.isArray(translations) ? asRecord(translations[0]) : null;
-    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "未知";
+    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "";
 
-    return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
+    return { success: true, code: "success", translatedText };
   } catch (error: unknown) {
     if (isAbortError(error)) {
-      return { success: false, message: "连接超时（10秒）" };
+      return { success: false, code: "timeout" };
     }
-    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
+    return { success: false, code: "network-error", detail: getErrorMessage(error) };
   }
 }
 
@@ -106,7 +128,7 @@ async function testAI(
   service: string,
   config: TestConnectionConfig,
   signal: AbortSignal
-): Promise<{ success: boolean; message: string }> {
+): Promise<ConnectionTestResult> {
   try {
     let token = config.token[service] || "";
     let url = config.proxy[service] || urls[service];
@@ -130,11 +152,11 @@ async function testAI(
 
     // 除了 custom 以外，一般需要 token
     if (!token && !service.startsWith('custom_') && service !== services.newapi) {
-      return { success: false, message: "请先配置访问令牌" };
+      return { success: false, code: "missing-token" };
     }
 
     if (!url) {
-      return { success: false, message: "未找到服务地址" };
+      return { success: false, code: "missing-url" };
     }
 
     const headers: Record<string, string> = {
@@ -169,38 +191,42 @@ async function testAI(
       const errorBody = await resp.text();
       
       if (resp.status === 401) {
-        return { success: false, message: "认证失败：请检查访问令牌是否正确" };
+        return { success: false, code: "auth-failed" };
       }
       if (resp.status === 404) {
-        return { success: false, message: "服务地址无效：请检查代理地址是否正确" };
+        return { success: false, code: "not-found" };
       }
       
-      return { success: false, message: `请求失败: ${resp.status} ${resp.statusText} ${errorBody}` };
+      return {
+        success: false,
+        code: "request-failed",
+        detail: `${resp.status} ${resp.statusText} ${errorBody}`.trim(),
+      };
     }
 
     const result = asRecord(await resp.json() as unknown);
     const choices = result?.choices;
     const firstChoice = Array.isArray(choices) ? asRecord(choices[0]) : null;
     const message = asRecord(firstChoice?.message);
-    const translatedText = typeof message?.content === "string" ? message.content : "未知";
+    const translatedText = typeof message?.content === "string" ? message.content : "";
 
-    return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
+    return { success: true, code: "success", translatedText };
   } catch (error: unknown) {
     if (isAbortError(error)) {
-      return { success: false, message: "连接超时（10秒）" };
+      return { success: false, code: "timeout" };
     }
-    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
+    return { success: false, code: "network-error", detail: getErrorMessage(error) };
   }
 }
 
 async function testDeepL(
   config: { token: Record<string, string>; proxy: Record<string, string> },
   signal: AbortSignal
-): Promise<{ success: boolean; message: string }> {
+): Promise<ConnectionTestResult> {
   try {
     const token = config.token[services.deepL];
     if (!token) {
-      return { success: false, message: "请先配置 DeepL 访问令牌" };
+      return { success: false, code: "missing-token" };
     }
 
     const url = config.proxy[services.deepL] || urls[services.deepL];
@@ -222,22 +248,26 @@ async function testDeepL(
       const errorBody = await resp.text();
       
       if (resp.status === 401 || resp.status === 403) {
-        return { success: false, message: "认证失败：请检查 DeepL 访问令牌是否正确" };
+        return { success: false, code: "auth-failed" };
       }
       
-      return { success: false, message: `请求失败: ${resp.status} ${resp.statusText}。请检查令牌是否正确` };
+      return {
+        success: false,
+        code: "request-failed",
+        detail: `${resp.status} ${resp.statusText} ${errorBody}`.trim(),
+      };
     }
 
     const result = asRecord(await resp.json() as unknown);
     const translations = result?.translations;
     const firstTranslation = Array.isArray(translations) ? asRecord(translations[0]) : null;
-    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "未知";
+    const translatedText = typeof firstTranslation?.text === "string" ? firstTranslation.text : "";
 
-    return { success: true, message: `连接成功！翻译结果: "${translatedText}"` };
+    return { success: true, code: "success", translatedText };
   } catch (error: unknown) {
     if (isAbortError(error)) {
-      return { success: false, message: "连接超时（10秒）" };
+      return { success: false, code: "timeout" };
     }
-    return { success: false, message: `连接失败: ${getErrorMessage(error)}` };
+    return { success: false, code: "network-error", detail: getErrorMessage(error) };
   }
 }

@@ -280,7 +280,7 @@ import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import { customModelString, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
-import { testConnection } from '@/entrypoints/utils/testConnection'
+import { testConnection, type ConnectionTestResult } from '@/entrypoints/utils/testConnection'
 import { canFetchProviderModels, fetchProviderModels, getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
 import { useI18n } from 'vue-i18n'
 
@@ -584,12 +584,47 @@ const handleTestConnection = async (service: string) => {
         [services.newapi]: config.value.newApiUrl,
       }
     })
-    if (result.success) ElMessage.success(result.message)
-    else ElMessage.error(result.message)
+    const message = formatConnectionTestResult(result)
+    if (result.success) ElMessage.success(message)
+    else ElMessage.error(message)
   } catch (error: any) {
-    ElMessage.error(t('options.service.testFailed', { message: error.message || t('options.service.unknownError') }))
+    const result: ConnectionTestResult = {
+      success: false,
+      code: 'network-error',
+      detail: error?.message || t('options.service.unknownError'),
+    }
+    ElMessage.error(formatConnectionTestResult(result))
   } finally {
     testingService.value = ''
+  }
+}
+
+const formatConnectionTestResult = (result: ConnectionTestResult): string => {
+  switch (result.code) {
+    case 'success':
+      return result.translatedText
+        ? t('options.service.testResult.success', { text: result.translatedText })
+        : t('options.service.testResult.successWithoutText')
+    case 'unsupported':
+      return t('options.service.testResult.unsupported')
+    case 'missing-token':
+      return t('options.service.testResult.missingToken')
+    case 'missing-url':
+      return t('options.service.testResult.missingUrl')
+    case 'auth-failed':
+      return t('options.service.testResult.authFailed')
+    case 'not-found':
+      return t('options.service.testResult.notFound')
+    case 'request-failed':
+      return t('options.service.testResult.requestFailed', {
+        detail: result.detail || t('options.service.unknownError'),
+      })
+    case 'timeout':
+      return t('options.service.testResult.timeout')
+    case 'network-error':
+      return t('options.service.testResult.networkError', {
+        detail: result.detail || t('options.service.unknownError'),
+      })
   }
 }
 </script>

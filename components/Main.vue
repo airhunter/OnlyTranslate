@@ -162,6 +162,9 @@
         :disabled="cacheBtnDisabled" @click="clearCache">
         {{ cacheBtnText }}
       </button>
+      <button class="text-link help-link" @click="openHelpPage">
+        {{ t('help.navLabel') }}
+      </button>
       <button class="text-link settings-link" @click="openSettingsPage">
         {{ t('common.settings') }}
       </button>
@@ -182,6 +185,7 @@ import { ElMessage } from 'element-plus'
 import browser from 'webextension-polyfill';
 import { useTheme } from '@/composables/useTheme';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
+import { openOptionsPanel } from '@/entrypoints/utils/help';
 
 
 // Config management
@@ -517,6 +521,10 @@ async function clearCache() {
 // ===== Footer: 打开设置页 =====
 function openSettingsPage() {
   browser.runtime.openOptionsPage()
+}
+
+function openHelpPage() {
+  void openOptionsPanel('help')
 }
 
 </script>

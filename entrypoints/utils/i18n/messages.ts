@@ -1,3 +1,5 @@
+import { helpMessages } from './helpMessages'
+
 export const messages = {
   'zh-CN': {
     common: {
@@ -129,6 +131,7 @@ export const messages = {
       chromeTranslatorDesc: '无需配置，完全免费',
       dismiss: '知道了，不再显示'
     },
+    help: helpMessages['zh-CN'],
     contextMenu: {
       translateFullPage: '全文翻译',
       restoreOriginal: '撤销翻译',
@@ -142,6 +145,7 @@ export const messages = {
         interaction: '交互设置',
         ai: 'AI 设置',
         general: '通用',
+        help: '帮助',
         about: '关于只译'
       },
       general: {
@@ -255,6 +259,18 @@ export const messages = {
         modelListUpdated: '模型列表已更新',
         unknownError: '未知错误',
         testFailed: '连接测试失败: {message}',
+        testResult: {
+          success: '连接成功，测试译文：“{text}”',
+          successWithoutText: '连接成功',
+          unsupported: '该服务暂不支持连接测试',
+          missingToken: '请先配置访问令牌',
+          missingUrl: '未找到服务地址',
+          authFailed: '认证失败，请检查访问令牌和账户状态',
+          notFound: '服务地址无效，请检查接口地址',
+          requestFailed: '请求失败：{detail}',
+          timeout: '连接超时（10 秒）',
+          networkError: '连接失败：{detail}'
+        },
         presetHints: {
           openai: '通用性强，需 API Key',
           deepseek: '性价比高，需 API Key',
@@ -528,6 +544,7 @@ export const messages = {
       chromeTranslatorDesc: 'No setup required, completely free',
       dismiss: 'Got it, do not show again'
     },
+    help: helpMessages['en-US'],
     contextMenu: {
       translateFullPage: 'Translate full page',
       restoreOriginal: 'Restore original',
@@ -541,6 +558,7 @@ export const messages = {
         interaction: 'Interaction',
         ai: 'AI settings',
         general: 'General',
+        help: 'Help',
         about: 'About'
       },
       general: {
@@ -654,6 +672,18 @@ export const messages = {
         modelListUpdated: 'Model list updated',
         unknownError: 'Unknown error',
         testFailed: 'Connection test failed: {message}',
+        testResult: {
+          success: 'Connected. Test translation: “{text}”',
+          successWithoutText: 'Connection successful',
+          unsupported: 'Connection testing is not supported for this service',
+          missingToken: 'Configure an access token first',
+          missingUrl: 'No service URL was found',
+          authFailed: 'Authentication failed. Check the access token and account status',
+          notFound: 'The service URL is invalid. Check the endpoint',
+          requestFailed: 'Request failed: {detail}',
+          timeout: 'Connection timed out after 10 seconds',
+          networkError: 'Connection failed: {detail}'
+        },
         presetHints: {
           openai: 'General-purpose, API Key required',
           deepseek: 'Cost-effective, API Key required',
@@ -927,6 +957,7 @@ export const messages = {
       chromeTranslatorDesc: '無需設定，完全免費',
       dismiss: '知道了，不再顯示'
     },
+    help: helpMessages['zh-TW'],
     contextMenu: {
       translateFullPage: '全文翻譯',
       restoreOriginal: '撤銷翻譯',
@@ -940,6 +971,7 @@ export const messages = {
         interaction: '互動設定',
         ai: 'AI 設定',
         general: '通用',
+        help: '說明',
         about: '關於只譯'
       },
       general: {
@@ -1053,6 +1085,18 @@ export const messages = {
         modelListUpdated: '模型列表已更新',
         unknownError: '未知錯誤',
         testFailed: '連線測試失敗: {message}',
+        testResult: {
+          success: '連線成功，測試譯文：「{text}」',
+          successWithoutText: '連線成功',
+          unsupported: '此服務暫不支援連線測試',
+          missingToken: '請先設定存取權杖',
+          missingUrl: '找不到服務位址',
+          authFailed: '驗證失敗，請檢查存取權杖和帳戶狀態',
+          notFound: '服務位址無效，請檢查介面位址',
+          requestFailed: '要求失敗：{detail}',
+          timeout: '連線逾時（10 秒）',
+          networkError: '連線失敗：{detail}'
+        },
         presetHints: {
           openai: '通用性強，需 API Key',
           deepseek: '性價比高，需 API Key',
@@ -1326,6 +1370,7 @@ export const messages = {
       chromeTranslatorDesc: '設定不要、完全無料',
       dismiss: '了解、今後表示しない'
     },
+    help: helpMessages['ja-JP'],
     contextMenu: {
       translateFullPage: 'ページ全体を翻訳',
       restoreOriginal: '原文に戻す',
@@ -1339,6 +1384,7 @@ export const messages = {
         interaction: '操作設定',
         ai: 'AI 設定',
         general: '一般',
+        help: 'ヘルプ',
         about: 'この拡張機能について'
       },
       general: {
@@ -1452,6 +1498,18 @@ export const messages = {
         modelListUpdated: 'モデル一覧を更新しました',
         unknownError: '不明なエラー',
         testFailed: '接続テストに失敗しました: {message}',
+        testResult: {
+          success: '接続に成功しました。テスト翻訳：「{text}」',
+          successWithoutText: '接続に成功しました',
+          unsupported: 'このサービスは接続テストに対応していません',
+          missingToken: '先にアクセストークンを設定してください',
+          missingUrl: 'サービス URL が見つかりません',
+          authFailed: '認証に失敗しました。アクセストークンとアカウント状態を確認してください',
+          notFound: 'サービス URL が無効です。エンドポイントを確認してください',
+          requestFailed: 'リクエストに失敗しました：{detail}',
+          timeout: '接続がタイムアウトしました（10 秒）',
+          networkError: '接続に失敗しました：{detail}'
+        },
         presetHints: {
           openai: '汎用性が高い、API Key 必須',
           deepseek: 'コスト効率が高い、API Key 必須',

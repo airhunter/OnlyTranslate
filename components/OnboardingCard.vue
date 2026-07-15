@@ -13,18 +13,18 @@
     <div class="onboarding-services">
       <p class="onboarding-services-label">{{ t('onboarding.recommendedServices') }}</p>
       <div class="onboarding-service-list">
-        <div class="onboarding-service-item" @click="selectService('siliconCloud')">
+        <button class="onboarding-service-item" @click="selectService('siliconCloud')">
           <span class="service-name">{{ t('onboarding.siliconCloud') }}</span>
           <span class="service-desc">{{ t('onboarding.siliconCloudDesc') }}</span>
-        </div>
-        <div class="onboarding-service-item" @click="selectService('deepseek')">
+        </button>
+        <button class="onboarding-service-item" @click="selectService('deepseek')">
           <span class="service-name">DeepSeek</span>
           <span class="service-desc">{{ t('onboarding.deepseekDesc') }}</span>
-        </div>
-        <div class="onboarding-service-item" @click="selectService('chromeTranslator')">
+        </button>
+        <button class="onboarding-service-item" @click="selectService('chromeTranslator')">
           <span class="service-name">{{ t('onboarding.chromeTranslator') }}</span>
           <span class="service-desc">{{ t('onboarding.chromeTranslatorDesc') }}</span>
-        </div>
+        </button>
       </div>
     </div>
     <button class="onboarding-dismiss" @click="dismiss">{{ t('onboarding.dismiss') }}</button>
@@ -32,20 +32,19 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storage } from '@wxt-dev/storage'
 import { useConfig } from '@/composables/useConfig'
 import { useI18n } from 'vue-i18n'
+import { ChatDotRound } from '@element-plus/icons-vue'
 
 const { config } = useConfig()
 const { t } = useI18n()
 const dismissed = ref(false)
 
 onMounted(async () => {
-  const val = await storage.getItem('local:onboardingDismissed')
-  if (val === true || val === 'true') {
-    dismissed.value = true
-  }
+  const value = await storage.getItem('local:onboardingDismissed')
+  dismissed.value = value === true || value === 'true'
 })
 
 const dismiss = async () => {
@@ -53,13 +52,8 @@ const dismiss = async () => {
   await storage.setItem('local:onboardingDismissed', true)
 }
 
-const emit = defineEmits<{
-  (e: 'navigate', panel: string): void
-}>()
-
 const selectService = (service: string) => {
   config.value.service = service
-  emit('navigate', 'service')
 }
 </script>
 
@@ -145,6 +139,7 @@ const selectService = (service: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 10px 14px;
   background: var(--fr-hover-color);
   border: 1px solid var(--fr-border-color);
@@ -184,6 +179,5 @@ const selectService = (service: string) => {
 .onboarding-dismiss:hover {
   background: var(--fr-hover-color);
   color: var(--fr-text-color-primary);
-  border-color: var(--fr-border-color);
 }
 </style>
