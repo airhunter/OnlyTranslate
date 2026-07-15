@@ -1,5 +1,17 @@
 # Changelog
 
+# [1.1.0](https://github.com/airhunter/OnlyTranslate/compare/v1.0.0...v1.1.0) (2026-07-15)
+
+
+### Bug Fixes
+
+* **content:** 修复 MathJax 行内公式段落漏翻 ([473ac4e](https://github.com/airhunter/OnlyTranslate/commit/473ac4e2502dc7cab437f7514baadd1964e0224b))
+
+
+### Features
+
+* **help:** 增加内置帮助中心与操作说明 ([e2d0d5c](https://github.com/airhunter/OnlyTranslate/commit/e2d0d5c72e77a379405abc526d1709252becf9f8))
+
 # [1.0.0](https://github.com/airhunter/OnlyTranslate/compare/v0.9.1...v1.0.0) (2026-07-13)
 
 
