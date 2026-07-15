@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.1.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.1：内置图文帮助',
+        items: [
+          '设置页新增可搜索的内置帮助中心，操作说明和界面截图随扩展提供，无网络时也能查看。',
+          '弹窗底部新增常驻“帮助”入口，集中说明识文与全页、双语与仅译文、划词、悬停、输入框和视频字幕的使用方法。',
+          '补充 Chrome 内置翻译、DeepSeek、SiliconCloud 和自定义网关的配置与排障说明，连接测试提示也完整支持四种界面语言。',
+          '修复包含 MathJax 行内公式的正文段落可能漏翻的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.1: Built-in Visual Help',
+        items: [
+          'Added a searchable help center in Settings, with instructions and interface screenshots bundled for offline access.',
+          'Added a permanent Help entry in the popup covering Smart and Full page scopes, bilingual and translation-only display, selection, hover, input-field, and video subtitle translation.',
+          'Added setup and troubleshooting guidance for Chrome built-in translation, DeepSeek, SiliconCloud, and custom gateways, with connection-test messages fully localized in all four interface languages.',
+          'Fixed body paragraphs containing inline MathJax formulas sometimes being skipped during translation.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.1：內建圖文說明',
+        items: [
+          '設定頁新增可搜尋的內建說明中心，操作說明和介面截圖隨擴充功能提供，沒有網路時也能查看。',
+          '彈出視窗底部新增常駐「說明」入口，集中介紹識文與全頁、雙語與僅譯文、選取、懸停、輸入框和影片字幕翻譯的使用方法。',
+          '補充 Chrome 內建翻譯、DeepSeek、SiliconCloud 和自訂閘道的設定與疑難排解說明，連線測試提示也完整支援四種介面語言。',
+          '修復包含 MathJax 行內公式的正文段落可能漏翻的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.1：画像付きヘルプを内蔵',
+        items: [
+          '設定画面に検索可能なヘルプセンターを追加しました。操作説明と画面イメージは拡張機能に同梱され、オフラインでも確認できます。',
+          'ポップアップ下部に常設の「ヘルプ」入口を追加し、スマート／ページ全体、バイリンガル／翻訳のみ、選択、ホバー、入力欄、動画字幕翻訳の使い方をまとめました。',
+          'Chrome 内蔵翻訳、DeepSeek、SiliconCloud、カスタムゲートウェイの設定とトラブルシューティングを追加し、接続テストのメッセージも 4 つの表示言語に対応しました。',
+          'MathJax のインライン数式を含む本文段落が翻訳されないことがある問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.0.0',
     notes: {
       'zh-CN': {
