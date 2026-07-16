@@ -468,8 +468,11 @@ const setAsCurrent = (service: any) => {
 
 const removeService = (service: any) => {
   if (config.value.service === service.id) {
-    ElMessage.warning(t('options.service.removeCurrentBlocked'))
-    return
+    if (service.isConfigured) {
+      ElMessage.warning(t('options.service.removeCurrentBlocked'))
+      return
+    }
+    config.value.service = services.microsoft
   }
   if (service.isCustom) {
     const index = config.value.customProviders.findIndex((p: any) => p.id === service.id)

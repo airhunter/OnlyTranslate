@@ -4,7 +4,15 @@ import { createAppI18n } from '@/entrypoints/utils/i18n'
 import OnboardingCard from '@/components/OnboardingCard.vue'
 
 const mocks = vi.hoisted(() => ({
-  config: { value: { service: 'microsoft' } },
+  config: {
+    value: {
+      service: 'microsoft',
+      activeBuiltinProviders: [] as string[],
+      customProviders: [],
+      token: {} as Record<string, string>,
+      newApiUrl: '',
+    }
+  },
   getItem: vi.fn(),
   setItem: vi.fn()
 }))
@@ -32,20 +40,32 @@ const mountCard = () => mount(OnboardingCard, {
 describe('OnboardingCard', () => {
   beforeEach(() => {
     mocks.config.value.service = 'microsoft'
+    mocks.config.value.activeBuiltinProviders = []
+    mocks.config.value.token = {}
     mocks.getItem.mockReset()
     mocks.getItem.mockResolvedValue(undefined)
     mocks.setItem.mockReset()
   })
 
-  it('shows the original welcome card and selects a recommended service without navigation', async () => {
+  it('adds an unconfigured recommended service without making it current', async () => {
     const wrapper = mountCard()
     await flushPromises()
 
     expect(wrapper.text()).toContain('欢迎使用「只译」')
     await wrapper.findAll('.onboarding-service-item')[0].trigger('click')
 
-    expect(mocks.config.value.service).toBe('siliconCloud')
+    expect(mocks.config.value.activeBuiltinProviders).toEqual(['siliconCloud'])
+    expect(mocks.config.value.service).toBe('microsoft')
     expect(wrapper.emitted('navigate')).toBeUndefined()
+  })
+
+  it('can switch directly to a recommended service that needs no configuration', async () => {
+    const wrapper = mountCard()
+    await flushPromises()
+
+    await wrapper.findAll('.onboarding-service-item')[2].trigger('click')
+
+    expect(mocks.config.value.service).toBe('chromeTranslator')
   })
 
   it('persists dismissal and hides the card', async () => {

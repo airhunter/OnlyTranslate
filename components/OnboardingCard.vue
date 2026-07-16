@@ -37,6 +37,7 @@ import { storage } from '@wxt-dev/storage'
 import { useConfig } from '@/composables/useConfig'
 import { useI18n } from 'vue-i18n'
 import { ChatDotRound } from '@element-plus/icons-vue'
+import { isServiceConfigured, services } from '@/entrypoints/utils/option'
 
 const { config } = useConfig()
 const { t } = useI18n()
@@ -53,7 +54,16 @@ const dismiss = async () => {
 }
 
 const selectService = (service: string) => {
-  config.value.service = service
+  if (service !== services.chromeTranslator) {
+    if (!config.value.activeBuiltinProviders) config.value.activeBuiltinProviders = []
+    if (!config.value.activeBuiltinProviders.includes(service)) {
+      config.value.activeBuiltinProviders.push(service)
+    }
+  }
+
+  if (isServiceConfigured(service, config.value)) {
+    config.value.service = service
+  }
 }
 </script>
 
