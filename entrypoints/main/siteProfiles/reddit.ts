@@ -2,20 +2,35 @@ import { findMatchingElement } from '@/entrypoints/utils/common';
 import type { SiteProfile, SiteProfileMode } from './types';
 import { debugLog, isSpecialContent } from './utils';
 
+const REDDIT_POST_TITLE_SELECTOR = 'h1, h3[data-click-id="body"], [slot="title"]';
+const REDDIT_POST_BODY_CONTAINER_SELECTOR = [
+    'div[data-post-click-location="text-body"]',
+    '[slot="text-body"]',
+    'shreddit-post [slot="text-body"]'
+].join(', ');
+const REDDIT_COMMENT_PAGE_POST_SELECTOR = 'shreddit-post[view-context="CommentsPage"]';
+const REDDIT_COMMENT_PAGE_POST_TITLE_SELECTOR = 'h1[slot="title"], h3[data-click-id="body"], [slot="title"]';
+const REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR = [
+    '[property="schema:articleBody"] > p',
+    '[property="schema:articleBody"] > blockquote',
+    '[property="schema:articleBody"] > h2',
+    '[property="schema:articleBody"] > h3',
+    '[property="schema:articleBody"] > h4',
+    '[property="schema:articleBody"] > ul > li',
+    '[property="schema:articleBody"] > ol > li'
+].join(', ');
+
 export const redditProfile: SiteProfile = {
     id: 'reddit',
     domains: ['reddit.com'],
     select: (node, context) => {
-        const postTitle = findMatchingElement(node, 'h1, h3[data-click-id="body"], [slot="title"]');
+        const postTitle = findMatchingElement(node, REDDIT_POST_TITLE_SELECTOR);
         if (postTitle) {
             debugLog('Reddit', '翻译帖子标题', postTitle.textContent);
             return postTitle;
         }
 
-        const postBody = findMatchingElement(
-            node,
-            'div[data-post-click-location="text-body"], [slot="text-body"], shreddit-post [slot="text-body"]'
-        );
+        const postBody = getRedditPostBodyTarget(node);
         if (postBody) {
             debugLog('Reddit', '翻译帖子正文', postBody.textContent?.substring(0, 50) + '...');
             return postBody;
@@ -72,8 +87,121 @@ export const redditProfile: SiteProfile = {
         }
 
         return false;
+    },
+    supplemental: (root, context) => {
+        if (context.mode !== 'smart') return [];
+
+        return collectRedditCommentPagePostTargets(root);
+    },
+    allowTarget: (node) => {
+        if (isRedditCommentPagePostTitle(node)) {
+            return {
+                role: 'title',
+                source: 'site-profile',
+                reason: 'reddit-comment-page-post-title'
+            };
+        }
+        if (isRedditStructuredPostBodyLeaf(node)) {
+            return {
+                role: 'paragraph',
+                source: 'site-profile',
+                reason: 'reddit-structured-post-body-leaf'
+            };
+        }
+        return false;
+    },
+    skipTarget: (node) => {
+        if (!isRedditStructuredPostBodyLayout(node)) return false;
+
+        return {
+            policy: 'hard-skip',
+            role: 'layout',
+            reason: 'reddit-structured-post-body-layout'
+        };
+    },
+    expandTarget: (node) => expandRedditCommentPagePostTarget(node),
+    afterBilingualAppend: (_node, translationNode, appendTarget) => {
+        if (!appendTarget.matches('shreddit-post-text-body')) return;
+
+        translationNode.setAttribute('slot', 'text-body');
     }
 };
+
+function getRedditPostBodyTarget(node: Element): Element | false {
+    const structuredBodyLeaf = findMatchingElement(node, REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR);
+    if (structuredBodyLeaf && structuredBodyLeaf.closest('shreddit-post')) return structuredBodyLeaf;
+
+    const postBody = findMatchingElement(node, REDDIT_POST_BODY_CONTAINER_SELECTOR);
+    if (!postBody) return false;
+
+    const nestedBodyLeaf = postBody.querySelector(REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR);
+    if (nestedBodyLeaf?.closest('shreddit-post') === postBody.closest('shreddit-post')) return nestedBodyLeaf;
+    return postBody;
+}
+
+function collectRedditCommentPagePostTargets(root: ParentNode): Element[] {
+    const posts = [
+        ...(root instanceof Element && root.matches(REDDIT_COMMENT_PAGE_POST_SELECTOR) ? [root] : []),
+        ...Array.from(root.querySelectorAll<Element>(REDDIT_COMMENT_PAGE_POST_SELECTOR))
+    ];
+    return Array.from(new Set(posts.flatMap(collectRedditCommentPagePostTargetsFromPost)));
+}
+
+function collectRedditCommentPagePostTargetsFromPost(post: Element): Element[] {
+    const targets: Element[] = [];
+
+    const title = findOwnedRedditPostDescendant(post, REDDIT_COMMENT_PAGE_POST_TITLE_SELECTOR);
+    if (title) targets.push(title);
+
+    const bodyLeaves = findOwnedRedditPostDescendants(post, REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR);
+    if (bodyLeaves.length > 0) {
+        targets.push(...bodyLeaves);
+        return targets;
+    }
+
+    const bodyContainer = findOwnedRedditPostDescendant(post, REDDIT_POST_BODY_CONTAINER_SELECTOR);
+    if (bodyContainer) targets.push(bodyContainer);
+    return targets;
+}
+
+function expandRedditCommentPagePostTarget(node: Element): Element[] | false {
+    const nestedTargets = collectRedditCommentPagePostTargets(node);
+    if (nestedTargets.length > 0) return nestedTargets;
+
+    const post = node.closest(REDDIT_COMMENT_PAGE_POST_SELECTOR);
+    return post ? collectRedditCommentPagePostTargetsFromPost(post) : false;
+}
+
+function findOwnedRedditPostDescendant(post: Element, selector: string): Element | undefined {
+    return findOwnedRedditPostDescendants(post, selector)[0];
+}
+
+function findOwnedRedditPostDescendants(post: Element, selector: string): Element[] {
+    return Array.from(post.querySelectorAll<Element>(selector))
+        .filter(node => node.closest('shreddit-post') === post);
+}
+
+function isRedditCommentPagePostTitle(node: Element): boolean {
+    const post = node.closest(REDDIT_COMMENT_PAGE_POST_SELECTOR);
+    return Boolean(
+        post
+        && node.matches(REDDIT_COMMENT_PAGE_POST_TITLE_SELECTOR)
+        && node.closest('shreddit-post') === post
+    );
+}
+
+function isRedditStructuredPostBodyLeaf(node: Element): boolean {
+    return node.matches(REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR)
+        && node.closest(REDDIT_COMMENT_PAGE_POST_SELECTOR) !== null
+        && node.closest('shreddit-post')?.matches(REDDIT_COMMENT_PAGE_POST_SELECTOR) === true;
+}
+
+function isRedditStructuredPostBodyLayout(node: Element): boolean {
+    if (!node.closest('shreddit-post')) return false;
+    if (!node.matches(`${REDDIT_POST_BODY_CONTAINER_SELECTOR}, [property="schema:articleBody"]`)) return false;
+
+    return node.querySelector(REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR) !== null;
+}
 
 function shouldSkipRedditElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {
     if (node.textContent && isSpecialContent(node.textContent)) {

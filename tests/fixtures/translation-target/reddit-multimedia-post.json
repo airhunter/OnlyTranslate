@@ -1,0 +1,24 @@
+{
+  "name": "Reddit multimedia post translates text without selecting the player",
+  "url": "https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/im_beginning_to_believe_made_a_basic_game_in_c/",
+  "scope": "smart",
+  "html": "reddit-multimedia-post.html",
+  "include": [
+    "video-post-title",
+    "post-paragraph-1",
+    "post-paragraph-2",
+    "post-paragraph-3",
+    "post-paragraph-4",
+    "post-paragraph-5"
+  ],
+  "exclude": [
+    "post-body-host",
+    "post-body-slot",
+    "post-body-shell",
+    "post-flair",
+    "video-player",
+    "video-error",
+    "video-toggle",
+    "post-share"
+  ]
+}

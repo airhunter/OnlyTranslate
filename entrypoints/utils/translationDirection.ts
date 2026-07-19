@@ -8,7 +8,7 @@ export interface TranslationDirection {
 }
 
 function cleanForDetection(origin: string): string {
-  return origin.replace(/[\s\u3000]/g, '');
+  return origin.replace(/[\s\u3000]+/g, ' ').trim();
 }
 
 export function resolveTranslationDirection(origin: string): TranslationDirection {

@@ -35,6 +35,14 @@ describe('resolveTranslationDirection', () => {
     })
   })
 
+  it('preserves word boundaries when normalizing text for language detection', () => {
+    vi.mocked(detectlang).mockReturnValue('en')
+
+    resolveTranslationDirection("  I'M\nBEGINNING\u3000TO  BELIEVE  ")
+
+    expect(detectlang).toHaveBeenCalledWith("I'M BEGINNING TO BELIEVE")
+  })
+
   it('skips translation when source matches default target in fixed target mode', () => {
     vi.mocked(detectlang).mockReturnValue('zh-Hans')
 

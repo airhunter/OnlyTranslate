@@ -1,0 +1,8 @@
+{
+  "name": "Reddit smart mode keeps slotted post text body",
+  "url": "https://www.reddit.com/r/PinoyProgrammer/comments/1s950b7/claude-pro/",
+  "scope": "smart",
+  "html": "reddit-slotted-post-body.html",
+  "include": ["post-title", "post-body-paragraph"],
+  "exclude": ["post-share"]
+}

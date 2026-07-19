@@ -65,6 +65,7 @@ import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
 
 describe('resolveAutoTranslateTarget behavior', () => {
   const originalLocation = window.location
+  const originalDocumentLocation = document.location
 
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -84,6 +85,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
     vi.useRealTimers()
     Object.defineProperty(window, 'location', {
       value: originalLocation,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: originalDocumentLocation,
       configurable: true
     })
   })
@@ -402,6 +407,140 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(translation?.textContent).toContain('原始 HTML')
     expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
+  })
+
+  it('keeps Reddit multimedia text leaves when player markup exceeds the target size limit', () => {
+    const redditUrl = new URL('https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/multimedia-post/')
+    Object.defineProperty(window, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <shreddit-post view-context="CommentsPage" post-type="multi_media">
+          <h1 id="post-title" slot="title">I'M BEGINNING TO BELIEVE</h1>
+          <shreddit-post-text-body id="post-body-host" slot="text-body">
+            <div slot="text-body" data-post-click-location="text-body">
+              <div property="schema:articleBody">
+                <p id="post-first">I have been learning C++ by building a small terminal game.</p>
+                <p id="post-second">I now understand more about memory management.</p>
+                <figure id="video-player">
+                  <p id="video-error">This video could not be loaded.</p>
+                  <video></video>
+                </figure>
+              </div>
+            </div>
+          </shreddit-post-text-body>
+        </shreddit-post>
+      </main>
+    `
+
+    document.querySelector('#video-player')?.setAttribute('data-player-state', 'x'.repeat(5000))
+
+    const target = resolveAutoTranslateTarget('smart')
+    const ids = target.nodes.map(node => node.id).filter(Boolean)
+
+    expect(document.querySelector('#post-body-host')?.outerHTML.length).toBeGreaterThan(4096)
+    expect(ids).toEqual(expect.arrayContaining(['post-title', 'post-first', 'post-second']))
+    expect(ids).not.toContain('post-body-host')
+    expect(ids).not.toContain('video-player')
+    expect(ids).not.toContain('video-error')
+  })
+
+  it('rescans a Reddit comments-page post after hydration replaces the original host', () => {
+    const redditUrl = new URL('https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/multimedia-post/')
+    Object.defineProperty(window, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <shreddit-post id="old-post" view-context="CommentsPage">
+        <h1 slot="title">Loading post</h1>
+      </shreddit-post>
+    `
+
+    const oldContentRoot = document.querySelector('#old-post') as Element
+    const replacement = document.createElement('shreddit-post')
+    replacement.id = 'hydrated-post'
+    replacement.setAttribute('view-context', 'CommentsPage')
+    replacement.setAttribute('post-type', 'multi_media')
+    replacement.innerHTML = `
+      <h1 id="hydrated-title" slot="title">I'M BEGINNING TO BELIEVE</h1>
+      <shreddit-post-text-body id="hydrated-body-host" slot="text-body">
+        <div slot="text-body" data-post-click-location="text-body">
+          <div property="schema:articleBody">
+            <p id="hydrated-first">I have been learning C++ by building a small terminal game.</p>
+            <p id="hydrated-second">I now understand more about memory management.</p>
+            <figure id="hydrated-player"><video></video></figure>
+          </div>
+        </div>
+      </shreddit-post-text-body>
+    `
+    oldContentRoot.replaceWith(replacement)
+
+    const grabOptions = {
+      siteCompatMode: 'smart' as const,
+      scanContext: createScanContext()
+    }
+    const scanRoot = getDynamicTranslationScanRoot(
+      replacement,
+      oldContentRoot,
+      'smart',
+      grabOptions
+    )
+    const nodes = collectDynamicTranslationNodes(
+      replacement,
+      oldContentRoot,
+      'smart',
+      grabOptions
+    )
+    const ids = nodes.map(node => node.id).filter(Boolean)
+
+    expect(scanRoot).toBe(replacement)
+    expect(ids).toEqual(expect.arrayContaining(['hydrated-title', 'hydrated-first', 'hydrated-second']))
+    expect(ids).not.toContain('hydrated-body-host')
+    expect(ids).not.toContain('hydrated-player')
+  })
+
+  it('projects bilingual Reddit post text through its named shadow slot', async () => {
+    const redditUrl = new URL('https://www.reddit.com/r/PinoyProgrammer/comments/1s950b7/claude-pro/')
+    Object.defineProperty(window, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    vi.mocked(translateText).mockResolvedValue('Reddit 帖子正文译文。')
+    document.body.innerHTML = `
+      <shreddit-post-text-body id="post-body" slot="text-body">
+        <div slot="text-body" data-post-click-location="text-body">
+          <div id="post-body-content">
+            <p>Developers are comparing the model capability and usage limits before choosing one plan.</p>
+          </div>
+        </div>
+      </shreddit-post-text-body>
+    `
+
+    const postBody = document.querySelector('#post-body') as HTMLElement
+    const shadowRoot = postBody.attachShadow({ mode: 'open' })
+    shadowRoot.innerHTML = '<slot name="text-body"></slot>'
+
+    await handleBilingualTranslation(postBody, false)
+
+    const translation = postBody.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+    const textBodySlot = shadowRoot.querySelector('slot') as HTMLSlotElement
+    expect(translation?.getAttribute('slot')).toBe('text-body')
+    expect(textBodySlot.assignedElements()).toContain(translation)
   })
 
   it('uses block insertion layout for flex translation targets in normal flow', async () => {
