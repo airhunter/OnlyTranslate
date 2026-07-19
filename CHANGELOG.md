@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/airhunter/OnlyTranslate/compare/v1.1.0...v1.1.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **content:** 修复 Reddit 多媒体帖子漏译 ([08758a9](https://github.com/airhunter/OnlyTranslate/commit/08758a9e6bc67e6f54564671f7ebfd775677b138))
+* **content:** 修复正文裸文本段落漏译 ([c3af9b0](https://github.com/airhunter/OnlyTranslate/commit/c3af9b023c7fcbeca9bf6c0a303b774a59e8d0ea))
+* **options:** 修复未配置服务被设为默认项 ([f1d6bdd](https://github.com/airhunter/OnlyTranslate/commit/f1d6bdd01290ac6795b993ba74405fb93f7a81fa))
+
 # [1.1.0](https://github.com/airhunter/OnlyTranslate/compare/v1.0.0...v1.1.0) (2026-07-15)
 
 
