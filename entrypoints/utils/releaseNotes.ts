@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.1.1',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.1.1：网页翻译稳定性修复',
+        items: [
+          '修复在设置页新增尚未完成配置的翻译服务时，它会被自动设为默认服务，导致无法直接删除的问题。',
+          '修复部分 Reddit 多媒体帖子正文未进入翻译范围的问题，视频帖子中的标题和正文现在可以正常翻译。',
+          '改进未使用段落标签包裹的文章正文识别，连续文本以及夹有删除线格式的段落不再容易漏翻。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.1.1: Web Translation Reliability Fixes',
+        items: [
+          'Fixed newly added but unfinished translation services being set as the default, which could prevent them from being deleted directly in Settings.',
+          'Fixed missing translations in some Reddit multimedia posts so titles and body text around video content are translated normally.',
+          'Improved detection of article prose that is not wrapped in paragraph tags, including continuous text containing strikethrough formatting.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.1.1：網頁翻譯穩定性修正',
+        items: [
+          '修正在設定頁新增但尚未完成設定的翻譯服務時，該服務會被自動設為預設項目而無法直接刪除的問題。',
+          '修正部分 Reddit 多媒體貼文正文未進入翻譯範圍的問題，影片貼文中的標題和正文現在可以正常翻譯。',
+          '改進未使用段落標籤包住的文章正文識別，連續文字以及夾有刪除線格式的段落不再容易漏翻。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.1.1：Web 翻訳の安定性を改善',
+        items: [
+          '設定が完了していない新しい翻訳サービスが自動的に既定になり、設定画面から直接削除できなくなる問題を修正しました。',
+          '一部の Reddit マルチメディア投稿が翻訳対象にならない問題を修正し、動画投稿のタイトルと本文を正常に翻訳できるようにしました。',
+          '段落タグで囲まれていない記事本文の検出を改善し、取り消し線を含む連続テキストも翻訳されやすくしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.1.0',
     notes: {
       'zh-CN': {
