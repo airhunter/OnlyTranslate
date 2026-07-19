@@ -305,6 +305,60 @@ describe('grabAllNode', () => {
     expect(target.textContent).not.toContain('FOMD system installed')
   })
 
+  it('wraps long direct prose between article section blocks and keeps strikethrough inline', () => {
+    document.body.innerHTML = `
+      <article>
+        <section id="intro">
+          <p id="previous-paragraph">The previous paragraph is already a normal translation target.</p>
+          Most companies I applied to invited me for interviews, with the exception of several research labs.
+          I applied repeatedly and never heard back once, despite people in my own lab getting replies. My
+          <s id="struck-word">love</s>
+          cover letters were works of art. You can reach me at the email you already have on file, multiple times.
+        </section>
+        <section id="topics">
+          <h2 id="topics-title">Technical Topics</h2>
+          Here is a list of topics I created before I started interviewing. Personally, I was asked a lot about
+          language models and reinforcement learning, reflecting my background. Make sure to cover everything well!
+          <p></p>
+          <div id="topic-grid"><h3>Machine Learning</h3></div>
+        </section>
+      </article>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(2)
+    expect(wrappers[0].textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Most companies I applied to invited me for interviews'
+    )
+    expect(wrappers[0].textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'My love cover letters were works of art.'
+    )
+    expect(document.querySelector('#struck-word')?.closest(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrappers[0])
+    expect(wrappers[0].contains(document.querySelector('#previous-paragraph'))).toBe(false)
+    expect(wrappers[1].textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Here is a list of topics I created before I started interviewing.'
+    )
+    expect(wrappers[1].contains(document.querySelector('#topics-title'))).toBe(false)
+    expect(wrappers[1].contains(document.querySelector('#topic-grid'))).toBe(false)
+  })
+
+  it('does not wrap long mixed-block direct text outside an article or main reading area', () => {
+    document.body.innerHTML = `
+      <section id="layout-section">
+        <h2>Product navigation</h2>
+        This layout description is intentionally long enough to resemble prose. It has sentence punctuation and
+        more than enough characters, but it is outside an article or main reading area and must stay unwrapped.
+      </section>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(0)
+  })
+
   it('wraps legacy font inline flow into br-separated direct text targets', () => {
     document.body.innerHTML = `
       <article>

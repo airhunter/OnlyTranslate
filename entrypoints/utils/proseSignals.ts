@@ -7,7 +7,7 @@ export const SENTENCE_PATTERN = /[.!?\u3002\uff01\uff1f]/;
 
 export const INLINE_TEXT_TAGS = new Set([
     'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
-    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
+    'font', 'mark', 's', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
     'img', 'br', 'wbr', 'svg', 'mjx-container'
 ]);
 

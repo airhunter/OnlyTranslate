@@ -12,7 +12,13 @@ import {
     type ScanBudgetKind,
     type ScanContext
 } from "@/entrypoints/main/translationTarget/scanContext";
-import { getProseEvidence, isInlineOnlyElement } from "@/entrypoints/utils/proseSignals";
+import {
+    getProseEvidence,
+    hasSentencePunctuation,
+    isInlineOnlyElement,
+    MAX_INTERACTIVE_DENSITY,
+    PROSE_TEXT_MIN
+} from "@/entrypoints/utils/proseSignals";
 
 // 直接翻译的标签集合（块级元素）
 const directSet = new Set([
@@ -222,7 +228,7 @@ function isHTMLElementNode(node: Node | null | undefined): node is HTMLElement {
 // 内联元素集合（可以包含在其他元素内的元素）
 export const inlineSet = new Set([
     'a', 'b', 'strong', 'span', 'em', 'i', 'u', 'small', 'sub', 'sup',
-    'font', 'mark', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
+    'font', 'mark', 's', 'cite', 'q', 'abbr', 'time', 'ruby', 'bdi', 'bdo',
     'img', 'br', 'wbr', 'svg', 'mjx-container'
 ]);
 
@@ -460,7 +466,9 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
         ? findLegacyInlineFlowRun(host, directChild)
         : findDirectTextRun(host, directChild);
     if (!run) return false;
-    if (requiresMediaBoundary && !isDirectTextRunAdjacentToMediaBlock(run)) return false;
+    if (requiresMediaBoundary &&
+        !isDirectTextRunAdjacentToMediaBlock(run) &&
+        !isReadableArticleDirectTextRun(host, run)) return false;
 
     const runWrapper = run.find(child => child instanceof Element && isDirectTextTargetElement(child)) as Element | undefined;
     if (runWrapper) return runWrapper;
@@ -648,6 +656,36 @@ function isDirectTextRunAdjacentToMediaBlock(run: ChildNode[]): boolean {
 
     return isMediaAdjacentTextBoundary(findMeaningfulSibling(first, 'previous')) ||
         isMediaAdjacentTextBoundary(findMeaningfulSibling(last, 'next'));
+}
+
+function isReadableArticleDirectTextRun(host: Element, run: ChildNode[]): boolean {
+    if (!host.closest('article, main')) return false;
+
+    const unwrappedText = run
+        .filter((child): child is Text => child instanceof Text)
+        .map(child => child.textContent ?? '')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (unwrappedText.length < PROSE_TEXT_MIN) return false;
+
+    const text = getDirectTextRunText(run).replace(/\s+/g, ' ').trim();
+    if (!hasSentencePunctuation(text)) return false;
+
+    const interactiveTextLength = run.reduce((sum, child) => {
+        if (!(child instanceof Element)) return sum;
+
+        const interactiveElements = child.matches('a, button, [role="button"], input')
+            ? [child]
+            : Array.from(child.querySelectorAll('a, button, [role="button"], input'));
+
+        return sum + interactiveElements.reduce(
+            (interactiveSum, element) => interactiveSum + getTranslatableText(element).replace(/\s+/g, ' ').trim().length,
+            0
+        );
+    }, 0);
+
+    return interactiveTextLength / text.length < MAX_INTERACTIVE_DENSITY;
 }
 
 function findMeaningfulSibling(node: ChildNode, direction: 'previous' | 'next'): ChildNode | null {

@@ -1,0 +1,27 @@
+{
+  "name": "Silvia Sapora article keeps unwrapped section prose",
+  "url": "https://silviasapora.github.io/blog/ml-interviews.html",
+  "scope": "smart",
+  "html": "silvia-sapora-direct-text.html",
+  "contentRootContains": [
+    "#interview-article"
+  ],
+  "include": [
+    "article-title",
+    "intro",
+    "topics-title",
+    "machine-learning-title"
+  ],
+  "exclude": [
+    "archive-link"
+  ],
+  "textIncludes": [
+    "Most companies I applied to invited me for interviews",
+    "My love",
+    "cover letters were works of art",
+    "Here is a list of topics I created before I started interviewing"
+  ],
+  "textExcludes": [
+    "Blog archive navigation"
+  ]
+}
