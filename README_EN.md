@@ -4,14 +4,10 @@
 
 [中文](./README.md) | English
 
-OnlyTranslate is a browser extension designed for a focused reading experience. It translates main web content, full pages, selected or hovered text, input fields, and video subtitles while preserving the page's original structure and reading flow as much as possible.
+OnlyTranslate is a browser extension designed for a focused reading experience. It translates main web content, full pages, selected or hovered text, input fields, video subtitles, and local EPUB ebooks while preserving the original structure and reading flow as much as possible.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
-
-<p align="center">
-  <img src="./public/help/popup-overview.png" alt="OnlyTranslate extension popup" width="360">
-</p>
 
 ## Quick Start
 
@@ -19,7 +15,9 @@ OnlyTranslate is a browser extension designed for a focused reading experience. 
 2. Select the OnlyTranslate icon in the browser toolbar and choose an available translation service. No-setup services such as Microsoft Translator and Google Translate can be used immediately; AI services require their corresponding API keys.
 3. For your first translation, try **Bilingual + Smart**, then select **Translate current page**. Select **Restore original** whenever you want to undo the translation.
 
-The **Help** link at the bottom of the popup opens searchable instructions for translation modes, selection and hover translation, input fields, video subtitles, service setup, and common issues. The guide is bundled with the extension and is available offline.
+To read an ebook, choose **Ebooks (Beta)** at the bottom of the popup, select **Import EPUB**, and choose a local DRM-free EPUB. After importing, continue reading from the popup library or open the full library to manage your books.
+
+The **More** menu in the top-right of the popup contains Clear cache and Help. Help provides searchable instructions for translation modes, selection and hover translation, input fields, video subtitles, service setup, and common issues. The guide is bundled with the extension and is available offline.
 
 ## Core Features
 
@@ -28,6 +26,7 @@ The **Help** link at the bottom of the popup opens searchable instructions for t
 - **Multiple ways to translate**: Start from the extension popup, the floating page toolbar, a keyboard shortcut, or the context menu.
 - **Selection, hover, and input-field translation**: Translate selected content, text under the pointer, or text entered into webpage input fields with a configurable trigger.
 - **Video subtitle translation**: Captures source subtitles on supported sites, translates them in context-aware segments, and shows bilingual subtitles. Playback-aware scheduling and local caching reduce waiting and repeated requests.
+- **Ebook translation (Beta)**: Import local EPUB files, automatically translate the current chapter while scrolling, and retain your library, reading progress, and location bookmarks.
 - **Flexible translation services**: Includes presets for Microsoft Translator, Google Translate, Chrome's built-in translator, DeepL, OpenAI, DeepSeek, Gemini, Claude, and more, plus OpenAI Chat Completions-compatible gateways.
 - **Advanced AI settings**: Control thinking mode separately for each service and configure a default target language with an optional reverse-translation language.
 - **Built-in user guide**: Searchable offline instructions and interface screenshots are available in Simplified Chinese, English, Traditional Chinese, and Japanese.
@@ -38,6 +37,16 @@ The **Help** link at the bottom of the popup opens searchable instructions for t
 - **Full page**: Best for documentation, admin pages, forums, tool sites, and information-dense pages. It translates more visible content while preserving the original page structure and interactions as much as possible.
 
 If Smart mode misses content, switch to Full page and translate again. For dynamically loaded content, scroll it into view and trigger translation again.
+
+## Ebook Translation (Beta)
+
+Choose **Ebooks** at the bottom of the popup to import an EPUB directly, view recently read books, or continue reading. The full reader uses vertical scrolling, automatically translates the current chapter, and supports bilingual or translation-only display, table-of-contents navigation, themes, font size, line spacing, and location bookmarks.
+
+- The first release supports local DRM-free EPUB files only. PDF, MOBI, and DRM-protected books are not supported.
+- Books, reading progress, and bookmarks are stored in the current browser profile. Cloud sync, export, notes, and AI analysis are not included.
+- The EPUB file itself is never uploaded. Chapter text is sent to the selected translation provider only when translation begins.
+- Removing a book also deletes its reading progress and bookmarks. Uninstalling the extension or clearing extension data removes the local library.
+- Imported books remain readable while the extension is disabled, but automatic translation pauses.
 
 ## Supported Platforms
 
@@ -57,9 +66,10 @@ Subtitle translation requires a readable source subtitle track provided by the v
 
 - OnlyTranslate itself is free and open source. It does not collect usage data for the project, and settings are stored locally in your browser.
 - When you use an online translation service, the text being translated is sent to the provider you selected and is subject to that provider's privacy policy.
+- Imported EPUB files, reading progress, and bookmarks remain in local browser storage. Only chapter text that needs translation is sent to the selected provider.
 - Chrome's built-in translation runs locally in the browser, but availability depends on the Chrome version, language pair, and local model state.
 - Some online services require an API key and may charge according to their own terms. OnlyTranslate does not manage provider accounts, quotas, or billing.
-- Translations and video subtitles may be cached locally to reduce repeated requests. You can remove them at any time with **Clear cache** at the bottom of the popup.
+- Translations and video subtitles may be cached locally to reduce repeated requests. You can remove them with **Clear cache** in the popup's top-right **More** menu.
 
 ## Installation
 
@@ -103,7 +113,7 @@ If translation does not start, a page is only partially translated, or subtitles
 
 ## Origin
 
-OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead). It keeps the core webpage translation experience while adding video subtitle translation, Smart / Full page scope switching, and a more focused settings experience. Thanks to the original author and all contributors for their open-source work.
+OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead). It keeps the core webpage translation experience while adding video subtitle translation, ebook translation, Smart / Full page scope switching, and a more focused settings experience. Thanks to the original author and all contributors for their open-source work.
 
 ## License
 
