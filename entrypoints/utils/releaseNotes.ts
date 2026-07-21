@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.2.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.2：电子书翻译阅读器（Beta）',
+        items: [
+          '新增本地 EPUB 导入和持久书架，可从 Popup 直接导入、查看最近阅读并继续打开图书。',
+          '新增滚动式电子书阅读器，进入章节后自动翻译，支持双语与仅译文显示、主题、字号和行距调整。',
+          '自动保存阅读进度并精确恢复位置，支持目录跳转、当前位置书签和章节末继续阅读。',
+          '图书、进度和书签只保存在当前浏览器中；书架支持移除图书并同步释放对应本地空间。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.2: Ebook Translation Reader (Beta)',
+        items: [
+          'Added local EPUB import and a persistent library, with direct import, recent books, and continue-reading access in the popup.',
+          'Added a scrolling ebook reader with automatic chapter translation, bilingual and translation-only views, themes, font size, and line spacing controls.',
+          'Reading progress is saved and restored precisely, with table-of-contents navigation, location bookmarks, and end-of-chapter continuation.',
+          'Books, progress, and bookmarks stay in the current browser; removing a book also releases its associated local storage.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.2：電子書翻譯閱讀器（Beta）',
+        items: [
+          '新增本機 EPUB 匯入和持久書架，可從 Popup 直接匯入、查看最近閱讀並繼續開啟圖書。',
+          '新增捲動式電子書閱讀器，進入章節後自動翻譯，支援雙語與僅譯文顯示、主題、字級和行距調整。',
+          '自動儲存閱讀進度並精確恢復位置，支援目錄跳轉、目前位置書籤和章節末繼續閱讀。',
+          '圖書、進度和書籤只保存在目前瀏覽器中；從書架移除圖書時也會釋放對應的本機空間。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.2：電子書籍翻訳リーダー（Beta）',
+        items: [
+          'ローカル EPUB の読み込みと永続的な本棚を追加し、ポップアップから直接読み込み、最近の本を開いて読書を再開できるようにしました。',
+          '章を開くと自動翻訳するスクロール式リーダーを追加し、対訳／翻訳のみ、テーマ、文字サイズ、行間の調整に対応しました。',
+          '読書位置を自動保存して正確に復元し、目次移動、現在位置のブックマーク、章末から次章への移動に対応しました。',
+          '本、進捗、ブックマークは現在のブラウザ内だけに保存され、本棚から削除すると関連するローカル容量も解放されます。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.1.1',
     notes: {
       'zh-CN': {
