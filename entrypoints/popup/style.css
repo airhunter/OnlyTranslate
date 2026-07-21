@@ -12,9 +12,15 @@
     -webkit-text-size-adjust: 100%;
 }
 
+html,
+body {
+    width: 400px;
+    margin: 0;
+    overflow: hidden;
+}
+
 #app {
-    min-width: 360px;
-    max-width: 360px;
+    width: 400px;
     margin: 0 auto;
     padding: 0;
     text-align: left;

@@ -29,7 +29,7 @@ export default defineConfig({
         name: '__MSG_extName__',
         description: '__MSG_extDescription__',
         default_locale: 'zh_CN',
-        permissions: ['storage', 'contextMenus', 'offscreen', 'alarms'],
+        permissions: ['storage', 'contextMenus', 'offscreen', 'alarms', 'unlimitedStorage'],
         host_permissions: ['<all_urls>'],
         action: {
             default_title: '__MSG_extName__',

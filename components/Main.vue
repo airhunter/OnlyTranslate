@@ -43,11 +43,52 @@
     <div class="header-right">
       <span class="status-text">{{ config.on ? t('common.enabled') : t('common.disabled') }}</span>
       <el-switch v-model="config.on" @change="handlePluginStateChange" />
+      <div class="utility-menu-wrap">
+        <button
+          type="button"
+          class="utility-menu-trigger"
+          :aria-label="t('popup.moreActions')"
+          :aria-expanded="utilityMenuVisible"
+          @click="utilityMenuVisible = !utilityMenuVisible"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="19" cy="12" r="1.5" />
+          </svg>
+        </button>
+        <div v-if="utilityMenuVisible" class="utility-menu">
+          <button
+            type="button"
+            :class="{ 'is-success': cacheStatus === 'success', 'is-failed': cacheStatus === 'failed' }"
+            :disabled="cacheBtnDisabled"
+            @click="clearCache"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
+              <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
+            </svg>
+            <span>{{ cacheBtnText }}</span>
+          </button>
+          <button type="button" @click="openHelpPage">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9.7 9a2.5 2.5 0 0 1 4.8 1c0 2-2.5 2.2-2.5 4" />
+              <path d="M12 18h.01" />
+            </svg>
+            <span>{{ t('help.navLabel') }}</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ===== Body ===== -->
-  <div class="popup-body">
+  <div
+    class="popup-body"
+    :class="{ 'popup-body--shelf': activePopupView === 'ebooks' }"
+  >
+    <template v-if="activePopupView === 'translate'">
 
     <!-- 插件禁用占位 -->
     <div v-if="!config.on" class="disabled-state">
@@ -145,37 +186,105 @@
       </div>
 
     </div>
+    </template>
+
+    <section v-else class="popup-bookshelf" :aria-label="t('popup.ebookShelfTitle')">
+      <div class="bookshelf-heading">
+        <div>
+          <h2>{{ t('popup.ebookShelfTitle') }}</h2>
+          <p>{{ t('popup.ebookShelfDescription') }}</p>
+        </div>
+        <button type="button" class="bookshelf-text-button" @click="openEbookReader()">
+          {{ t('popup.viewAllBooks') }} ↗
+        </button>
+      </div>
+
+      <div v-if="ebookShelfLoading" class="bookshelf-status">{{ t('common.processing') }}</div>
+      <div v-else-if="ebookShelfError" class="bookshelf-status bookshelf-status--error">{{ ebookShelfError }}</div>
+      <div v-else-if="popupEbooks.length" class="popup-book-list">
+        <button
+          v-for="item in popupEbooks"
+          :key="item.record.bookId"
+          type="button"
+          class="popup-book"
+          @click="openEbookReader(item.record.bookId)"
+        >
+          <span class="popup-book-cover">
+            <img v-if="ebookCoverUrls[item.record.bookId]" :src="ebookCoverUrls[item.record.bookId]" alt="" />
+            <span v-else>{{ item.record.title.slice(0, 1).toLocaleUpperCase() }}</span>
+          </span>
+          <span class="popup-book-copy">
+            <strong>{{ item.record.title }}</strong>
+            <span>{{ item.record.author || t('ebook.unknownAuthor') }}</span>
+            <span class="popup-book-progress"><i :style="{ width: `${Math.round(item.progress * 100)}%` }" /></span>
+            <small>{{ t('ebook.readingProgress', { percent: Math.round(item.progress * 100) }) }}</small>
+          </span>
+          <span class="popup-book-arrow" aria-hidden="true">›</span>
+        </button>
+      </div>
+      <div v-else class="bookshelf-empty">
+        <span class="bookshelf-empty-icon" aria-hidden="true">EPUB</span>
+        <strong>{{ t('popup.emptyEbookShelf') }}</strong>
+        <p>{{ t('popup.emptyEbookShelfDescription') }}</p>
+      </div>
+
+      <input
+        ref="popupFileInput"
+        class="popup-file-input"
+        type="file"
+        accept=".epub,application/epub+zip"
+        @change="handlePopupFileChange"
+      />
+      <button type="button" class="bookshelf-import" :disabled="popupImporting" @click="choosePopupEbook">
+        {{ popupImporting ? t('common.processing') : t('ebook.importEpub') }}
+      </button>
+    </section>
   </div>
 
   <!-- ===== Footer ===== -->
   <div class="popup-footer">
-    <!-- 快捷键提示行 -->
-    <div v-if="shortcuts.length" class="footer-shortcuts">
-      <div v-for="s in shortcuts" :key="s.key" class="shortcut-row">
-        <span class="shortcut-key">{{ s.key }}</span>
-        <span class="shortcut-desc">{{ s.desc }}</span>
-      </div>
-    </div>
-    <!-- 操作按钮行 -->
-    <div class="footer-actions">
-      <button class="text-link cache-link" :class="{ 'is-loading': cacheLoading, 'is-success': cacheStatus === 'success', 'is-failed': cacheStatus === 'failed' }"
-        :disabled="cacheBtnDisabled" @click="clearCache">
-        {{ cacheBtnText }}
+    <nav class="popup-nav" :aria-label="t('popup.navigation')">
+      <button
+        type="button"
+        class="popup-nav-button"
+        :class="{ 'popup-nav-button--active': activePopupView === 'translate' }"
+        :aria-current="activePopupView === 'translate' ? 'page' : undefined"
+        @click="activePopupView = 'translate'"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 5h11M8 2v3M5 8c1.4 2.5 3.4 4.5 6 6M11 8c-1.2 2.7-3.5 5-7 7M13 21l4-10 4 10M14.5 17.5h5" />
+        </svg>
+        <span>{{ t('popup.translateTab') }}</span>
       </button>
-      <button class="text-link help-link" @click="openHelpPage">
-        {{ t('help.navLabel') }}
+      <button
+        type="button"
+        class="popup-nav-button"
+        :class="{ 'popup-nav-button--active': activePopupView === 'ebooks' }"
+        :aria-current="activePopupView === 'ebooks' ? 'page' : undefined"
+        @click="showEbookShelf"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 4.5h5a4 4 0 0 1 4 4V21a3.5 3.5 0 0 0-3.5-3.5H3z" />
+          <path d="M21 4.5h-5a4 4 0 0 0-4 4V21a3.5 3.5 0 0 1 3.5-3.5H21z" />
+        </svg>
+        <span>{{ t('popup.ebooksTab') }}</span>
+        <span class="popup-nav-beta">BETA</span>
       </button>
-      <button class="text-link settings-link" @click="openSettingsPage">
-        {{ t('common.settings') }}
+      <button type="button" class="popup-nav-button" @click="openSettingsPage">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.09A1.7 1.7 0 0 0 8.94 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.57 15 1.7 1.7 0 0 0 3 14H3v-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57 1.7 1.7 0 0 0 10 3V3h4v.09A1.7 1.7 0 0 0 15.06 4.6a1.7 1.7 0 0 0 1.88-.34L17 4.2 19.83 7l-.06.06A1.7 1.7 0 0 0 19.43 9 1.7 1.7 0 0 0 21 10h.09v4H21a1.7 1.7 0 0 0-1.6 1z" />
+        </svg>
+        <span>{{ t('common.settings') }}</span>
       </button>
-    </div>
+    </nav>
   </div>
 
 </template>
 
 <script lang="ts" setup>
 
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { options, isServiceConfigured } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
@@ -186,6 +295,15 @@ import browser from 'webextension-polyfill';
 import { useTheme } from '@/composables/useTheme';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
 import { openOptionsPanel } from '@/entrypoints/utils/help';
+import { cache } from '@/entrypoints/utils/cache';
+import { EbookImportError, EbookRepository } from '@/entrypoints/ebook/repository';
+import { getEbookPageUrl } from '@/entrypoints/ebook/url';
+import type { EbookRecord } from '@/entrypoints/ebook/types';
+
+interface PopupEbook {
+  record: EbookRecord;
+  progress: number;
+}
 
 
 // Config management
@@ -202,6 +320,15 @@ const {
 // 应用版本号
 const appVersion = browser.runtime.getManifest().version;
 const releaseNotesVisible = ref(false);
+const utilityMenuVisible = ref(false);
+const activePopupView = ref<'translate' | 'ebooks'>('translate');
+const ebookRepository = new EbookRepository();
+const popupEbooks = ref<PopupEbook[]>([]);
+const ebookShelfLoading = ref(false);
+const ebookShelfError = ref('');
+const ebookCoverUrls = reactive<Record<string, string>>({});
+const popupFileInput = ref<HTMLInputElement>();
+const popupImporting = ref(false);
 
 type OptionLike = { label: string; labelKey?: string }
 const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
@@ -442,31 +569,6 @@ const toggleSelectionTranslator = (val: boolean) => {
   config.value.selectionTranslatorMode = val ? 'bilingual' : 'disabled'
 }
 
-// ===== Footer: 快捷键显示 =====
-const shortcuts = computed(() => {
-  const list: { key: string; desc: string }[] = [];
-  
-  // 处理悬浮球快捷键 (全页翻译)
-  let floatingKey = config.value.floatingBallHotkey;
-  if (floatingKey === 'custom' && config.value.customFloatingBallHotkey) {
-    floatingKey = config.value.customFloatingBallHotkey;
-  }
-  if (floatingKey && floatingKey !== 'none') {
-    list.push({ key: floatingKey, desc: t('popup.fullPageShortcut') });
-  }
-  
-  // 处理悬浮翻译快捷键
-  let hoverKey = config.value.hotkey;
-  if (hoverKey === 'custom' && config.value.customHotkey) {
-    hoverKey = config.value.customHotkey;
-  }
-  if (hoverKey && hoverKey !== 'none') {
-    list.push({ key: hoverKey, desc: t('popup.selectionShortcut') });
-  }
-  
-  return list;
-});
-
 // ===== Footer: 清除缓存 =====
 const cacheBtnDisabled = ref(false);
 const cacheBtnText = computed(() => {
@@ -489,6 +591,7 @@ async function clearCache() {
     cacheBtnDisabled.value = true;
     cacheLoading.value = true;
     cacheStatus.value = 'idle';
+    cache.clean();
 
     const [tabs, subtitleCacheResponse] = await Promise.all([
       browser.tabs.query({ active: true, currentWindow: true }),
@@ -520,12 +623,100 @@ async function clearCache() {
 
 // ===== Footer: 打开设置页 =====
 function openSettingsPage() {
+  utilityMenuVisible.value = false;
   browser.runtime.openOptionsPage()
 }
 
+async function showEbookShelf() {
+  activePopupView.value = 'ebooks';
+  await refreshEbookShelf();
+}
+
+async function refreshEbookShelf() {
+  ebookShelfLoading.value = true;
+  ebookShelfError.value = '';
+  clearEbookCoverUrls();
+  try {
+    const books = (await ebookRepository.listRecentBooks()).slice(0, 3);
+    popupEbooks.value = await Promise.all(books.map(async record => ({
+      record,
+      progress: (await ebookRepository.getProgress(record.bookId))?.percentage ?? 0,
+    })));
+    books.forEach(record => {
+      if (record.coverBlob) ebookCoverUrls[record.bookId] = URL.createObjectURL(record.coverBlob);
+    });
+  } catch (error) {
+    console.error('Failed to load the ebook shelf:', error);
+    popupEbooks.value = [];
+    ebookShelfError.value = t('popup.ebookShelfLoadFailed');
+  } finally {
+    ebookShelfLoading.value = false;
+  }
+}
+
+function clearEbookCoverUrls() {
+  Object.values(ebookCoverUrls).forEach(url => URL.revokeObjectURL(url));
+  Object.keys(ebookCoverUrls).forEach(bookId => delete ebookCoverUrls[bookId]);
+}
+
+function openEbookReader(bookId?: string) {
+  void browser.tabs.create({ url: getEbookPageUrl(bookId) })
+}
+
+function choosePopupEbook() {
+  if (!popupImporting.value) popupFileInput.value?.click();
+}
+
+async function handlePopupFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (file) await importPopupEbook(file);
+}
+
+async function importPopupEbook(file: File) {
+  popupImporting.value = true;
+  try {
+    const { extractEpubMetadata } = await import('@/entrypoints/ebook/readerController');
+    const result = await ebookRepository.importBook(file, extractEpubMetadata);
+    await refreshEbookShelf();
+    openEbookReader(result.book.bookId);
+  } catch (error) {
+    console.error('Failed to import an ebook from the popup:', error);
+    ElMessage.error(popupImportErrorText(error));
+  } finally {
+    popupImporting.value = false;
+  }
+}
+
+function popupImportErrorText(error: unknown): string {
+  if (!(error instanceof EbookImportError)) return t('ebook.importFailed');
+  const keyByCode: Record<EbookImportError['code'], string> = {
+    INVALID_FILE: 'ebook.invalidFile',
+    EMPTY_FILE: 'ebook.emptyFile',
+    INSUFFICIENT_STORAGE: 'ebook.insufficientStorage',
+    QUOTA_EXCEEDED: 'ebook.insufficientStorage',
+    PARSE_FAILED: 'ebook.parseFailed',
+  };
+  return t(keyByCode[error.code]);
+}
+
 function openHelpPage() {
+  utilityMenuVisible.value = false;
   void openOptionsPanel('help')
 }
+
+function handlePopupFocus() {
+  if (activePopupView.value === 'ebooks') void refreshEbookShelf();
+}
+
+onMounted(() => window.addEventListener('focus', handlePopupFocus));
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handlePopupFocus);
+  clearEbookCoverUrls();
+  ebookRepository.close();
+});
 
 </script>
 
@@ -536,7 +727,7 @@ function openHelpPage() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: var(--fr-bg-color);
   border-bottom: 1px solid var(--fr-border-color-lighter);
   position: sticky;
@@ -623,7 +814,96 @@ function openHelpPage() {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.utility-menu-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.utility-menu-trigger {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fr-text-color-regular);
+  cursor: pointer;
+}
+
+.utility-menu-trigger:hover,
+.utility-menu-trigger[aria-expanded="true"] {
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-primary);
+}
+
+.utility-menu-trigger svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.utility-menu {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  width: 132px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--fr-border-color-lighter);
+  border-radius: 8px;
+  background: var(--fr-bg-color);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+}
+
+.utility-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fr-text-color-primary);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.utility-menu button:hover {
+  background: var(--fr-hover-color);
+}
+
+.utility-menu button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.utility-menu button.is-success {
+  color: var(--el-color-success);
+}
+
+.utility-menu button.is-failed {
+  color: var(--el-color-danger);
+}
+
+.utility-menu button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .status-text {
@@ -725,23 +1005,215 @@ function openHelpPage() {
 
 /* ===== Body ===== */
 .popup-body {
-  padding: 12px 20px 8px;
-  overflow-y: auto;
-  max-height: 480px;
+  padding: 10px 16px 6px;
+  overflow: visible;
   background: var(--fr-bg-color);
 }
 
-.popup-body::-webkit-scrollbar {
-  width: 4px;
-}
-
-.popup-body::-webkit-scrollbar-thumb {
-  background: var(--fr-border-color);
-  border-radius: 2px;
-}
-
 .disabled-state {
-  padding: 32px 0;
+  padding: 20px 0;
+}
+
+.popup-body--shelf {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.popup-bookshelf {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bookshelf-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bookshelf-heading h2 {
+  margin: 0;
+  color: var(--fr-text-color-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.bookshelf-heading p {
+  margin: 3px 0 0;
+  color: var(--fr-text-color-regular);
+  font-size: 12px;
+}
+
+.bookshelf-text-button {
+  flex-shrink: 0;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--fr-accent-color);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.popup-book-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-book {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--fr-border-color-lighter);
+  border-radius: 8px;
+  background: var(--fr-bg-color);
+  color: var(--fr-text-color-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.popup-book:hover {
+  border-color: var(--fr-border-color);
+  background: var(--fr-hover-color);
+  transform: translateY(-1px);
+}
+
+.popup-book-cover {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 5px 8px 8px 5px;
+  background: var(--fr-hover-color);
+  color: var(--fr-accent-color);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.popup-book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popup-book-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.popup-book-copy strong,
+.popup-book-copy > span:not(.popup-book-progress) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popup-book-copy strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.popup-book-copy > span:not(.popup-book-progress),
+.popup-book-copy small {
+  color: var(--fr-text-color-regular);
+  font-size: 11px;
+}
+
+.popup-book-progress {
+  height: 3px;
+  margin: 8px 0 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--fr-border-color-lighter);
+}
+
+.popup-book-progress i {
+  display: block;
+  height: 100%;
+  background: var(--fr-accent-color);
+}
+
+.popup-book-arrow {
+  color: var(--fr-text-color-regular);
+  font-size: 22px;
+}
+
+.bookshelf-status,
+.bookshelf-empty {
+  display: flex;
+  min-height: 168px;
+  align-items: center;
+  justify-content: center;
+  color: var(--fr-text-color-regular);
+  font-size: 12px;
+  text-align: center;
+}
+
+.bookshelf-status--error {
+  color: var(--el-color-danger);
+}
+
+.bookshelf-empty {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bookshelf-empty strong {
+  color: var(--fr-text-color-primary);
+  font-size: 14px;
+}
+
+.bookshelf-empty p {
+  margin: 0;
+}
+
+.bookshelf-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 64px;
+  margin-bottom: 4px;
+  border-radius: 5px 10px 10px 5px;
+  background: var(--fr-hover-color);
+  color: var(--fr-accent-color);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bookshelf-import {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--fr-border-color);
+  border-radius: 7px;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.bookshelf-import:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.bookshelf-import:hover {
+  border-color: var(--fr-accent-color);
+  color: var(--fr-accent-color);
+}
+
+.popup-file-input {
+  display: none;
 }
 
 /* ===== Translate Page Button - Solid Minimal Style ===== */
@@ -750,10 +1222,10 @@ function openHelpPage() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 44px;
+  height: 40px;
   width: 100%;
   padding: 0 20px;
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -810,8 +1282,8 @@ function openHelpPage() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  min-height: 36px;
+  padding: 7px 0;
+  min-height: 30px;
   border-bottom: 1px solid var(--fr-border-color-lighter);
 }
 
@@ -858,86 +1330,66 @@ function openHelpPage() {
 .popup-footer {
   display: flex;
   flex-direction: column;
-  padding: 12px 20px 16px;
+  padding: 7px 16px 9px;
   border-top: 1px solid var(--fr-border-color-lighter);
   background: var(--fr-bg-color);
-  gap: 12px;
-}
-
-.footer-shortcuts {
-  display: flex;
-  flex-direction: column;
   gap: 6px;
-  padding: 0 0 12px;
-  border-bottom: 1px solid var(--fr-border-color-lighter);
 }
 
-.shortcut-row {
+.popup-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.popup-nav-button {
+  position: relative;
   display: flex;
+  height: 50px;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.shortcut-key {
-  min-width: 56px;
-  padding: 2px 6px;
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  color: var(--fr-text-color-primary);
-  text-align: center;
-  background: var(--fr-hover-color);
-  border-radius: 4px;
-}
-
-.shortcut-desc {
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--fr-text-color-regular);
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 4px 0;
-}
-
-.text-link {
-  font-size: 12px;
-  color: var(--fr-text-color-regular);
-  cursor: pointer;
-  background: var(--fr-hover-color);
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 6px 14px;
   font-family: inherit;
+  font-size: 12px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all .18s ease;
 }
 
-.text-link:hover {
+.popup-nav-button:hover {
+  background: var(--fr-hover-color);
   color: var(--fr-text-color-primary);
-  background: var(--fr-border-color-lighter);
-  border-color: var(--fr-border-color);
 }
 
-.text-link:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.popup-nav-button--active {
+  background: transparent;
+  color: var(--fr-accent-color);
 }
 
-.text-link.is-success {
-  color: var(--el-color-success);
+.popup-nav-button svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.text-link.is-failed {
-  color: var(--el-color-danger);
-}
-
-.cache-link.is-loading {
-  opacity: 0.7;
+.popup-nav-beta {
+  position: absolute;
+  top: 3px;
+  right: 14px;
+  color: #e53935;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .3px;
 }
 
 /* ===== Select & Input ===== */
