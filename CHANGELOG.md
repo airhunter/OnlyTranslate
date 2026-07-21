@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.2.0](https://github.com/airhunter/OnlyTranslate/compare/v1.1.1...v1.2.0) (2026-07-21)
+
+
+### Features
+
+* **ebook:** 新增电子书翻译阅读器 ([5c38307](https://github.com/airhunter/OnlyTranslate/commit/5c3830703813e702b65ec7525205a1cb7e6dcf60))
+
 ## [1.1.1](https://github.com/airhunter/OnlyTranslate/compare/v1.1.0...v1.1.1) (2026-07-19)
 
 
