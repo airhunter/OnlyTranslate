@@ -57,6 +57,14 @@ pnpm zip
 pnpm release:check <version> --check-zip
 ```
 
+`--check-zip` 会同时检查发布产物的体积预算：
+
+- 发布 ZIP 超过 `1.5 MB`（`1,500,000` 字节）时告警。
+- `content-scripts/content.js` 超过 `800 KiB`（`819,200` 字节）时提示审查始终注入页面的代码。
+- 发布 ZIP 相比 `releaseNotes` 中的上一版本增长超过 `15%` 时提示检查构建内容。
+
+体积预算告警不会直接阻断发布。出现告警后，需要确认增长来自预期功能或资源，并在继续发布前检查是否存在重复依赖、误打包资源或可延迟加载的内容脚本代码。单版本增长检查依赖 `.output` 中保留上一版本的 Chrome ZIP；缺少上一版本产物时，校验会明确提示无法比较。
+
 注意：正式发布前如果 `package.json` 版本号尚未提升，`pnpm zip` 生成的 zip 文件名仍会使用当前版本号。`release-it` 会在发布过程中先提升版本号，再通过 `before:github:release` 钩子重新运行 `pnpm zip` 并上传目标版本产物。
 
 ## 正式发布

@@ -5,6 +5,9 @@ import path from 'node:path';
 import ts from 'typescript';
 
 const requiredReleaseNoteLocales = ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'];
+const releaseZipWarningBytes = 1_500_000;
+const contentScriptReviewBytes = 800 * 1024;
+const releaseGrowthReviewRatio = 0.15;
 const args = process.argv.slice(2);
 let versionArg;
 let checkZip = false;
@@ -91,6 +94,8 @@ if (checkZip) {
   if (!fs.existsSync(expectedZip)) {
     fail(`缺少打包产物: ${path.relative(root, expectedZip)}，请先运行 pnpm zip`);
   }
+
+  checkArtifactSize(expectedZip, releaseNotes[1]?.version);
 }
 
 console.log(`release readiness check passed for v${version}`);
@@ -101,6 +106,95 @@ function readJson(relativePath) {
 
 function readText(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
+}
+
+function checkArtifactSize(zipPath, previousVersion) {
+  const zipBytes = fs.statSync(zipPath).size;
+  const zipSize = formatMb(zipBytes);
+
+  console.log(`artifact size: ZIP ${zipSize} MB / 1.50 MB`);
+  if (zipBytes > releaseZipWarningBytes) {
+    warn(`发布 ZIP 为 ${zipSize} MB，超过 1.50 MB，请检查构建内容`);
+  }
+
+  const contentEntry = readZipEntries(zipPath).find((entry) => entry.name === 'content-scripts/content.js');
+  if (!contentEntry) {
+    warn('发布 ZIP 中未找到 content-scripts/content.js，无法检查内容脚本大小');
+  } else {
+    const contentSize = formatKib(contentEntry.uncompressedSize);
+    console.log(`artifact size: content.js ${contentSize} KiB / 800.0 KiB`);
+    if (contentEntry.uncompressedSize > contentScriptReviewBytes) {
+      warn(`content.js 为 ${contentSize} KiB，超过 800.0 KiB，请审查始终注入页面的代码`);
+    }
+  }
+
+  if (!previousVersion) {
+    console.log('artifact growth: 无上一版本，跳过单版本增长检查');
+    return;
+  }
+
+  const previousZip = path.join(root, `.output/OnlyTranslate-v${previousVersion}-chrome.zip`);
+  if (!fs.existsSync(previousZip)) {
+    warn(`缺少上一版本产物 ${path.relative(root, previousZip)}，无法检查单版本增长`);
+    return;
+  }
+
+  const previousZipBytes = fs.statSync(previousZip).size;
+  const growthRatio = previousZipBytes === 0 ? 0 : (zipBytes - previousZipBytes) / previousZipBytes;
+  const growthPercentValue = growthRatio * 100;
+  const growthPercent = (Math.abs(growthPercentValue) < 0.05 ? 0 : growthPercentValue).toFixed(1);
+  console.log(`artifact growth: v${previousVersion} -> v${version} ${growthPercent}% / 15.0%`);
+  if (growthRatio > releaseGrowthReviewRatio) {
+    warn(`发布 ZIP 相比 v${previousVersion} 增长 ${growthPercent}%，超过 15.0%，请检查构建内容`);
+  }
+}
+
+function readZipEntries(zipPath) {
+  const buffer = fs.readFileSync(zipPath);
+  const endOfCentralDirectorySignature = 0x06054b50;
+  const centralDirectorySignature = 0x02014b50;
+  const minimumEndOffset = Math.max(0, buffer.length - 65_557);
+  let endOffset = -1;
+
+  for (let offset = buffer.length - 22; offset >= minimumEndOffset; offset -= 1) {
+    if (buffer.readUInt32LE(offset) === endOfCentralDirectorySignature) {
+      endOffset = offset;
+      break;
+    }
+  }
+
+  if (endOffset === -1) {
+    fail(`无法读取 ZIP 中央目录: ${path.relative(root, zipPath)}`);
+  }
+
+  const entryCount = buffer.readUInt16LE(endOffset + 10);
+  let offset = buffer.readUInt32LE(endOffset + 16);
+  const entries = [];
+
+  for (let index = 0; index < entryCount; index += 1) {
+    if (buffer.readUInt32LE(offset) !== centralDirectorySignature) {
+      fail(`ZIP 中央目录损坏: ${path.relative(root, zipPath)}`);
+    }
+
+    const uncompressedSize = buffer.readUInt32LE(offset + 24);
+    const fileNameLength = buffer.readUInt16LE(offset + 28);
+    const extraFieldLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const name = buffer.toString('utf8', offset + 46, offset + 46 + fileNameLength).replaceAll('\\', '/');
+
+    entries.push({ name, uncompressedSize });
+    offset += 46 + fileNameLength + extraFieldLength + commentLength;
+  }
+
+  return entries;
+}
+
+function formatMb(bytes) {
+  return (bytes / 1_000_000).toFixed(2);
+}
+
+function formatKib(bytes) {
+  return (bytes / 1024).toFixed(1);
 }
 
 function readReleaseNotes(relativePath) {
@@ -233,4 +327,8 @@ function printHelp() {
 function fail(message) {
   console.error(`release readiness check failed: ${message}`);
   process.exit(1);
+}
+
+function warn(message) {
+  console.warn(`release readiness warning: ${message}`);
 }
