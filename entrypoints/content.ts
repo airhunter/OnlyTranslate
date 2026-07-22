@@ -14,10 +14,11 @@ import { setupFloatingBallHotkey } from "@/entrypoints/content/floatingBallHotke
 import { setupManualTranslationTriggers } from "@/entrypoints/content/manualTranslationTriggers";
 import { setupInputBoxTranslation } from "@/entrypoints/content/inputBoxTranslation";
 import { setupContentRuntimeControls, setupContentUnloadCleanup } from "@/entrypoints/content/contentControls";
+import { setupContentUiMounting } from "@/entrypoints/content/contentUiMounting";
 
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
-    runAt: 'document_end',  // 在页面加载完成后运行
+    runAt: 'document_end',  // DOM 解析完成后注册页面能力，扩展 UI 会等待 window.load
     async main() {
         await configReady // 等待配置加载完成
         if (config.on === false) return; // 如果配置关闭，则不执行任何操作
@@ -55,18 +56,23 @@ export default defineContentScript({
             onPageTranslationStateChange: setFloatingBallTranslationState
         });
 
-        // 挂载悬浮球（如果配置未禁用）
-        if (config.disableFloatingBall !== true) {
-            // 使用配置中的位置
-            mountFloatingBall();
-        }
-        
-        // 挂载划词翻译组件（如果配置未禁用）
-        if (config.disableSelectionTranslator !== true) {
-            mountSelectionTranslator();
-        }
-        
-        setupOnboardingWidgets();
+        // 等页面 hydration 完成后再向 body 挂载扩展 UI，避免被 Next.js 等框架清理。
+        const contentUiMounting = setupContentUiMounting({
+            document,
+            window,
+            mount: () => {
+                if (config.disableFloatingBall !== true) {
+                    mountFloatingBall();
+                }
+
+                if (config.disableSelectionTranslator !== true) {
+                    mountSelectionTranslator();
+                }
+
+                setupOnboardingWidgets();
+            }
+        });
+        window.addEventListener('beforeunload', contentUiMounting.dispose, { once: true });
 
         setupVideoSubtitle();
 
