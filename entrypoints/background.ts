@@ -15,6 +15,7 @@ import {
     videoSubtitleCacheInternals,
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
+import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -26,53 +27,6 @@ function isTranslationMessage(message: any): boolean {
         && Array.isArray(message.origins)
         && message.origins.length > 0
         && message.origins.every((origin: unknown) => typeof origin === 'string' && origin.trim().length > 0);
-}
-
-/**
- * 在background脚本中调用微软翻译API（避免Firefox CORS问题）
- */
-async function translateWithMicrosoftInBackground(text: string, targetLang: string): Promise<string> {
-    try {
-        // 获取微软翻译的JWT令牌
-        const jwtToken = await refreshMicrosoftTokenInBackground();
-
-        // 调用微软翻译API
-        const response = await fetch(`https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=${targetLang}&api-version=3.0&includeSentenceLength=true&textType=html`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + jwtToken
-            },
-            body: JSON.stringify([{ Text: text }])
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            return result[0].translations[0].text;
-        } else {
-            throw new Error(`${t('runtime.microsoftTranslateFailed')}: ${response.status} ${response.statusText}`);
-        }
-    } catch (error) {
-        console.error('微软翻译请求失败:', error);
-        throw error;
-    }
-}
-
-/**
- * 在background脚本中刷新微软翻译令牌
- */
-async function refreshMicrosoftTokenInBackground(): Promise<string> {
-    try {
-        const response = await fetch("https://edge.microsoft.com/translate/auth");
-        if (response.ok) {
-            return await response.text();
-        } else {
-            throw new Error(`${t('runtime.microsoftTokenFailed')}: ${response.status} ${response.statusText}`);
-        }
-    } catch (error) {
-        console.error('获取微软翻译令牌失败:', error);
-        throw error;
-    }
 }
 
 export default defineBackground({
@@ -229,7 +183,11 @@ export default defineBackground({
 
             // 处理输入框翻译请求
             if (message?.type === 'inputBoxTranslation') {
-                return translateWithMicrosoftInBackground(message.text, message.targetLang)
+                return translateInputWithCurrentService({
+                    text: message.text,
+                    targetLang: message.targetLang,
+                    context: message.context,
+                })
                     .then(translatedText => ({ success: true, translatedText }))
                     .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
             }

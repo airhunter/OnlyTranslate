@@ -24,7 +24,7 @@ The **More** menu in the top-right of the popup contains Clear cache and Help. H
 - **Smart / full-page translation**: Smart mode focuses on articles, comments, and the main reading area. Full-page mode covers more visible text on documentation, forums, and tool pages.
 - **Bilingual / translation-only display**: Keep the original text for comparison and language learning, or show only the translation for a cleaner reading flow.
 - **Multiple ways to translate**: Start from the extension popup, the floating page toolbar, a keyboard shortcut, or the context menu.
-- **Selection, hover, and input-field translation**: Translate selected content, text under the pointer, or text entered into webpage input fields with a configurable trigger.
+- **Selection, hover, and input-field translation**: Translate selected content or text under the pointer, preview suggestions beside the caret, switch target language in place, and press `Tab` to replace the original text.
 - **Video subtitle translation**: Captures source subtitles on supported sites, translates them in context-aware segments, and shows bilingual subtitles. Playback-aware scheduling and local caching reduce waiting and repeated requests.
 - **Ebook translation (Beta)**: Import local EPUB files, automatically translate the current chapter while scrolling, and retain your library, reading progress, and location bookmarks.
 - **Flexible translation services**: Includes presets for Microsoft Translator, Google Translate, Chrome's built-in translator, DeepL, OpenAI, DeepSeek, Gemini, Claude, and more, plus OpenAI Chat Completions-compatible gateways.

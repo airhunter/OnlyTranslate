@@ -37,4 +37,21 @@ describe('i18n', () => {
       expect(t('video.subtitleTranslationCatchingUp', { seconds: 12 })).toContain('12')
     }
   })
+
+  it('provides input translation candidate messages in every supported locale', () => {
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      setLocale(locale)
+      for (const key of [
+        'runtime.inputTranslationTranslating',
+        'runtime.inputTranslationCandidate',
+        'runtime.inputTranslationAccept',
+        'runtime.inputTranslationCancel',
+        'runtime.inputTranslationUnsupportedEditor',
+        'options.interaction.inputCandidateHint',
+        'option.inputTrigger.autoPause',
+      ]) {
+        expect(t(key), `${locale}:${key}`).not.toBe(key)
+      }
+    }
+  })
 })

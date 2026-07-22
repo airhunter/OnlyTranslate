@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OnlyTranslate 输入翻译手工测试页</title>
+  <style>
+    :root {
+      color: #243342;
+      background: #f4f8fb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin: 0 0 6px; font-size: 17px; }
+    p { line-height: 1.65; }
+    code { padding: 2px 5px; border-radius: 5px; background: #e9f3fa; }
+    .intro, .case {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid #cfe2ef;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 5px 18px rgba(46, 88, 117, 0.06);
+    }
+    .case-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); }
+    .hint { margin: 0 0 12px; color: #5a6e7d; font-size: 13px; }
+    input, textarea, [contenteditable="true"] {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      color: #243342;
+      border: 1px solid #9fc6de;
+      border-radius: 8px;
+      background: #fbfdff;
+      font: 14px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    textarea { min-height: 130px; resize: vertical; }
+    [contenteditable="true"] { min-height: 96px; }
+    button {
+      margin-top: 10px;
+      padding: 7px 11px;
+      color: #126da8;
+      border: 1px solid #9fcfe9;
+      border-radius: 7px;
+      background: #edf8ff;
+      cursor: pointer;
+    }
+    .value {
+      display: block;
+      min-height: 44px;
+      margin-top: 10px;
+      padding: 8px;
+      overflow: auto;
+      color: #385164;
+      border-radius: 7px;
+      background: #f1f6f9;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+    .CodeMirror { padding: 10px; border: 1px solid #9fc6de; border-radius: 8px; background: #fbfdff; }
+    .CodeMirror textarea { min-height: 110px; border: 0; padding: 4px; outline: 0; background: transparent; }
+    .CodeMirror::before { content: "Mock CodeMirror 5 model"; display: block; margin-bottom: 6px; color: #5a6e7d; font-size: 11px; }
+    .monaco-editor { position: relative; min-height: 110px; padding: 12px; border: 1px dashed #d09c79; border-radius: 8px; background: #fff9f3; }
+    .monaco-editor .inputarea { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .fake-code { font: 14px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .guard { color: #9a4d20; }
+    ol { padding-left: 22px; line-height: 1.7; }
+  </style>
+  <script>
+    window.CodeMirror = {
+      fromTextArea(source) {
+        const root = document.getElementById('mock-codemirror')
+        const proxy = root.querySelector('textarea')
+        let value = source.value
+        proxy.value = value
+
+        const doc = {
+          getValue: () => value,
+          firstLine: () => 0,
+          lastLine: () => value.split('\n').length - 1,
+          getLine: line => value.split('\n')[line] || '',
+          replaceRange(text) {
+            value = text
+            proxy.value = text
+            proxy.dispatchEvent(new InputEvent('input', {
+              bubbles: true,
+              data: text,
+              inputType: 'insertReplacementText'
+            }))
+          },
+          setCursor() {}
+        }
+
+        proxy.addEventListener('input', event => {
+          if (event.inputType !== 'insertReplacementText') value = proxy.value
+          updateValue(proxy)
+        })
+
+        const editor = {
+          getDoc: () => doc,
+          getValue: doc.getValue,
+          getWrapperElement: () => root,
+          save: () => { source.value = value },
+          focus: () => proxy.focus()
+        }
+        window.mockCodeMirrorEditor = editor
+        root.dataset.ready = 'true'
+        return editor
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.CodeMirror.fromTextArea(document.getElementById('mock-codemirror-source'), {})
+    })
+  </script>
+</head>
+<body>
+  <h1>OnlyTranslate 输入翻译手工测试页</h1>
+  <p>建议先把触发方式设为“连续三次空格”。每个候选出现后先按 Esc，确认原文完全不变；再次触发后按 Tab，确认只在编辑框仍聚焦时接受。</p>
+
+  <section class="intro">
+    <strong>通过标准</strong>
+    <ol>
+      <li>候选出现前后，下面的 JSON 原文显示不应发生意外变化。</li>
+      <li>连续三次空格只作为指令，不删除样例中原有的缩进、空行和行末两个空格。</li>
+      <li>目标语言下拉框获得焦点后，按 Tab 只切换焦点，不接受候选。</li>
+      <li>结构化富文本和模拟 Monaco 代理输入框应提示不支持，不发送局部文本。</li>
+      <li>Mock CodeMirror 应翻译完整内容，按 Tab 后完整替换。</li>
+    </ol>
+  </section>
+
+  <div class="case-grid">
+    <section class="case">
+      <h2>1. 普通单行输入框</h2>
+      <p class="hint">测试候选、语言切换、Tab 接受和 Esc 取消。</p>
+      <input id="plain-input" value="你好，这是一条普通输入框测试。">
+      <output class="value" data-value-for="plain-input"></output>
+    </section>
+
+    <section class="case">
+      <h2>2. 保留格式的多行文本</h2>
+      <p class="hint">第一行有四个前导空格，第二行末尾有两个 Markdown 空格，末尾还有空行。</p>
+      <textarea id="formatted-textarea"></textarea>
+      <output class="value" data-value-for="formatted-textarea"></output>
+    </section>
+
+    <section class="case">
+      <h2>3. 简单 contenteditable</h2>
+      <p class="hint">只有纯文本，允许生成并接受候选。</p>
+      <div id="plain-editable" contenteditable="true">你好，这是一个简单的可编辑区域。</div>
+      <output class="value" data-html-for="plain-editable"></output>
+    </section>
+
+    <section class="case">
+      <h2>4. 结构化富文本保护</h2>
+      <p class="hint guard">建议切换到 Ctrl/Command + Enter 测试；应该提示暂不支持，链接和加粗必须保留。</p>
+      <div id="rich-editor" class="ProseMirror" contenteditable="true"><p>请保留这个 <strong>加粗内容</strong> 和 <a href="https://example.com/">链接</a>。</p></div>
+      <output class="value" data-html-for="rich-editor"></output>
+    </section>
+
+    <section class="case">
+      <h2>5. Mock CodeMirror 5</h2>
+      <p class="hint">实例仅由 fromTextArea 返回，不挂在 DOM 节点上，用来复测 V2EX 的真实问题。</p>
+      <textarea id="mock-codemirror-source" hidden>在正式提交之前，你可以点击预览查看 Markdown 正文的完整渲染效果。</textarea>
+      <div id="mock-codemirror" class="CodeMirror"><textarea aria-label="Mock CodeMirror editor"></textarea></div>
+      <output class="value" data-value-for="mock-codemirror"></output>
+    </section>
+
+    <section class="case">
+      <h2>6. 未适配的隐藏代理输入框</h2>
+      <p class="hint guard">点击按钮聚焦模拟 Monaco 的隐藏 textarea，再使用快捷键；应该提示暂不支持。</p>
+      <div class="monaco-editor">
+        <textarea id="unknown-proxy" class="inputarea monaco-mouse-cursor-text" data-onlytranslate-editor-proxy aria-hidden="true"></textarea>
+        <div class="fake-code">这是完整编辑器内容，但隐藏 textarea 里只有“最后一小段”。</div>
+      </div>
+      <button type="button" id="focus-proxy">聚焦隐藏代理输入框</button>
+      <output class="value" data-value-for="unknown-proxy"></output>
+    </section>
+  </div>
+
+  <script>
+    const formatted = document.getElementById('formatted-textarea')
+    formatted.value = '    第一行需要保留四个前导空格。\n第二行末尾是 Markdown 硬换行。  \n\n'
+    document.getElementById('unknown-proxy').value = '最后一小段'
+
+    function updateValue(element) {
+      const requestedId = element.closest('.CodeMirror')?.id || element.id
+      const output = document.querySelector(`[data-value-for="${requestedId}"]`)
+      if (output) output.textContent = JSON.stringify(element.value)
+    }
+
+    function updateHtml(element) {
+      const output = document.querySelector(`[data-html-for="${element.id}"]`)
+      if (output) output.textContent = element.innerHTML
+    }
+
+    document.querySelectorAll('input, textarea').forEach(element => {
+      updateValue(element)
+      element.addEventListener('input', () => updateValue(element))
+      element.addEventListener('change', () => updateValue(element))
+    })
+    document.querySelectorAll('[contenteditable="true"]').forEach(element => {
+      updateHtml(element)
+      element.addEventListener('input', () => updateHtml(element))
+    })
+    document.getElementById('focus-proxy').addEventListener('click', () => {
+      document.getElementById('unknown-proxy').focus()
+    })
+  </script>
+</body>
+</html>

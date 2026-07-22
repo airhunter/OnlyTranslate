@@ -66,6 +66,10 @@
             </el-select>
           </div>
         </div>
+
+        <p v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="input-candidate-hint">
+          {{ t('options.interaction.inputCandidateHint') }}
+        </p>
       </div>
     </div>
 
@@ -299,6 +303,13 @@ const getCustomHotkeyDisplayName = () => {
 
 .setting-card-body {
   padding: 8px 20px 12px;
+}
+
+.input-candidate-hint {
+  margin: 8px 0 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 /* Card inner rows customization */

@@ -105,18 +105,30 @@
 /* 翻译提示弹窗样式 - 柔和低调设计 */
 .fluent-input-tooltip {
     position: fixed;
-    background: rgba(0, 0, 0, 0.75);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
+    --onlytranslate-input-sky: #5bb5f5;
+    --onlytranslate-input-sky-deep: #258ed8;
+    --onlytranslate-input-sky-ink: #126da8;
+    --onlytranslate-input-sky-soft: #edf8ff;
+    --onlytranslate-input-sky-line: #b9e3fb;
+    --onlytranslate-input-text: #303133;
+    --onlytranslate-input-muted: #606266;
+    --onlytranslate-input-border: #dcdfe6;
+    background: #ffffff;
+    color: var(--onlytranslate-input-text);
+    padding: 10px 12px;
+    border: 1px solid var(--onlytranslate-input-border);
+    border-radius: 10px;
     font-size: 12px;
     font-weight: 400;
-    z-index: 10000;
+    z-index: 2147483646;
     pointer-events: none;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 8px 24px rgba(31, 45, 61, 0.14);
+    box-sizing: border-box;
+    opacity: 0;
     transform: translateY(3px);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
 }
 
 .fluent-input-tooltip.show {
@@ -130,15 +142,167 @@
 }
 
 .fluent-input-tooltip.translating {
-    background: rgba(59, 130, 246, 0.85);
-}
-
-.fluent-input-tooltip.success {
-    background: rgba(34, 197, 94, 0.85);
+    width: max-content;
+    min-width: min(300px, calc(100vw - 24px));
+    max-width: min(440px, calc(100vw - 24px));
+    color: var(--onlytranslate-input-sky-ink);
+    background: #ffffff;
+    border-color: var(--onlytranslate-input-sky-line);
+    pointer-events: auto;
 }
 
 .fluent-input-tooltip.error {
-    background: rgba(239, 68, 68, 0.85);
+    color: #b42318;
+    background: #fff7f6;
+    border-color: #f6c7c3;
+}
+
+.fluent-input-tooltip-icon {
+    display: inline-block;
+    margin-right: 6px;
+    font-weight: 700;
+}
+
+.fluent-input-tooltip.candidate {
+    width: max-content;
+    min-width: min(320px, calc(100vw - 24px));
+    max-width: min(440px, calc(100vw - 24px));
+    padding: 12px;
+    color: var(--onlytranslate-input-text);
+    background: #ffffff;
+    border-color: var(--onlytranslate-input-sky-line);
+    pointer-events: auto;
+    box-shadow: 0 12px 30px rgba(31, 45, 61, 0.16);
+}
+
+.fluent-input-candidate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.fluent-input-candidate-label {
+    color: var(--onlytranslate-input-sky-ink);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.fluent-input-target-select {
+    all: unset;
+    appearance: auto;
+    box-sizing: border-box;
+    min-width: 104px;
+    height: 28px;
+    padding: 3px 24px 3px 8px;
+    color: var(--onlytranslate-input-sky-ink);
+    background: var(--onlytranslate-input-sky-soft);
+    border: 1px solid var(--onlytranslate-input-sky-line);
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 20px;
+}
+
+.fluent-input-target-select:hover,
+.fluent-input-target-select:focus-visible {
+    border-color: var(--onlytranslate-input-sky);
+    box-shadow: 0 0 0 2px rgba(91, 181, 245, 0.16);
+}
+
+.fluent-input-loading-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 28px;
+    padding: 7px 9px;
+    color: var(--onlytranslate-input-sky-ink);
+    background: var(--onlytranslate-input-sky-soft);
+    border-radius: 7px;
+}
+
+.fluent-input-loading-spinner {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
+    border: 2px solid var(--onlytranslate-input-sky-line);
+    border-top-color: var(--onlytranslate-input-sky-deep);
+    border-radius: 50%;
+    animation: inputTranslationSpinner 0.7s linear infinite;
+}
+
+@keyframes inputTranslationSpinner {
+    to { transform: rotate(360deg); }
+}
+
+.fluent-input-candidate-text {
+    max-height: 160px;
+    overflow: auto;
+    padding: 8px 9px;
+    color: var(--onlytranslate-input-text);
+    background: #f8fbfd;
+    border: 1px solid #e8f1f7;
+    border-radius: 7px;
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+}
+
+.fluent-input-candidate-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #ebeef5;
+}
+
+.fluent-input-candidate-button {
+    all: unset;
+    box-sizing: border-box;
+    min-height: 26px;
+    padding: 4px 8px;
+    color: var(--onlytranslate-input-muted);
+    background: #ffffff;
+    border: 1px solid var(--onlytranslate-input-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+.fluent-input-candidate-button:hover,
+.fluent-input-candidate-button:focus-visible {
+    color: var(--onlytranslate-input-sky-ink);
+    border-color: var(--onlytranslate-input-sky);
+}
+
+.fluent-input-candidate-button.primary {
+    color: #ffffff;
+    background: var(--onlytranslate-input-sky-deep);
+    border-color: var(--onlytranslate-input-sky-deep);
+}
+
+.fluent-input-candidate-button.primary:hover,
+.fluent-input-candidate-button.primary:focus-visible {
+    color: #ffffff;
+    background: var(--onlytranslate-input-sky-ink);
+    border-color: var(--onlytranslate-input-sky-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fluent-input-tooltip,
+    .fluent-input-translating,
+    .fluent-input-success,
+    .fluent-input-error,
+    .fluent-input-loading-spinner {
+        animation: none !important;
+        transition: none !important;
+    }
 }
 
 /* 图标旋转动画 */

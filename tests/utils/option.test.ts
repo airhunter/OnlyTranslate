@@ -3,6 +3,17 @@ import { Config } from '@/entrypoints/utils/model'
 import { isServiceConfigured, options, services } from '@/entrypoints/utils/option'
 
 describe('service options', () => {
+  it('offers manual, repeated-character, and automatic input preview triggers', () => {
+    expect(options.inputBoxTranslationTrigger.map(item => item.value)).toEqual([
+      'disabled',
+      'ctrl_enter',
+      'triple_space',
+      'triple_equal',
+      'triple_dash',
+      'auto_pause',
+    ])
+  })
+
   it('does not expose the retired fixed custom service in the popup list', () => {
     expect(options.services.some(item => item.value === services.custom)).toBe(false)
   })

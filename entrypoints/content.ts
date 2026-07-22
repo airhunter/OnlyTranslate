@@ -21,6 +21,14 @@ export default defineContentScript({
     async main() {
         await configReady // 等待配置加载完成
         if (config.on === false) return; // 如果配置关闭，则不执行任何操作
+        const inputBoxTranslation = setupInputBoxTranslation({
+            config,
+            document,
+            window,
+            runtime: browser.runtime,
+            t
+        });
+        window.addEventListener('beforeunload', inputBoxTranslation.dispose, { once: true });
         // 添加手动翻译事件监听器
         setupManualTranslationTriggers({
             config,
@@ -83,12 +91,3 @@ export default defineContentScript({
         });
     }
 })
-
-// 初始化输入框翻译功能
-setupInputBoxTranslation({
-    config,
-    document,
-    window,
-    runtime: browser.runtime,
-    t
-});

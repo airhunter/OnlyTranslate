@@ -265,9 +265,11 @@ export const options = {
     ],
     inputBoxTranslationTrigger: [
         {value: "disabled", label: "关闭", labelKey: "option.inputTrigger.disabled"},
+        {value: "ctrl_enter", label: "Ctrl/Command + Enter", labelKey: "option.inputTrigger.ctrlEnter"},
         {value: "triple_space", label: "连续三次空格", labelKey: "option.inputTrigger.tripleSpace"},
         {value: "triple_equal", label: "连续三次等号 (=)", labelKey: "option.inputTrigger.tripleEqual"},
         {value: "triple_dash", label: "连续三次减号 (-)", labelKey: "option.inputTrigger.tripleDash"},
+        {value: "auto_pause", label: "停止输入后自动预览", labelKey: "option.inputTrigger.autoPause"},
     ],
 };
 
