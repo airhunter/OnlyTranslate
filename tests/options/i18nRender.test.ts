@@ -1,9 +1,17 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createAppI18n } from '@/entrypoints/utils/i18n'
 import AISettingsGroup from '@/components/options/AISettingsGroup.vue'
 import GeneralGroup from '@/components/options/GeneralGroup.vue'
 import AboutGroup from '@/components/options/AboutGroup.vue'
+
+const mocks = vi.hoisted(() => ({
+  clearTranslationCache: vi.fn(),
+}))
+
+vi.mock('@/entrypoints/utils/clearTranslationCache', () => ({
+  clearTranslationCache: mocks.clearTranslationCache,
+}))
 
 vi.mock('webextension-polyfill', () => ({
   default: {
@@ -37,6 +45,11 @@ const global = {
 }
 
 describe('options i18n render', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.clearTranslationCache.mockResolvedValue({ clearedPageTabs: 0, videoSubtitleEntries: 0 })
+  })
+
   it.each([
     ['zh-CN', '思考模式'],
     ['en-US', 'Thinking mode'],
@@ -56,6 +69,17 @@ describe('options i18n render', () => {
   it('renders general settings', () => {
     const wrapper = mount(GeneralGroup, { global })
     expect(wrapper.text()).toContain('视觉呈现')
+    expect(wrapper.text()).toContain('清除已缓存译文')
+    expect(wrapper.get('.cache-clear-button').attributes('type')).toBe('primary')
+  })
+
+  it('clears translation caches from general settings', async () => {
+    const wrapper = mount(GeneralGroup, { global })
+
+    await wrapper.get('.cache-clear-button').trigger('click')
+    await flushPromises()
+
+    expect(mocks.clearTranslationCache).toHaveBeenCalledOnce()
   })
 
   it('renders about page', () => {

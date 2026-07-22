@@ -295,7 +295,7 @@ import browser from 'webextension-polyfill';
 import { useTheme } from '@/composables/useTheme';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
 import { openOptionsPanel } from '@/entrypoints/utils/help';
-import { cache } from '@/entrypoints/utils/cache';
+import { clearTranslationCache } from '@/entrypoints/utils/clearTranslationCache';
 import { EbookImportError, EbookRepository } from '@/entrypoints/ebook/repository';
 import { getEbookPageUrl } from '@/entrypoints/ebook/url';
 import type { EbookRecord } from '@/entrypoints/ebook/types';
@@ -591,22 +591,7 @@ async function clearCache() {
     cacheBtnDisabled.value = true;
     cacheLoading.value = true;
     cacheStatus.value = 'idle';
-    cache.clean();
-
-    const [tabs, subtitleCacheResponse] = await Promise.all([
-      browser.tabs.query({ active: true, currentWindow: true }),
-      browser.runtime.sendMessage({ type: 'CLEAR_VIDEO_SUBTITLE_CACHE' }),
-    ]);
-    const subtitleCacheResult = subtitleCacheResponse as { success?: boolean; error?: string };
-    if (!subtitleCacheResult?.success) {
-      throw new Error(subtitleCacheResult?.error || 'Failed to clear video subtitle cache');
-    }
-    if (tabs[0]?.id) {
-      await browser.tabs.sendMessage(tabs[0].id, { message: 'clearCache' }).catch(error => {
-        // Restricted/internal pages have no content script or page cache to clear.
-        console.warn('Skipped active-page cache clear:', error);
-      });
-    }
+    await clearTranslationCache();
 
     cacheStatus.value = 'success';
   } catch (error) {

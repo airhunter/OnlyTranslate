@@ -48,6 +48,27 @@
 
         <div class="setting-row">
           <span class="setting-label">
+            {{ t('options.general.cacheManagement') }}
+            <el-tooltip effect="dark" :content="t('options.general.clearCacheTip')" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control">
+            <el-button
+              class="cache-clear-button"
+              :type="cacheButtonType"
+              :loading="cacheLoading"
+              :disabled="cacheButtonDisabled"
+              @click="handleClearCache"
+            >
+              <el-icon v-if="!cacheLoading"><Delete /></el-icon>
+              {{ cacheButtonText }}
+            </el-button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">
             {{ t('options.general.concurrency') }}
             <el-tooltip effect="dark" :content="t('options.general.concurrencyTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
@@ -87,18 +108,58 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, ref } from 'vue'
 import { options, defaultOption } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
-import { InfoFilled, Upload, Download } from '@element-plus/icons-vue'
+import { Delete, InfoFilled, Upload, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { storage } from '@wxt-dev/storage'
 import { useI18n } from 'vue-i18n'
+import { clearTranslationCache } from '@/entrypoints/utils/clearTranslationCache'
 
 const { config } = useConfig()
 const { t } = useI18n()
 
 type OptionLike = { label: string; labelKey?: string }
 const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
+
+const cacheLoading = ref(false)
+const cacheButtonDisabled = ref(false)
+const cacheStatus = ref<'idle' | 'success' | 'failed'>('idle')
+const cacheButtonText = computed(() => {
+  if (cacheStatus.value === 'success') return t('common.cleared')
+  if (cacheStatus.value === 'failed') return t('common.failed')
+  if (cacheLoading.value) return t('common.clearing')
+  return t('options.general.clearCacheAction')
+})
+const cacheButtonType = computed(() => {
+  if (cacheStatus.value === 'success') return 'success'
+  if (cacheStatus.value === 'failed') return 'danger'
+  return 'primary'
+})
+
+const handleClearCache = async () => {
+  if (cacheButtonDisabled.value) return
+  cacheButtonDisabled.value = true
+  cacheLoading.value = true
+  cacheStatus.value = 'idle'
+
+  try {
+    await clearTranslationCache()
+    cacheStatus.value = 'success'
+    ElMessage.success(t('options.general.cacheCleared'))
+  } catch (error) {
+    console.error('清除缓存失败:', error)
+    cacheStatus.value = 'failed'
+    ElMessage.error(t('options.general.cacheClearFailed'))
+  } finally {
+    cacheLoading.value = false
+    setTimeout(() => {
+      cacheButtonDisabled.value = false
+      cacheStatus.value = 'idle'
+    }, 1500)
+  }
+}
 
 // Handle concurrent change
 const handleConcurrentChange = (currentValue: number | undefined) => {
@@ -237,6 +298,10 @@ const validateConfig = (configData: any): boolean => {
 
 .general-group :deep(.setting-row:not(:last-child)) {
   border-bottom: 1px solid var(--fr-border-color-lighter);
+}
+
+.cache-clear-button {
+  min-width: 128px;
 }
 
 /* ===== Config management ===== */

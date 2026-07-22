@@ -88,10 +88,32 @@ describe('help utilities', () => {
     }
   })
 
+  it('keeps the beta ebook guide concise and available in every locale', () => {
+    const ebookTopic = helpTopics.find(topic => topic.id === 'ebooks')
+    expect(ebookTopic?.sections).toHaveLength(2)
+
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      const i18n = createAppI18n(locale)
+      expect(i18n.global.t('help.topics.ebooks.title')).toContain('Beta')
+      expect(i18n.global.t('help.topics.ebooks.betaBody')).toContain('EPUB')
+    }
+  })
+
+  it('documents cache clearing and protected local data in every locale', () => {
+    const settingsTopic = helpTopics.find(topic => topic.id === 'settings')
+    expect(settingsTopic?.sections.some(section => section.id === 'translation-cache')).toBe(true)
+
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      const i18n = createAppI18n(locale)
+      expect(i18n.global.t('help.topics.settings.cacheTitle')).not.toBe('help.topics.settings.cacheTitle')
+      expect(i18n.global.t('help.topics.settings.cacheStep4')).toContain('API')
+    }
+  })
+
   it('references screenshots bundled with the extension', () => {
     const images = helpTopics.flatMap(topic => topic.sections.flatMap(section => section.image ? [section.image] : []))
 
-    expect(images).toHaveLength(3)
+    expect(images).toHaveLength(2)
     for (const image of images) {
       expect(existsSync(resolve(process.cwd(), 'public', image.replace(/^\//, ''))), image).toBe(true)
     }

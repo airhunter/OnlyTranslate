@@ -32,8 +32,6 @@ export const helpTopics: HelpTopic[] = [
         id: 'first-translation',
         titleKey: 'help.topics.quickStart.firstTranslationTitle',
         bodyKey: 'help.topics.quickStart.firstTranslationBody',
-        image: '/help/popup-overview.png',
-        imageAltKey: 'help.images.popupOverview',
         stepKeys: [
           'help.topics.quickStart.firstTranslationStep1',
           'help.topics.quickStart.firstTranslationStep2',
@@ -139,6 +137,29 @@ export const helpTopics: HelpTopic[] = [
     ],
   },
   {
+    id: 'ebooks',
+    titleKey: 'help.topics.ebooks.title',
+    summaryKey: 'help.topics.ebooks.summary',
+    keywordsKey: 'help.topics.ebooks.keywords',
+    sections: [
+      {
+        id: 'ebook-start',
+        titleKey: 'help.topics.ebooks.startTitle',
+        bodyKey: 'help.topics.ebooks.startBody',
+        stepKeys: [
+          'help.topics.ebooks.startStep1',
+          'help.topics.ebooks.startStep2',
+          'help.topics.ebooks.startStep3',
+        ],
+      },
+      {
+        id: 'ebook-beta',
+        titleKey: 'help.topics.ebooks.betaTitle',
+        bodyKey: 'help.topics.ebooks.betaBody',
+      },
+    ],
+  },
+  {
     id: 'services',
     titleKey: 'help.topics.services.title',
     summaryKey: 'help.topics.services.summary',
@@ -197,6 +218,45 @@ export const helpTopics: HelpTopic[] = [
           'help.topics.services.customStep4',
           'help.topics.services.customStep5',
           'help.topics.services.customStep6',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'settings',
+    titleKey: 'help.topics.settings.title',
+    summaryKey: 'help.topics.settings.summary',
+    keywordsKey: 'help.topics.settings.keywords',
+    sections: [
+      {
+        id: 'languages',
+        titleKey: 'help.topics.settings.languagesTitle',
+        bodyKey: 'help.topics.settings.languagesBody',
+        stepKeys: [
+          'help.topics.settings.languagesStep1',
+          'help.topics.settings.languagesStep2',
+          'help.topics.settings.languagesStep3',
+        ],
+      },
+      {
+        id: 'appearance-settings',
+        titleKey: 'help.topics.settings.appearanceTitle',
+        bodyKey: 'help.topics.settings.appearanceBody',
+      },
+      {
+        id: 'local-data',
+        titleKey: 'help.topics.settings.dataTitle',
+        bodyKey: 'help.topics.settings.dataBody',
+      },
+      {
+        id: 'translation-cache',
+        titleKey: 'help.topics.settings.cacheTitle',
+        bodyKey: 'help.topics.settings.cacheBody',
+        stepKeys: [
+          'help.topics.settings.cacheStep1',
+          'help.topics.settings.cacheStep2',
+          'help.topics.settings.cacheStep3',
+          'help.topics.settings.cacheStep4',
         ],
       },
     ],

@@ -27,8 +27,8 @@ describe('HelpGroup', () => {
     })
 
     expect(wrapper.text()).toContain(title)
-    expect(wrapper.findAll('.help-topic')).toHaveLength(6)
-    expect(wrapper.findAll('.help-toc-link')).toHaveLength(6)
+    expect(wrapper.findAll('.help-topic')).toHaveLength(8)
+    expect(wrapper.findAll('.help-toc-link')).toHaveLength(8)
   })
 
   it('presents readable operation steps and compact screenshots', () => {
@@ -38,9 +38,11 @@ describe('HelpGroup', () => {
 
     expect(wrapper.text()).toContain('第一次翻译网页')
     expect(wrapper.text()).toContain('输入框翻译')
+    expect(wrapper.text()).toContain('电子书翻译（Beta）')
+    expect(wrapper.text()).toContain('翻译缓存与清理')
     expect(wrapper.text()).toContain('自定义网关')
     expect(wrapper.findAll('.help-steps').length).toBeGreaterThanOrEqual(10)
-    expect(wrapper.findAll('.help-figure img')).toHaveLength(3)
+    expect(wrapper.findAll('.help-figure img')).toHaveLength(2)
     expect(wrapper.get('.help-figure img').attributes('loading')).toBe('lazy')
   })
 
@@ -52,6 +54,10 @@ describe('HelpGroup', () => {
 
     await search.setValue('连续三次空格')
     expect(wrapper.text()).toContain('输入框翻译')
+    expect(wrapper.findAll('.help-topic')).toHaveLength(1)
+
+    await search.setValue('公测')
+    expect(wrapper.text()).toContain('电子书翻译（Beta）')
     expect(wrapper.findAll('.help-topic')).toHaveLength(1)
 
     await search.setValue('完全不存在的关键词')
