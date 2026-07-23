@@ -1,5 +1,18 @@
 # Changelog
 
+# [1.3.0](https://github.com/airhunter/OnlyTranslate/compare/v1.2.0...v1.3.0) (2026-07-23)
+
+
+### Bug Fixes
+
+* **content:** 延后页面 UI 挂载避免悬浮球消失 ([1d366df](https://github.com/airhunter/OnlyTranslate/commit/1d366dfb47cf1e2164b35650e6926253114d6b27))
+
+
+### Features
+
+* **content:** 增加输入框译文候选与编辑器适配 ([f5bedab](https://github.com/airhunter/OnlyTranslate/commit/f5bedab0fa9f34376b4d826ac992230bb2c860ea))
+* **options:** 增加缓存清理入口并更新使用帮助 ([34212ac](https://github.com/airhunter/OnlyTranslate/commit/34212aca434e6fa7acf1e10be68a6ca476d19f45))
+
 # [1.2.0](https://github.com/airhunter/OnlyTranslate/compare/v1.1.1...v1.2.0) (2026-07-21)
 
 
