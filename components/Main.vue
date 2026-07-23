@@ -990,7 +990,7 @@ onBeforeUnmount(() => {
 
 /* ===== Body ===== */
 .popup-body {
-  padding: 10px 16px 6px;
+  padding: 12px 16px;
   overflow: visible;
   background: var(--fr-bg-color);
 }

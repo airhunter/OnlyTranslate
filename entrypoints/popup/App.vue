@@ -13,6 +13,6 @@ import 'element-plus/theme-chalk/dark/css-vars.css';
 
 <style scoped>
 .popup-root {
-  width: 400px;
+  width: 360px;
 }
 </style>
