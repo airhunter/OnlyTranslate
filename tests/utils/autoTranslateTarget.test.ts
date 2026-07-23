@@ -409,6 +409,39 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(document.querySelector('#late-card > .only-translate-bilingual-content')).toBeNull()
   })
 
+  it('keeps Wikipedia paragraphs whole when inline metadata exceeds the markup size limit', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://en.wikipedia.org/wiki/Jordan'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="mw-parser-output">
+          <h1 id="wiki-title">Jordan</h1>
+          <p id="wiki-lead">
+            <b id="wiki-country">Jordan</b>,
+            <sup id="wiki-reference"><a href="#cite_note-a">[a]</a></sup>
+            officially the <b>Hashemite Kingdom of Jordan</b>, is a country in the
+            <a id="wiki-region" href="/wiki/Southern_Levant">Southern Levant</a>
+            region of West Asia. Jordan is bordered by Syria to the north and Iraq to the east.
+          </p>
+        </div>
+      </main>
+    `
+
+    document.querySelector('#wiki-reference')?.setAttribute(
+      'data-mw',
+      JSON.stringify({ body: 'x'.repeat(5000) })
+    )
+
+    const paragraph = document.querySelector('#wiki-lead')!
+    const target = resolveAutoTranslateTarget('smart')
+    const paragraphTargets = target.nodes.filter(node => node === paragraph || paragraph.contains(node))
+
+    expect(paragraph.outerHTML.length).toBeGreaterThan(4096)
+    expect(paragraphTargets).toEqual([paragraph])
+  })
+
   it('keeps Reddit multimedia text leaves when player markup exceeds the target size limit', () => {
     const redditUrl = new URL('https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/multimedia-post/')
     Object.defineProperty(window, 'location', {

@@ -6,6 +6,7 @@ import { getMainDomain } from '@/entrypoints/utils/domain';
 import {
     getStructuralHint,
     hasSentencePunctuation,
+    isSemanticInlineTextBlock,
     PROSE_TEXT_MIN_SHORT
 } from '@/entrypoints/utils/proseSignals';
 import {
@@ -261,7 +262,9 @@ function getGenericHardSkipReason(element: Element, context: TranslationTargetCo
 
     const text = getCachedNormalizedText(context.grabOptions?.scanContext, element) || getTranslatableText(element).replace(/\s+/g, ' ').trim();
     if (text.length < 3) return 'too-short';
-    if (text.length > 3072 || element.outerHTML.length > 4096) return 'too-long';
+    if (text.length > 3072 || (element.outerHTML.length > 4096 && !isSemanticInlineTextBlock(element))) {
+        return 'too-long';
+    }
 
     return undefined;
 }

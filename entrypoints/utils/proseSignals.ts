@@ -15,6 +15,17 @@ const SEMANTIC_PARAGRAPH_TAGS = new Set([
     'p', 'blockquote', 'figcaption', 'li'
 ]);
 
+const SEMANTIC_INLINE_TEXT_BLOCK_TAGS = new Set([
+    ...SEMANTIC_PARAGRAPH_TAGS,
+    'dd',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6'
+]);
+
 const TEXT_BLOCK_DESCENDANT_SELECTOR = [
     'p',
     'blockquote',
@@ -124,6 +135,11 @@ export function hasSentencePunctuation(text: string): boolean {
 export function isInlineOnlyElement(element: Element): boolean {
     return Array.from(element.children)
         .every(child => INLINE_TEXT_TAGS.has(child.tagName.toLowerCase()));
+}
+
+export function isSemanticInlineTextBlock(element: Element): boolean {
+    return SEMANTIC_INLINE_TEXT_BLOCK_TAGS.has(element.tagName.toLowerCase())
+        && isInlineOnlyElement(element);
 }
 
 function getElementText(element: Element, options: ProseEvidenceOptions): string {

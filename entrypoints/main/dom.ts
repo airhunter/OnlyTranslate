@@ -16,6 +16,7 @@ import {
     getProseEvidence,
     hasSentencePunctuation,
     isInlineOnlyElement,
+    isSemanticInlineTextBlock,
     MAX_INTERACTIVE_DENSITY,
     PROSE_TEXT_MIN
 } from "@/entrypoints/utils/proseSignals";
@@ -1007,11 +1008,13 @@ function isJSONContent(node: Element): boolean {
 // 检查文本长度
 function checkTextSize(node: Element): boolean {
     // 1. 若文本内容长度超过 3072
-    // 2. 或者 outerHTML 长度超过 4096，都视为过长
-    // 3. 少于3个字符
+    // 2. 普通节点 outerHTML 长度超过 4096 时视为过长
+    // 3. 语义文本块仅含内联内容时，忽略 CMS 元数据造成的 HTML 体积膨胀
+    // 4. 少于3个字符
     const textLength = node.textContent?.length ?? 0;
+    const hasOversizedMarkup = Boolean(node.outerHTML && node.outerHTML.length > 4096);
     return textLength > 3072 ||
-        (node.outerHTML && node.outerHTML.length > 4096) ||
+        (hasOversizedMarkup && !isSemanticInlineTextBlock(node)) ||
         textLength < 3;
 }
 

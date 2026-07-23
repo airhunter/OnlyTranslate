@@ -1,0 +1,8 @@
+{
+  "name": "Wikipedia keeps rich metadata paragraphs as complete translation targets",
+  "url": "https://en.wikipedia.org/wiki/Jordan",
+  "scope": "smart",
+  "html": "wikipedia-rich-metadata.html",
+  "include": ["wiki-lead"],
+  "exclude": ["wiki-country", "wiki-reference", "wiki-region"]
+}
