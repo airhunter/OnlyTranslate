@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.3.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.3：输入框翻译增强',
+        items: [
+          '输入框翻译会在光标旁显示译文候选，按 Tab 确认前不会修改原输入，按 Esc 可取消。',
+          '支持直接在候选框中切换目标语言，并可在设置中选择输入框翻译的默认目标语言。',
+          '改进普通输入框、文本域、纯文本可编辑区域和 CodeMirror 5 的兼容性，可按完整编辑内容进行翻译和替换。',
+          '设置页新增一键清理扩展、已打开网页、视频字幕和电子书的译文缓存，不会删除图书、进度、书签、设置或密钥。',
+          '修复部分页面在加载时重建布局后，悬浮翻译按钮可能消失的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.3: Enhanced Input-Field Translation',
+        items: [
+          'Input-field translation now shows a suggestion beside the caret and keeps the original text unchanged until you press Tab; press Esc to dismiss it.',
+          'Switch the target language directly in the suggestion and choose the default target language for input-field translation in Settings.',
+          'Improved support for standard inputs, textareas, plain editable areas, and CodeMirror 5, using the complete editor content when translating and replacing.',
+          'Added one-click clearing for extension, open webpage, video subtitle, and ebook translation caches in Settings without deleting books, progress, bookmarks, settings, or API keys.',
+          'Fixed the floating translation button disappearing on some pages that rebuild their layout while loading.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.3：輸入框翻譯增強',
+        items: [
+          '輸入框翻譯會在游標旁顯示譯文候選，按下 Tab 確認前不會修改原輸入，按下 Esc 可取消。',
+          '支援直接在候選框中切換目標語言，並可在設定中選擇輸入框翻譯的預設目標語言。',
+          '改善一般輸入框、文字區域、純文字可編輯區域和 CodeMirror 5 的相容性，可依完整編輯內容進行翻譯和替換。',
+          '設定頁新增一鍵清除擴充功能、已開啟網頁、影片字幕和電子書的譯文快取，不會刪除圖書、進度、書籤、設定或金鑰。',
+          '修正部分頁面在載入時重建版面後，浮動翻譯按鈕可能消失的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.3：入力欄翻訳を強化',
+        items: [
+          '入力欄のカーソル付近に翻訳候補を表示し、Tab で確定するまで元の入力を変更しないようにしました。Esc で候補を閉じられます。',
+          '候補上で翻訳先言語を切り替えられ、設定で入力欄翻訳の既定の翻訳先言語を選べるようにしました。',
+          '標準入力欄、テキストエリア、プレーンな編集可能領域、CodeMirror 5 への対応を改善し、エディター全体の内容を正しく読み取り、置換できるようにしました。',
+          '設定から拡張機能、開いている Web ページ、動画字幕、電子書籍の翻訳キャッシュをまとめて削除できるようにしました。本、読書進捗、ブックマーク、設定、API キーは削除されません。',
+          '読み込み中にレイアウトを書き換えるページで、フローティング翻訳ボタンが消えることがある問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.2.0',
     notes: {
       'zh-CN': {
