@@ -9,6 +9,12 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
 
+<p align="center">
+  <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="只译的真实网页识文翻译效果" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="只译的视频双语字幕效果" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="只译的 EPUB 翻译阅读器" width="32%" />
+</p>
+
 ## 快速开始
 
 1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi) 安装只译，打开需要翻译的普通网页。

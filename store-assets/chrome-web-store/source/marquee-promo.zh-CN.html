@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1400, initial-scale=1" />
+  <title>OnlyTranslate Marquee Promotional Tile</title>
+  <style>
+    :root {
+      font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: #fff;
+      background: #155bd7;
+      font-synthesis: none;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1400px; height: 560px; overflow: hidden; }
+
+    .tile {
+      position: relative;
+      width: 1400px;
+      height: 560px;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 70% 20%, rgba(89, 217, 255, .36), transparent 34%),
+        radial-gradient(circle at 12% 20%, rgba(255,255,255,.17), transparent 28%),
+        linear-gradient(130deg, #102faa 0%, #1d6de4 58%, #12b7c7 100%);
+    }
+
+    .tile::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
+      background-size: 46px 46px;
+      opacity: .22;
+      z-index: -3;
+    }
+
+    .visual {
+      position: absolute;
+      top: -18px;
+      right: -52px;
+      width: 930px;
+      height: 596px;
+      object-fit: cover;
+      object-position: 58% 50%;
+      opacity: .98;
+      filter: saturate(1.12) contrast(1.04);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 100%);
+      z-index: -2;
+    }
+
+    .shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(7, 20, 90, .96) 0%, rgba(18, 66, 177, .86) 38%, rgba(26, 118, 222, .38) 64%, rgba(16, 173, 198, .04) 100%),
+        linear-gradient(0deg, rgba(6, 19, 79, .20), transparent 42%);
+      z-index: -1;
+    }
+
+    .brand {
+      position: absolute;
+      top: 70px;
+      left: 84px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand img {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      box-shadow: 0 18px 38px rgba(0, 16, 74, .32);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 860;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 8px;
+      color: rgba(255,255,255,.78);
+      font-size: 15px;
+      font-weight: 780;
+      letter-spacing: .08em;
+    }
+
+    .copy {
+      position: absolute;
+      left: 84px;
+      top: 176px;
+      width: 610px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 58px;
+      line-height: 1.13;
+      font-weight: 880;
+      letter-spacing: 0;
+      text-shadow: 0 12px 34px rgba(5, 18, 80, .28);
+    }
+
+    p {
+      width: 640px;
+      margin: 22px 0 0;
+      color: rgba(255,255,255,.83);
+      font-size: 22px;
+      line-height: 1.55;
+      font-weight: 520;
+    }
+
+    .chips {
+      position: absolute;
+      left: 84px;
+      bottom: 82px;
+      display: flex;
+      gap: 14px;
+    }
+
+    .chips span {
+      display: inline-flex;
+      height: 38px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 999px;
+      background: rgba(255,255,255,.13);
+      color: rgba(255,255,255,.92);
+      font-size: 14px;
+      font-weight: 800;
+      backdrop-filter: blur(14px);
+    }
+
+    .spark {
+      position: absolute;
+      right: 548px;
+      top: 106px;
+      width: 70px;
+      height: 70px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+      box-shadow: 0 24px 70px rgba(56, 189, 248, .28);
+      backdrop-filter: blur(12px);
+    }
+
+    .spark::before,
+    .spark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 31px;
+      height: 4px;
+      border-radius: 999px;
+      background: #fff;
+      transform: translate(-50%, -50%);
+    }
+
+    .spark::after {
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+  </style>
+</head>
+<body>
+  <main class="tile">
+    <img class="visual" src="../generated/marquee-imagegen-source.png" alt="" />
+    <div class="shade" aria-hidden="true"></div>
+    <div class="spark" aria-hidden="true"></div>
+
+    <div class="brand">
+      <img src="../../../public/icon/512.png" alt="" />
+      <div>
+        <strong>只译 OnlyTranslate</strong>
+        <span>FOCUSED TRANSLATION</span>
+      </div>
+    </div>
+
+    <section class="copy">
+      <h1>外语内容，<br />直接双语读</h1>
+      <p>网页文章、视频字幕、本地 EPUB，<br />放进同一套浏览器扩展。</p>
+    </section>
+
+    <div class="chips" aria-hidden="true">
+      <span>识文翻译</span>
+      <span>双语字幕</span>
+      <span>EPUB 阅读器</span>
+      <span>开源自选服务</span>
+    </div>
+  </main>
+</body>
+</html>

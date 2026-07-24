@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1280, initial-scale=1" />
+  <title>只译识文真实网页演示</title>
+  <style>
+    :root {
+      font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: #162033;
+      background: #eaf1fb;
+      font-synthesis: none;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1280px; min-width: 1280px; height: 800px; overflow: hidden; }
+
+    .shot {
+      position: relative;
+      width: 1280px;
+      height: 800px;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 8% 8%, rgba(91, 141, 255, .22), transparent 34%),
+        radial-gradient(circle at 98% 4%, rgba(57, 214, 199, .28), transparent 32%),
+        linear-gradient(135deg, #f8fbff 0%, #edf4ff 55%, #f7fbf8 100%);
+    }
+
+    .shot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(37, 99, 235, .12) 1px, transparent 1px);
+      background-size: 26px 26px;
+      opacity: .28;
+      z-index: -1;
+    }
+
+    .brand {
+      position: absolute;
+      top: 38px;
+      left: 54px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #1d4ed8;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, .24);
+    }
+
+    .brand-mark svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .headline {
+      position: absolute;
+      top: 90px;
+      left: 54px;
+      width: 780px;
+    }
+
+    .headline h1 {
+      margin: 0;
+      color: #15213a;
+      font-size: 44px;
+      line-height: 1.18;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .headline p {
+      margin: 14px 0 0;
+      color: #526075;
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    .browser {
+      position: absolute;
+      left: 54px;
+      top: 200px;
+      width: 880px;
+      height: 540px;
+      overflow: hidden;
+      border: 1px solid rgba(82, 104, 139, .22);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 32px 80px rgba(38, 72, 122, .22), 0 8px 22px rgba(38, 72, 122, .10);
+    }
+
+    .browser-top {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 0 14px;
+      border-bottom: 1px solid #e7ebf2;
+      background: #f5f7fa;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dots i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d2d7df;
+    }
+
+    .dots i:first-child { background: #ff877d; }
+    .dots i:nth-child(2) { background: #ffca64; }
+    .dots i:last-child { background: #67d28d; }
+
+    .address {
+      flex: 1;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: #fff;
+      color: #768397;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .browser img {
+      display: block;
+      width: 880px;
+      height: 498px;
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    .source-note {
+      position: absolute;
+      left: 74px;
+      bottom: 28px;
+      color: #768397;
+      font-size: 12px;
+    }
+
+    .insight-panel {
+      position: absolute;
+      top: 200px;
+      right: 48px;
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-card {
+      padding: 18px 18px 17px;
+      border: 1px solid rgba(82, 104, 139, .18);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .82);
+      box-shadow: 0 18px 42px rgba(38, 72, 122, .12);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-card strong {
+      display: block;
+      color: #13213a;
+      font-size: 18px;
+      line-height: 1.35;
+      font-weight: 820;
+    }
+
+    .panel-card p {
+      margin: 8px 0 0;
+      color: #5d6a7f;
+      font-size: 14px;
+      line-height: 1.58;
+    }
+
+    .panel-card.primary {
+      background: #16336e;
+      color: #fff;
+      border-color: rgba(255, 255, 255, .18);
+    }
+
+    .panel-card.primary strong { color: #fff; }
+    .panel-card.primary p { color: rgba(255, 255, 255, .78); }
+
+    .smart-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #dff9f4;
+      color: #087568;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .smart-pill i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, .14);
+    }
+
+    .callout {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: #fff;
+      color: #1f3b69;
+      font-size: 13px;
+      font-weight: 780;
+      box-shadow: 0 12px 28px rgba(38, 72, 122, .16);
+    }
+
+    .callout i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .callout.article {
+      left: 210px;
+      top: 505px;
+    }
+
+    .callout.sidebar {
+      left: 675px;
+      top: 342px;
+    }
+
+    .arrows {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .arrows path {
+      fill: none;
+      stroke: #2563eb;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 3px 4px rgba(37, 99, 235, .18));
+    }
+  </style>
+</head>
+<body>
+  <main class="shot">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 7h10M10 4v3m-4 0c.8 2 2.1 3.8 4 5.2M12 7c-.7 2-1.9 3.8-3.6 5.3M14 16h6M17 13l3 7M16 18h5"/></svg>
+      </div>
+      <span>ONLYTRANSLATE · 只译</span>
+    </div>
+
+    <section class="headline">
+      <h1>识文：只翻你正在读的内容</h1>
+      <p>真实网页演示。正文双语保留，导航、订阅按钮和侧栏推荐不打扰阅读。</p>
+    </section>
+
+    <section class="browser" aria-label="真实网页识文截图">
+      <div class="browser-top">
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="address">technologyreview.com/2026/07/20/.../ai-biases-hiring-humans</div>
+      </div>
+      <img src="../zh-CN/smart-real-page-raw.png" alt="只译在 MIT Technology Review 文章页上的识文翻译真实截图" />
+    </section>
+
+    <div class="callout article"><i></i>正文进入双语阅读</div>
+    <div class="callout sidebar"><i></i>侧栏推荐保持原样</div>
+
+    <aside class="insight-panel">
+      <div class="panel-card primary">
+        <span class="smart-pill"><i></i>Smart / 识文</span>
+        <strong>不是把整页都翻一遍</strong>
+        <p>识文优先寻找标题、正文和主要阅读区域，让译文贴着阅读节奏出现。</p>
+      </div>
+      <div class="panel-card">
+        <strong>减少页面噪声</strong>
+        <p>媒体站常见的导航、订阅、推荐列表会尽量避开，页面不会突然变得满屏都是译文。</p>
+      </div>
+      <div class="panel-card">
+        <strong>保留原网页结构</strong>
+        <p>原文仍在原位置，译文跟随正文呈现，适合读文章、博客、新闻和技术资料。</p>
+      </div>
+    </aside>
+
+    <svg class="arrows" viewBox="0 0 1280 800" aria-hidden="true">
+      <path d="M350 505 C 365 470, 395 444, 440 430" />
+      <path d="M742 342 C 710 330, 690 315, 682 292" />
+    </svg>
+
+    <div class="source-note">真实网页截图用于功能演示，不代表 MIT Technology Review 对只译的授权或背书。</div>
+  </main>
+</body>
+</html>

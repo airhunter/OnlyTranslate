@@ -413,7 +413,7 @@ export const messages = {
       },
       about: {
         title: '关于只译',
-        productDesc: '一款专注翻译的浏览器插件，强大而克制，只做一件事。',
+        productDesc: '给认真读外语内容的人：网页、视频字幕和 EPUB 都能双语翻译。',
         projectHome: '项目主页',
         releaseNotes: '更新说明',
         privacyPolicy: '隐私政策'
@@ -902,7 +902,7 @@ export const messages = {
       },
       about: {
         title: 'About OnlyTranslate',
-        productDesc: 'A focused browser extension for translation: powerful, restrained, and built to do one thing well.',
+        productDesc: 'Bilingual reading for web pages, video subtitles, and local EPUB books.',
         projectHome: 'Project home',
         releaseNotes: 'Release notes',
         privacyPolicy: 'Privacy policy'
@@ -1391,7 +1391,7 @@ export const messages = {
       },
       about: {
         title: '關於只譯',
-        productDesc: '一款專注翻譯的瀏覽器擴充功能，強大而克制，只做好一件事。',
+        productDesc: '給認真讀外語內容的人：網頁、影片字幕和 EPUB 都能雙語翻譯。',
         projectHome: '專案首頁',
         releaseNotes: '更新說明',
         privacyPolicy: '隱私權政策'
@@ -1880,7 +1880,7 @@ export const messages = {
       },
       about: {
         title: 'OnlyTranslate について',
-        productDesc: '翻訳に特化したブラウザー拡張機能。強力で控えめ、ひとつのことを丁寧に行います。',
+        productDesc: 'Webページ、動画字幕、ローカルEPUBを対訳で読める翻訳拡張機能。',
         projectHome: 'プロジェクトホーム',
         releaseNotes: 'リリースノート',
         privacyPolicy: 'プライバシーポリシー'

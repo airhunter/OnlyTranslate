@@ -9,6 +9,12 @@ OnlyTranslate is a browser extension designed for a focused reading experience. 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
 
+<p align="center">
+  <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="OnlyTranslate Smart translation on a real webpage" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="OnlyTranslate bilingual video subtitles" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="OnlyTranslate EPUB translation reader" width="32%" />
+</p>
+
 ## Quick Start
 
 1. Install OnlyTranslate from the [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi), then open a regular webpage you want to translate.

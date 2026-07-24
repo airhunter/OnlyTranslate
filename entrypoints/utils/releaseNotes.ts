@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.3.1',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.3.1：商店展示与定位更新',
+        items: [
+          '更新扩展包摘要，突出网页、视频字幕和本地 EPUB 的双语阅读场景。',
+          '补充 Chrome Web Store 中文与全球通用截图、宣传图素材，让识文、字幕、EPUB、书架和服务选择更直观。',
+          '更新 README 首屏截图与商店文案，安装前更容易看懂只译适合哪些外语阅读场景。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.3.1: Store Presentation Refresh',
+        items: [
+          'Updated the extension package summary to highlight bilingual reading for web pages, video subtitles, and local EPUB books.',
+          'Added refreshed Chrome Web Store screenshots and promotional assets for both Chinese and global listings.',
+          'Updated README preview screenshots and store copy so new users can understand the core reading scenarios more quickly.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.3.1：商店展示與定位更新',
+        items: [
+          '更新擴充功能套件摘要，突出網頁、影片字幕和本機 EPUB 的雙語閱讀場景。',
+          '補充 Chrome Web Store 中文與全球通用截圖、宣傳圖素材，讓識文、字幕、EPUB、書架和服務選擇更直觀。',
+          '更新 README 首屏截圖與商店文案，安裝前更容易看懂只譯適合哪些外語閱讀場景。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.3.1：ストア表示と位置づけを更新',
+        items: [
+          '拡張機能パッケージの概要を更新し、Web ページ、動画字幕、ローカル EPUB の対訳読書をより分かりやすくしました。',
+          'Chrome Web Store 向けに、中国語表示用とグローバル表示用のスクリーンショット、プロモーション画像を追加しました。',
+          'README の先頭画像とストア文面を更新し、インストール前に主な読書シーンを把握しやすくしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.3.0',
     notes: {
       'zh-CN': {
