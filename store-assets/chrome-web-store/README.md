@@ -40,9 +40,9 @@
 
 ImageGen 原图位于 `generated/`。最终文字由 HTML/CSS 叠加，避免图片模型生成乱码。
 
-## 仍需补齐
+## 上传状态
 
-- 如果后续要上传 Marquee，可以直接使用 `marquee-promo.png`，也可以在它左侧留白区域叠加英文品牌短句后再上传。
+Chrome Web Store 的中文截图、全球通用截图、小宣传图和 Marquee 宣传图已于 2026-07-24 更新。
 
 ## 文案
 

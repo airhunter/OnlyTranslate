@@ -80,16 +80,19 @@
 ## 上传清单
 
 - [ ] `public/icon/128.png` 作为商店图标
-- [ ] 上传 `zh-CN/01-web-translation.png`
-- [ ] 上传 `zh-CN/02-video-subtitles.png`
-- [ ] 上传 `zh-CN/03-ebook-reader-beta.png`
-- [ ] 上传 `zh-CN/04-popup-bookshelf.png`
-- [ ] 上传 `zh-CN/05-services-and-privacy.png`
-- [ ] 在“全球通用的资源”截图位上传 `global/01-web-translation.png` 至 `global/05-services-and-privacy.png`
-- [ ] 上传 `small-promo-tile.png`
-- [ ] 可选：上传 `marquee-promo.png`
-- [ ] 短描述使用本文案
-- [ ] 长描述使用本文案
+- [x] 更新商店标题（2026-07-24）
+- [x] 上传 `zh-CN/01-web-translation.png`
+- [x] 上传 `zh-CN/02-video-subtitles.png`
+- [x] 上传 `zh-CN/03-ebook-reader-beta.png`
+- [x] 上传 `zh-CN/04-popup-bookshelf.png`
+- [x] 上传 `zh-CN/05-services-and-privacy.png`
+- [x] 在“全球通用的资源”截图位上传 `global/01-web-translation.png` 至 `global/05-services-and-privacy.png`
+- [x] 上传 `small-promo-tile.png`
+- [x] 上传 `marquee-promo.png`
+- [x] 短描述使用本文案
+- [x] 长描述使用本文案
 - [ ] 分类建议：Productivity 或 Tools
 - [ ] Homepage URL 指向 GitHub 仓库
 - [ ] Support URL 指向 GitHub Issues
+
+以上已勾选项根据 2026-07-24 的后台更新确认；图标、分类和链接项仍需单独核对。
