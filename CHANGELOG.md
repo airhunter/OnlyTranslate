@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/airhunter/OnlyTranslate/compare/v1.3.0...v1.3.1) (2026-07-25)
+
+
+### Bug Fixes
+
+* **content:** 修复 Wikipedia 段落翻译排版 ([0065050](https://github.com/airhunter/OnlyTranslate/commit/0065050edb40406925daa54e3743b878792c8c8b))
+* **popup:** 调整弹窗尺寸比例 ([1b306ee](https://github.com/airhunter/OnlyTranslate/commit/1b306eec70d62dfa4b1e5da0ca7587a85d2cf4f1))
+
 # [1.3.0](https://github.com/airhunter/OnlyTranslate/compare/v1.2.0...v1.3.0) (2026-07-23)
 
 
