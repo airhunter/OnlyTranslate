@@ -2,7 +2,7 @@
 
 > Focused, capable, and intentionally quiet. It does one thing well: translation.
 
-[中文](./README.md) | English
+[中文](./README.md) | English | [Official website](https://onlytranslate.top/)
 
 OnlyTranslate is a browser extension designed for a focused reading experience. It translates main web content, full pages, selected or hovered text, input fields, video subtitles, and local EPUB ebooks while preserving the original structure and reading flow as much as possible.
 
