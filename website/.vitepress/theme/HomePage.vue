@@ -66,7 +66,7 @@ const demos = {
 
 const currentDemo = computed(() => demos[activeDemo.value]);
 
-async function syncDemoPlayback() {
+async function syncDemoPlayback(preferSound = false) {
   const video = demoVideoElement.value;
   if (!video) {
     return;
@@ -83,23 +83,41 @@ async function syncDemoPlayback() {
     return;
   }
 
+  if (preferSound) {
+    video.muted = false;
+  }
+
   try {
     await video.play();
-  } catch {
-    // 浏览器仍可能根据用户设置阻止自动播放，保留原生控件供手动播放。
+  } catch (error) {
+    const isAutoplayBlocked =
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      error.name === 'NotAllowedError';
+    if (!isAutoplayBlocked) {
+      return;
+    }
+
+    video.muted = true;
+    try {
+      await video.play();
+    } catch {
+      // 浏览器仍可能根据用户设置阻止播放，保留原生控件供手动操作。
+    }
   }
 }
 
-async function selectDemo(demo: DemoId) {
+async function selectDemo(demo: DemoId, preferSound = false) {
   if (demo === activeDemo.value) {
-    await syncDemoPlayback();
+    await syncDemoPlayback(preferSound);
     return;
   }
 
   demoVideoElement.value?.pause();
   activeDemo.value = demo;
   await nextTick();
-  await syncDemoPlayback();
+  await syncDemoPlayback(preferSound);
 }
 
 async function selectAdjacentDemo(direction: -1 | 1) {
@@ -108,7 +126,7 @@ async function selectAdjacentDemo(direction: -1 | 1) {
     (currentIndex + direction + demoIds.length) % demoIds.length;
   const nextDemo = demoIds[nextIndex];
 
-  await selectDemo(nextDemo);
+  await selectDemo(nextDemo, true);
   document.getElementById(`demo-tab-${nextDemo}`)?.focus();
 }
 
@@ -291,7 +309,7 @@ const services = [
             :aria-selected="activeDemo === 'web'"
             aria-controls="demo-panel-web"
             :tabindex="activeDemo === 'web' ? 0 : -1"
-            @click="selectDemo('web')"
+            @click="selectDemo('web', true)"
             @keydown.left.prevent="selectAdjacentDemo(-1)"
             @keydown.right.prevent="selectAdjacentDemo(1)"
           >
@@ -307,7 +325,7 @@ const services = [
             :aria-selected="activeDemo === 'video'"
             aria-controls="demo-panel-video"
             :tabindex="activeDemo === 'video' ? 0 : -1"
-            @click="selectDemo('video')"
+            @click="selectDemo('video', true)"
             @keydown.left.prevent="selectAdjacentDemo(-1)"
             @keydown.right.prevent="selectAdjacentDemo(1)"
           >
@@ -323,7 +341,7 @@ const services = [
             :aria-selected="activeDemo === 'epub'"
             aria-controls="demo-panel-epub"
             :tabindex="activeDemo === 'epub' ? 0 : -1"
-            @click="selectDemo('epub')"
+            @click="selectDemo('epub', true)"
             @keydown.left.prevent="selectAdjacentDemo(-1)"
             @keydown.right.prevent="selectAdjacentDemo(1)"
           >
@@ -345,7 +363,6 @@ const services = [
                 ref="demoVideoElement"
                 controls
                 playsinline
-                muted
                 loop
                 preload="none"
                 :poster="currentDemo.poster"
