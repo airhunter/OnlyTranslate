@@ -117,9 +117,11 @@ Tech stack: [WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript, 
 
 If translation does not start, a page is only partially translated, or subtitles do not appear, check the built-in guide first. If the issue persists, report it through [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues).
 
-## Origin
+## Credits and Origin
 
 OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead). It keeps the core webpage translation experience while adding video subtitle translation, ebook translation, Smart / Full page scope switching, and a more focused settings experience. Thanks to the original author and all contributors for their open-source work.
+
+The design and implementation of OnlyTranslate's EPUB reader drew inspiration from [taylorren/ai-reader](https://github.com/taylorren/ai-reader). Thanks to the project and its contributors for sharing their open-source ideas and work.
 
 ## License
 

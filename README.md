@@ -117,9 +117,11 @@ corepack pnpm zip
 
 如果遇到无法翻译、页面漏翻或字幕异常，请先查看扩展内帮助；仍未解决时，可以前往 [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues) 反馈。
 
-## 项目来源
+## 致谢与项目来源
 
 OnlyTranslate 基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/FluentRead) 开发。在保留核心网页翻译能力的基础上，重点补充了视频字幕翻译、电子书翻译、识文 / 全页切换和更精简的设置体验。感谢原作者及所有贡献者的开源工作。
+
+OnlyTranslate 的 EPUB 阅读功能在设计与实现过程中参考了 [taylorren/ai-reader](https://github.com/taylorren/ai-reader)。感谢该项目及其贡献者分享的开源思路与实践。
 
 ## 开源协议
 
