@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/airhunter/OnlyTranslate/compare/v1.3.1...v1.3.2) (2026-07-27)
+
+
+### Bug Fixes
+
+* **content:** 修复 Hacker News 正文与评论漏翻 ([13fddc6](https://github.com/airhunter/OnlyTranslate/commit/13fddc6da5fd276cad4bde6f674b887d94572fb1))
+
 ## [1.3.1](https://github.com/airhunter/OnlyTranslate/compare/v1.3.0...v1.3.1) (2026-07-25)
 
 
