@@ -1,0 +1,29 @@
+{
+  "name": "Hacker News item keeps the current story and comment containers without metadata",
+  "url": "https://news.ycombinator.com/item?id=47555081",
+  "scope": "smart",
+  "html": "hacker-news-item.html",
+  "include": [
+    "story-title",
+    "story-text",
+    "comment-text"
+  ],
+  "exclude": [
+    "comment-cell",
+    "story-paragraph",
+    "story-conclusion",
+    "comment-paragraph",
+    "comment-conclusion"
+  ],
+  "textIncludes": [
+    "I've been reflecting on how LLMs are changing our learning habits",
+    "Several weeks ago, I spent about a week fully reverse engineering"
+  ],
+  "textExcludes": [
+    "76 points",
+    "acmerfight",
+    "peteforde",
+    "3 months ago",
+    "reply"
+  ]
+}

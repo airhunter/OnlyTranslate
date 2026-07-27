@@ -18,6 +18,11 @@ describe('domain utils', () => {
     expect(getMainDomain('https://www.x.com/openai/status/1')).toBe('x.com')
   })
 
+  it('keeps the Hacker News subdomain as its site profile key', () => {
+    expect(getMainDomain('https://news.ycombinator.com/item?id=47555081')).toBe('news.ycombinator.com')
+    expect(getMainDomain(new URL('https://news.ycombinator.com/newest'))).toBe('news.ycombinator.com')
+  })
+
   it('keeps the legacy compat facade on the same parser', () => {
     expect(getCompatMainDomain).toBe(getMainDomain)
   })

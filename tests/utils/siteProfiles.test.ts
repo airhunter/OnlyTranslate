@@ -14,6 +14,56 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+// 取自 https://news.ycombinator.com/item?id=47555081 的当前 DOM 结构
+const HN_ITEM_FIXTURE = `
+  <center><table id="hnmain">
+    <tr><td class="hnnavbar">
+      <span class="pagetop">
+        <b class="hnname"><a href="news">Hacker News</a></b>
+        <a id="nav-newest" href="newest">new</a> | <a href="front">past</a>
+      </span>
+    </td></tr>
+    <tr><td>
+      <table class="fatitem">
+        <tr class="athing" id="47555081">
+          <td class="title"><span class="rank"></span></td>
+          <td class="votelinks"><center><a href="vote?id=47555081"><div id="vote-arrow" class="votearrow" title="upvote"></div></a></center></td>
+          <td class="title"><span class="titleline"><a id="story-title" href="item?id=47555081">The risk of AI isn't making us lazy, but making "lazy" look productive</a></span></td>
+        </tr>
+        <tr><td colspan="2"></td><td class="subtext"><span class="subline">
+          <span class="score">76 points</span> by
+          <a id="story-user" href="user?id=acmerfight" class="hnuser">acmerfight</a>
+          <span class="age" title="2026-03-28T14:48:14"><a href="item?id=47555081">3 months ago</a></span>
+          | <a href="hide?id=47555081">hide</a>
+          | <a id="story-comments" href="item?id=47555081">88&nbsp;comments</a>
+        </span></td></tr>
+        <tr><td colspan="2"></td><td>
+          <div id="top-text" class="toptext" style="margin-top:4px">I've been reflecting on how LLMs are changing our learning habits as engineers.<p id="top-text-paragraph">But real learning requires deep reading, thinking, and practice.</p></div>
+        </td></tr>
+      </table>
+      <br><br>
+      <table class="comment-tree">
+        <tr class="athing comtr" id="47556028"><td><table><tr>
+          <td class="ind" indent="0"><img src="s.gif" height="1" width="0"></td>
+          <td class="votelinks"><center><a href="vote?id=47556028"><div class="votearrow" title="upvote"></div></a></center></td>
+          <td id="comment-cell" class="default">
+            <div><span class="comhead">
+              <a href="user?id=peteforde" class="hnuser">peteforde</a>
+              <span id="comment-age" class="age" title="2026-03-28T16:25:40"><a href="item?id=47556028">3 months ago</a></span>
+              <span class="navs"> | <a href="#47555767" class="clicky">next</a></span>
+            </span></div>
+            <br>
+            <div class="comment">
+              <div id="comment-text" class="commtext c00">Several weeks ago, I spent about a week fully reverse engineering a Stereomaker pedal.<p id="comment-paragraph">It uses a 5-stage all-pass filter to mess with the phase without the use of delay.</p></div>
+              <div class="reply"><p><font size="1"><u><a id="comment-reply" href="reply?id=47556028">reply</a></u></font></p></div>
+            </div>
+          </td>
+        </tr></table></td></tr>
+      </table>
+    </td></tr>
+  </table></center>
+`
+
 describe('site profile registry', () => {
   it('registers migrated select profiles by domain', () => {
     expect(selectCompatFn['github.com']).toBeTypeOf('function')
@@ -304,6 +354,74 @@ describe('site profile registry', () => {
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#live-headline')!, { mode: 'smart' })).toBe(document.querySelector('#live-headline'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#live-paragraph')!, { mode: 'smart' })).toBe(document.querySelector('#live-paragraph'))
     expect(selectCompatFn['cnn.com']?.(document.querySelector('#left-rail')!, { mode: 'smart' })).toEqual({ skip: true })
+  })
+
+  it('recognizes current Hacker News item DOM and keeps metadata untranslated', () => {
+    document.body.innerHTML = HN_ITEM_FIXTURE
+
+    const select = selectCompatFn['news.ycombinator.com']!
+    const title = document.querySelector('#story-title')!
+    const topText = document.querySelector('#top-text')!
+    const commentText = document.querySelector('#comment-text')!
+
+    expect(select(title, { mode: 'smart' })).toBe(title)
+    expect(select(topText, { mode: 'smart' })).toBe(topText)
+    expect(select(document.querySelector('#top-text-paragraph')!, { mode: 'smart' })).toBe(topText)
+    expect(select(commentText, { mode: 'smart' })).toBe(commentText)
+    expect(select(document.querySelector('#comment-paragraph')!, { mode: 'smart' })).toBe(commentText)
+
+    expect(select(document.querySelector('#comment-cell')!, { mode: 'smart' })).toBe(false)
+    expect(select(document.querySelector('#story-user')!, { mode: 'smart' })).toEqual({ skip: true })
+    expect(select(document.querySelector('#comment-age')!, { mode: 'smart' })).toEqual({ skip: true })
+    expect(select(document.querySelector('#comment-reply')!, { mode: 'smart' })).toEqual({ skip: true })
+    expect(select(document.querySelector('#nav-newest')!, { mode: 'smart' })).toEqual({ skip: true })
+    expect(select(document.querySelector('#vote-arrow')!, { mode: 'smart' })).toBe(false)
+  })
+
+  it('supplements the Hacker News story text that sits outside the comment tree', () => {
+    document.body.innerHTML = HN_ITEM_FIXTURE
+
+    const targets = supplementalCompatFn['news.ycombinator.com']?.(document.body, { mode: 'smart' }) ?? []
+
+    expect(targets).toContain(document.querySelector('#story-title'))
+    expect(targets).toContain(document.querySelector('#top-text'))
+    expect(targets).toContain(document.querySelector('#comment-text'))
+    expect(targets).not.toContain(document.querySelector('#story-user'))
+    expect(targets).not.toContain(document.querySelector('#comment-cell'))
+  })
+
+  it('still recognizes legacy Hacker News selectors', () => {
+    document.body.innerHTML = `
+      <table>
+        <tr class="athing">
+          <td class="title"><a id="legacy-title" class="titlelink" href="item?id=1">Legacy story title</a></td>
+        </tr>
+        <tr>
+          <td class="default">
+            <div class="comment"><span id="legacy-comment" class="commtext c00">Legacy comment body.</span></div>
+          </td>
+        </tr>
+      </table>
+    `
+
+    const select = selectCompatFn['news.ycombinator.com']!
+
+    expect(select(document.querySelector('#legacy-title')!, { mode: 'smart' })).toBe(document.querySelector('#legacy-title'))
+    expect(select(document.querySelector('#legacy-comment')!, { mode: 'smart' })).toBe(document.querySelector('#legacy-comment'))
+  })
+
+  it('keeps recognizing the Hacker News user profile about cell', () => {
+    document.body.innerHTML = `
+      <table>
+        <tr>
+          <td>about:</td>
+          <td id="about-cell" class="default">Engineer writing about compilers and coffee.</td>
+        </tr>
+      </table>
+    `
+
+    expect(selectCompatFn['news.ycombinator.com']?.(document.querySelector('#about-cell')!, { mode: 'smart' }))
+      .toBe(document.querySelector('#about-cell'))
   })
 
   it('supplements CNN article page headlines that sit outside the selected article body', () => {

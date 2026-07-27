@@ -33,6 +33,7 @@ export interface SiteProfile {
     select?: SiteProfileSelect;
     replace?: SiteProfileReplace;
     supplemental?: SiteProfileSupplemental;
+    preserveSupplementalTargets?: boolean;
     afterBilingualAppend?: SiteProfileAfterBilingualAppend;
     allowTarget?: SiteProfileTargetAllow;
     skipTarget?: SiteProfileTargetSkip;

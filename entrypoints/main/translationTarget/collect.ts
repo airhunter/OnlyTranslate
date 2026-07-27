@@ -229,12 +229,17 @@ function collectSupplementalReadingTargets(
     const genericTargets = shouldUseProfileFastPath(profileTargets, context)
         ? []
         : collectGenericSupplementalReadingTargets(root, context, siteTargets);
+    const preservedSiteTargets = getCurrentSiteProfile()?.preserveSupplementalTargets
+        ? new Set(siteTargets)
+        : undefined;
 
     return [
         ...genericTargets,
         ...siteTargets
     ]
-        .flatMap(unit => expandSupplementalReadingUnit(unit, context))
+        .flatMap(unit => preservedSiteTargets?.has(unit)
+            ? [unit]
+            : expandSupplementalReadingUnit(unit, context))
         .filter(unit => isVisibleForTranslation(unit, context));
 }
 

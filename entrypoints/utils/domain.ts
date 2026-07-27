@@ -19,6 +19,7 @@ export function getMainDomain(url: DomainInput): string {
         }
 
         hostname = hostname.replace(/^www\./, '');
+        if (hostname === 'news.ycombinator.com') return hostname;
 
         const parts = hostname.split('.');
         if (parts.length >= 2) {
