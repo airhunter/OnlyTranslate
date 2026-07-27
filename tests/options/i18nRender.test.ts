@@ -82,8 +82,38 @@ describe('options i18n render', () => {
     expect(mocks.clearTranslationCache).toHaveBeenCalledOnce()
   })
 
-  it('renders about page', () => {
+  it('renders about page with official website and source links', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     const wrapper = mount(AboutGroup, { global })
+
     expect(wrapper.text()).toContain('关于只译')
+    expect(wrapper.text()).toContain('官方网站')
+    expect(wrapper.text()).toContain('GitHub 源码')
+
+    await wrapper.get('[data-testid="official-website-link"]').trigger('click')
+    expect(openSpy).toHaveBeenCalledWith('https://onlytranslate.top/', '_blank', 'noopener,noreferrer')
+
+    await wrapper.get('[data-testid="github-link"]').trigger('click')
+    expect(openSpy).toHaveBeenCalledWith('https://github.com/airhunter/OnlyTranslate', '_blank', 'noopener,noreferrer')
+    openSpy.mockRestore()
+  })
+
+  it.each([
+    ['zh-CN', '“只译” (OnlyTranslate) 隐私权政策', '最后更新日期', '我们不收集'],
+    ['en-US', 'OnlyTranslate Privacy Policy', 'Last updated', 'We do not collect'],
+    ['zh-TW', '「只譯」(OnlyTranslate) 隱私權政策', '最後更新日期', '我們不會收集'],
+    ['ja-JP', '「OnlyTranslate」プライバシーポリシー', '最終更新日', '個人情報'],
+  ])('renders the localized privacy policy for %s', (locale, title, meta, body) => {
+    const i18n = createAppI18n(locale as 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP')
+    const wrapper = mount(AboutGroup, {
+      global: {
+        ...global,
+        plugins: [i18n],
+      },
+    })
+
+    expect(wrapper.get('.privacy-title').text()).toBe(title)
+    expect(wrapper.get('.privacy-meta').text()).toContain(meta)
+    expect(wrapper.get('.privacy-doc').text()).toContain(body)
   })
 })

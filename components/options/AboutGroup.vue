@@ -18,10 +18,26 @@
             <span class="meta-label">{{ t('common.currentVersion') }}</span>
             <strong>v{{ appVersion }}</strong>
           </div>
-          <button type="button" class="project-link" @click="openExternal(GITHUB_URL)">
-            <span>{{ t('options.about.projectHome') }}</span>
-            <el-icon><ArrowRight /></el-icon>
-          </button>
+          <div class="project-links">
+            <button
+              type="button"
+              class="project-link"
+              data-testid="official-website-link"
+              @click="openExternal(OFFICIAL_WEBSITE_URL)"
+            >
+              <span>{{ t('options.about.officialWebsite') }}</span>
+              <el-icon><ArrowRight /></el-icon>
+            </button>
+            <button
+              type="button"
+              class="project-link"
+              data-testid="github-link"
+              @click="openExternal(GITHUB_URL)"
+            >
+              <span>{{ t('options.about.sourceCode') }}</span>
+              <el-icon><ArrowRight /></el-icon>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -61,15 +77,28 @@ import { computed } from 'vue'
 import { ArrowRight } from '@element-plus/icons-vue'
 import browser from 'webextension-polyfill'
 import { findReleaseNoteByVersion } from '@/entrypoints/utils/releaseNotes'
-import privacyMarkdown from '../../PRIVACY.md?raw'
+import privacyZhCnMarkdown from '../../PRIVACY.md?raw'
+import privacyEnUsMarkdown from '../../PRIVACY_EN.md?raw'
+import privacyZhTwMarkdown from '../../PRIVACY_ZH_TW.md?raw'
+import privacyJaJpMarkdown from '../../PRIVACY_JA.md?raw'
 import { useI18n } from 'vue-i18n'
 
+const OFFICIAL_WEBSITE_URL = 'https://onlytranslate.top/'
 const GITHUB_URL = 'https://github.com/airhunter/OnlyTranslate'
 
 const appVersion = browser.runtime.getManifest().version
 const logoUrl = browser.runtime.getURL('/icon/128.png')
 const { t, locale } = useI18n()
 const currentReleaseNote = computed(() => findReleaseNoteByVersion(appVersion, locale.value))
+const privacyMarkdownByLocale = {
+  'zh-CN': privacyZhCnMarkdown,
+  'en-US': privacyEnUsMarkdown,
+  'zh-TW': privacyZhTwMarkdown,
+  'ja-JP': privacyJaJpMarkdown,
+} as const
+const localizedPrivacyMarkdown = computed(() =>
+  privacyMarkdownByLocale[locale.value as keyof typeof privacyMarkdownByLocale] ?? privacyZhCnMarkdown
+)
 
 const openExternal = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer')
@@ -86,7 +115,9 @@ const renderInlineMarkdown = (value: string) => escapeHtml(value)
   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
   .replace(/`(.+?)`/g, '<code>$1</code>')
 
-const privacyBlocks = computed(() => privacyMarkdown
+const privacyMetaPrefixes = ['最后更新日期', 'Last updated', '最後更新日期', '最終更新日']
+
+const privacyBlocks = computed(() => localizedPrivacyMarkdown.value
   .split('\n')
   .map((line: string) => line.trim())
   .filter(Boolean)
@@ -94,7 +125,7 @@ const privacyBlocks = computed(() => privacyMarkdown
     const content = line.replace(/^#\s+/, '').replace(/^\*\*(.+)\*\*$/, '$1')
     const type = line.startsWith('# ')
       ? 'title'
-      : line.startsWith('最后更新日期')
+      : privacyMetaPrefixes.some(prefix => line.startsWith(prefix))
         ? 'meta'
         : /^\*\*\d+\./.test(line)
           ? 'section'
@@ -210,6 +241,13 @@ const privacyBlocks = computed(() => privacyMarkdown
   line-height: 1.5;
 }
 
+.project-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .project-link {
   display: flex;
   align-items: center;
@@ -303,6 +341,10 @@ const privacyBlocks = computed(() => privacyMarkdown
   .product-meta {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .project-links {
+    flex-wrap: wrap;
   }
 }
 </style>

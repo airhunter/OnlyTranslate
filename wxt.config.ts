@@ -28,6 +28,7 @@ export default defineConfig({
     manifest: {
         name: '__MSG_extName__',
         description: '__MSG_extDescription__',
+        homepage_url: 'https://onlytranslate.top/',
         default_locale: 'zh_CN',
         permissions: ['storage', 'contextMenus', 'offscreen', 'alarms', 'unlimitedStorage'],
         host_permissions: ['<all_urls>'],

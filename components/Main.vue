@@ -78,6 +78,13 @@
             </svg>
             <span>{{ t('help.navLabel') }}</span>
           </button>
+          <button type="button" class="official-website-menu-item" @click="openOfficialWebsite">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+            </svg>
+            <span>{{ t('popup.officialWebsite') }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -689,6 +696,11 @@ function popupImportErrorText(error: unknown): string {
 function openHelpPage() {
   utilityMenuVisible.value = false;
   void openOptionsPanel('help')
+}
+
+function openOfficialWebsite() {
+  utilityMenuVisible.value = false;
+  void browser.tabs.create({ url: 'https://onlytranslate.top/' })
 }
 
 function handlePopupFocus() {

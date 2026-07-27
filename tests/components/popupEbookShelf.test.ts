@@ -147,6 +147,13 @@ describe('Popup ebook shelf', () => {
     await wrapper.find('.utility-menu-trigger').trigger('click');
     expect(wrapper.find('.utility-menu').text()).toContain('清空缓存');
     expect(wrapper.find('.utility-menu').text()).toContain('帮助');
+    expect(wrapper.find('.utility-menu').text()).toContain('官方网站');
+
+    await wrapper.find('.official-website-menu-item').trigger('click');
+    expect(mocks.createTab).toHaveBeenCalledWith({
+      url: 'https://onlytranslate.top/',
+    });
+    mocks.createTab.mockClear();
 
     await wrapper.findAll('.popup-nav-button')[1].trigger('click');
     await flushPromises();

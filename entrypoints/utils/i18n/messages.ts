@@ -50,6 +50,7 @@ export const messages = {
       ebookReader: '电子书翻译',
       navigation: '功能导航',
       moreActions: '更多操作',
+      officialWebsite: '官方网站',
       translateTab: '网页',
       ebooksTab: '电子书',
       ebookShelfTitle: '电子书书架',
@@ -414,7 +415,8 @@ export const messages = {
       about: {
         title: '关于只译',
         productDesc: '给认真读外语内容的人：网页、视频字幕和 EPUB 都能双语翻译。',
-        projectHome: '项目主页',
+        officialWebsite: '官方网站',
+        sourceCode: 'GitHub 源码',
         releaseNotes: '更新说明',
         privacyPolicy: '隐私政策'
       }
@@ -539,6 +541,7 @@ export const messages = {
       ebookReader: 'Ebook translation',
       navigation: 'Feature navigation',
       moreActions: 'More actions',
+      officialWebsite: 'Official website',
       translateTab: 'Web',
       ebooksTab: 'Ebooks',
       ebookShelfTitle: 'Ebook library',
@@ -903,7 +906,8 @@ export const messages = {
       about: {
         title: 'About OnlyTranslate',
         productDesc: 'Bilingual reading for web pages, video subtitles, and local EPUB books.',
-        projectHome: 'Project home',
+        officialWebsite: 'Official website',
+        sourceCode: 'GitHub source',
         releaseNotes: 'Release notes',
         privacyPolicy: 'Privacy policy'
       }
@@ -1028,6 +1032,7 @@ export const messages = {
       ebookReader: '電子書翻譯',
       navigation: '功能導覽',
       moreActions: '更多操作',
+      officialWebsite: '官方網站',
       translateTab: '網頁',
       ebooksTab: '電子書',
       ebookShelfTitle: '電子書書架',
@@ -1392,7 +1397,8 @@ export const messages = {
       about: {
         title: '關於只譯',
         productDesc: '給認真讀外語內容的人：網頁、影片字幕和 EPUB 都能雙語翻譯。',
-        projectHome: '專案首頁',
+        officialWebsite: '官方網站',
+        sourceCode: 'GitHub 原始碼',
         releaseNotes: '更新說明',
         privacyPolicy: '隱私權政策'
       }
@@ -1517,6 +1523,7 @@ export const messages = {
       ebookReader: '電子書籍翻訳',
       navigation: '機能ナビゲーション',
       moreActions: 'その他の操作',
+      officialWebsite: '公式サイト',
       translateTab: 'ウェブ',
       ebooksTab: '電子書籍',
       ebookShelfTitle: '電子書籍の本棚',
@@ -1881,7 +1888,8 @@ export const messages = {
       about: {
         title: 'OnlyTranslate について',
         productDesc: 'Webページ、動画字幕、ローカルEPUBを対訳で読める翻訳拡張機能。',
-        projectHome: 'プロジェクトホーム',
+        officialWebsite: '公式サイト',
+        sourceCode: 'GitHub ソース',
         releaseNotes: 'リリースノート',
         privacyPolicy: 'プライバシーポリシー'
       }
