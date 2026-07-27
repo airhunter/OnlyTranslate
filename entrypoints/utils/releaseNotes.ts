@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.4.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.4：关于页面与隐私说明优化',
+        items: [
+          'Popup 的“更多”菜单新增官方网站入口，需要了解产品信息时可以直接访问。',
+          '“关于只译”页面同时提供官方网站和 GitHub 源码入口，相关资源更容易找到。',
+          '隐私政策现在会跟随界面语言显示，完整支持简体中文、English、繁體中文和日本語。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.4: Improved About Page and Privacy Information',
+        items: [
+          'Added an official website link to the popup More menu for direct access to product information.',
+          'The About OnlyTranslate page now provides separate links to the official website and GitHub source code.',
+          'The privacy policy now follows the interface language, with complete support for Simplified Chinese, English, Traditional Chinese, and Japanese.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.4：關於頁面與隱私說明最佳化',
+        items: [
+          'Popup 的「更多」選單新增官方網站入口，需要瞭解產品資訊時可以直接前往。',
+          '「關於只譯」頁面同時提供官方網站和 GitHub 原始碼入口，相關資源更容易找到。',
+          '隱私權政策現在會跟隨介面語言顯示，完整支援簡體中文、English、繁體中文和日本語。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.4：概要ページとプライバシー情報を改善',
+        items: [
+          'ポップアップの「その他」メニューから公式サイトへ直接アクセスできるようにしました。',
+          '「OnlyTranslate について」ページに、公式サイトと GitHub ソースコードへのリンクをそれぞれ追加しました。',
+          'プライバシーポリシーが画面の言語に合わせて表示されるようになり、簡体字中国語、英語、繁体字中国語、日本語に完全対応しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.3.2',
     notes: {
       'zh-CN': {
