@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 
 // Mock window.matchMedia
@@ -19,6 +19,17 @@ Object.defineProperty(window, 'matchMedia', {
 
 describe('useTheme', () => {
   beforeEach(() => {
+    vi.mocked(window.matchMedia).mockClear()
+    vi.mocked(window.matchMedia).mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
     document.documentElement.classList.remove('dark')
   })
 
@@ -60,6 +71,32 @@ describe('useTheme', () => {
 
     updateTheme('auto')
 
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('should reactively follow system preference changes in auto mode', async () => {
+    const mediaQuery = {
+      matches: false,
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    } as MediaQueryList
+    vi.mocked(window.matchMedia).mockReturnValueOnce(mediaQuery)
+    const config = ref({ theme: 'auto' })
+    const { actualTheme } = useTheme(config)
+
+    expect(actualTheme.value).toBe('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+
+    Object.defineProperty(mediaQuery, 'matches', { configurable: true, value: true })
+    mediaQuery.onchange?.call(mediaQuery, { matches: true } as MediaQueryListEvent)
+    await nextTick()
+
+    expect(actualTheme.value).toBe('dark')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
 })

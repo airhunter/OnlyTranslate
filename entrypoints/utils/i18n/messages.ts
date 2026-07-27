@@ -107,6 +107,7 @@ export const messages = {
       noBookmarks: '还没有书签',
       bookmark: '书签',
       deleteBookmark: '删除书签',
+      continuePreviousChapter: '返回上一章',
       continueNextChapter: '继续阅读下一章',
       bookFinished: '本书已读完'
     },
@@ -598,6 +599,7 @@ export const messages = {
       noBookmarks: 'No bookmarks yet',
       bookmark: 'Bookmark',
       deleteBookmark: 'Delete bookmark',
+      continuePreviousChapter: 'Go to the previous chapter',
       continueNextChapter: 'Continue to the next chapter',
       bookFinished: 'You finished this book'
     },
@@ -1089,6 +1091,7 @@ export const messages = {
       noBookmarks: '還沒有書籤',
       bookmark: '書籤',
       deleteBookmark: '刪除書籤',
+      continuePreviousChapter: '返回上一章',
       continueNextChapter: '繼續閱讀下一章',
       bookFinished: '本書已讀完'
     },
@@ -1580,6 +1583,7 @@ export const messages = {
       noBookmarks: 'ブックマークはまだありません',
       bookmark: 'ブックマーク',
       deleteBookmark: 'ブックマークを削除',
+      continuePreviousChapter: '前の章に戻る',
       continueNextChapter: '次の章を読む',
       bookFinished: 'この本を読み終えました'
     },

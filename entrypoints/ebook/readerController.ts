@@ -6,6 +6,7 @@ import ePub, {
   type NavItem,
   type Rendition,
 } from 'epubjs';
+import { fitEbookImagePage } from './pageLayout';
 import { sanitizeEbookDocument } from './sanitizer';
 import type {
   Bookmark,
@@ -25,6 +26,8 @@ export interface ReaderLocation {
 
 export interface ChapterContinuationState {
   atChapterEnd: boolean;
+  previousHref?: string;
+  previousLabel?: string;
   nextHref?: string;
   nextLabel?: string;
 }
@@ -45,10 +48,32 @@ interface ReaderControllerOptions {
 
 interface RenderedSection {
   href?: string;
+  prev?: () => RenderedSection | undefined;
   next?: () => RenderedSection | undefined;
 }
 
 const CHAPTER_END_THRESHOLD = 32;
+
+export const EBOOK_THEME_COLORS = {
+  light: {
+    foreground: '#24272d',
+    background: '#fbfaf7',
+    link: '#3975d7',
+  },
+  dark: {
+    foreground: '#e6e8ec',
+    background: '#111317',
+    link: '#77a7ff',
+  },
+} as const;
+
+export function applyEbookDocumentTheme(document: Document, theme: 'light' | 'dark'): void {
+  const colors = EBOOK_THEME_COLORS[theme];
+  document.documentElement.style.setProperty('color-scheme', theme);
+  document.documentElement.style.setProperty('background-color', colors.background, 'important');
+  document.body?.style.setProperty('color', colors.foreground, 'important');
+  document.body?.style.setProperty('background-color', colors.background, 'important');
+}
 
 export function hasReachedChapterEnd(
   scrollTop: number,
@@ -86,6 +111,47 @@ function normalizeLocation(location: unknown): Location | undefined {
 
 function flattenToc(items: NavItem[]): NavItem[] {
   return items.flatMap(item => [item, ...flattenToc(item.subitems ?? [])]);
+}
+
+function normalizePackagePath(path: string): string {
+  const segments: string[] = [];
+  path.replace(/\\/g, '/').split('/').forEach(segment => {
+    if (!segment || segment === '.') return;
+    if (segment === '..') {
+      segments.pop();
+      return;
+    }
+    segments.push(segment);
+  });
+  return segments.join('/');
+}
+
+export function resolveEbookNavigationHref(href: string, navigationPath: string): string {
+  const target = href.trim();
+  if (!target || /^epubcfi\(/i.test(target) || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) {
+    return target;
+  }
+
+  const suffixIndex = target.search(/[?#]/);
+  const resource = suffixIndex >= 0 ? target.slice(0, suffixIndex) : target;
+  const suffix = suffixIndex >= 0 ? target.slice(suffixIndex) : '';
+  const navigationResource = navigationPath.split(/[?#]/)[0];
+  const navigationDirectory = navigationResource.includes('/')
+    ? navigationResource.slice(0, navigationResource.lastIndexOf('/') + 1)
+    : '';
+  const resolvedResource = resource
+    ? (resource.startsWith('/') ? resource.slice(1) : `${navigationDirectory}${resource}`)
+    : navigationResource;
+  const normalized = normalizePackagePath(resolvedResource);
+  return `${normalized}${suffix}`;
+}
+
+export function resolveEbookNavigation(items: readonly NavItem[], navigationPath: string): NavItem[] {
+  return items.map(item => ({
+    ...item,
+    href: resolveEbookNavigationHref(item.href, navigationPath),
+    subitems: resolveEbookNavigation(item.subitems ?? [], navigationPath),
+  }));
 }
 
 async function fetchCover(book: Book): Promise<Blob | undefined> {
@@ -126,6 +192,7 @@ export class EbookReaderController {
   private scrollContainer?: HTMLElement;
   private resizeObserver?: ResizeObserver;
   private restoringLayout = false;
+  private theme: 'light' | 'dark' = 'light';
   private sectionCount = 1;
   private readonly handleScroll = () => this.updateChapterContinuation();
 
@@ -144,7 +211,9 @@ export class EbookReaderController {
     this.book = book;
     await book.ready;
     this.sectionCount = Math.max(1, (await book.loaded.spine).length);
-    this.toc = (await book.loaded.navigation).toc;
+    const navigation = await book.loaded.navigation;
+    const navigationPath = book.packaging.navPath || book.packaging.ncxPath || '';
+    this.toc = resolveEbookNavigation(navigation.toc, navigationPath);
     this.navigationByHref = new Map(flattenToc(this.toc).map(item => [this.normalizeHref(item.href), item]));
 
     book.spine.hooks.content.register((document: Document) => {
@@ -153,6 +222,7 @@ export class EbookReaderController {
 
     const rendition = book.renderTo(container, EBOOK_RENDITION_OPTIONS);
     this.rendition = rendition;
+    this.theme = theme;
     if (progress?.cfi) {
       this.current = {
         cfi: progress.cfi,
@@ -162,20 +232,27 @@ export class EbookReaderController {
         atEnd: progress.percentage >= 1,
       };
     }
+    const lightTheme = EBOOK_THEME_COLORS.light;
+    const darkTheme = EBOOK_THEME_COLORS.dark;
     rendition.themes.register('onlytranslate-light', {
-      body: { color: '#24272d', background: '#fbfaf7' },
-      a: { color: '#3975d7' },
+      body: { color: lightTheme.foreground, background: lightTheme.background },
+      a: { color: lightTheme.link },
     });
     rendition.themes.register('onlytranslate-dark', {
-      body: { color: '#e6e8ec', background: '#17191d' },
-      a: { color: '#77a7ff' },
+      body: { color: darkTheme.foreground, background: darkTheme.background },
+      a: { color: darkTheme.link },
     });
-    rendition.themes.select(theme === 'dark' ? 'onlytranslate-dark' : 'onlytranslate-light');
+    this.applyTheme(theme);
     rendition.themes.fontSize(`${settings.fontScale}%`);
     rendition.themes.override('line-height', String(settings.lineHeight), true);
 
     rendition.hooks.content.register((contents: Contents) => {
       this.currentContents = contents;
+      applyEbookDocumentTheme(contents.document, this.theme);
+      fitEbookImagePage(contents.document, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
       this.attachExternalLinkHandler(contents.document);
     });
     rendition.on('rendered', (section: RenderedSection, view: { contents?: Contents }) => {
@@ -183,6 +260,10 @@ export class EbookReaderController {
       if (!contents) return;
       this.currentContents = contents;
       this.currentSection = section;
+      fitEbookImagePage(contents.document, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
       this.observeCurrentView();
       this.emitChapterContinuation(false);
       this.scheduleChapterEndCheck();
@@ -244,6 +325,13 @@ export class EbookReaderController {
     return true;
   }
 
+  async continueToPreviousChapter(): Promise<boolean> {
+    const previous = this.currentSection?.prev?.();
+    if (!previous?.href || !this.rendition) return false;
+    await this.rendition.display(previous.href);
+    return true;
+  }
+
   getCurrentLocation(): ReaderLocation | undefined {
     const latest = normalizeLocation(this.rendition?.currentLocation());
     if (latest?.start?.cfi) {
@@ -288,10 +376,13 @@ export class EbookReaderController {
     if (cfi) await this.rendition?.display(cfi);
   }
 
-  async applyTheme(theme: 'light' | 'dark'): Promise<void> {
-    const cfi = this.getCurrentLocation()?.cfi;
+  applyTheme(theme: 'light' | 'dark'): void {
+    this.theme = theme;
+    const colors = EBOOK_THEME_COLORS[theme];
     this.rendition?.themes.select(theme === 'dark' ? 'onlytranslate-dark' : 'onlytranslate-light');
-    if (cfi) await this.rendition?.display(cfi);
+    this.rendition?.themes.override('color', colors.foreground, true);
+    this.rendition?.themes.override('background-color', colors.background, true);
+    if (this.currentContents) applyEbookDocumentTheme(this.currentContents.document, theme);
   }
 
   async restoreAfterLayout(cfi: string): Promise<void> {
@@ -340,9 +431,12 @@ export class EbookReaderController {
   }
 
   private emitChapterContinuation(atChapterEnd: boolean): void {
+    const previous = this.currentSection?.prev?.();
     const next = this.currentSection?.next?.();
     this.options.onChapterContinuation?.({
       atChapterEnd,
+      previousHref: previous?.href,
+      previousLabel: previous?.href ? this.chapterLabel(previous.href) : undefined,
       nextHref: next?.href,
       nextLabel: next?.href ? this.chapterLabel(next.href) : undefined,
     });

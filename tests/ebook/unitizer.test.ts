@@ -36,6 +36,23 @@ describe('ebook chapter unitizer', () => {
     expect(translation.querySelector('math mi')?.textContent).toBe('y');
   });
 
+  it('preserves EPUB presentation classes without duplicating ids or internal state', () => {
+    const document = parse('<h2 id="episode-title" class="h2p centered">Episode one</h2>');
+    const [unit] = collectEbookTranslationUnits(document);
+
+    const translation = insertEbookTranslation(unit, '第一集');
+
+    expect(translation.tagName).toBe('H2');
+    expect(translation.classList.contains('h2p')).toBe(true);
+    expect(translation.classList.contains('centered')).toBe(true);
+    expect(translation.classList.contains('onlytranslate-ebook-translation')).toBe(true);
+    expect(translation.classList.contains('onlytranslate-ebook-has-translation')).toBe(false);
+    expect(translation.hasAttribute('id')).toBe(false);
+
+    const replacement = insertEbookTranslation(unit, '第一集');
+    expect(replacement.classList.contains('onlytranslate-ebook-has-translation')).toBe(false);
+  });
+
   it('keeps original text visible until a translation exists in translation-only mode', () => {
     const document = parse('<p>Original paragraph</p><p>Still pending</p>');
     const units = collectEbookTranslationUnits(document);

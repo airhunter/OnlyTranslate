@@ -1,4 +1,4 @@
-import { watch, onUnmounted } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 
 interface ThemeConfig {
@@ -7,34 +7,27 @@ interface ThemeConfig {
 
 export function useTheme(config: Ref<ThemeConfig>) {
   const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-  function updateTheme(theme: string) {
-    if (theme === 'auto') {
-      // Auto mode: use system preference
-      const isDark = darkModeMediaQuery.matches
-      document.documentElement.classList.toggle('dark', isDark)
-    } else {
-      // Manual mode: use selected theme
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-    }
-  }
-
-  // Watch config.theme changes
-  watch(() => config.value.theme, (newTheme) => {
-    updateTheme(newTheme || 'auto')
+  const systemTheme = ref<'light' | 'dark'>(darkModeMediaQuery.matches ? 'dark' : 'light')
+  const actualTheme = computed<'light' | 'dark'>(() => {
+    if (config.value.theme === 'dark') return 'dark'
+    if (config.value.theme === 'light') return 'light'
+    return systemTheme.value
   })
 
-  // Listen for system theme changes (auto mode)
-  darkModeMediaQuery.onchange = () => {
-    if (config.value.theme === 'auto') {
-      updateTheme('auto')
-    }
+  function updateTheme(theme: string) {
+    const resolvedTheme = theme === 'auto' ? systemTheme.value : theme
+    document.documentElement.classList.toggle('dark', resolvedTheme === 'dark')
   }
 
-  // Cleanup on unmount
+  watch(actualTheme, theme => updateTheme(theme), { immediate: true })
+
+  darkModeMediaQuery.onchange = event => {
+    systemTheme.value = event.matches ? 'dark' : 'light'
+  }
+
   onUnmounted(() => {
     darkModeMediaQuery.onchange = null
   })
 
-  return { updateTheme, darkModeMediaQuery }
+  return { updateTheme, darkModeMediaQuery, actualTheme }
 }

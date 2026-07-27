@@ -4,7 +4,16 @@ vi.mock('webextension-polyfill', () => ({
   default: { tabs: { create: vi.fn() } },
 }));
 import { selectDroppedFile } from '../../entrypoints/ebook/dropImport';
-import { estimateSpineProgress, findBookmarkAtCfi, hasReachedChapterEnd } from '../../entrypoints/ebook/readerController';
+import {
+  applyEbookDocumentTheme,
+  EBOOK_THEME_COLORS,
+  EbookReaderController,
+  estimateSpineProgress,
+  findBookmarkAtCfi,
+  hasReachedChapterEnd,
+  resolveEbookNavigation,
+  resolveEbookNavigationHref,
+} from '../../entrypoints/ebook/readerController';
 
 describe('ebook reader interactions', () => {
   it('accepts one dropped file and rejects empty or multi-file drops', () => {
@@ -37,5 +46,108 @@ describe('ebook reader interactions', () => {
     expect(findBookmarkAtCfi(bookmarks, 'epubcfi(/6/4)')?.id).toBe('two');
     expect(findBookmarkAtCfi(bookmarks, 'epubcfi(/6/6)')).toBeUndefined();
     expect(findBookmarkAtCfi(bookmarks, '')).toBeUndefined();
+  });
+
+  it('resolves EPUB 3 navigation hrefs relative to the navigation document', () => {
+    const navigation = resolveEbookNavigation([{
+      id: 'part-one',
+      href: 'part01.xhtml',
+      label: 'Part one',
+      subitems: [{
+        id: 'chapter-one',
+        href: 'ch01.xhtml#page_3',
+        label: 'Chapter one',
+      }],
+    }], 'xhtml/nav.xhtml');
+
+    expect(navigation[0].href).toBe('xhtml/part01.xhtml');
+    expect(navigation[0].subitems?.[0].href).toBe('xhtml/ch01.xhtml#page_3');
+  });
+
+  it('keeps package-relative NCX hrefs and CFIs stable', () => {
+    expect(resolveEbookNavigationHref('xhtml/ch01.xhtml#page_3', 'toc.ncx'))
+      .toBe('xhtml/ch01.xhtml#page_3');
+    expect(resolveEbookNavigationHref('epubcfi(/6/4)', 'xhtml/nav.xhtml'))
+      .toBe('epubcfi(/6/4)');
+  });
+
+  it('moves to the previous spine section when chapter-end navigation is used', async () => {
+    const display = vi.fn(async () => undefined);
+    const controller = new EbookReaderController();
+    Object.assign(controller, {
+      currentSection: {
+        prev: () => ({ href: 'xhtml/ch01.xhtml' }),
+      },
+      rendition: { display },
+    });
+
+    await expect(controller.continueToPreviousChapter()).resolves.toBe(true);
+    expect(display).toHaveBeenCalledWith('xhtml/ch01.xhtml');
+  });
+
+  it('provides both neighboring chapter labels at the end of a section', () => {
+    const onChapterContinuation = vi.fn();
+    const controller = new EbookReaderController({ onChapterContinuation });
+    Object.assign(controller, {
+      currentSection: {
+        prev: () => ({ href: 'xhtml/ch01.xhtml' }),
+        next: () => ({ href: 'xhtml/ch03.xhtml' }),
+      },
+      navigationByHref: new Map([
+        ['xhtml/ch01.xhtml', { label: 'Chapter one' }],
+        ['xhtml/ch03.xhtml', { label: 'Chapter three' }],
+      ]),
+    });
+
+    (controller as unknown as { emitChapterContinuation(atChapterEnd: boolean): void })
+      .emitChapterContinuation(true);
+
+    expect(onChapterContinuation).toHaveBeenCalledWith({
+      atChapterEnd: true,
+      previousHref: 'xhtml/ch01.xhtml',
+      previousLabel: 'Chapter one',
+      nextHref: 'xhtml/ch03.xhtml',
+      nextLabel: 'Chapter three',
+    });
+  });
+
+  it('applies a theme to the current rendition without redisplaying the chapter', () => {
+    const select = vi.fn();
+    const override = vi.fn();
+    const display = vi.fn();
+    const ebookDocument = document.implementation.createHTMLDocument('Chapter');
+    const controller = new EbookReaderController();
+    Object.assign(controller, {
+      currentContents: { document: ebookDocument },
+      rendition: {
+        themes: { select, override },
+        display,
+      },
+    });
+
+    controller.applyTheme('dark');
+
+    expect(select).toHaveBeenCalledWith('onlytranslate-dark');
+    expect(override).toHaveBeenCalledWith('color', EBOOK_THEME_COLORS.dark.foreground, true);
+    expect(override).toHaveBeenCalledWith('background-color', EBOOK_THEME_COLORS.dark.background, true);
+    expect(ebookDocument.documentElement.style.backgroundColor).toBe(EBOOK_THEME_COLORS.dark.background);
+    expect(ebookDocument.documentElement.style.getPropertyPriority('background-color')).toBe('important');
+    expect(ebookDocument.body.style.backgroundColor).toBe(EBOOK_THEME_COLORS.dark.background);
+    expect(display).not.toHaveBeenCalled();
+  });
+
+  it('replaces publisher page colors when the rendered document theme changes', () => {
+    const ebookDocument = document.implementation.createHTMLDocument('Chapter');
+    ebookDocument.documentElement.style.backgroundColor = 'white';
+    ebookDocument.body.style.backgroundColor = 'white';
+    ebookDocument.body.style.color = 'black';
+
+    applyEbookDocumentTheme(ebookDocument, 'dark');
+
+    expect(ebookDocument.documentElement.style.colorScheme).toBe('dark');
+    expect(ebookDocument.documentElement.style.backgroundColor).toBe('#111317');
+    expect(ebookDocument.body.style.backgroundColor).toBe('#111317');
+    expect(ebookDocument.body.style.color).toBe('#e6e8ec');
+    expect(ebookDocument.body.style.getPropertyPriority('color')).toBe('important');
   });
 });

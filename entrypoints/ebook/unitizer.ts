@@ -6,6 +6,10 @@ const INLINE_TAGS = [
   'a', 'abbr', 'b', 'br', 'cite', 'del', 'em', 'i', 'ins', 'mark', 'q', 'rp', 'rt',
   'ruby', 's', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u',
 ];
+const MANAGED_CLASSES = new Set([
+  'onlytranslate-ebook-has-translation',
+  'onlytranslate-ebook-translation',
+]);
 
 export interface EbookTranslationUnit {
   id: string;
@@ -110,7 +114,12 @@ export function insertEbookTranslation(unit: EbookTranslationUnit, translatedHtm
   unit.translationElement?.remove();
   const isTableCell = unit.element.matches('td,th');
   const translation = unit.element.ownerDocument.createElement(isTableCell ? 'div' : unit.element.tagName.toLocaleLowerCase());
-  translation.className = 'onlytranslate-ebook-translation';
+  if (!isTableCell) {
+    unit.element.classList.forEach(className => {
+      if (!MANAGED_CLASSES.has(className)) translation.classList.add(className);
+    });
+  }
+  translation.classList.add('onlytranslate-ebook-translation');
   translation.dataset.onlytranslateEbookTranslation = unit.id;
   translation.innerHTML = sanitizeTranslatedInlineHtml(translatedHtml);
   restoreProtectedNodes(translation, unit.placeholders);

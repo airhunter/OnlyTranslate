@@ -133,7 +133,20 @@
       <section class="reader-stage">
         <div ref="viewer" class="epub-viewer" />
         <Transition name="continuation">
-          <div v-if="chapterContinuation.atChapterEnd" class="chapter-continuation">
+          <div
+            v-if="chapterContinuation.atChapterEnd"
+            class="chapter-continuation"
+            :class="{ 'chapter-continuation--single': !chapterContinuation.previousHref }"
+          >
+            <button
+              v-if="chapterContinuation.previousHref"
+              class="chapter-continuation__button chapter-continuation__button--previous"
+              @click="continueToPreviousChapter"
+            >
+              <b aria-hidden="true">←</b>
+              <span>{{ t('ebook.continuePreviousChapter') }}</span>
+              <strong>{{ chapterContinuation.previousLabel }}</strong>
+            </button>
             <button class="chapter-continuation__button" @click="continueReading">
               <span>{{ chapterContinuation.nextHref ? t('ebook.continueNextChapter') : t('ebook.bookFinished') }}</span>
               <strong>{{ chapterContinuation.nextLabel || t('ebook.backToLibrary') }}</strong>
@@ -184,7 +197,7 @@ interface FlatNavItem extends NavItem {
 
 const { t, locale } = useI18n();
 const { config, loadConfig } = useConfig();
-useTheme(config);
+const { actualTheme } = useTheme(config);
 
 const repository = new EbookRepository();
 const fileInput = ref<HTMLInputElement>();
@@ -213,12 +226,6 @@ const chapterContinuation = reactive<ChapterContinuationState>({ atChapterEnd: f
 let progressTimer: ReturnType<typeof setTimeout> | undefined;
 let lastLocation: ReaderLocation | undefined;
 let dragDepth = 0;
-
-const actualTheme = computed<'light' | 'dark'>(() => {
-  if (config.value.theme === 'dark') return 'dark';
-  if (config.value.theme === 'light') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-});
 
 const themeLabel = computed(() => t(`ebook.theme${config.value.theme === 'dark' ? 'Dark' : config.value.theme === 'light' ? 'Light' : 'Auto'}`));
 
@@ -372,7 +379,13 @@ async function leaveReader(): Promise<void> {
   currentChapterHref.value = '';
   currentLocationCfi.value = '';
   lastLocation = undefined;
-  Object.assign(chapterContinuation, { atChapterEnd: false, nextHref: undefined, nextLabel: undefined });
+  Object.assign(chapterContinuation, {
+    atChapterEnd: false,
+    previousHref: undefined,
+    previousLabel: undefined,
+    nextHref: undefined,
+    nextLabel: undefined,
+  });
   await refreshLibrary();
 }
 
@@ -462,6 +475,11 @@ async function applyReaderSettings(): Promise<void> {
 
 function display(target: string): void {
   void controller.display(target);
+}
+
+async function continueToPreviousChapter(): Promise<void> {
+  chapterContinuation.atChapterEnd = false;
+  await controller.continueToPreviousChapter();
 }
 
 async function continueReading(): Promise<void> {
