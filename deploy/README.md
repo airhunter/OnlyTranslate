@@ -2,12 +2,14 @@
 
 官网使用 Docker 构建，并由 Caddy 提供静态文件服务。生产环境默认域名为
 `onlytranslate.top`。Caddy 会自动申请和续期 HTTPS 证书，并把 HTTP 请求跳转到
-HTTPS。
+HTTPS。`www.onlytranslate.top` 作为兼容入口，永久跳转到不带 `www` 的正式域名，
+并保留访问路径和查询参数。
 
 ## 服务器要求
 
 - Rocky Linux 9
 - 域名的 A 记录已经指向服务器公网 IPv4
+- `www` 的 CNAME 记录已经指向 `onlytranslate.top`
 - 腾讯云轻量应用服务器防火墙已放行 TCP 80、443
 - 使用中国大陆服务器时，域名已完成 ICP 备案
 
@@ -86,12 +88,14 @@ docker compose up -d
 ```bash
 curl -I http://onlytranslate.top
 curl -I https://onlytranslate.top
+curl -I https://www.onlytranslate.top
 docker compose ps
 docker compose logs --tail=100 website
 ```
 
-预期 HTTP 返回重定向，HTTPS 返回成功状态。首页、使用帮助、隐私说明和三段演示
-视频都应能正常打开与播放。
+预期根域名的 HTTP 返回 HTTPS 重定向，根域名的 HTTPS 返回成功状态，
+`www.onlytranslate.top` 返回指向 `https://onlytranslate.top` 的 `308` 重定向。
+首页、使用帮助、隐私说明和三段演示视频都应能正常打开与播放。
 
 如果域名尚未生效，可先用服务器 IP 测试 HTTP。创建项目根目录 `.env`：
 

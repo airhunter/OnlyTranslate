@@ -1,3 +1,7 @@
+www.onlytranslate.top {
+	redir https://onlytranslate.top{uri} 308
+}
+
 {$SITE_ADDRESS:onlytranslate.top} {
 	root * /srv
 
