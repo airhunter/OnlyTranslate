@@ -4,16 +4,40 @@
 
 ## 成片
 
+- `onlytranslate-web-bilingual-horizontal-v2.mp4`
+  - 1920 × 1080
+  - 30 fps
+  - 39 秒
+  - 当前推荐横屏版；开场说明 Chrome 扩展定位及网页、视频字幕、本地 EPUB 三类场景
+- `onlytranslate-web-bilingual-vertical-v2.mp4`
+  - 1080 × 1920
+  - 30 fps
+  - 39 秒
+  - 当前推荐竖屏版；适用于 Shorts、即刻、抖音等竖屏信息流
+- `onlytranslate-web-bilingual-horizontal-voiceover.mp4`
+  - 1920 × 1080
+  - 30 fps
+  - 32 秒
+  - 中文配音版，用于 B 站及横屏发布
+- `onlytranslate-web-bilingual-vertical-voiceover.mp4`
+  - 1080 × 1920
+  - 30 fps
+  - 32 秒
+  - 中文配音版，用于即刻及竖屏信息流
 - `onlytranslate-web-bilingual-horizontal.mp4`
   - 1920 × 1080
   - 30 fps
   - 32 秒
-  - 用于 X、B 站横屏发布
+  - 无配音原版，已用于 X 和 Reddit
 - `onlytranslate-web-bilingual-vertical.mp4`
   - 1080 × 1920
   - 30 fps
   - 32 秒
-  - 用于即刻和竖屏信息流
+  - 无配音原版
+
+逐句 TTS 和合成 WAV 作为本地制作素材保留，不提交仓库。V2 结尾统一为
+“网页、视频、电子书，都能双语读”，并引导用户在 Chrome Web Store 搜索
+「只译」。
 
 `poster-horizontal.png` 和 `poster-vertical.png` 是正文与译文同屏时的封面候选帧。
 
@@ -21,8 +45,12 @@
 
 - [x] X（2026-07-24）
 - [x] Reddit（2026-07-24）
-- [ ] 即刻
-- [ ] B 站动态
+- [x] 即刻（2026-07-25）
+- [x] YouTube Shorts（2026-07-25）
+- [x] B 站动态（2026-07-25）
+- [x] 小红书（2026-07-25）
+- [x] 抖音（2026-07-25）
+- [x] 微信视频号（2026-07-25）
 - [ ] 发布满 48 小时后记录各渠道数据和具体反馈
 
 ## 内容
@@ -63,4 +91,12 @@ Chrome Web Store:
 https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi
 
 #网页翻译 #双语阅读 #Chrome
+```
+
+### YouTube Shorts
+
+标题：
+
+```text
+网页翻译不必铺满全页｜只译：开源 Chrome 双语阅读扩展 #Shorts
 ```

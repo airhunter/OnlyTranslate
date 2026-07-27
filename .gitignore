@@ -19,6 +19,9 @@ docs/.vitepress/cache
 docs/.vitepress/.temp
 docs/.temp
 docs/.cache
+website/.vitepress/dist
+website/.vitepress/cache
+website/.vitepress/.temp
 
 # Development
 web-ext.config.ts
@@ -63,6 +66,17 @@ Thumbs.db
 *.crx
 *.xpi
 *.bak
+deploy/artifacts/
+
+# Demo working files
+store-assets/demos/**/*.wav
+store-assets/demos/**/*.mov
+store-assets/demos/**/*.epub
+store-assets/demos/**/source-recording*.mp4
+store-assets/demos/**/*-clean.mp4
+
+# Local promotion drafts
+docs/promotion/sspai-matrix-draft.md
 
 # Local env files
 .env*.local
