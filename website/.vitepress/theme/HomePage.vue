@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
-import appIcon from '../../../public/icon/128.png';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+} from 'vue';
+import appIconSmall from '../../../public/icon/48.png';
+import appIconLarge from '../../../public/icon/128.png';
 import webScreenshot from '../../../store-assets/chrome-web-store/zh-CN/01-web-translation.png';
-import demoPoster from '../../../store-assets/demos/web-bilingual-reading/poster-horizontal.png';
+import demoPoster from '../../../store-assets/demos/web-bilingual-reading/poster-horizontal.webp';
 import demoVideo from '../../../store-assets/demos/web-bilingual-reading/onlytranslate-web-bilingual-horizontal-voiceover.mp4';
-import subtitleDemoPoster from '../../../store-assets/demos/video-bilingual-subtitles/poster-horizontal.jpg';
+import subtitleDemoPoster from '../../../store-assets/demos/video-bilingual-subtitles/poster-horizontal.webp';
 import subtitleDemoVideo from '../../../store-assets/demos/video-bilingual-subtitles/onlytranslate-video-subtitles-horizontal-voiceover.mp4';
-import epubDemoPoster from '../../../store-assets/demos/epub-bilingual-reading/poster-horizontal.jpg';
+import epubDemoPoster from '../../../store-assets/demos/epub-bilingual-reading/poster-horizontal.webp';
 import epubDemoVideo from '../../../store-assets/demos/epub-bilingual-reading/onlytranslate-epub-bilingual-horizontal-voiceover.mp4';
 
 const chromeWebStoreUrl =
@@ -19,19 +26,80 @@ type DemoId = 'web' | 'video' | 'epub';
 
 const demoIds: DemoId[] = ['web', 'video', 'epub'];
 const activeDemo = ref<DemoId>('web');
-const webDemo = ref<HTMLVideoElement>();
-const subtitleDemo = ref<HTMLVideoElement>();
-const epubDemo = ref<HTMLVideoElement>();
+const demoMedia = ref<HTMLElement>();
+const demoVideoElement = ref<HTMLVideoElement>();
+const isDemoVisible = ref(false);
+let demoObserver: IntersectionObserver | undefined;
 
-function selectDemo(demo: DemoId) {
-  if (demo === activeDemo.value) {
+const demos = {
+  web: {
+    poster: demoPoster,
+    video: demoVideo,
+    label: '01 · 网页识文',
+    title: '留在原网页，只翻正在读的正文',
+    ariaLabel: '只译网页识文翻译演示视频',
+  },
+  video: {
+    poster: subtitleDemoPoster,
+    video: subtitleDemoVideo,
+    label: '02 · 视频字幕',
+    title: '外语字幕，跟着播放进度双语显示',
+    ariaLabel: '只译视频双语字幕真实演示',
+  },
+  epub: {
+    poster: epubDemoPoster,
+    video: epubDemoVideo,
+    label: '03 · 本地 EPUB',
+    title: '导入电子书，沿着章节继续双语读',
+    ariaLabel: '只译本地 EPUB 双语阅读真实演示',
+  },
+} satisfies Record<
+  DemoId,
+  {
+    poster: string;
+    video: string;
+    label: string;
+    title: string;
+    ariaLabel: string;
+  }
+>;
+
+const currentDemo = computed(() => demos[activeDemo.value]);
+
+async function syncDemoPlayback() {
+  const video = demoVideoElement.value;
+  if (!video) {
     return;
   }
 
-  webDemo.value?.pause();
-  subtitleDemo.value?.pause();
-  epubDemo.value?.pause();
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
+  const shouldPlay =
+    isDemoVisible.value && !document.hidden && !prefersReducedMotion;
+
+  if (!shouldPlay) {
+    video.pause();
+    return;
+  }
+
+  try {
+    await video.play();
+  } catch {
+    // 浏览器仍可能根据用户设置阻止自动播放，保留原生控件供手动播放。
+  }
+}
+
+async function selectDemo(demo: DemoId) {
+  if (demo === activeDemo.value) {
+    await syncDemoPlayback();
+    return;
+  }
+
+  demoVideoElement.value?.pause();
   activeDemo.value = demo;
+  await nextTick();
+  await syncDemoPlayback();
 }
 
 async function selectAdjacentDemo(direction: -1 | 1) {
@@ -40,10 +108,34 @@ async function selectAdjacentDemo(direction: -1 | 1) {
     (currentIndex + direction + demoIds.length) % demoIds.length;
   const nextDemo = demoIds[nextIndex];
 
-  selectDemo(nextDemo);
-  await nextTick();
+  await selectDemo(nextDemo);
   document.getElementById(`demo-tab-${nextDemo}`)?.focus();
 }
+
+onMounted(() => {
+  const media = demoMedia.value;
+  if (!media || !('IntersectionObserver' in window)) {
+    isDemoVisible.value = true;
+    void syncDemoPlayback();
+    return;
+  }
+
+  demoObserver = new IntersectionObserver(
+    ([entry]) => {
+      isDemoVisible.value =
+        entry.isIntersecting && entry.intersectionRatio >= 0.35;
+      void syncDemoPlayback();
+    },
+    { threshold: [0, 0.35, 0.75] },
+  );
+  demoObserver.observe(media);
+  document.addEventListener('visibilitychange', syncDemoPlayback);
+});
+
+onBeforeUnmount(() => {
+  demoObserver?.disconnect();
+  document.removeEventListener('visibilitychange', syncDemoPlayback);
+});
 
 const services = [
   '微软翻译',
@@ -61,7 +153,13 @@ const services = [
   <div class="landing-page">
     <header class="landing-header">
       <a class="brand" href="/" aria-label="只译 OnlyTranslate 首页">
-        <img :src="appIcon" alt="" width="42" height="42" />
+        <img
+          :src="appIconSmall"
+          alt=""
+          width="42"
+          height="42"
+          fetchpriority="high"
+        />
         <span>
           <strong>只译</strong>
           <small>OnlyTranslate</small>
@@ -236,85 +334,31 @@ const services = [
 
         <div class="demo-stage">
           <article
-            v-show="activeDemo === 'web'"
-            id="demo-panel-web"
+            :id="`demo-panel-${activeDemo}`"
             class="demo-panel"
             role="tabpanel"
-            aria-labelledby="demo-tab-web"
+            :aria-labelledby="`demo-tab-${activeDemo}`"
           >
-            <div class="demo-stage-media">
+            <div ref="demoMedia" class="demo-stage-media">
               <video
-                ref="webDemo"
+                :key="activeDemo"
+                ref="demoVideoElement"
                 controls
                 playsinline
-                preload="metadata"
-                :poster="demoPoster"
-                aria-label="只译网页识文翻译演示视频"
+                muted
+                loop
+                preload="none"
+                :poster="currentDemo.poster"
+                :aria-label="currentDemo.ariaLabel"
               >
-                <source :src="demoVideo" type="video/mp4" />
+                <source :src="currentDemo.video" type="video/mp4" />
                 你的浏览器暂不支持视频播放。
               </video>
             </div>
             <div class="demo-stage-copy">
               <div>
-                <p>01 · 网页识文</p>
-                <h3>留在原网页，只翻正在读的正文</h3>
-              </div>
-            </div>
-          </article>
-
-          <article
-            v-show="activeDemo === 'video'"
-            id="demo-panel-video"
-            class="demo-panel"
-            role="tabpanel"
-            aria-labelledby="demo-tab-video"
-          >
-            <div class="demo-stage-media">
-              <video
-                ref="subtitleDemo"
-                controls
-                playsinline
-                preload="metadata"
-                :poster="subtitleDemoPoster"
-                aria-label="只译视频双语字幕真实演示"
-              >
-                <source :src="subtitleDemoVideo" type="video/mp4" />
-                你的浏览器暂不支持视频播放。
-              </video>
-            </div>
-            <div class="demo-stage-copy">
-              <div>
-                <p>02 · 视频字幕</p>
-                <h3>外语字幕，跟着播放进度双语显示</h3>
-              </div>
-            </div>
-          </article>
-
-          <article
-            v-show="activeDemo === 'epub'"
-            id="demo-panel-epub"
-            class="demo-panel"
-            role="tabpanel"
-            aria-labelledby="demo-tab-epub"
-          >
-            <div class="demo-stage-media">
-              <video
-                ref="epubDemo"
-                controls
-                playsinline
-                preload="metadata"
-                :poster="epubDemoPoster"
-                aria-label="只译本地 EPUB 双语阅读真实演示"
-              >
-                <source :src="epubDemoVideo" type="video/mp4" />
-                你的浏览器暂不支持视频播放。
-              </video>
-            </div>
-            <div class="demo-stage-copy">
-              <div>
-                <p>03 · 本地 EPUB</p>
-                <h3>导入电子书，沿着章节继续双语读</h3>
+                <p>{{ currentDemo.label }}</p>
+                <h3>{{ currentDemo.title }}</h3>
               </div>
             </div>
           </article>
@@ -493,7 +537,14 @@ const services = [
 
       <section class="final-cta">
         <div class="section-shell final-cta-inner">
-          <img :src="appIcon" alt="" width="72" height="72" />
+          <img
+            :src="appIconLarge"
+            alt=""
+            width="72"
+            height="72"
+            loading="lazy"
+            decoding="async"
+          />
           <p class="section-number">OnlyTranslate · 只译</p>
           <h2 class="final-cta-title">
             <span class="final-cta-opening">小而克制，</span><span class="final-cta-scenes">网页、视频、电子书，</span>
@@ -532,7 +583,14 @@ const services = [
     <footer class="landing-footer">
       <div class="section-shell footer-layout">
         <div class="footer-brand">
-          <img :src="appIcon" alt="" width="36" height="36" />
+          <img
+            :src="appIconSmall"
+            alt=""
+            width="36"
+            height="36"
+            loading="lazy"
+            decoding="async"
+          />
           <span><strong>只译</strong><small>OnlyTranslate</small></span>
         </div>
         <nav aria-label="页脚导航">

@@ -15,6 +15,7 @@ website/.vitepress/.temp
 
 !public/
 !public/icon/
+!public/icon/48.png
 !public/icon/128.png
 
 !store-assets/
@@ -24,11 +25,11 @@ website/.vitepress/.temp
 
 !store-assets/demos/
 !store-assets/demos/web-bilingual-reading/
-!store-assets/demos/web-bilingual-reading/poster-horizontal.png
+!store-assets/demos/web-bilingual-reading/poster-horizontal.webp
 !store-assets/demos/web-bilingual-reading/onlytranslate-web-bilingual-horizontal-voiceover.mp4
 !store-assets/demos/video-bilingual-subtitles/
-!store-assets/demos/video-bilingual-subtitles/poster-horizontal.jpg
+!store-assets/demos/video-bilingual-subtitles/poster-horizontal.webp
 !store-assets/demos/video-bilingual-subtitles/onlytranslate-video-subtitles-horizontal-voiceover.mp4
 !store-assets/demos/epub-bilingual-reading/
-!store-assets/demos/epub-bilingual-reading/poster-horizontal.jpg
+!store-assets/demos/epub-bilingual-reading/poster-horizontal.webp
 !store-assets/demos/epub-bilingual-reading/onlytranslate-epub-bilingual-horizontal-voiceover.mp4
