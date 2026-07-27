@@ -30,10 +30,12 @@ Before implementation:
 
 - State key assumptions when the task touches content detection, translation insertion, DOM mutation, layout behavior, release flow, or user-visible behavior.
 - If a requirement has multiple materially different interpretations, explain the options and ask before implementing.
-- Prefer the simplest change that solves the current problem.
+- Prefer the smallest change that correctly solves the current problem; “smallest” means the lowest-risk, least-complex implementation within the required quality and scope boundaries, not merely the fewest lines of code.
 - Keep edits surgical: only change files required by the task, and do not refactor, reformat, rename, or clean up unrelated code.
 - Match existing project style and local patterns.
-- Do not add new dependencies, configuration, abstractions, or extension points unless they clearly reduce complexity and are approved.
+- Before adding code, dependencies, configuration, abstractions, or extension points, prefer existing implementations, standard libraries, platform-native capabilities, and existing dependencies.
+- Do not sacrifice correctness, input validation, error handling, security, accessibility, or necessary tests to reduce code size or implementation effort.
+- When these principles compete, preserve the quality baseline and scope boundary first, then choose the least complex implementation.
 - If unrelated issues are found, mention them in the response instead of changing them.
 
 For multi-step tasks, briefly define the success criteria and verification plan before editing.
