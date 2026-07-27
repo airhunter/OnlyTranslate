@@ -1,0 +1,21 @@
+name: onlytranslate
+
+services:
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: onlytranslate-website:latest
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-onlytranslate.top}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

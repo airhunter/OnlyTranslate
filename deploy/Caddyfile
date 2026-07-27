@@ -1,0 +1,27 @@
+{$SITE_ADDRESS:onlytranslate.top} {
+	root * /srv
+
+	encode zstd gzip
+
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@documents {
+		not path /assets/*
+	}
+	header @documents Cache-Control "no-cache"
+
+	header {
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+	}
+
+	try_files {path} {path}.html {path}/index.html
+	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}
