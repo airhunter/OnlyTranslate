@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.3.2',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.3.2：Hacker News 翻译修复',
+        items: [
+          '修复 Hacker News 帖子标题和正文在识文模式下可能完全漏翻的问题。',
+          '修复多段评论只翻译部分段落、开头首段未翻译的问题。',
+          '避免将用户名、时间、积分和回复、导航等操作误作正文翻译，保持双语内容清晰。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.3.2: Hacker News Translation Fixes',
+        items: [
+          'Fixed Hacker News story titles and body text sometimes being skipped entirely in Smart mode.',
+          'Fixed multi-paragraph comments being translated only partially, including missing opening text.',
+          'Kept usernames, timestamps, scores, reply links, and navigation controls out of translated reading content.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.3.2：Hacker News 翻譯修正',
+        items: [
+          '修正 Hacker News 貼文標題和正文在識文模式下可能完全漏翻的問題。',
+          '修正多段留言只翻譯部分段落、開頭首段未翻譯的問題。',
+          '避免將使用者名稱、時間、積分和回覆、導覽等操作誤作正文翻譯，維持雙語內容清晰。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.3.2：Hacker News の翻訳を修正',
+        items: [
+          'スマートモードで Hacker News の投稿タイトルと本文が翻訳対象から完全に外れることがある問題を修正しました。',
+          '複数段落のコメントで冒頭を含む一部だけが翻訳されない問題を修正しました。',
+          'ユーザー名、時刻、スコア、返信リンク、ナビゲーション操作を本文の翻訳対象から除外しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.3.1',
     notes: {
       'zh-CN': {
