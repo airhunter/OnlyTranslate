@@ -23,7 +23,7 @@ html {
 }
 
 body {
-  background: var(--ot-paper);
+  background: var(--vp-c-bg);
 }
 
 .landing-page {
