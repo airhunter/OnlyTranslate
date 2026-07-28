@@ -257,6 +257,7 @@ describe('video subtitle quality-mode circuit breaker', () => {
 
     const button = document.getElementById('fr-subtitle-quick-btn') as HTMLButtonElement
     const hint = document.getElementById('fr-subtitle-status-hint') as HTMLElement
+    expect(button.title).toContain('video.subtitleFastModeActive')
     expect(button.title).toContain('video.subtitleForcedFastMode')
     expect(hint.textContent).toBe('video.subtitleForcedFastMode')
     expect(hint.hidden).toBe(false)

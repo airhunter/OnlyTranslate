@@ -31,6 +31,7 @@ import {
     resolveOpenAICompatibleEndpoint,
 } from '@/entrypoints/utils/providerEndpoint'
 import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
+import { isVideoFastModeEffective } from './fastMode'
 
 const EVENT_TYPE = 'fr-subtitle-inject'
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
@@ -600,13 +601,14 @@ function updateQuickButton() {
     if (!button) return
 
     const visibleStatus = resolveVisibleStatus()
+    const statusText = getQuickButtonStatusText(visibleStatus)
     button.dataset.subtitleStatus = visibleStatus
-    button.title = getQuickButtonTitle(visibleStatus)
+    button.title = `${statusText}${getFastModeTitleSuffix(visibleStatus)}`
     button.setAttribute('aria-label', button.title)
     button.setAttribute('aria-pressed', String(subtitleEnabled))
     button.replaceChildren(buildBtnSvg(getQuickButtonColor(visibleStatus)), buildStatusDot(visibleStatus))
     ensureStatusHint(button)
-    handleVisibleStatusChange(visibleStatus, button.title, button)
+    handleVisibleStatusChange(visibleStatus, statusText, button)
 }
 
 function resolveVisibleStatus(): VisibleSubtitleStatus {
@@ -625,23 +627,36 @@ function resolveVisibleStatus(): VisibleSubtitleStatus {
     return subtitleLoadStatus
 }
 
-function getQuickButtonTitle(status: VisibleSubtitleStatus): string {
-    const suffix = forcedFastMode ? ` · ${t('video.subtitleForcedFastMode')}` : ''
-    if (status === 'disabled') return `${t('video.subtitleButtonOff')}${suffix}`
-    if (status === 'loading' || status === 'fetching') return `${t('video.subtitleLoading')}${suffix}`
-    if (status === 'waiting-cc') return `${t('video.subtitleWaitingCc')}${suffix}`
-    if (status === 'no-track') return `${t('video.subtitleNoTrack')}${suffix}`
-    if (status === 'failed') return `${t('video.subtitleLoadFailed')}${suffix}`
-    if (status === 'translation-failed') return `${t('video.subtitleTranslationFailed')}${suffix}`
-    if (status === 'starting') return `${t('video.subtitleTranslationStarting')}${suffix}`
+function getQuickButtonStatusText(status: VisibleSubtitleStatus): string {
+    if (status === 'disabled') return t('video.subtitleButtonOff')
+    if (status === 'loading' || status === 'fetching') return t('video.subtitleLoading')
+    if (status === 'waiting-cc') return t('video.subtitleWaitingCc')
+    if (status === 'no-track') return t('video.subtitleNoTrack')
+    if (status === 'failed') return t('video.subtitleLoadFailed')
+    if (status === 'translation-failed') return t('video.subtitleTranslationFailed')
+    if (status === 'starting') return t('video.subtitleTranslationStarting')
     if (status === 'catching-up') {
-        return `${t('video.subtitleTranslationCatchingUp', {
+        return t('video.subtitleTranslationCatchingUp', {
             seconds: Math.max(0, translationStatus?.runwaySeconds || 0),
-        })}${suffix}`
+        })
     }
-    if (status === 'buffered') return `${t('video.subtitleTranslationBuffered')}${suffix}`
-    if (status === 'ready') return `${t('video.subtitleReady')}${suffix}`
-    return `${t('video.subtitleButtonOn')}${suffix}`
+    if (status === 'buffered') return t('video.subtitleTranslationBuffered')
+    if (status === 'ready') return t('video.subtitleReady')
+    return t('video.subtitleButtonOn')
+}
+
+function getFastModeTitleSuffix(status: VisibleSubtitleStatus): string {
+    if (
+        status === 'disabled'
+        || !resolveEffectiveFastMode()
+        || !['starting', 'catching-up', 'buffered', 'translation-failed', 'ready'].includes(status)
+    ) return ''
+
+    const effect = isVideoFastModeEffective(String(config.service || ''), config)
+        ? t('video.subtitleFastModeActive')
+        : t('video.subtitleFastModeInactive')
+    const forced = forcedFastMode ? ` · ${t('video.subtitleForcedFastMode')}` : ''
+    return ` · ${effect}${forced}`
 }
 
 function getQuickButtonColor(status: VisibleSubtitleStatus): string {

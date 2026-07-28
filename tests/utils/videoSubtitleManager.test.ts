@@ -229,7 +229,9 @@ describe('video subtitle manager lifecycle', () => {
       failedInImmediateWindow: false,
     })
     expect(quickButton.dataset.subtitleStatus).toBe('catching-up')
-    expect(quickButton.title).toBe('video.subtitleTranslationCatchingUp:8')
+    expect(quickButton.title).toBe(
+      'video.subtitleTranslationCatchingUp:8 · video.subtitleFastModeActive',
+    )
     const hint = document.getElementById('fr-subtitle-status-hint')!
     expect(hint.hidden).toBe(false)
     expect(quickButton.contains(hint)).toBe(false)
@@ -243,7 +245,9 @@ describe('video subtitle manager lifecycle', () => {
       activeRuns: 1,
       failedInImmediateWindow: false,
     })
-    expect(quickButton.title).toBe('video.subtitleTranslationCatchingUp:13')
+    expect(quickButton.title).toBe(
+      'video.subtitleTranslationCatchingUp:13 · video.subtitleFastModeActive',
+    )
     expect(hint.textContent).toBe('video.subtitleTranslationCatchingUp:8')
 
     mocks.schedulerOptions[0].onStatus?.({
@@ -265,7 +269,9 @@ describe('video subtitle manager lifecycle', () => {
       activeRuns: 1,
       failedInImmediateWindow: false,
     })
-    expect(quickButton.title).toBe('video.subtitleTranslationCatchingUp:14')
+    expect(quickButton.title).toBe(
+      'video.subtitleTranslationCatchingUp:14 · video.subtitleFastModeActive',
+    )
     expect(hint.hidden).toBe(true)
     expect(hint.textContent).toBe('')
 

@@ -26,6 +26,8 @@ export interface AnthropicTranslationPolicy {
     removeTemperature: boolean
 }
 
+export type TranslationFastModeProtocol = 'openai' | 'gemini' | 'anthropic' | 'deepseek'
+
 export function normalizeTranslationModelId(model: string): string {
     return String(model || '')
         .trim()
@@ -165,4 +167,20 @@ export function resolveAnthropicTranslationPolicy(
     }
 
     return { removeTemperature: false }
+}
+
+export function supportsTranslationFastMode(
+    protocol: TranslationFastModeProtocol,
+    model: string,
+): boolean {
+    if (protocol === 'deepseek') return true
+    if (protocol === 'openai') {
+        return Boolean(resolveOpenAITranslationPolicy(model, false).reasoningEffort)
+    }
+    if (protocol === 'gemini') {
+        return Boolean(resolveGeminiTranslationPolicy(model, false).thinkingConfig)
+    }
+
+    const policy = resolveAnthropicTranslationPolicy(model, true)
+    return Boolean(policy.thinking || policy.outputConfig || policy.removeTemperature)
 }

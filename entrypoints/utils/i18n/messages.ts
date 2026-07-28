@@ -138,6 +138,8 @@ export const messages = {
       subtitleTranslationCatchingUp: '正在追赶翻译，已准备未来 {seconds} 秒',
       subtitleTranslationBuffered: '翻译已跟上',
       subtitleTranslationFailed: '翻译失败，当前显示原文',
+      subtitleFastModeActive: 'FastMode 已生效',
+      subtitleFastModeInactive: 'FastMode 未生效（可忽略）',
       subtitleForcedFastMode: '已自动切换速度优先'
     },
     runtime: {
@@ -647,6 +649,8 @@ export const messages = {
       subtitleTranslationCatchingUp: 'Catching up; {seconds} seconds ready ahead',
       subtitleTranslationBuffered: 'Translation has caught up',
       subtitleTranslationFailed: 'Translation failed; showing the original text',
+      subtitleFastModeActive: 'FastMode is active',
+      subtitleFastModeInactive: 'FastMode is inactive (safe to ignore)',
       subtitleForcedFastMode: 'Automatically switched to speed priority'
     },
     runtime: {
@@ -1156,6 +1160,8 @@ export const messages = {
       subtitleTranslationCatchingUp: '正在追趕翻譯，已準備未來 {seconds} 秒',
       subtitleTranslationBuffered: '翻譯已跟上',
       subtitleTranslationFailed: '翻譯失敗，目前顯示原文',
+      subtitleFastModeActive: 'FastMode 已生效',
+      subtitleFastModeInactive: 'FastMode 未生效（可忽略）',
       subtitleForcedFastMode: '已自動切換為速度優先'
     },
     runtime: {
@@ -1665,6 +1671,8 @@ export const messages = {
       subtitleTranslationCatchingUp: '翻訳を追いつかせています。今後 {seconds} 秒を準備済みです',
       subtitleTranslationBuffered: '翻訳が再生に追いつきました',
       subtitleTranslationFailed: '翻訳に失敗したため、原文を表示しています',
+      subtitleFastModeActive: 'FastMode は有効です',
+      subtitleFastModeInactive: 'FastMode は無効です（無視して構いません）',
       subtitleForcedFastMode: '速度優先へ自動的に切り替えました'
     },
     runtime: {
