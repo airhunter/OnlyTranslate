@@ -18,6 +18,7 @@ import {
     type SubtitleCacheIdentity,
     type SubtitleCacheStorageArea,
 } from '@/entrypoints/video/cache'
+import { REQUEST_POLICY_VERSION } from '@/entrypoints/utils/modelCapabilities'
 
 class MemoryStorage implements SubtitleCacheStorageArea {
     data: Record<string, unknown> = {}
@@ -62,6 +63,8 @@ const baseIdentity: SubtitleCacheIdentity = {
     model: 'gpt-5-mini',
     endpoint: 'HTTPS://API.Example.com:443/v1/chat/completions/?api_key=secret#fragment',
     fastMode: true,
+    requestPolicyVersion: REQUEST_POLICY_VERSION,
+    thinkingWanted: false,
     promptFingerprint: 'private-prompt-fingerprint',
 }
 
@@ -201,6 +204,8 @@ describe('video subtitle persistent cache', () => {
             { ...baseIdentity, endpoint: 'https://other.example/v1' },
             { ...baseIdentity, endpoint: 'https://api.example.com/v1/chat/completions?api-version=2026-01-01' },
             { ...baseIdentity, fastMode: false },
+            { ...baseIdentity, requestPolicyVersion: 'other-request-policy' },
+            { ...baseIdentity, thinkingWanted: true },
             { ...baseIdentity, promptFingerprint: 'other-prompt' },
         ]
         for (const identity of variants) {

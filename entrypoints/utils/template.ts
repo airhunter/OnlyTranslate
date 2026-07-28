@@ -3,17 +3,18 @@ import {customModelString, defaultOption, services} from "./option";
 import {config} from "@/entrypoints/utils/config";
 import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
 import { buildSubtitleTranslationPrompt } from '@/entrypoints/service/subtitle'
+import {
+    resolveAnthropicTranslationPolicy,
+    resolveGeminiTranslationPolicy,
+    resolveOpenAITranslationPolicy,
+} from './modelCapabilities'
 
 // openai 格式的消息模板（通用模板）
-function isOpenAIReasoningModel(model: string): boolean {
-    return /^(?:gpt-5|o\d(?:-|$))/i.test(model)
-}
-
 function applyTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
+    const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
     if (config.service === services.deepseek) {
-        const thinkingEnabled = !fastMode && config.thinking?.[config.service] === true
-        payload.thinking = { type: thinkingEnabled ? 'enabled' : 'disabled' }
-        if (thinkingEnabled) {
+        payload.thinking = { type: thinkingWanted ? 'enabled' : 'disabled' }
+        if (thinkingWanted) {
             delete payload.temperature
             payload.reasoning_effort = 'high'
         } else {
@@ -22,12 +23,10 @@ function applyTranslationMode(payload: Record<string, unknown>, model: string, f
         return
     }
 
-    if (!fastMode) return
-
-    if (isOpenAIReasoningModel(model)) {
-        delete payload.temperature
-        payload.reasoning_effort = 'low'
-    }
+    delete payload.reasoning_effort
+    const policy = resolveOpenAITranslationPolicy(model, thinkingWanted)
+    if (policy.removeTemperature) delete payload.temperature
+    if (policy.reasoningEffort) payload.reasoning_effort = policy.reasoningEffort
 }
 
 export function commonMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
@@ -55,7 +54,6 @@ export function commonMsgTemplate(origin: string, targetLang = config.to, fastMo
     const payload: Record<string, unknown> = {
         'model': model,
         "temperature": 1.0,
-        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -84,7 +82,6 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
         'model': model,
         // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
         "temperature": 0.3,
-        "reasoning_effort": config.thinking?.[config.service] ? 'medium' : 'none',
         'messages': [
             {
                 'role': 'system',
@@ -124,7 +121,6 @@ export function commonSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
     const payload: Record<string, unknown> = {
         model,
         temperature: 0.2,
-        reasoning_effort: config.thinking?.[config.service] ? 'medium' : 'none',
         messages: [
             { role: 'system', content: prompt.system },
             { role: 'user', content: prompt.user },
@@ -167,27 +163,15 @@ export function geminiMsgTemplate(origin: string, targetLang = config.to, fastMo
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
+    const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
+    const policy = resolveGeminiTranslationPolicy(model, thinkingWanted)
     const payload: Record<string, unknown> = {
-        "generationConfig": {
-            "thinkingConfig": {
-                "thinkingBudget": config.thinking?.[config.service] ? 1024 : 0
-            }
-        },
+        "generationConfig": policy.thinkingConfig
+            ? { thinkingConfig: policy.thinkingConfig }
+            : {},
         "contents": [
             {"role": "user", "parts": [{"text": user}]},
         ]
-    }
-
-    if (fastMode && /^gemini-2\.5-/i.test(model)) {
-        payload.generationConfig = {
-            thinkingConfig: {
-                thinkingBudget: /pro/i.test(model) ? 128 : 0,
-            },
-        }
-    } else if (fastMode && /^gemini-3/i.test(model)) {
-        payload.generationConfig = {
-            thinkingConfig: { thinkingLevel: 'minimal' },
-        }
     }
 
     return JSON.stringify(payload)
@@ -198,20 +182,12 @@ export function geminiSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
         ? config.customModel[config.service]
         : config.model[config.service]
     const prompt = buildSubtitleTranslationPrompt(job)
+    const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
+    const policy = resolveGeminiTranslationPolicy(model, thinkingWanted)
     const generationConfig: Record<string, unknown> = {
         responseMimeType: 'application/json',
-        thinkingConfig: {
-            thinkingBudget: config.thinking?.[config.service] ? 1024 : 0,
-        },
     }
-
-    if (fastMode && /^gemini-2\.5-/i.test(model)) {
-        generationConfig.thinkingConfig = {
-            thinkingBudget: /pro/i.test(model) ? 128 : 0,
-        }
-    } else if (fastMode && /^gemini-3/i.test(model)) {
-        generationConfig.thinkingConfig = { thinkingLevel: 'minimal' }
-    }
+    if (policy.thinkingConfig) generationConfig.thinkingConfig = policy.thinkingConfig
 
     return JSON.stringify({
         systemInstruction: { parts: [{ text: prompt.system }] },
@@ -238,12 +214,18 @@ function resolveClaudeModel(): string {
     return model
 }
 
-function applyClaudeTranslationMode(payload: Record<string, unknown>, fastMode: boolean) {
-    const thinkingEnabled = !fastMode && config.thinking?.[config.service] === true
-    if (!thinkingEnabled) return
-
-    delete payload.temperature
-    payload.thinking = { type: 'enabled', budget_tokens: 1024 }
+function applyClaudeTranslationMode(
+    payload: Record<string, unknown>,
+    model: string,
+    fastMode: boolean,
+) {
+    const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
+    const policy = resolveAnthropicTranslationPolicy(model, thinkingWanted)
+    delete payload.thinking
+    delete payload.output_config
+    if (policy.removeTemperature) delete payload.temperature
+    if (policy.thinking) payload.thinking = policy.thinking
+    if (policy.outputConfig) payload.output_config = policy.outputConfig
 }
 
 // claude
@@ -262,7 +244,7 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to, fastMo
             {role: "user", content: user},
         ]
     }
-    applyClaudeTranslationMode(payload, fastMode)
+    applyClaudeTranslationMode(payload, model, fastMode)
     return JSON.stringify(payload)
 }
 
@@ -278,7 +260,7 @@ export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
             { role: 'user', content: prompt.user },
         ],
     }
-    applyClaudeTranslationMode(payload, fastMode)
+    applyClaudeTranslationMode(payload, model, fastMode)
     return JSON.stringify(payload)
 }
 

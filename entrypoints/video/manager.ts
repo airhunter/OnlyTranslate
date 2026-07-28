@@ -23,7 +23,8 @@ import {
 import { config } from '@/entrypoints/utils/config'
 import { t } from '@/entrypoints/utils/i18n'
 import { urls } from '@/entrypoints/utils/constant'
-import { customModelString, services } from '@/entrypoints/utils/option'
+import { customModelString, services, servicesType } from '@/entrypoints/utils/option'
+import { REQUEST_POLICY_VERSION } from '@/entrypoints/utils/modelCapabilities'
 import {
     getCustomProviderProtocol,
     resolveCustomProviderEndpoint,
@@ -294,6 +295,8 @@ function createScheduler(generation: number): SubtitleTranslationScheduler {
 
 function createSubtitleCacheRuntimeSignature(sourceLanguage?: string): string {
     const service = String(config.service || '')
+    const fastMode = config.videoSubtitleFastMode !== false
+    const thinkingWanted = !fastMode && config.thinking?.[service] === true
     return JSON.stringify([
         service,
         canUseStructuredSubtitleTranslation() ? 'structured' : 'direct',
@@ -305,7 +308,10 @@ function createSubtitleCacheRuntimeSignature(sourceLanguage?: string): string {
         Boolean(config.bidirectionalTranslation),
         config.bidirectionalTarget || '',
         Boolean(config.useCache),
-        config.videoSubtitleFastMode !== false,
+        fastMode,
+        ...(servicesType.isAI(service)
+            ? [REQUEST_POLICY_VERSION, thinkingWanted]
+            : []),
     ])
 }
 
@@ -315,6 +321,8 @@ async function buildSubtitleCacheIdentity(
 ): Promise<SubtitleCacheIdentity> {
     const service = String(config.service || '')
     const mode = canUseStructuredSubtitleTranslation() ? 'structured' : 'direct'
+    const fastMode = config.videoSubtitleFastMode !== false
+    const thinkingWanted = !fastMode && config.thinking?.[service] === true
     const promptSource = mode === 'structured'
         ? [
             mode,
@@ -342,8 +350,14 @@ async function buildSubtitleCacheIdentity(
         service,
         model: resolveEffectiveSubtitleModel(service),
         endpoint: normalizeSubtitleCacheEndpoint(resolveSubtitleEndpoint(service)),
-        fastMode: config.videoSubtitleFastMode !== false,
+        fastMode,
         promptFingerprint: await sha256SubtitleCacheValue(JSON.stringify(promptSource)),
+        ...(servicesType.isAI(service)
+            ? {
+                requestPolicyVersion: REQUEST_POLICY_VERSION,
+                thinkingWanted,
+            }
+            : {}),
     }
 }
 

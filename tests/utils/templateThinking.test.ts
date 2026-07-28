@@ -42,9 +42,9 @@ describe('per-service thinking request configuration', () => {
     mockConfig.thinking = {}
   })
 
-  it('explicitly disables reasoning for OpenAI-compatible single and batch requests by default', () => {
-    expect(JSON.parse(commonMsgTemplate('Hello'))).toMatchObject({ reasoning_effort: 'none' })
-    expect(JSON.parse(commonBatchMsgTemplate(['Hello']))).toMatchObject({ reasoning_effort: 'none' })
+  it('uses the lowest legal GPT-5 reasoning setting for single and batch requests by default', () => {
+    expect(JSON.parse(commonMsgTemplate('Hello'))).toMatchObject({ reasoning_effort: 'minimal' })
+    expect(JSON.parse(commonBatchMsgTemplate(['Hello']))).toMatchObject({ reasoning_effort: 'minimal' })
   })
 
   it('enables medium reasoning only for the selected OpenAI-compatible service', () => {

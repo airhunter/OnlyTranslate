@@ -1,14 +1,22 @@
-import { customModelString } from "./option";
+import { customModelString, servicesType } from "./option";
 import { config } from "@/entrypoints/utils/config";
+import { REQUEST_POLICY_VERSION } from './modelCapabilities'
 
 const prefix = "flcache_"; // fluent read cache
 
 // 构建缓存 key
 function buildKey(message: string, targetLang = config.to) {
     const { service, model, to, style, customModel } = config;
-    const selectedModel = model[service] === customModelString ? customModel[service] : model[service];
+    const provider = service.startsWith('custom_')
+        ? config.customProviders?.find(item => item.id === service)
+        : undefined
+    const selectedModel = provider
+        ? provider.model === customModelString ? provider.customModel : provider.model
+        : model[service] === customModelString ? customModel[service] : model[service];
     // 前缀_服务_模型_目标语言_消息
-    return [prefix, style, service, selectedModel, targetLang || to, message].join('_');
+    const parts = [prefix, style, service, selectedModel, targetLang || to, message]
+    if (servicesType.isAI(service)) parts.splice(1, 0, REQUEST_POLICY_VERSION)
+    return parts.join('_');
 }
 
 export const cache = {

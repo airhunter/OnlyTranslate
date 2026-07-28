@@ -1,0 +1,669 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`translation model request policies > matches the normalized payload matrix for every template surface 1`] = `
+{
+  "anthropic:claude-fable-5": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "low",
+        },
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "low",
+        },
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": null,
+      },
+    },
+  },
+  "anthropic:claude-future": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+  },
+  "anthropic:claude-haiku-4-5": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": {
+          "budget_tokens": 1024,
+          "type": "enabled",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": {
+          "budget_tokens": 1024,
+          "type": "enabled",
+        },
+      },
+    },
+  },
+  "anthropic:claude-opus-4-8": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+  },
+  "anthropic:claude-opus-5": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "low",
+        },
+        "thinking": {
+          "type": "disabled",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "low",
+        },
+        "thinking": {
+          "type": "disabled",
+        },
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+  },
+  "anthropic:claude-sonnet-4-6": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+  },
+  "gemini:gemini-2.5-flash-lite": {
+    "fast": {
+      "single": {
+        "thinkingBudget": 0,
+      },
+      "subtitle": {
+        "thinkingBudget": 0,
+      },
+    },
+    "thinking": {
+      "single": {
+        "thinkingBudget": 1024,
+      },
+      "subtitle": {
+        "thinkingBudget": 1024,
+      },
+    },
+  },
+  "gemini:gemini-3.1-pro": {
+    "fast": {
+      "single": {
+        "thinkingLevel": "low",
+      },
+      "subtitle": {
+        "thinkingLevel": "low",
+      },
+    },
+    "thinking": {
+      "single": {
+        "thinkingLevel": "medium",
+      },
+      "subtitle": {
+        "thinkingLevel": "medium",
+      },
+    },
+  },
+  "gemini:gemini-3.6-flash": {
+    "fast": {
+      "single": {
+        "thinkingLevel": "minimal",
+      },
+      "subtitle": {
+        "thinkingLevel": "minimal",
+      },
+    },
+    "thinking": {
+      "single": {
+        "thinkingLevel": "medium",
+      },
+      "subtitle": {
+        "thinkingLevel": "medium",
+      },
+    },
+  },
+  "gemini:gemini-future": {
+    "fast": {
+      "single": null,
+      "subtitle": null,
+    },
+    "thinking": {
+      "single": null,
+      "subtitle": null,
+    },
+  },
+  "gemini:models/gemini-2.5-pro": {
+    "fast": {
+      "single": {
+        "thinkingBudget": 128,
+      },
+      "subtitle": {
+        "thinkingBudget": 128,
+      },
+    },
+    "thinking": {
+      "single": {
+        "thinkingBudget": 1024,
+      },
+      "subtitle": {
+        "thinkingBudget": 1024,
+      },
+    },
+  },
+  "openai:gpt-4.1": {
+    "fast": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+  },
+  "openai:gpt-5-chat-latest": {
+    "fast": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+  },
+  "openai:gpt-5-mini": {
+    "fast": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+    },
+  },
+  "openai:gpt-5.1-2026-01-01": {
+    "fast": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "none",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "none",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "none",
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+    },
+  },
+  "openai:gpt5": {
+    "fast": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+  },
+  "openai:o3-mini-2025-01-31": {
+    "fast": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "low",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "low",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "low",
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+    },
+  },
+}
+`;
+
+exports[`translation model request policies > matches the reviewed capability registry 1`] = `
+{
+  "anthropic": {
+    "claude-fable-5": {
+      "fast": {
+        "outputConfig": {
+          "effort": "low",
+        },
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "outputConfig": {
+          "effort": "medium",
+        },
+        "removeTemperature": true,
+      },
+    },
+    "claude-future": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
+    "claude-haiku-4-5": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": true,
+        "thinking": {
+          "budget_tokens": 1024,
+          "type": "enabled",
+        },
+      },
+    },
+    "claude-opus-4-8": {
+      "fast": {
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "outputConfig": {
+          "effort": "medium",
+        },
+        "removeTemperature": true,
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+    "claude-opus-5": {
+      "fast": {
+        "outputConfig": {
+          "effort": "low",
+        },
+        "removeTemperature": true,
+        "thinking": {
+          "type": "disabled",
+        },
+      },
+      "thinking": {
+        "outputConfig": {
+          "effort": "medium",
+        },
+        "removeTemperature": true,
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+    "claude-sonnet-4-6": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "outputConfig": {
+          "effort": "medium",
+        },
+        "removeTemperature": true,
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+  },
+  "gemini": {
+    "gemini-2.5-flash-lite": {
+      "fast": {
+        "thinkingConfig": {
+          "thinkingBudget": 0,
+        },
+      },
+      "thinking": {
+        "thinkingConfig": {
+          "thinkingBudget": 1024,
+        },
+      },
+    },
+    "gemini-3.1-pro": {
+      "fast": {
+        "thinkingConfig": {
+          "thinkingLevel": "low",
+        },
+      },
+      "thinking": {
+        "thinkingConfig": {
+          "thinkingLevel": "medium",
+        },
+      },
+    },
+    "gemini-3.6-flash": {
+      "fast": {
+        "thinkingConfig": {
+          "thinkingLevel": "minimal",
+        },
+      },
+      "thinking": {
+        "thinkingConfig": {
+          "thinkingLevel": "medium",
+        },
+      },
+    },
+    "gemini-future": {
+      "fast": {},
+      "thinking": {},
+    },
+    "models/gemini-2.5-pro": {
+      "fast": {
+        "thinkingConfig": {
+          "thinkingBudget": 128,
+        },
+      },
+      "thinking": {
+        "thinkingConfig": {
+          "thinkingBudget": 1024,
+        },
+      },
+    },
+  },
+  "openai": {
+    "gpt-4.1": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
+    "gpt-5-chat-latest": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
+    "gpt-5-mini": {
+      "fast": {
+        "reasoningEffort": "minimal",
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "reasoningEffort": "medium",
+        "removeTemperature": true,
+      },
+    },
+    "gpt-5.1-2026-01-01": {
+      "fast": {
+        "reasoningEffort": "none",
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "reasoningEffort": "medium",
+        "removeTemperature": true,
+      },
+    },
+    "gpt5": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
+    "o3-mini-2025-01-31": {
+      "fast": {
+        "reasoningEffort": "low",
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "reasoningEffort": "medium",
+        "removeTemperature": true,
+      },
+    },
+  },
+}
+`;

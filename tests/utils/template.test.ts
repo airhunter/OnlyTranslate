@@ -72,18 +72,18 @@ describe('translation templates', () => {
     expect(userContent).toContain('exactly once')
   })
 
-  it('uses low reasoning effort for fast OpenAI reasoning-model requests', () => {
+  it('uses the lowest supported reasoning effort for fast OpenAI reasoning-model requests', () => {
     const payload = JSON.parse(commonMsgTemplate('Hello', 'zh-Hans', true))
 
-    expect(payload.reasoning_effort).toBe('low')
+    expect(payload.reasoning_effort).toBe('minimal')
     expect(payload.temperature).toBeUndefined()
   })
 
-  it('uses the configured default reasoning mode for normal webpage OpenAI requests', () => {
+  it('uses the lowest supported reasoning effort when thinking is disabled', () => {
     const payload = JSON.parse(commonMsgTemplate('Hello', 'zh-Hans'))
 
-    expect(payload.reasoning_effort).toBe('none')
-    expect(payload.temperature).toBe(1)
+    expect(payload.reasoning_effort).toBe('minimal')
+    expect(payload.temperature).toBeUndefined()
   })
 
   it('disables DeepSeek thinking for subtitle requests without changing the selected model', () => {
@@ -126,11 +126,11 @@ describe('translation templates', () => {
     })
   })
 
-  it('builds a low-reasoning structured OpenAI subtitle request', () => {
+  it('builds a minimal-reasoning structured OpenAI subtitle request', () => {
     const payload = JSON.parse(commonSubtitleBatchMsgTemplate(subtitleJob, true))
     const user = JSON.parse(payload.messages[1].content)
 
-    expect(payload.reasoning_effort).toBe('low')
+    expect(payload.reasoning_effort).toBe('minimal')
     expect(payload.temperature).toBeUndefined()
     expect(payload.messages[0].content).toContain('Context entries are read-only')
     expect(user).toMatchObject({

@@ -32,6 +32,8 @@ export interface SubtitleCacheIdentity {
     endpoint: string
     fastMode: boolean
     promptFingerprint: string
+    requestPolicyVersion?: string
+    thinkingWanted?: boolean
 }
 
 export interface SubtitleCacheSegment {
@@ -247,6 +249,9 @@ function buildSegmentIdentity(
         .map(segmentFingerprintPart)
 
     // The canonical identity only exists in memory. Storage receives the SHA-256 digest below.
+    const requestPolicyIdentity = identity.requestPolicyVersion
+        ? [identity.requestPolicyVersion, Boolean(identity.thinkingWanted)]
+        : []
     return JSON.stringify([
         identity.trackKey,
         identity.title,
@@ -260,6 +265,7 @@ function buildSegmentIdentity(
         identity.model,
         normalizeSubtitleCacheEndpoint(identity.endpoint),
         identity.fastMode,
+        ...requestPolicyIdentity,
         identity.promptFingerprint,
         segmentFingerprintPart(segments[index]),
         before,
