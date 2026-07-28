@@ -13,6 +13,9 @@ COPY website ./website
 COPY public/icon/48.png ./public/icon/48.png
 COPY public/icon/128.png ./public/icon/128.png
 COPY store-assets/chrome-web-store/zh-CN/01-web-translation.png ./store-assets/chrome-web-store/zh-CN/01-web-translation.png
+COPY store-assets/chrome-web-store/global/01-web-translation.png ./store-assets/chrome-web-store/global/01-web-translation.png
+COPY store-assets/chrome-web-store/global/02-video-subtitles.png ./store-assets/chrome-web-store/global/02-video-subtitles.png
+COPY store-assets/chrome-web-store/global/03-ebook-reader-beta.png ./store-assets/chrome-web-store/global/03-ebook-reader-beta.png
 COPY store-assets/demos/web-bilingual-reading/poster-horizontal.webp ./store-assets/demos/web-bilingual-reading/poster-horizontal.webp
 COPY store-assets/demos/web-bilingual-reading/onlytranslate-web-bilingual-horizontal-voiceover.mp4 ./store-assets/demos/web-bilingual-reading/onlytranslate-web-bilingual-horizontal-voiceover.mp4
 COPY store-assets/demos/video-bilingual-subtitles/poster-horizontal.webp ./store-assets/demos/video-bilingual-subtitles/poster-horizontal.webp
