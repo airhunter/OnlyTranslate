@@ -174,7 +174,7 @@ describe('video subtitle translator', () => {
     }))
   })
 
-  it('preserves the disabled speed-priority setting across structured and single fallback requests', async () => {
+  it('uses a restricted FastMode fallback after a non-timeout quality failure', async () => {
     mockConfig.videoSubtitleFastMode = false
     const onQualityRequestResult = vi.fn()
     mockSendMessage.mockImplementation(async (message: Record<string, unknown>) => {
@@ -191,7 +191,12 @@ describe('video subtitle translator', () => {
     )
 
     expect(mockSendMessage).toHaveBeenCalledTimes(3)
-    expect(mockSendMessage.mock.calls.every(([message]) => message.fastMode === false)).toBe(true)
+    expect(mockSendMessage.mock.calls[0][0]).toEqual(expect.objectContaining({
+      type: 'SUBTITLE_BATCH_TRANSLATION',
+      fastMode: false,
+    }))
+    expect(mockSendMessage.mock.calls.slice(1)
+      .every(([message]) => message.fastMode === true)).toBe(true)
     expect(onQualityRequestResult).toHaveBeenCalledWith('failure')
   })
 
@@ -209,6 +214,34 @@ describe('video subtitle translator', () => {
     }))
     expect(onQualityRequestResult).toHaveBeenCalledOnce()
     expect(onQualityRequestResult).toHaveBeenCalledWith('success')
+  })
+
+  it('applies the degraded retry and batch deadline to non-timeout structured fallbacks', async () => {
+    const onQualityRequestResult = vi.fn()
+    mockSendMessage.mockImplementation((message: Record<string, unknown>) => {
+      if (message.type === 'SUBTITLE_BATCH_TRANSLATION') {
+        return Promise.resolve([{ id: 'wrong-id', translatedText: 'invalid' }])
+      }
+      return new Promise(() => {})
+    })
+
+    const translation = translateSubtitleBatch(createJob(), translationOptions('foreground', {
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))
+    await flushMicrotasks()
+
+    expect(onQualityRequestResult).toHaveBeenCalledWith('failure')
+    expect(mockSendMessage).toHaveBeenCalledTimes(3)
+
+    await vi.advanceTimersByTimeAsync(20_000)
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(mockSendMessage).toHaveBeenCalledTimes(5)
+    expect(mockSendMessage.mock.calls.slice(1)
+      .every(([message]) => message.fastMode === true)).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(9_000)
+    await expect(translation).resolves.toEqual([])
   })
 
   it('limits a quality-timeout fallback to FastMode singles and a 30-second batch deadline', async () => {
@@ -315,6 +348,59 @@ describe('video subtitle translator', () => {
     expect(mockSendMessage.mock.calls[0][0]).not.toHaveProperty('useCache')
   })
 
+  it('reports each direct quality attempt without shortening its 45-second request budget', async () => {
+    mockConfig.user_role = { openai: 'My custom subtitle instructions' }
+    const job = createJob({
+      entries: [{ id: 'target-1', role: 'target', text: 'Slow sentence.' }],
+    })
+    const onQualityRequestResult = vi.fn()
+    mockSendMessage
+      .mockImplementationOnce(() => new Promise(() => {}))
+      .mockResolvedValueOnce('慢句。')
+
+    const translation = translateSubtitleBatch(job, translationOptions('foreground', {
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))
+    await flushMicrotasks()
+
+    await vi.advanceTimersByTimeAsync(44_999)
+    expect(onQualityRequestResult).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(onQualityRequestResult).toHaveBeenCalledWith('timeout')
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    await expect(translation).resolves.toEqual([
+      { id: 'target-1', translatedText: '慢句。', cacheable: true },
+    ])
+    expect(onQualityRequestResult.mock.calls).toEqual([
+      ['timeout'],
+      ['success'],
+    ])
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage.mock.calls.every(([message]) => message.fastMode === false)).toBe(true)
+  })
+
+  it('reports direct non-timeout failures and stops retries when its observer aborts', async () => {
+    mockConfig.user_role = { openai: 'My custom subtitle instructions' }
+    const controller = new AbortController()
+    const onQualityRequestResult = vi.fn(() => controller.abort())
+    mockSendMessage.mockRejectedValueOnce(new Error('provider rejected request'))
+
+    await expect(translateSubtitleBatch(createJob({
+      entries: [{ id: 'target-1', role: 'target', text: 'Rejected.' }],
+    }), translationOptions('foreground', {
+      signal: controller.signal,
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))).resolves.toEqual([])
+
+    expect(onQualityRequestResult).toHaveBeenCalledOnce()
+    expect(onQualityRequestResult).toHaveBeenCalledWith('failure')
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+  })
+
   it.each(['zhipu', 'minimax', 'google', 'microsoft', 'chromeTranslator', 'deepL'])(
     'falls back to direct single runtime requests for unsupported %s',
     async (service) => {
@@ -328,6 +414,18 @@ describe('video subtitle translator', () => {
       expect(mockSendMessage.mock.calls.every(([message]) => !message.type)).toBe(true)
     },
   )
+
+  it('does not report machine-translation singles as quality-mode requests', async () => {
+    mockConfig.service = 'google'
+    const onQualityRequestResult = vi.fn()
+
+    await expect(translateSubtitleBatch(createJob(), translationOptions('foreground', {
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))).resolves.toEqual(translatedResults(createJob()))
+
+    expect(onQualityRequestResult).not.toHaveBeenCalled()
+  })
 
   it('reports cacheable direct results as soon as each target finishes', async () => {
     mockConfig.service = 'google'

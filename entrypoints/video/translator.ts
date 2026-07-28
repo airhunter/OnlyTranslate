@@ -54,6 +54,17 @@ interface SingleTranslationPolicy {
     batchDeadlineMs?: number
 }
 
+const DEFAULT_SINGLE_POLICY: SingleTranslationPolicy = {
+    requestTimeoutMs: REQUEST_TIMEOUT_MS,
+    maxRetries: MAX_SINGLE_RETRIES,
+}
+
+const DEGRADED_SINGLE_POLICY: SingleTranslationPolicy = {
+    requestTimeoutMs: DEGRADED_REQUEST_TIMEOUT_MS,
+    maxRetries: DEGRADED_MAX_SINGLE_RETRIES,
+    batchDeadlineMs: DEGRADED_BATCH_DEADLINE_MS,
+}
+
 class SubtitleRequestTimeoutError extends Error {
     constructor() {
         super('Subtitle translation request timed out')
@@ -254,6 +265,7 @@ async function requestSingleSubtitle(
     job: SubtitleTranslationJob,
     fastMode: boolean,
     policy: SingleTranslationPolicy,
+    onQualityRequestResult?: SubtitleTranslationOptions['onQualityRequestResult'],
     retryCount = 0,
     signal?: AbortSignal,
 ): Promise<string> {
@@ -268,12 +280,26 @@ async function requestSingleSubtitle(
         }), signal, policy.requestTimeoutMs)
         const result = normalizeRuntimeText(response)
         if (!result) throw new Error('Subtitle translation response is empty')
+        notifyQualityRequestResult(onQualityRequestResult, 'success')
         return result
     } catch (error) {
         if (signal?.aborted) throw createAbortError()
+        notifyQualityRequestResult(
+            onQualityRequestResult,
+            error instanceof SubtitleRequestTimeoutError ? 'timeout' : 'failure',
+        )
+        if (signal?.aborted) throw createAbortError()
         if (retryCount >= policy.maxRetries) throw error
         await waitForRetry(retryDelay(retryCount), signal)
-        return requestSingleSubtitle(entry, job, fastMode, policy, retryCount + 1, signal)
+        return requestSingleSubtitle(
+            entry,
+            job,
+            fastMode,
+            policy,
+            onQualityRequestResult,
+            retryCount + 1,
+            signal,
+        )
     }
 }
 
@@ -315,12 +341,15 @@ async function translateWithSingles(
     options: SubtitleTranslationOptions,
     cacheable: boolean,
     fastMode: boolean,
-    policy: SingleTranslationPolicy = {
-        requestTimeoutMs: REQUEST_TIMEOUT_MS,
-        maxRetries: MAX_SINGLE_RETRIES,
-    },
+    policy: SingleTranslationPolicy = DEFAULT_SINGLE_POLICY,
+    reportQualityResults = false,
 ): Promise<SubtitleTranslationResult[]> {
-    const { signal: parentSignal, lane, onPartialResult } = options
+    const {
+        signal: parentSignal,
+        lane,
+        onPartialResult,
+        onQualityRequestResult,
+    } = options
     if (parentSignal?.aborted) return []
     const deadline = createDeadlineSignal(parentSignal, policy.batchDeadlineMs)
     const signal = deadline.signal
@@ -338,7 +367,15 @@ async function translateWithSingles(
 
             try {
                 const translatedText = await withAbort(enqueueTranslation(
-                    () => requestSingleSubtitle(entry, job, fastMode, policy, 0, signal),
+                    () => requestSingleSubtitle(
+                        entry,
+                        job,
+                        fastMode,
+                        policy,
+                        reportQualityResults ? onQualityRequestResult : undefined,
+                        0,
+                        signal,
+                    ),
                     { priority },
                 ), signal)
                 if (signal?.aborted) return
@@ -402,19 +439,19 @@ export async function translateSubtitleBatch(
                 const result = error instanceof SubtitleRequestTimeoutError ? 'timeout' : 'failure'
                 notifyQualityRequestResult(onQualityRequestResult, result)
                 if (signal?.aborted) return []
-                if (result === 'timeout') {
-                    return translateWithSingles(job, options, false, true, {
-                        requestTimeoutMs: DEGRADED_REQUEST_TIMEOUT_MS,
-                        maxRetries: DEGRADED_MAX_SINGLE_RETRIES,
-                        batchDeadlineMs: DEGRADED_BATCH_DEADLINE_MS,
-                    })
-                }
             }
-            return translateWithSingles(job, options, false, fastMode)
+            return translateWithSingles(job, options, false, true, DEGRADED_SINGLE_POLICY)
         }
     }
 
-    return translateWithSingles(job, options, true, fastMode)
+    return translateWithSingles(
+        job,
+        options,
+        true,
+        fastMode,
+        DEFAULT_SINGLE_POLICY,
+        !fastMode && servicesType.isAI(config.service),
+    )
 }
 
 export { SUBTITLE_TRANSLATION_PROMPT_VERSION }
