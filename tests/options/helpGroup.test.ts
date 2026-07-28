@@ -41,6 +41,8 @@ describe('HelpGroup', () => {
     expect(wrapper.text()).toContain('电子书翻译（Beta）')
     expect(wrapper.text()).toContain('翻译缓存与清理')
     expect(wrapper.text()).toContain('自定义网关')
+    expect(wrapper.text()).toContain('查看字幕 FastMode 状态')
+    expect(wrapper.text()).toContain('如果视频字幕加载流畅，可以直接忽略')
     expect(wrapper.findAll('.help-steps').length).toBeGreaterThanOrEqual(10)
     expect(wrapper.findAll('.help-figure img')).toHaveLength(2)
     expect(wrapper.get('.help-figure img').attributes('loading')).toBe('lazy')

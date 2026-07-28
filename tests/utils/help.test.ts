@@ -110,6 +110,18 @@ describe('help utilities', () => {
     }
   })
 
+  it('documents the optional FastMode status in every locale', () => {
+    const features = helpTopics.find(topic => topic.id === 'features')
+    expect(features?.sections.some(section => section.id === 'subtitle-fast-mode')).toBe(true)
+
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      const i18n = createAppI18n(locale)
+      expect(i18n.global.t('help.topics.features.fastModeTitle')).toContain('FastMode')
+      expect(i18n.global.t('help.topics.features.fastModeStep2'))
+        .not.toBe('help.topics.features.fastModeStep2')
+    }
+  })
+
   it('references screenshots bundled with the extension', () => {
     const images = helpTopics.flatMap(topic => topic.sections.flatMap(section => section.image ? [section.image] : []))
 

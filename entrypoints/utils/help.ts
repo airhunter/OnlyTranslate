@@ -134,6 +134,15 @@ export const helpTopics: HelpTopic[] = [
           'help.topics.features.subtitleStep4',
         ],
       },
+      {
+        id: 'subtitle-fast-mode',
+        titleKey: 'help.topics.features.fastModeTitle',
+        bodyKey: 'help.topics.features.fastModeBody',
+        stepKeys: [
+          'help.topics.features.fastModeStep1',
+          'help.topics.features.fastModeStep2',
+        ],
+      },
     ],
   },
   {

@@ -73,6 +73,10 @@ export const helpMessages = {
         subtitleStep2: '打开扩展弹窗，开启“视频字幕翻译”。',
         subtitleStep3: '开始播放视频。支持的网站会在获取到字幕后自动显示双语字幕。',
         subtitleStep4: '若未显示，尝试切换一次播放器的原字幕语言，或刷新视频页面后重新播放。',
+        fastModeTitle: '查看字幕 FastMode 状态',
+        fastModeBody: '将鼠标悬停在视频播放器中的只译字幕按钮上，可以查看当前字幕会话的 FastMode 是否生效。',
+        fastModeStep1: '“FastMode 已生效”表示只译已经按当前模型能力使用速度优先策略。',
+        fastModeStep2: '“FastMode 未生效”通常表示当前模型不需要降低思考能力，或当前模型、服务暂不支持。这是正常现象；如果视频字幕加载流畅，可以直接忽略。',
       },
       ebooks: {
         title: '电子书翻译（Beta）',
@@ -227,6 +231,10 @@ export const helpMessages = {
         subtitleStep2: 'Open the popup and enable Video subtitle translation.',
         subtitleStep3: 'Play the video. Supported sites display bilingual subtitles after the track is detected.',
         subtitleStep4: 'If subtitles do not appear, switch the original subtitle language once or refresh the video page.',
+        fastModeTitle: 'Check subtitle FastMode status',
+        fastModeBody: 'Hover over the OnlyTranslate subtitle button in the video player to see whether FastMode is active for the current subtitle session.',
+        fastModeStep1: '“FastMode is active” means OnlyTranslate is applying its speed-priority strategy for the current model.',
+        fastModeStep2: '“FastMode is inactive” usually means the model does not need reduced reasoning, or the current model or service does not support it. This is normal and can be ignored when subtitles load smoothly.',
       },
       ebooks: {
         title: 'Ebook translation (Beta)', summary: 'Learn how to import and resume a local EPUB and understand the current beta scope.', keywords: 'ebook EPUB beta import library reading progress bookmark table of contents scrolling',
@@ -331,6 +339,8 @@ export const helpMessages = {
         inputStep1: '進入「設定 → 互動設定」，在「輸入框增強」選擇 Ctrl/Command + Enter、連續三次字元（例如連續三次空格）或停止輸入後自動預覽。', inputStep2: '選擇預設目標語言；候選框出現後也可直接切換語言並重新產生。', inputStep3: '先檢查游標旁的譯文候選；按 Tab 接受，按 Esc 取消。沒有候選時 Tab 仍維持網頁原有行為。',
         subtitleTitle: '影片字幕翻譯', subtitleBody: '在 YouTube、YouTube Kids、Udemy、Coursera、Khan Academy 等支援的網站上，把既有字幕軌翻譯成雙語字幕。',
         subtitleStep1: '開啟影片並確認播放器可顯示原字幕；沒有字幕軌的影片無法翻譯字幕。', subtitleStep2: '開啟擴充功能彈窗，啟用「影片字幕翻譯」。', subtitleStep3: '開始播放影片，支援的網站會在取得字幕後自動顯示雙語字幕。', subtitleStep4: '若未顯示，請切換一次播放器的原字幕語言，或重新整理影片頁面。',
+        fastModeTitle: '查看字幕 FastMode 狀態', fastModeBody: '將滑鼠停在影片播放器中的只譯字幕按鈕上，即可查看目前字幕工作階段的 FastMode 是否生效。',
+        fastModeStep1: '「FastMode 已生效」表示只譯已依目前模型能力套用速度優先策略。', fastModeStep2: '「FastMode 未生效」通常表示目前模型不需要降低思考能力，或目前模型、服務暫不支援。這是正常現象；如果影片字幕載入流暢，可以直接忽略。',
       },
       ebooks: {
         title: '電子書翻譯（Beta）', summary: '了解本機 EPUB 的匯入、續讀和目前測試範圍。', keywords: '電子書 EPUB Beta 公測 匯入 書架 閱讀進度 書籤 目錄 捲動閱讀',
@@ -409,6 +419,8 @@ export const helpMessages = {
         inputStep1: '「設定 → 操作設定」の「入力欄拡張」で、Ctrl/Command + Enter、文字 3 回（スペース 3 回など）、または入力停止後の自動プレビューを選びます。', inputStep2: '既定の翻訳先を選びます。候補内でも翻訳先を切り替えて再生成できます。', inputStep3: 'カーソルの近くに表示された候補を確認し、Tab で適用、Esc でキャンセルします。候補がないときは通常の Tab 操作を妨げません。',
         subtitleTitle: '動画字幕翻訳', subtitleBody: 'YouTube、YouTube Kids、Udemy、Coursera、Khan Academy などの対応サイトで、既存の字幕トラックをバイリンガル字幕に翻訳します。',
         subtitleStep1: '動画を開き、プレーヤーで元字幕を表示できることを確認します。字幕トラックがない動画は翻訳できません。', subtitleStep2: 'ポップアップを開き、「動画字幕翻訳」をオンにします。', subtitleStep3: '動画を再生します。対応サイトでは字幕取得後にバイリンガル字幕が表示されます。', subtitleStep4: '表示されない場合は元字幕の言語を一度切り替えるか、動画ページを再読み込みします。',
+        fastModeTitle: '字幕 FastMode の状態を確認する', fastModeBody: '動画プレーヤーの OnlyTranslate 字幕ボタンにポインターを合わせると、現在の字幕セッションで FastMode が有効か確認できます。',
+        fastModeStep1: '「FastMode は有効です」は、現在のモデルに速度優先の制御が適用されていることを示します。', fastModeStep2: '「FastMode は無効です」は、推論を下げる必要がないモデルか、現在のモデルまたはサービスが未対応であることを示します。正常な状態なので、字幕が滑らかに読み込まれる場合は無視して構いません。',
       },
       ebooks: {
         title: '電子書籍翻訳（Beta）', summary: 'ローカル EPUB の読み込み、続きからの再開、現在のベータ範囲を説明します。', keywords: '電子書籍 EPUB Beta ベータ 読み込み 本棚 進捗 ブックマーク 目次 スクロール',
