@@ -12,6 +12,7 @@ import {
     canUseStructuredSubtitleTranslation,
     SUBTITLE_TRANSLATION_PROMPT_VERSION,
     translateSubtitleBatch,
+    type SubtitleQualityRequestResult,
 } from './translator'
 import {
     createVideoSubtitleCacheSession,
@@ -56,6 +57,8 @@ let currentCacheSession: VideoSubtitleCacheSession | null = null
 let currentCacheRuntimeSignature = ''
 let currentSessionReady = false
 let translationStatus: SubtitleSchedulerSnapshot | null = null
+let forcedFastMode = false
+let consecutiveQualityTimeouts = 0
 let statusHintTimer: number | null = null
 let lastVisibleStatus: VisibleSubtitleStatus | null = null
 const lastStatusHintAt = new Map<VisibleSubtitleStatus, number>()
@@ -250,6 +253,7 @@ function applyCacheHits(
 ) {
     const translatedById = new Map(hits.map(hit => [hit.id, hit.translatedText.trim()]))
     for (const segment of segments) {
+        if (segment.status === 'translated') continue
         const translatedText = translatedById.get(segment.id)
         if (!translatedText) continue
         segment.translatedText = translatedText
@@ -267,7 +271,11 @@ function createScheduler(generation: number): SubtitleTranslationScheduler {
         title: currentVideoTitle,
         sourceLanguage: currentSourceLanguage,
         targetLanguage: resolveEffectiveSubtitleTarget(currentSourceLanguage),
-        translateBatch: translateSubtitleBatch,
+        translateBatch: (job, options) => translateSubtitleBatch(job, {
+            ...options,
+            effectiveFastMode: resolveEffectiveFastMode(),
+            onQualityRequestResult: result => handleQualityRequestResult(generation, result),
+        }),
         onUpdate: () => {
             if (generation === sessionGeneration && subtitleEnabled) {
                 overlay.setSegments([...currentSegments])
@@ -284,6 +292,8 @@ function createScheduler(generation: number): SubtitleTranslationScheduler {
                 || !subtitleEnabled
                 || !config.useCache
                 || !cacheSession
+                // Replacing the session object is the final guard against a quality-mode
+                // result being written under the FastMode identity after a circuit break.
                 || cacheSession !== currentCacheSession
                 || currentCacheRuntimeSignature !== createSubtitleCacheRuntimeSignature(currentSourceLanguage)
             ) return
@@ -293,9 +303,97 @@ function createScheduler(generation: number): SubtitleTranslationScheduler {
     })
 }
 
+function handleQualityRequestResult(
+    generation: number,
+    result: SubtitleQualityRequestResult,
+) {
+    if (generation !== sessionGeneration || forcedFastMode) return
+    if (result !== 'timeout') {
+        consecutiveQualityTimeouts = 0
+        return
+    }
+
+    consecutiveQualityTimeouts++
+    if (consecutiveQualityTimeouts >= 2) {
+        void forceFastModeForCurrentSession(generation)
+    }
+}
+
+async function forceFastModeForCurrentSession(generation: number) {
+    if (
+        forcedFastMode
+        || generation !== sessionGeneration
+        || !currentVideo
+        || !activeTrackKey
+    ) return
+
+    // This flag is set before stopping the scheduler so simultaneous lane timeouts
+    // cannot perform the restart twice.
+    forcedFastMode = true
+    const video = currentVideo
+    const trackKey = activeTrackKey
+    const oldScheduler = scheduler
+    oldScheduler?.stop()
+    scheduler = null
+    sessionGeneration++
+    const restartGeneration = sessionGeneration
+    consecutiveQualityTimeouts = 0
+
+    for (const segment of currentSegments) {
+        if (segment.status === 'translated') continue
+        segment.status = 'pending'
+        segment.translatedText = undefined
+    }
+
+    // Assigning a different object reference (null now, a new session below) makes
+    // late quality-mode commits fail the cacheSession !== currentCacheSession guard.
+    currentCacheSession = null
+    currentCacheRuntimeSignature = createSubtitleCacheRuntimeSignature(currentSourceLanguage)
+    translationStatus = createStartingSnapshot()
+    overlay.setSegments([...currentSegments])
+    updateQuickButton()
+    showForcedFastModeHint()
+
+    let cacheSession: VideoSubtitleCacheSession | null = null
+    try {
+        cacheSession = await createVideoSubtitleCacheSession({
+            identity: await buildSubtitleCacheIdentity(trackKey, currentSourceLanguage),
+            segments: currentSegments,
+            useCache: config.useCache,
+        })
+        if (!isCurrentSession(restartGeneration, trackKey, video)) return
+
+        const runtimeSignature = createSubtitleCacheRuntimeSignature(currentSourceLanguage)
+        if (runtimeSignature === currentCacheRuntimeSignature) {
+            const hits = await cacheSession.hydrate()
+            if (!isCurrentSession(restartGeneration, trackKey, video)) return
+            if (runtimeSignature === createSubtitleCacheRuntimeSignature(currentSourceLanguage)) {
+                applyCacheHits(currentSegments, hits)
+            } else {
+                cacheSession = null
+            }
+        } else {
+            cacheSession = null
+        }
+    } catch {
+        // Cache preparation must not prevent the FastMode runtime from restarting.
+    }
+
+    if (!isCurrentSession(restartGeneration, trackKey, video)) return
+    currentCacheSession = cacheSession
+    currentCacheRuntimeSignature = createSubtitleCacheRuntimeSignature(currentSourceLanguage)
+    overlay.setSegments([...currentSegments])
+    scheduler = createScheduler(restartGeneration)
+    scheduler.start()
+}
+
+function resolveEffectiveFastMode(): boolean {
+    return forcedFastMode || config.videoSubtitleFastMode !== false
+}
+
 function createSubtitleCacheRuntimeSignature(sourceLanguage?: string): string {
     const service = String(config.service || '')
-    const fastMode = config.videoSubtitleFastMode !== false
+    const fastMode = resolveEffectiveFastMode()
     const thinkingWanted = !fastMode && config.thinking?.[service] === true
     return JSON.stringify([
         service,
@@ -321,7 +419,7 @@ async function buildSubtitleCacheIdentity(
 ): Promise<SubtitleCacheIdentity> {
     const service = String(config.service || '')
     const mode = canUseStructuredSubtitleTranslation() ? 'structured' : 'direct'
-    const fastMode = config.videoSubtitleFastMode !== false
+    const fastMode = resolveEffectiveFastMode()
     const thinkingWanted = !fastMode && config.thinking?.[service] === true
     const promptSource = mode === 'structured'
         ? [
@@ -435,6 +533,8 @@ function beginNewSession() {
     currentCacheRuntimeSignature = ''
     currentSessionReady = false
     translationStatus = null
+    forcedFastMode = false
+    consecutiveQualityTimeouts = 0
     resetStatusHintState()
     setSubtitleLoadStatus('idle')
 }
@@ -547,21 +647,22 @@ function resolveVisibleStatus(): VisibleSubtitleStatus {
 }
 
 function getQuickButtonTitle(status: VisibleSubtitleStatus): string {
-    if (status === 'disabled') return t('video.subtitleButtonOff')
-    if (status === 'loading' || status === 'fetching') return t('video.subtitleLoading')
-    if (status === 'waiting-cc') return t('video.subtitleWaitingCc')
-    if (status === 'no-track') return t('video.subtitleNoTrack')
-    if (status === 'failed') return t('video.subtitleLoadFailed')
-    if (status === 'translation-failed') return t('video.subtitleTranslationFailed')
-    if (status === 'starting') return t('video.subtitleTranslationStarting')
+    const suffix = forcedFastMode ? ` · ${t('video.subtitleForcedFastMode')}` : ''
+    if (status === 'disabled') return `${t('video.subtitleButtonOff')}${suffix}`
+    if (status === 'loading' || status === 'fetching') return `${t('video.subtitleLoading')}${suffix}`
+    if (status === 'waiting-cc') return `${t('video.subtitleWaitingCc')}${suffix}`
+    if (status === 'no-track') return `${t('video.subtitleNoTrack')}${suffix}`
+    if (status === 'failed') return `${t('video.subtitleLoadFailed')}${suffix}`
+    if (status === 'translation-failed') return `${t('video.subtitleTranslationFailed')}${suffix}`
+    if (status === 'starting') return `${t('video.subtitleTranslationStarting')}${suffix}`
     if (status === 'catching-up') {
-        return t('video.subtitleTranslationCatchingUp', {
+        return `${t('video.subtitleTranslationCatchingUp', {
             seconds: Math.max(0, translationStatus?.runwaySeconds || 0),
-        })
+        })}${suffix}`
     }
-    if (status === 'buffered') return t('video.subtitleTranslationBuffered')
-    if (status === 'ready') return t('video.subtitleReady')
-    return t('video.subtitleButtonOn')
+    if (status === 'buffered') return `${t('video.subtitleTranslationBuffered')}${suffix}`
+    if (status === 'ready') return `${t('video.subtitleReady')}${suffix}`
+    return `${t('video.subtitleButtonOn')}${suffix}`
 }
 
 function getQuickButtonColor(status: VisibleSubtitleStatus): string {
@@ -688,6 +789,17 @@ function hideStatusHint() {
     if (!hint) return
     hint.hidden = true
     hint.textContent = ''
+}
+
+function showForcedFastModeHint() {
+    const button = document.getElementById(QUICK_BTN_ID) as HTMLButtonElement | null
+    const hint = button ? ensureStatusHint(button) : null
+    if (!button || !hint) return
+    hideStatusHint()
+    positionStatusHint(button, hint)
+    hint.hidden = false
+    hint.textContent = t('video.subtitleForcedFastMode')
+    statusHintTimer = window.setTimeout(hideStatusHint, 5_000)
 }
 
 function resetStatusHintState() {

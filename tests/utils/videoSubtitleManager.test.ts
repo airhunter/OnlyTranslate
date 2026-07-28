@@ -217,7 +217,7 @@ describe('video subtitle manager lifecycle', () => {
       sourceLanguage: 'en',
       targetLanguage: 'zh-Hans',
       title: 'Original Video',
-      translateBatch: mocks.translateSubtitleBatch,
+      translateBatch: expect.any(Function),
     }))
 
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(100_000)

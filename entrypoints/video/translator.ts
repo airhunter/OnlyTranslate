@@ -15,6 +15,9 @@ const REQUEST_TIMEOUT_MS = 45_000
 const MAX_SINGLE_RETRIES = 3
 const BASE_RETRY_DELAY_MS = 1_000
 const MAX_RETRY_DELAY_MS = 30_000
+const DEGRADED_REQUEST_TIMEOUT_MS = 20_000
+const DEGRADED_MAX_SINGLE_RETRIES = 1
+const DEGRADED_BATCH_DEADLINE_MS = 30_000
 
 const STRUCTURED_SUBTITLE_SERVICES = new Set<string>([
     services.openai,
@@ -39,6 +42,23 @@ export interface SubtitleTranslationOptions {
     signal?: AbortSignal
     lane: SubtitleTranslationLane
     onPartialResult?: (result: SubtitleTranslationResult) => void
+    effectiveFastMode?: boolean
+    onQualityRequestResult?: (result: SubtitleQualityRequestResult) => void
+}
+
+export type SubtitleQualityRequestResult = 'success' | 'timeout' | 'failure'
+
+interface SingleTranslationPolicy {
+    requestTimeoutMs: number
+    maxRetries: number
+    batchDeadlineMs?: number
+}
+
+class SubtitleRequestTimeoutError extends Error {
+    constructor() {
+        super('Subtitle translation request timed out')
+        this.name = 'SubtitleRequestTimeoutError'
+    }
 }
 
 function normalizeLanguage(language?: string): string {
@@ -126,7 +146,11 @@ function withAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
     })
 }
 
-function withTimeout<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+function withTimeout<T>(
+    promise: Promise<T>,
+    signal?: AbortSignal,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         let settled = false
         const finish = (callback: () => void) => {
@@ -138,8 +162,8 @@ function withTimeout<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
         }
         const handleAbort = () => finish(() => reject(createAbortError()))
         const timer = setTimeout(
-            () => finish(() => reject(new Error('Subtitle translation request timed out'))),
-            REQUEST_TIMEOUT_MS,
+            () => finish(() => reject(new SubtitleRequestTimeoutError())),
+            timeoutMs,
         )
 
         if (signal?.aborted) {
@@ -195,7 +219,7 @@ async function requestStructuredBatch(
                 sourceLang: job.sourceLanguage,
                 targetLang: job.targetLanguage,
                 fastMode,
-            }), signal)
+            }), signal, REQUEST_TIMEOUT_MS)
         },
         { priority: lane === 'foreground' ? 'high' : 'background' },
     ), signal)
@@ -229,6 +253,7 @@ async function requestSingleSubtitle(
     entry: SubtitleTranslationEntry,
     job: SubtitleTranslationJob,
     fastMode: boolean,
+    policy: SingleTranslationPolicy,
     retryCount = 0,
     signal?: AbortSignal,
 ): Promise<string> {
@@ -240,15 +265,48 @@ async function requestSingleSubtitle(
             sourceLang: job.sourceLanguage,
             targetLang: job.targetLanguage,
             fastMode,
-        }), signal)
+        }), signal, policy.requestTimeoutMs)
         const result = normalizeRuntimeText(response)
         if (!result) throw new Error('Subtitle translation response is empty')
         return result
     } catch (error) {
         if (signal?.aborted) throw createAbortError()
-        if (retryCount >= MAX_SINGLE_RETRIES) throw error
+        if (retryCount >= policy.maxRetries) throw error
         await waitForRetry(retryDelay(retryCount), signal)
-        return requestSingleSubtitle(entry, job, fastMode, retryCount + 1, signal)
+        return requestSingleSubtitle(entry, job, fastMode, policy, retryCount + 1, signal)
+    }
+}
+
+function createDeadlineSignal(parentSignal: AbortSignal | undefined, deadlineMs: number | undefined) {
+    if (!deadlineMs) {
+        return {
+            signal: parentSignal,
+            cleanup: () => undefined,
+        }
+    }
+
+    const controller = new AbortController()
+    const handleParentAbort = () => controller.abort()
+    if (parentSignal?.aborted) controller.abort()
+    else parentSignal?.addEventListener('abort', handleParentAbort, { once: true })
+    const timer = setTimeout(() => controller.abort(), deadlineMs)
+    return {
+        signal: controller.signal,
+        cleanup: () => {
+            clearTimeout(timer)
+            parentSignal?.removeEventListener('abort', handleParentAbort)
+        },
+    }
+}
+
+function notifyQualityRequestResult(
+    callback: SubtitleTranslationOptions['onQualityRequestResult'],
+    result: SubtitleQualityRequestResult,
+) {
+    try {
+        callback?.(result)
+    } catch {
+        // Runtime observers must not change translation or fallback behavior.
     }
 }
 
@@ -257,9 +315,15 @@ async function translateWithSingles(
     options: SubtitleTranslationOptions,
     cacheable: boolean,
     fastMode: boolean,
+    policy: SingleTranslationPolicy = {
+        requestTimeoutMs: REQUEST_TIMEOUT_MS,
+        maxRetries: MAX_SINGLE_RETRIES,
+    },
 ): Promise<SubtitleTranslationResult[]> {
-    const { signal, lane, onPartialResult } = options
-    if (signal?.aborted) return []
+    const { signal: parentSignal, lane, onPartialResult } = options
+    if (parentSignal?.aborted) return []
+    const deadline = createDeadlineSignal(parentSignal, policy.batchDeadlineMs)
+    const signal = deadline.signal
     const targets = targetEntries(job)
     const results: Array<SubtitleTranslationResult | undefined> = new Array(targets.length)
     const workerCount = Math.min(lane === 'foreground' ? 2 : 1, targets.length)
@@ -274,10 +338,11 @@ async function translateWithSingles(
 
             try {
                 const translatedText = await withAbort(enqueueTranslation(
-                    () => requestSingleSubtitle(entry, job, fastMode, 0, signal),
+                    () => requestSingleSubtitle(entry, job, fastMode, policy, 0, signal),
                     { priority },
                 ), signal)
-                if (signal?.aborted || !translatedText.trim()) return
+                if (signal?.aborted) return
+                if (!translatedText.trim()) continue
 
                 const result: SubtitleTranslationResult = {
                     id: entry.id,
@@ -296,16 +361,20 @@ async function translateWithSingles(
         }
     }
 
-    await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
-    return results.filter((result): result is SubtitleTranslationResult => Boolean(result))
+    try {
+        await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
+        return results.filter((result): result is SubtitleTranslationResult => Boolean(result))
+    } finally {
+        deadline.cleanup()
+    }
 }
 
 export async function translateSubtitleBatch(
     rawJob: SubtitleTranslationJob,
     options: SubtitleTranslationOptions = { lane: 'foreground' },
 ): Promise<SubtitleTranslationResult[]> {
-    const { signal, lane } = options
-    const fastMode = config.videoSubtitleFastMode !== false
+    const { signal, lane, onQualityRequestResult } = options
+    const fastMode = options.effectiveFastMode ?? config.videoSubtitleFastMode !== false
     const direction = resolveSubtitleDirection(rawJob)
     const job: SubtitleTranslationJob = {
         ...rawJob,
@@ -325,9 +394,22 @@ export async function translateSubtitleBatch(
     if (canUseStructuredSubtitleTranslation()) {
         try {
             const results = await requestStructuredBatch(job, lane, fastMode, signal)
+            if (!fastMode) notifyQualityRequestResult(onQualityRequestResult, 'success')
             return results.map(result => ({ ...result, cacheable: true }))
-        } catch {
+        } catch (error) {
             if (signal?.aborted) return []
+            if (!fastMode) {
+                const result = error instanceof SubtitleRequestTimeoutError ? 'timeout' : 'failure'
+                notifyQualityRequestResult(onQualityRequestResult, result)
+                if (signal?.aborted) return []
+                if (result === 'timeout') {
+                    return translateWithSingles(job, options, false, true, {
+                        requestTimeoutMs: DEGRADED_REQUEST_TIMEOUT_MS,
+                        maxRetries: DEGRADED_MAX_SINGLE_RETRIES,
+                        batchDeadlineMs: DEGRADED_BATCH_DEADLINE_MS,
+                    })
+                }
+            }
             return translateWithSingles(job, options, false, fastMode)
         }
     }
@@ -336,3 +418,11 @@ export async function translateSubtitleBatch(
 }
 
 export { SUBTITLE_TRANSLATION_PROMPT_VERSION }
+
+export const subtitleTranslationDefaults = Object.freeze({
+    requestTimeoutMs: REQUEST_TIMEOUT_MS,
+    maxSingleRetries: MAX_SINGLE_RETRIES,
+    degradedRequestTimeoutMs: DEGRADED_REQUEST_TIMEOUT_MS,
+    degradedMaxSingleRetries: DEGRADED_MAX_SINGLE_RETRIES,
+    degradedBatchDeadlineMs: DEGRADED_BATCH_DEADLINE_MS,
+})

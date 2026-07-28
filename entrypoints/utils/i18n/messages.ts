@@ -137,7 +137,8 @@ export const messages = {
       subtitleTranslationStarting: '正在准备翻译',
       subtitleTranslationCatchingUp: '正在追赶翻译，已准备未来 {seconds} 秒',
       subtitleTranslationBuffered: '翻译已跟上',
-      subtitleTranslationFailed: '翻译失败，当前显示原文'
+      subtitleTranslationFailed: '翻译失败，当前显示原文',
+      subtitleForcedFastMode: '已自动切换速度优先'
     },
     runtime: {
       retry: '重试',
@@ -645,7 +646,8 @@ export const messages = {
       subtitleTranslationStarting: 'Preparing subtitle translation',
       subtitleTranslationCatchingUp: 'Catching up; {seconds} seconds ready ahead',
       subtitleTranslationBuffered: 'Translation has caught up',
-      subtitleTranslationFailed: 'Translation failed; showing the original text'
+      subtitleTranslationFailed: 'Translation failed; showing the original text',
+      subtitleForcedFastMode: 'Automatically switched to speed priority'
     },
     runtime: {
       retry: 'Retry',
@@ -1153,7 +1155,8 @@ export const messages = {
       subtitleTranslationStarting: '正在準備翻譯',
       subtitleTranslationCatchingUp: '正在追趕翻譯，已準備未來 {seconds} 秒',
       subtitleTranslationBuffered: '翻譯已跟上',
-      subtitleTranslationFailed: '翻譯失敗，目前顯示原文'
+      subtitleTranslationFailed: '翻譯失敗，目前顯示原文',
+      subtitleForcedFastMode: '已自動切換為速度優先'
     },
     runtime: {
       retry: '重試',
@@ -1661,7 +1664,8 @@ export const messages = {
       subtitleTranslationStarting: '字幕翻訳を準備しています',
       subtitleTranslationCatchingUp: '翻訳を追いつかせています。今後 {seconds} 秒を準備済みです',
       subtitleTranslationBuffered: '翻訳が再生に追いつきました',
-      subtitleTranslationFailed: '翻訳に失敗したため、原文を表示しています'
+      subtitleTranslationFailed: '翻訳に失敗したため、原文を表示しています',
+      subtitleForcedFastMode: '速度優先へ自動的に切り替えました'
     },
     runtime: {
       retry: '再試行',

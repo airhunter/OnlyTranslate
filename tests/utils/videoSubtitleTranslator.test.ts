@@ -176,6 +176,7 @@ describe('video subtitle translator', () => {
 
   it('preserves the disabled speed-priority setting across structured and single fallback requests', async () => {
     mockConfig.videoSubtitleFastMode = false
+    const onQualityRequestResult = vi.fn()
     mockSendMessage.mockImplementation(async (message: Record<string, unknown>) => {
       if (message.type === 'SUBTITLE_BATCH_TRANSLATION') {
         return [{ id: 'wrong-id', translatedText: 'invalid' }]
@@ -183,12 +184,88 @@ describe('video subtitle translator', () => {
       return `translated:${message.origin}`
     })
 
-    await expect(translateSubtitleBatch(createJob())).resolves.toEqual(
+    await expect(translateSubtitleBatch(createJob(), translationOptions('foreground', {
+      onQualityRequestResult,
+    }))).resolves.toEqual(
       translatedResults(createJob(), false),
     )
 
     expect(mockSendMessage).toHaveBeenCalledTimes(3)
     expect(mockSendMessage.mock.calls.every(([message]) => message.fastMode === false)).toBe(true)
+    expect(onQualityRequestResult).toHaveBeenCalledWith('failure')
+  })
+
+  it('uses the explicit effective mode and reports a successful quality request', async () => {
+    const onQualityRequestResult = vi.fn()
+
+    await expect(translateSubtitleBatch(createJob(), translationOptions('foreground', {
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))).resolves.toEqual(translatedResults(createJob()))
+
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'SUBTITLE_BATCH_TRANSLATION',
+      fastMode: false,
+    }))
+    expect(onQualityRequestResult).toHaveBeenCalledOnce()
+    expect(onQualityRequestResult).toHaveBeenCalledWith('success')
+  })
+
+  it('limits a quality-timeout fallback to FastMode singles and a 30-second batch deadline', async () => {
+    const job = createJob()
+    const onPartialResult = vi.fn()
+    const onQualityRequestResult = vi.fn()
+    mockSendMessage.mockImplementation((message: Record<string, unknown>) => {
+      if (message.type === 'SUBTITLE_BATCH_TRANSLATION') return new Promise(() => {})
+      if (message.origin === 'She said it worked.') return Promise.resolve('她说这成功了。')
+      return new Promise(() => {})
+    })
+
+    const translation = translateSubtitleBatch(job, translationOptions('foreground', {
+      effectiveFastMode: false,
+      onPartialResult,
+      onQualityRequestResult,
+    }))
+    await flushMicrotasks()
+    await vi.advanceTimersByTimeAsync(45_000)
+    await flushMicrotasks()
+
+    expect(onQualityRequestResult).toHaveBeenCalledWith('timeout')
+    const fallbackMessages = mockSendMessage.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter(message => message.type !== 'SUBTITLE_BATCH_TRANSLATION')
+    expect(fallbackMessages).toHaveLength(2)
+    expect(fallbackMessages.every(message => message.fastMode === true)).toBe(true)
+    expect(onPartialResult).toHaveBeenCalledWith({
+      id: 'target-1',
+      translatedText: '她说这成功了。',
+      cacheable: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    await expect(translation).resolves.toEqual([
+      { id: 'target-1', translatedText: '她说这成功了。', cacheable: false },
+    ])
+    expect(mockSendMessage.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter(message => message.origin === 'Not right away.')).toHaveLength(2)
+  })
+
+  it('does not start timeout fallback singles when the quality observer aborts the run', async () => {
+    const controller = new AbortController()
+    const onQualityRequestResult = vi.fn(() => controller.abort())
+    mockSendMessage.mockImplementation(() => new Promise(() => {}))
+
+    const translation = translateSubtitleBatch(createJob(), translationOptions('foreground', {
+      signal: controller.signal,
+      effectiveFastMode: false,
+      onQualityRequestResult,
+    }))
+    await vi.advanceTimersByTimeAsync(45_000)
+
+    await expect(translation).resolves.toEqual([])
+    expect(onQualityRequestResult).toHaveBeenCalledWith('timeout')
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
   })
 
   it('queues a structured prefetch request with background priority', async () => {
@@ -377,10 +454,13 @@ describe('video subtitle translator', () => {
 
   it('does not start single fallbacks after a seek cancels a structured job', async () => {
     const controller = new AbortController()
+    const onQualityRequestResult = vi.fn()
     mockSendMessage.mockImplementationOnce(() => new Promise(() => {}))
 
     const translation = translateSubtitleBatch(createJob(), translationOptions('foreground', {
       signal: controller.signal,
+      effectiveFastMode: false,
+      onQualityRequestResult,
     }))
     await Promise.resolve()
     controller.abort()
@@ -390,6 +470,7 @@ describe('video subtitle translator', () => {
     expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'SUBTITLE_BATCH_TRANSLATION',
     }))
+    expect(onQualityRequestResult).not.toHaveBeenCalled()
   })
 
   it('does not send a structured request when its epoch is already cancelled', async () => {
@@ -427,5 +508,31 @@ describe('video subtitle translator', () => {
     await expect(translation).resolves.toEqual([])
     expect(mockSendMessage).toHaveBeenCalledTimes(1)
     expect(onPartialResult).not.toHaveBeenCalled()
+  })
+
+  it('continues a single worker after an empty target exhausts its retries', async () => {
+    mockConfig.service = 'google'
+    const job = createJob({
+      entries: [
+        { id: 'target-1', role: 'target', text: 'Empty.' },
+        { id: 'target-2', role: 'target', text: 'Continue.' },
+      ],
+    })
+    mockSendMessage.mockImplementation(async (message: Record<string, unknown>) => (
+      message.origin === 'Empty.' ? '' : '继续。'
+    ))
+
+    const translation = translateSubtitleBatch(job, translationOptions('prefetch'))
+    await vi.runAllTimersAsync()
+
+    await expect(translation).resolves.toEqual([
+      { id: 'target-2', translatedText: '继续。', cacheable: true },
+    ])
+    expect(mockSendMessage.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter(message => message.origin === 'Empty.')).toHaveLength(4)
+    expect(mockSendMessage).toHaveBeenLastCalledWith(expect.objectContaining({
+      origin: 'Continue.',
+    }))
   })
 })
