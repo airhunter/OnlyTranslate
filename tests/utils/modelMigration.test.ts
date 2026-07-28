@@ -15,6 +15,7 @@ vi.mock('@wxt-dev/storage', () => ({ storage: storageMocks }))
 
 import {
     CLAUDE_MODEL_MIGRATIONS,
+    CLAUDE_RETIRED_MODEL_RECOMMENDATIONS,
     applyRetiredClaudeModelMigration,
     consumeClaudeModelMigrationNotice,
     getRetiredClaudeModelRecommendation,
@@ -32,6 +33,9 @@ describe('Claude preset model migration', () => {
     it('keeps every migration target in the current Claude presets', () => {
         const presets = models.get(services.claude) || []
         for (const target of Object.values(CLAUDE_MODEL_MIGRATIONS)) {
+            expect(presets).toContain(target)
+        }
+        for (const target of Object.values(CLAUDE_RETIRED_MODEL_RECOMMENDATIONS)) {
             expect(presets).toContain(target)
         }
     })
@@ -72,7 +76,11 @@ describe('Claude preset model migration', () => {
     )
 
     it('leaves unknown and custom values untouched', () => {
-        for (const value of ['claude-company-alias', customModelString]) {
+        for (const value of [
+            'claude-company-alias',
+            'claude-3-opus-20240229',
+            customModelString,
+        ]) {
             const config = {
                 model: { [services.claude]: value },
                 customModel: { [services.claude]: 'claude-sonnet-4-0' },
@@ -105,6 +113,12 @@ describe('Claude preset model migration', () => {
 
     it('provides a recommendation without mutating custom model names', () => {
         expect(getRetiredClaudeModelRecommendation('claude-sonnet-4-0')).toBe('claude-sonnet-4-6')
+        expect(getRetiredClaudeModelRecommendation('claude-3-5-sonnet-20241022'))
+            .toBe('claude-sonnet-4-6')
+        expect(getRetiredClaudeModelRecommendation('anthropic/claude-3-opus'))
+            .toBe('claude-opus-4-8')
+        expect(getRetiredClaudeModelRecommendation('claude-3-haiku-20240307'))
+            .toBe('claude-haiku-4-5')
         expect(getRetiredClaudeModelRecommendation('claude-company-alias')).toBeUndefined()
     })
 
@@ -124,6 +138,16 @@ describe('Claude preset model migration', () => {
         storageState.set(modelMigrationInternals.noticeKey, JSON.stringify({
             from: 'claude-opus-4-1',
             to: 'unexpected-model',
+        }))
+
+        await expect(consumeClaudeModelMigrationNotice()).resolves.toBeNull()
+        expect(storageState.has(modelMigrationInternals.noticeKey)).toBe(false)
+    })
+
+    it('does not accept a broad retirement recommendation as a migration notice', async () => {
+        storageState.set(modelMigrationInternals.noticeKey, JSON.stringify({
+            from: 'claude-3-opus-20240229',
+            to: 'claude-opus-4-8',
         }))
 
         await expect(consumeClaudeModelMigrationNotice()).resolves.toBeNull()
