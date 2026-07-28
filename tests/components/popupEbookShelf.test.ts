@@ -83,6 +83,9 @@ vi.mock('@/entrypoints/utils/option', () => ({
 
 vi.mock('@/entrypoints/utils/help', () => ({ openOptionsPanel: vi.fn() }));
 vi.mock('@/entrypoints/utils/cache', () => ({ cache: { clean: vi.fn() } }));
+vi.mock('@/entrypoints/utils/modelMigration', () => ({
+  consumeClaudeModelMigrationNotice: vi.fn(async () => null),
+}));
 
 import Main from '@/components/Main.vue';
 

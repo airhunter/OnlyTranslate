@@ -146,6 +146,23 @@ describe('ServiceGroup', () => {
     expect(wrapper.text()).toContain('已从厂商接口获取 2 个模型')
   })
 
+  it('recommends a replacement without changing a retired custom Anthropic model', () => {
+    mocks.config.value.customProviders = [{
+      id: 'custom_anthropic',
+      name: 'Anthropic gateway',
+      protocol: 'anthropic',
+      url: 'https://gateway.example',
+      token: '',
+      model: '自定义模型',
+      customModel: 'claude-opus-4-1',
+    }]
+
+    const wrapper = mountGroup()
+
+    expect(wrapper.text()).toContain('型号 claude-opus-4-1 已停止服务，建议改用 claude-opus-4-8')
+    expect(mocks.config.value.customProviders[0].customModel).toBe('claude-opus-4-1')
+  })
+
   it('falls back to Microsoft when removing an unconfigured current service', async () => {
     mocks.config.value.service = 'custom_pending'
     mocks.config.value.customProviders = [{

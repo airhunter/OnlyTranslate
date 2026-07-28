@@ -206,6 +206,15 @@
                     </el-tooltip>
                   </div>
                   <div v-if="modelFetchHints[service.id]" class="model-fetch-hint">{{ modelFetchHints[service.id] }}</div>
+                  <div
+                    v-if="getCustomProviderRetirementRecommendation(service.provider)"
+                    class="model-retirement-hint"
+                  >
+                    {{ t('options.service.retiredModelRecommendation', {
+                      model: resolveCustomProviderModel(service.provider),
+                      replacement: getCustomProviderRetirementRecommendation(service.provider),
+                    }) }}
+                  </div>
                 </div>
               </div>
             </template>
@@ -248,6 +257,15 @@
                 <div class="provider-form-label">{{ t('options.service.customModel') }}</div>
                 <div class="provider-form-control">
                   <el-input v-model="config.customModel[service.id]" :placeholder="t('options.service.customModelPlaceholder')" />
+                  <div
+                    v-if="getBuiltinRetirementRecommendation(service.id)"
+                    class="model-retirement-hint"
+                  >
+                    {{ t('options.service.retiredModelRecommendation', {
+                      model: config.customModel[service.id],
+                      replacement: getBuiltinRetirementRecommendation(service.id),
+                    }) }}
+                  </div>
                 </div>
               </div>
 
@@ -345,6 +363,7 @@ import {
   getCustomProviderProtocol,
   resolveCustomProviderEndpoint,
 } from '@/entrypoints/utils/providerEndpoint'
+import { getRetiredClaudeModelRecommendation } from '@/entrypoints/utils/modelMigration'
 import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
@@ -615,6 +634,19 @@ const getCustomProviderModelOptions = (service: string, provider: CustomProvider
   provider.customModel,
   ...(state.modelOptions[service] || []).filter(item => item !== customModelString),
 ].filter(Boolean)))
+const resolveCustomProviderModel = (provider: CustomProvider) => provider.model === customModelString
+  ? provider.customModel
+  : provider.model
+const getCustomProviderRetirementRecommendation = (provider: CustomProvider) => (
+  getCustomProviderProtocol(provider) === 'anthropic'
+    ? getRetiredClaudeModelRecommendation(resolveCustomProviderModel(provider))
+    : undefined
+)
+const getBuiltinRetirementRecommendation = (service: string) => (
+  service === services.claude
+    ? getRetiredClaudeModelRecommendation(config.value.customModel[service] || '')
+    : undefined
+)
 
 const getProxyValue = (service: string) => {
   const defaultUrl = urls[service]
@@ -865,6 +897,12 @@ const formatConnectionTestResult = (result: ConnectionTestResult): string => {
 .model-fetch-hint {
   margin-top: 6px;
   color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.model-retirement-hint {
+  margin-top: 8px;
+  color: var(--el-color-warning);
   font-size: 12px;
   line-height: 1.5;
 }

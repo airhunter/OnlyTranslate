@@ -306,6 +306,7 @@ import { clearTranslationCache } from '@/entrypoints/utils/clearTranslationCache
 import { EbookImportError, EbookRepository } from '@/entrypoints/ebook/repository';
 import { getEbookPageUrl } from '@/entrypoints/ebook/url';
 import type { EbookRecord } from '@/entrypoints/ebook/types';
+import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration';
 
 interface PopupEbook {
   record: EbookRecord;
@@ -448,6 +449,10 @@ loadConfig().then(() => {
   }
   // 查询当前页面翻译状态
   checkTranslationStatus()
+  void consumeClaudeModelMigrationNotice().then((notice) => {
+    if (!notice) return
+    ElMessage.info(t('common.modelMigrated', { from: notice.from, to: notice.to }))
+  })
 })
 
 watch(() => config.value.uiLocale, (value) => {

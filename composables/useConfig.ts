@@ -1,6 +1,10 @@
 import { ref, watch, nextTick } from 'vue'
 import { Config } from '@/entrypoints/utils/model'
 import { storage } from '@wxt-dev/storage'
+import {
+  applyRetiredClaudeModelMigration,
+  saveClaudeModelMigrationNotice,
+} from '@/entrypoints/utils/modelMigration'
 
 // Singleton — shared across all useConfig() calls so components never hold
 // stale defaults that overwrite the user's saved settings on save.
@@ -36,7 +40,23 @@ export function useConfig() {
 
     const value = await storage.getItem('local:config')
     if (typeof value === 'string' && value) {
-      Object.assign(config.value, JSON.parse(value) as Partial<Config>)
+      const parsedConfig = JSON.parse(value) as Partial<Config>
+      const migration = applyRetiredClaudeModelMigration(parsedConfig)
+      if (migration.status === 'target-missing') {
+        console.warn(
+          `Skipped Claude model migration because target "${migration.notice.to}" is not a current preset.`,
+        )
+      } else if (migration.status === 'migrated') {
+        const migratedJson = JSON.stringify(parsedConfig)
+        _lastWrittenJson = migratedJson
+        await storage.setItem('local:config', migratedJson)
+        try {
+          await saveClaudeModelMigrationNotice(migration.notice)
+        } catch (error) {
+          console.warn('Failed to save Claude model migration notice:', error)
+        }
+      }
+      Object.assign(config.value, parsedConfig)
     }
 
     // Register auto-save only after initial load to avoid persisting

@@ -1,5 +1,9 @@
 import { Config } from "@/entrypoints/utils/model";
 import { setLocale } from "@/entrypoints/utils/i18n";
+import {
+    applyRetiredClaudeModelMigration,
+    saveClaudeModelMigrationNotice,
+} from './modelMigration'
 
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
@@ -43,6 +47,20 @@ async function loadConfig() {
                         activeSet.add('openai');
                     }
                     parsedConfig.activeBuiltinProviders = Array.from(activeSet);
+                }
+
+                const migration = applyRetiredClaudeModelMigration(parsedConfig)
+                if (migration.status === 'target-missing') {
+                    console.warn(
+                        `Skipped Claude model migration because target "${migration.notice.to}" is not a current preset.`,
+                    )
+                } else if (migration.status === 'migrated') {
+                    await storage.setItem('local:config', JSON.stringify(parsedConfig))
+                    try {
+                        await saveClaudeModelMigrationNotice(migration.notice)
+                    } catch (error) {
+                        console.warn('Failed to save Claude model migration notice:', error)
+                    }
                 }
 
                 // 如果配置有效，合并到当前 config 中

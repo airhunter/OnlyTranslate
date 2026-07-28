@@ -22,7 +22,8 @@ export const messages = {
       confirm: '确认',
       cancel: '取消',
       clear: '清除',
-      unknownError: '未知错误'
+      unknownError: '未知错误',
+      modelMigrated: 'Claude 模型已从 {from} 迁移到 {to}，因为旧型号已停止服务。'
     },
     popup: {
       disabledDescription: '插件已禁用',
@@ -316,6 +317,7 @@ export const messages = {
         refreshModelsNeedsUrl: '请先填写接口地址',
         customModel: '自定义模型',
         customModelPlaceholder: '输入模型名称',
+        retiredModelRecommendation: '型号 {model} 已停止服务，建议改用 {replacement}。',
         apiUrl: '接口 URL',
         proxyUrl: '代理 URL',
         apiUrlPlaceholder: '输入接口 URL',
@@ -528,7 +530,8 @@ export const messages = {
       confirm: 'Confirm',
       cancel: 'Cancel',
       clear: 'Clear',
-      unknownError: 'Unknown error'
+      unknownError: 'Unknown error',
+      modelMigrated: 'Claude model migrated from {from} to {to} because the previous model is no longer available.'
     },
     popup: {
       disabledDescription: 'The extension is disabled',
@@ -822,6 +825,7 @@ export const messages = {
         refreshModelsNeedsUrl: 'Enter the provider URL first',
         customModel: 'Custom model',
         customModelPlaceholder: 'Enter model name',
+        retiredModelRecommendation: '{model} is no longer available. Use {replacement} instead.',
         apiUrl: 'API URL',
         proxyUrl: 'Proxy URL',
         apiUrlPlaceholder: 'Enter API URL',
@@ -1034,7 +1038,8 @@ export const messages = {
       confirm: '確認',
       cancel: '取消',
       clear: '清除',
-      unknownError: '未知錯誤'
+      unknownError: '未知錯誤',
+      modelMigrated: 'Claude 模型已從 {from} 遷移至 {to}，因為舊型號已停止服務。'
     },
     popup: {
       disabledDescription: '擴充功能已停用',
@@ -1328,6 +1333,7 @@ export const messages = {
         refreshModelsNeedsUrl: '請先填寫介面地址',
         customModel: '自訂模型',
         customModelPlaceholder: '輸入模型名稱',
+        retiredModelRecommendation: '型號 {model} 已停止服務，建議改用 {replacement}。',
         apiUrl: '介面 URL',
         proxyUrl: '代理 URL',
         apiUrlPlaceholder: '輸入介面 URL',
@@ -1540,7 +1546,8 @@ export const messages = {
       confirm: '確認',
       cancel: 'キャンセル',
       clear: 'クリア',
-      unknownError: '不明なエラー'
+      unknownError: '不明なエラー',
+      modelMigrated: '旧モデルの提供終了に伴い、Claude モデルを {from} から {to} に移行しました。'
     },
     popup: {
       disabledDescription: '拡張機能は無効です',
@@ -1834,6 +1841,7 @@ export const messages = {
         refreshModelsNeedsUrl: '先にプロバイダー URL を入力してください',
         customModel: 'カスタムモデル',
         customModelPlaceholder: 'モデル名を入力',
+        retiredModelRecommendation: '{model} は提供を終了しました。{replacement} の使用を推奨します。',
         apiUrl: 'API URL',
         proxyUrl: 'プロキシ URL',
         apiUrlPlaceholder: 'API URL を入力',

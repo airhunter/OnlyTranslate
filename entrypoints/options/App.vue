@@ -35,6 +35,7 @@
 
 <script lang="ts" setup>
 import { ref, watch, watchEffect } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
@@ -48,6 +49,7 @@ import GeneralGroup from '@/components/options/GeneralGroup.vue'
 import HelpGroup from '@/components/options/HelpGroup.vue'
 import AboutGroup from '@/components/options/AboutGroup.vue'
 import { resolveOptionsRoute, type OptionsPanel } from '@/entrypoints/utils/help'
+import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration'
 import '../../styles/theme.css'
 import '../../styles/settings-row.css'
 import 'element-plus/theme-chalk/base.css'
@@ -64,6 +66,10 @@ watchEffect(() => {
 loadConfig().then(() => {
   updateTheme(config.value.theme || 'auto')
   locale.value = resolveLocale(config.value.uiLocale || 'auto')
+  void consumeClaudeModelMigrationNotice().then((notice) => {
+    if (!notice) return
+    ElMessage.info(t('common.modelMigrated', { from: notice.from, to: notice.to }))
+  })
 })
 
 watch(() => config.value.uiLocale, (value) => {
