@@ -24,13 +24,13 @@ import {
 import { config } from '@/entrypoints/utils/config'
 import { t } from '@/entrypoints/utils/i18n'
 import { urls } from '@/entrypoints/utils/constant'
-import { customModelString, services, servicesType } from '@/entrypoints/utils/option'
+import { services, servicesType } from '@/entrypoints/utils/option'
 import { REQUEST_POLICY_VERSION } from '@/entrypoints/utils/modelCapabilities'
 import {
-    getCustomProviderProtocol,
     resolveCustomProviderEndpoint,
     resolveOpenAICompatibleEndpoint,
 } from '@/entrypoints/utils/providerEndpoint'
+import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
 
 const EVENT_TYPE = 'fr-subtitle-inject'
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
@@ -479,28 +479,7 @@ function resolveEffectiveSubtitleTarget(sourceLanguage?: string): string {
 }
 
 function resolveEffectiveSubtitleModel(service: string): string {
-    let model = ''
-    if (service.startsWith('custom_')) {
-        const provider = config.customProviders?.find(item => item.id === service)
-        model = provider?.model === customModelString
-            ? provider.customModel
-            : provider?.model || ''
-    } else {
-        model = config.model?.[service] === customModelString
-            ? config.customModel?.[service] || ''
-            : config.model?.[service] || ''
-    }
-
-    model = model.replace(/（.*）/g, '').trim()
-    const customProvider = service.startsWith('custom_')
-        ? config.customProviders?.find(item => item.id === service)
-        : undefined
-    if (service === services.claude || getCustomProviderProtocol(customProvider) === 'anthropic') {
-        if (model === 'claude-3-5-haiku') return 'claude-3-5-haiku-20241022'
-        if (model === 'claude-3-5-sonnet') return 'claude-3-5-sonnet-20241022'
-        if (model === 'claude-3-opus') return 'claude-3-opus-20240229'
-    }
-    return model
+    return resolveConfiguredTranslationModel(service, config)
 }
 
 function resolveSubtitleEndpoint(service: string): string {

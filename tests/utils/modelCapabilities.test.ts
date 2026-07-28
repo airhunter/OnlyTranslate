@@ -239,4 +239,14 @@ describe('translation model request policies', () => {
             expect(withThinking).toEqual(withoutThinking)
         }
     })
+
+    it('does not rewrite a user-provided Claude alias to a dated model ID', () => {
+        mockConfig.service = 'claude'
+        mockConfig.model.claude = 'claude-3-5-sonnet'
+
+        expect(JSON.parse(claudeMsgTemplate('Hello', 'zh-Hans')).model)
+            .toBe('claude-3-5-sonnet')
+        expect(JSON.parse(claudeSubtitleBatchMsgTemplate(subtitleJob)).model)
+            .toBe('claude-3-5-sonnet')
+    })
 })

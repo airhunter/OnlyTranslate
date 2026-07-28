@@ -8,6 +8,7 @@ import {
     resolveGeminiTranslationPolicy,
     resolveOpenAITranslationPolicy,
 } from './modelCapabilities'
+import { resolveConfiguredTranslationModel } from './modelSelection'
 
 // openai 格式的消息模板（通用模板）
 function applyTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
@@ -199,19 +200,7 @@ export function geminiSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
 }
 
 function resolveClaudeModel(): string {
-    let model = config.model[services.claude]
-    let customModel = config.customModel[services.claude]
-    if (config.service.startsWith('custom_')) {
-        const provider = config.customProviders?.find(item => item.id === config.service)
-        model = provider?.model || ''
-        customModel = provider?.customModel || ''
-    }
-    model = model === customModelString ? customModel : model
-    model = (model || '').replace(/（.*）/g, '')
-    if (model === "claude-3-5-haiku") model = "claude-3-5-haiku-20241022";
-    else if (model === "claude-3-5-sonnet") model = "claude-3-5-sonnet-20241022";
-    else if (model === "claude-3-opus") model = "claude-3-opus-20240229";
-    return model
+    return resolveConfiguredTranslationModel(config.service, config)
 }
 
 function applyClaudeTranslationMode(
