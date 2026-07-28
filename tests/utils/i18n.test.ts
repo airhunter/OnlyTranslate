@@ -38,6 +38,16 @@ describe('i18n', () => {
     }
   })
 
+  it.each([
+    ['zh-CN', '连续超时'],
+    ['en-US', 'consecutive timeouts'],
+    ['zh-TW', '連續逾時'],
+    ['ja-JP', '連続してタイムアウト'],
+  ] as const)('explains the quality-mode timeout fallback for %s', (locale, expected) => {
+    setLocale(locale)
+    expect(t('options.general.videoSubtitleSpeedPriorityTip')).toContain(expected)
+  })
+
   it('provides input translation candidate messages in every supported locale', () => {
     for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
       setLocale(locale)
