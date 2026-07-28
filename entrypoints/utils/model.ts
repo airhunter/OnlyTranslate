@@ -77,6 +77,7 @@ export class Config {
     inputBoxTranslationTrigger: string; // 输入框翻译触发方式
     inputBoxTranslationTarget: string; // 输入框翻译目标语言
     enableVideoSubtitle: boolean; // 是否启用视频字幕翻译
+    videoSubtitleFastMode: boolean; // 是否优先降低视频字幕翻译延迟
     customProviders: CustomProvider[]; // 动态自定义网关池
     activeBuiltinProviders: string[]; // 用户手动启用/留存在面板的内置预设服务 ID
     translationScope: 'smart' | 'full'; // 翻译范围：smart=智能识别主内容，full=翻译整个页面
@@ -130,6 +131,7 @@ export class Config {
         this.inputBoxTranslationTrigger = 'disabled'; // 默认关闭输入框翻译
         this.inputBoxTranslationTarget = 'en'; // 默认翻译成英文
         this.enableVideoSubtitle = true; // 默认启用视频字幕翻译
+        this.videoSubtitleFastMode = true; // 默认优先视频字幕翻译速度
         this.customProviders = []; // 默认没有自定义节点
         this.activeBuiltinProviders = []; // 默认空的启用列表，加载时会进行迁移
         this.translationScope = 'smart'; // 默认智能识别主内容

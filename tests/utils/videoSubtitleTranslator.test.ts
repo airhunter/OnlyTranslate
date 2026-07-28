@@ -16,6 +16,7 @@ const mockConfig = vi.hoisted(() => ({
   service: 'openai',
   bidirectionalTranslation: false,
   bidirectionalTarget: 'en',
+  videoSubtitleFastMode: true,
   user_role: {} as Record<string, string>,
   system_role: {} as Record<string, string>,
 }))
@@ -94,6 +95,7 @@ describe('video subtitle translator', () => {
     mockConfig.service = 'openai'
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
+    mockConfig.videoSubtitleFastMode = true
     mockConfig.user_role = {}
     mockConfig.system_role = {}
     mockDetectlang.mockReturnValue('en')
@@ -170,6 +172,23 @@ describe('video subtitle translator', () => {
       job: expect.objectContaining({ sourceLanguage: 'en' }),
       sourceLang: 'en',
     }))
+  })
+
+  it('preserves the disabled speed-priority setting across structured and single fallback requests', async () => {
+    mockConfig.videoSubtitleFastMode = false
+    mockSendMessage.mockImplementation(async (message: Record<string, unknown>) => {
+      if (message.type === 'SUBTITLE_BATCH_TRANSLATION') {
+        return [{ id: 'wrong-id', translatedText: 'invalid' }]
+      }
+      return `translated:${message.origin}`
+    })
+
+    await expect(translateSubtitleBatch(createJob())).resolves.toEqual(
+      translatedResults(createJob(), false),
+    )
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(3)
+    expect(mockSendMessage.mock.calls.every(([message]) => message.fastMode === false)).toBe(true)
   })
 
   it('queues a structured prefetch request with background priority', async () => {

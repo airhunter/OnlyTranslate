@@ -305,6 +305,7 @@ function createSubtitleCacheRuntimeSignature(sourceLanguage?: string): string {
         Boolean(config.bidirectionalTranslation),
         config.bidirectionalTarget || '',
         Boolean(config.useCache),
+        config.videoSubtitleFastMode !== false,
     ])
 }
 
@@ -341,7 +342,7 @@ async function buildSubtitleCacheIdentity(
         service,
         model: resolveEffectiveSubtitleModel(service),
         endpoint: normalizeSubtitleCacheEndpoint(resolveSubtitleEndpoint(service)),
-        fastMode: true,
+        fastMode: config.videoSubtitleFastMode !== false,
         promptFingerprint: await sha256SubtitleCacheValue(JSON.stringify(promptSource)),
     }
 }

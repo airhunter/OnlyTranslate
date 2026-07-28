@@ -69,6 +69,7 @@ describe('options i18n render', () => {
   it('renders general settings', () => {
     const wrapper = mount(GeneralGroup, { global })
     expect(wrapper.text()).toContain('视觉呈现')
+    expect(wrapper.text()).toContain('字幕翻译优先速度')
     expect(wrapper.text()).toContain('清除已缓存译文')
     expect(wrapper.get('.cache-clear-button').attributes('type')).toBe('primary')
   })

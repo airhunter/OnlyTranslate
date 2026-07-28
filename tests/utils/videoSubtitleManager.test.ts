@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   cacheCommitMany: vi.fn(),
   config: {
     enableVideoSubtitle: true,
+    videoSubtitleFastMode: true,
     to: 'zh-Hans',
     useCache: true,
     service: 'openai',
@@ -131,6 +132,7 @@ describe('video subtitle manager lifecycle', () => {
     mocks.cacheHydrate.mockReset().mockResolvedValue([])
     mocks.cacheCommitMany.mockReset().mockResolvedValue(undefined)
     mocks.config.useCache = true
+    mocks.config.videoSubtitleFastMode = true
     mocks.createCacheSession.mockReset().mockResolvedValue({
       hydrate: mocks.cacheHydrate,
       commitMany: mocks.cacheCommitMany,

@@ -183,6 +183,7 @@ function validateRuntimeResults(
 async function requestStructuredBatch(
     job: SubtitleTranslationJob,
     lane: SubtitleTranslationLane,
+    fastMode: boolean,
     signal?: AbortSignal,
 ): Promise<SubtitleTranslationResult[]> {
     const response = await withAbort(enqueueTranslation(
@@ -193,7 +194,7 @@ async function requestStructuredBatch(
                 job,
                 sourceLang: job.sourceLanguage,
                 targetLang: job.targetLanguage,
-                fastMode: true,
+                fastMode,
             }), signal)
         },
         { priority: lane === 'foreground' ? 'high' : 'background' },
@@ -227,6 +228,7 @@ function waitForRetry(delay: number, signal?: AbortSignal): Promise<void> {
 async function requestSingleSubtitle(
     entry: SubtitleTranslationEntry,
     job: SubtitleTranslationJob,
+    fastMode: boolean,
     retryCount = 0,
     signal?: AbortSignal,
 ): Promise<string> {
@@ -237,7 +239,7 @@ async function requestSingleSubtitle(
             origin: entry.text,
             sourceLang: job.sourceLanguage,
             targetLang: job.targetLanguage,
-            fastMode: true,
+            fastMode,
         }), signal)
         const result = normalizeRuntimeText(response)
         if (!result) throw new Error('Subtitle translation response is empty')
@@ -246,7 +248,7 @@ async function requestSingleSubtitle(
         if (signal?.aborted) throw createAbortError()
         if (retryCount >= MAX_SINGLE_RETRIES) throw error
         await waitForRetry(retryDelay(retryCount), signal)
-        return requestSingleSubtitle(entry, job, retryCount + 1, signal)
+        return requestSingleSubtitle(entry, job, fastMode, retryCount + 1, signal)
     }
 }
 
@@ -254,6 +256,7 @@ async function translateWithSingles(
     job: SubtitleTranslationJob,
     options: SubtitleTranslationOptions,
     cacheable: boolean,
+    fastMode: boolean,
 ): Promise<SubtitleTranslationResult[]> {
     const { signal, lane, onPartialResult } = options
     if (signal?.aborted) return []
@@ -271,7 +274,7 @@ async function translateWithSingles(
 
             try {
                 const translatedText = await withAbort(enqueueTranslation(
-                    () => requestSingleSubtitle(entry, job, 0, signal),
+                    () => requestSingleSubtitle(entry, job, fastMode, 0, signal),
                     { priority },
                 ), signal)
                 if (signal?.aborted || !translatedText.trim()) return
@@ -302,6 +305,7 @@ export async function translateSubtitleBatch(
     options: SubtitleTranslationOptions = { lane: 'foreground' },
 ): Promise<SubtitleTranslationResult[]> {
     const { signal, lane } = options
+    const fastMode = config.videoSubtitleFastMode !== false
     const direction = resolveSubtitleDirection(rawJob)
     const job: SubtitleTranslationJob = {
         ...rawJob,
@@ -320,15 +324,15 @@ export async function translateSubtitleBatch(
 
     if (canUseStructuredSubtitleTranslation()) {
         try {
-            const results = await requestStructuredBatch(job, lane, signal)
+            const results = await requestStructuredBatch(job, lane, fastMode, signal)
             return results.map(result => ({ ...result, cacheable: true }))
         } catch {
             if (signal?.aborted) return []
-            return translateWithSingles(job, options, false)
+            return translateWithSingles(job, options, false, fastMode)
         }
     }
 
-    return translateWithSingles(job, options, true)
+    return translateWithSingles(job, options, true, fastMode)
 }
 
 export { SUBTITLE_TRANSLATION_PROMPT_VERSION }

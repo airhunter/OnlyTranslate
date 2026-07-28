@@ -17,4 +17,9 @@ describe('Config', () => {
     expect(config.bidirectionalTranslation).toBe(false)
     expect(config.bidirectionalTarget).toBe('en')
   })
+
+  it('should prioritize video subtitle speed by default', () => {
+    const config = new Config()
+    expect(config.videoSubtitleFastMode).toBe(true)
+  })
 })

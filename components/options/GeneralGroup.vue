@@ -48,6 +48,18 @@
 
         <div class="setting-row">
           <span class="setting-label">
+            {{ t('options.general.videoSubtitleSpeedPriority') }}
+            <el-tooltip effect="dark" :content="t('options.general.videoSubtitleSpeedPriorityTip')" placement="top-start" :show-after="500">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </span>
+          <div class="setting-control setting-control--switch">
+            <el-switch v-model="config.videoSubtitleFastMode" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">
             {{ t('options.general.cacheManagement') }}
             <el-tooltip effect="dark" :content="t('options.general.clearCacheTip')" placement="top-start" :show-after="500">
               <el-icon class="info-icon"><InfoFilled /></el-icon>
