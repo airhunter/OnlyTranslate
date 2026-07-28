@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
       customProviders: [] as Array<{
         id: string
         name: string
+        protocol?: 'openai' | 'anthropic'
         url: string
         token: string
         model: string
@@ -96,7 +97,53 @@ describe('ServiceGroup', () => {
     await wrapper.find('.gallery-item--custom').trigger('click')
 
     expect(mocks.config.value.customProviders).toHaveLength(1)
+    expect(mocks.config.value.customProviders[0].protocol).toBe('openai')
     expect(mocks.config.value.service).toBe('microsoft')
+  })
+
+  it('shows the completed request URL below the custom provider address', async () => {
+    mocks.config.value.customProviders = [{
+      id: 'custom_anthropic',
+      name: 'Anthropic gateway',
+      protocol: 'anthropic',
+      url: 'https://gateway.example/v1',
+      token: '',
+      model: '自定义模型',
+      customModel: 'claude-test',
+    }]
+    const wrapper = mountGroup()
+
+    expect(wrapper.get('[data-testid="custom-provider-endpoint-preview"]').text())
+      .toContain('https://gateway.example/v1/messages')
+  })
+
+  it('refreshes custom provider models without replacing a manually entered model', async () => {
+    mocks.config.value.customProviders = [{
+      id: 'custom_anthropic',
+      name: 'Anthropic gateway',
+      protocol: 'anthropic',
+      url: 'https://gateway.example',
+      token: 'anthropic-token',
+      model: '自定义模型',
+      customModel: 'manual-model',
+    }]
+    mocks.fetchModels.mockResolvedValue([
+      'claude-remote-a',
+      'claude-remote-b',
+      '自定义模型',
+    ])
+    const wrapper = mountGroup()
+
+    await wrapper.get('[data-testid="custom-provider-model-refresh"]').trigger('click')
+    await flushPromises()
+
+    expect(mocks.fetchModels).toHaveBeenCalledWith('custom_anthropic', {
+      token: 'anthropic-token',
+      url: 'https://gateway.example',
+      protocol: 'anthropic',
+    })
+    expect(mocks.config.value.customProviders[0].customModel).toBe('manual-model')
+    expect(wrapper.text()).toContain('已从厂商接口获取 2 个模型')
   })
 
   it('falls back to Microsoft when removing an unconfigured current service', async () => {

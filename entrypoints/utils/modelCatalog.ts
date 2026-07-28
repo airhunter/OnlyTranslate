@@ -2,10 +2,13 @@ import CryptoJS from 'crypto-js'
 import { urls } from './constant'
 import { customModelString, models, services } from './option'
 import { t } from './i18n'
+import type { CustomProviderProtocol } from './model'
+import { resolveProviderEndpoint } from './providerEndpoint'
 
 interface FetchModelOptions {
   token?: string
   url?: string
+  protocol?: CustomProviderProtocol
   signal?: AbortSignal
 }
 
@@ -32,7 +35,8 @@ const providerModelFetchers = new Set<string>([
   services.claude
 ])
 
-export const canFetchProviderModels = (service: string) => providerModelFetchers.has(service)
+export const canFetchProviderModels = (service: string) => service.startsWith('custom_')
+  || providerModelFetchers.has(service)
 
 export const getStaticModelOptions = (service: string) => appendCustomModelOption(models.get(service) || [])
 
@@ -48,7 +52,7 @@ export async function fetchProviderModels(service: string, options: FetchModelOp
     throw new Error(t('runtime.modelFetchUnsupported'))
   }
 
-  if (!options.token) {
+  if (!options.token && !service.startsWith('custom_')) {
     throw new Error(t('runtime.apiKeyRequired'))
   }
 
@@ -69,6 +73,27 @@ export async function fetchProviderModels(service: string, options: FetchModelOp
 }
 
 function buildModelListRequest(service: string, options: FetchModelOptions): ModelListRequest {
+  if (service.startsWith('custom_')) {
+    if (!options.url?.trim()) {
+      throw new Error(t('runtime.providerUrlRequired'))
+    }
+    const protocol: CustomProviderProtocol = options.protocol === 'anthropic'
+      ? 'anthropic'
+      : 'openai'
+    const headers: Record<string, string> = {}
+    if (protocol === 'anthropic') {
+      if (options.token) headers['x-api-key'] = options.token
+      headers['anthropic-version'] = '2023-06-01'
+      headers['anthropic-dangerous-direct-browser-access'] = 'true'
+    } else if (options.token) {
+      headers.Authorization = `Bearer ${options.token}`
+    }
+    return {
+      url: buildModelsEndpoint(resolveProviderEndpoint(options.url, protocol)),
+      headers
+    }
+  }
+
   if (service === services.gemini) {
     return {
       url: `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(options.token || '')}`,
@@ -104,9 +129,13 @@ function buildModelListRequest(service: string, options: FetchModelOptions): Mod
 
 export function buildModelsEndpoint(value: string) {
   const url = new URL(value || 'https://api.openai.com/v1/chat/completions')
-  url.search = ''
 
   const normalizedPath = url.pathname.replace(/\/+$/, '')
+  if (normalizedPath.endsWith('/api/generate')) {
+    url.pathname = normalizedPath.replace(/\/api\/generate$/, '/api/tags')
+    return url.toString()
+  }
+
   if (normalizedPath.endsWith('/chat/completions')) {
     url.pathname = normalizedPath.replace(/\/chat\/completions$/, '/models')
     return url.toString()

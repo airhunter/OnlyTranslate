@@ -13,6 +13,8 @@ describe('modelCatalog', () => {
     expect(buildModelsEndpoint('https://api.openai.com/v1/chat/completions')).toBe('https://api.openai.com/v1/models')
     expect(buildModelsEndpoint('https://openrouter.ai/api/v1/chat/completions')).toBe('https://openrouter.ai/api/v1/models')
     expect(buildModelsEndpoint('https://example.com/v1')).toBe('https://example.com/v1/models')
+    expect(buildModelsEndpoint('http://localhost:11434/api/generate')).toBe('http://localhost:11434/api/tags')
+    expect(buildModelsEndpoint('https://example.com/v1/messages?tenant=demo')).toBe('https://example.com/v1/models?tenant=demo')
   })
 
   it('keeps custom model option as fallback', () => {
@@ -73,8 +75,62 @@ describe('modelCatalog', () => {
     vi.unstubAllGlobals()
   })
 
+  it('fetches models from a custom OpenAI-compatible provider without requiring a token', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{ id: 'local-model' }]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchProviderModels('custom_openai', {
+      protocol: 'openai',
+      url: 'http://localhost:8080/v1'
+    })).resolves.toEqual(['local-model', customModelString])
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/v1/models',
+      expect.objectContaining({
+        method: 'GET',
+        headers: {}
+      })
+    )
+
+    vi.unstubAllGlobals()
+  })
+
+  it('uses native Anthropic headers for a custom Anthropic-compatible provider', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{ id: 'claude-custom' }]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchProviderModels('custom_anthropic', {
+      protocol: 'anthropic',
+      url: 'https://gateway.example',
+      token: 'anthropic-token'
+    })).resolves.toEqual(['claude-custom', customModelString])
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gateway.example/v1/models',
+      expect.objectContaining({
+        method: 'GET',
+        headers: {
+          'x-api-key': 'anthropic-token',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        }
+      })
+    )
+
+    vi.unstubAllGlobals()
+  })
+
   it('reports supported provider model catalogs', () => {
     expect(canFetchProviderModels(services.openai)).toBe(true)
+    expect(canFetchProviderModels('custom_gateway')).toBe(true)
     expect(canFetchProviderModels(services.deepL)).toBe(false)
   })
 })

@@ -134,9 +134,36 @@
                 </div>
               </div>
               <div class="provider-form-row">
+                <div class="provider-form-label">{{ t('options.service.providerProtocol') }}</div>
+                <div class="provider-form-control">
+                  <el-select
+                    data-testid="custom-provider-protocol"
+                    :model-value="getCustomProviderProtocol(service.provider)"
+                    @update:model-value="setCustomProviderProtocol(service.provider, $event)"
+                  >
+                    <el-option
+                      v-for="protocol in customProviderProtocols"
+                      :key="protocol"
+                      :label="t(`options.service.protocol.${protocol}`)"
+                      :value="protocol"
+                    />
+                  </el-select>
+                </div>
+              </div>
+              <div class="provider-form-row">
                 <div class="provider-form-label">{{ t('options.service.providerUrl') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.url" :placeholder="t('options.service.providerUrlPlaceholder')" />
+                  <el-input
+                    v-model="service.provider.url"
+                    :placeholder="getProviderUrlPlaceholder(service.provider)"
+                  />
+                  <div
+                    class="provider-endpoint-preview"
+                    data-testid="custom-provider-endpoint-preview"
+                  >
+                    <span>{{ t('options.service.endpointPreview') }}</span>
+                    <code>{{ getProviderEndpointPreview(service.provider) || t('options.service.endpointPreviewEmpty') }}</code>
+                  </div>
                 </div>
               </div>
               <div class="provider-form-row">
@@ -148,7 +175,37 @@
               <div class="provider-form-row">
                 <div class="provider-form-label">{{ t('options.service.modelName') }}</div>
                 <div class="provider-form-control">
-                  <el-input v-model="service.provider.customModel" :placeholder="t('options.service.modelNamePlaceholder')" @input="service.provider.model = customModelString" />
+                  <div class="model-picker">
+                    <el-select
+                      v-model="service.provider.customModel"
+                      filterable
+                      allow-create
+                      default-first-option
+                      :placeholder="t('options.service.modelNamePlaceholder')"
+                      :loading="loadingModels[service.id]"
+                      @update:model-value="service.provider.model = customModelString"
+                    >
+                      <el-option
+                        v-for="item in getCustomProviderModelOptions(service.id, service.provider)"
+                        :key="item"
+                        class="select-left"
+                        :label="item"
+                        :value="item"
+                      />
+                    </el-select>
+                    <el-tooltip :content="getRefreshModelsTip(service.id)" placement="top">
+                      <el-button
+                        data-testid="custom-provider-model-refresh"
+                        :icon="Refresh"
+                        :loading="loadingModels[service.id]"
+                        :disabled="!canFetchModels(service.id)"
+                        plain
+                        :aria-label="t('options.service.refreshModels')"
+                        @click="handleFetchModels(service.id)"
+                      />
+                    </el-tooltip>
+                  </div>
+                  <div v-if="modelFetchHints[service.id]" class="model-fetch-hint">{{ modelFetchHints[service.id] }}</div>
                 </div>
               </div>
             </template>
@@ -282,6 +339,12 @@ import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection, type ConnectionTestResult } from '@/entrypoints/utils/testConnection'
 import { canFetchProviderModels, fetchProviderModels, getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
+import type { CustomProvider, CustomProviderProtocol } from '@/entrypoints/utils/model'
+import {
+  customProviderProtocols,
+  getCustomProviderProtocol,
+  resolveCustomProviderEndpoint,
+} from '@/entrypoints/utils/providerEndpoint'
 import { useI18n } from 'vue-i18n'
 
 const { config } = useConfig()
@@ -503,6 +566,7 @@ const addCustomProvider = () => {
   config.value.customProviders.push({
     id: newId,
     name: t('options.service.newCustomProvider'),
+    protocol: 'openai',
     url: '',
     token: '',
     model: customModelString,
@@ -511,6 +575,15 @@ const addCustomProvider = () => {
   showAddServiceDialog.value = false
   expandedServices[newId] = true
   ElMessage.success(t('options.service.addedCustomNeedsConfig'))
+}
+
+const setCustomProviderProtocol = (provider: CustomProvider, value: unknown) => {
+  provider.protocol = value === 'anthropic' ? 'anthropic' : 'openai'
+}
+const getProviderEndpointPreview = (provider: CustomProvider) => resolveCustomProviderEndpoint(provider)
+const getProviderUrlPlaceholder = (provider: CustomProvider) => {
+  const protocol: CustomProviderProtocol = getCustomProviderProtocol(provider)
+  return t(`options.service.providerUrlPlaceholder.${protocol}`)
 }
 
 const isConfigured = (service: string) => isServiceConfigured(service, config.value)
@@ -523,8 +596,25 @@ const setThinkingEnabled = (service: string, value: string | number | boolean) =
   if (!config.value.thinking) config.value.thinking = {}
   config.value.thinking[service] = value === true
 }
-const canFetchModels = (service: string) => canFetchProviderModels(service)
+const findCustomProvider = (service: string) => config.value.customProviders
+  ?.find(provider => provider.id === service)
+const canFetchModels = (service: string) => {
+  const provider = findCustomProvider(service)
+  return canFetchProviderModels(service) && (!servicesType.isCustom(service) || !!provider?.url.trim())
+}
+const getRefreshModelsTip = (service: string) => {
+  if (servicesType.isCustom(service) && !findCustomProvider(service)?.url.trim()) {
+    return t('options.service.refreshModelsNeedsUrl')
+  }
+  return canFetchProviderModels(service)
+    ? t('options.service.refreshModelsTip')
+    : t('options.service.refreshModelsUnsupported')
+}
 const getModelOptions = (service: string) => state.modelOptions[service] || getStaticModelOptions(service)
+const getCustomProviderModelOptions = (service: string, provider: CustomProvider) => Array.from(new Set([
+  provider.customModel,
+  ...(state.modelOptions[service] || []).filter(item => item !== customModelString),
+].filter(Boolean)))
 
 const getProxyValue = (service: string) => {
   const defaultUrl = urls[service]
@@ -547,19 +637,27 @@ const resetProxy = (service: string) => {
 const handleFetchModels = async (service: string) => {
   if (!canFetchModels(service)) return
 
+  const provider = findCustomProvider(service)
   loadingModels[service] = true
   modelFetchHints[service] = ''
 
   try {
     const items = await fetchProviderModels(service, {
-      token: config.value.token[service],
-      url: getProxyValue(service)
+      token: provider?.token ?? config.value.token[service],
+      url: provider?.url ?? getProxyValue(service),
+      protocol: provider ? getCustomProviderProtocol(provider) : undefined,
     })
 
     state.modelOptions[service] = items
-    const currentModel = config.value.model[service]
-    if (!currentModel || (currentModel !== customModelString && !items.includes(currentModel))) {
-      config.value.model[service] = items.find((item) => item !== customModelString) || customModelString
+    const firstRemoteModel = items.find(item => item !== customModelString)
+    if (provider) {
+      provider.model = customModelString
+      if (!provider.customModel) provider.customModel = firstRemoteModel || ''
+    } else {
+      const currentModel = config.value.model[service]
+      if (!currentModel || (currentModel !== customModelString && !items.includes(currentModel))) {
+        config.value.model[service] = firstRemoteModel || customModelString
+      }
     }
 
     const remoteModelCount = items.filter((item) => item !== customModelString).length
@@ -769,6 +867,21 @@ const formatConnectionTestResult = (result: ConnectionTestResult): string => {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
+}
+.provider-endpoint-preview {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.provider-endpoint-preview code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--el-text-color-regular);
+  font-family: var(--el-font-family);
 }
 .provider-inline-action { margin-top: 6px; display: flex; justify-content: flex-end; }
 .apikey-link { font-size: 12px; color: var(--fr-accent-color); text-decoration: none; }
