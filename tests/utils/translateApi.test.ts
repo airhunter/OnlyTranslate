@@ -14,6 +14,15 @@ const mockConfig = vi.hoisted(() => ({
     openai: 'gpt-5-mini'
   } as Record<string, string>,
   customModel: {} as Record<string, string>,
+  customProviders: [] as Array<{
+    id: string
+    protocol?: 'openai' | 'anthropic'
+    url: string
+    token: string
+    model: string
+    customModel: string
+    name: string
+  }>,
   style: 1,
   system_role: {} as Record<string, string>,
   user_role: {} as Record<string, string>
@@ -53,7 +62,11 @@ vi.mock('@/entrypoints/utils/translationDirection', () => ({
   resolveTranslationDirection: mockResolveTranslationDirection
 }))
 
-import { cancelAllTranslations, translateText } from '../../entrypoints/utils/translateApi'
+import {
+  cancelAllTranslations,
+  canUseBatchTranslationForCurrentConfig,
+  translateText,
+} from '../../entrypoints/utils/translateApi'
 import { resolveTranslationDirection } from '../../entrypoints/utils/translationDirection'
 
 describe('translateText', () => {
@@ -64,6 +77,7 @@ describe('translateText', () => {
       openai: 'gpt-5-mini'
     }
     mockConfig.customModel = {}
+    mockConfig.customProviders = []
     mockConfig.style = 1
     mockConfig.system_role = {}
     mockConfig.user_role = {}
@@ -209,6 +223,21 @@ describe('translateText', () => {
     })
     expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '你好', 'zh-Hans')
     expect(mockCacheLocalSet).toHaveBeenCalledWith('World', '世界', 'zh-Hans')
+  })
+
+  it('keeps ordinary batching disabled for Anthropic-compatible custom providers', () => {
+    mockConfig.service = 'custom_anthropic'
+    mockConfig.customProviders = [{
+      id: 'custom_anthropic',
+      name: 'Anthropic gateway',
+      protocol: 'anthropic',
+      url: 'https://gateway.example',
+      token: '',
+      model: '自定义模型',
+      customModel: 'claude-test',
+    }]
+
+    expect(canUseBatchTranslationForCurrentConfig(true)).toBe(false)
   })
 
   it('does not batch cache hits', async () => {

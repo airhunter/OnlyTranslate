@@ -9,7 +9,11 @@ const mockConfig = vi.hoisted(() => ({
     claude: 'claude-sonnet-4-0'
   } as Record<string, string>,
   customModel: {} as Record<string, string>,
-  customProviders: [],
+  customProviders: [] as Array<{
+    id: string
+    model: string
+    customModel: string
+  }>,
   system_role: {} as Record<string, string>,
   user_role: {} as Record<string, string>,
   thinking: {} as Record<string, boolean>
@@ -23,6 +27,7 @@ import {
     commonBatchMsgTemplate,
     commonMsgTemplate,
     commonSubtitleBatchMsgTemplate,
+    claudeMsgTemplate,
     claudeSubtitleBatchMsgTemplate,
     deepseekMsgTemplate,
     geminiMsgTemplate,
@@ -49,6 +54,7 @@ describe('translation templates', () => {
     mockConfig.model.openai = 'gpt-5-mini'
     mockConfig.model.deepseek = 'deepseek-v4-pro'
     mockConfig.model.gemini = 'gemini-2.5-flash'
+    mockConfig.customProviders = []
     mockConfig.thinking = {}
   })
 
@@ -152,5 +158,20 @@ describe('translation templates', () => {
     })
     expect(claude.thinking).toBeUndefined()
     expect(claude.system).toContain('untrusted data')
+  })
+
+  it('uses the selected custom model in Anthropic-compatible payloads', () => {
+    mockConfig.service = 'custom_anthropic'
+    mockConfig.customProviders = [{
+      id: 'custom_anthropic',
+      model: '自定义模型',
+      customModel: 'claude-custom-model',
+    }]
+
+    const single = JSON.parse(claudeMsgTemplate('Hello', 'zh-Hans'))
+    const subtitle = JSON.parse(claudeSubtitleBatchMsgTemplate(subtitleJob))
+
+    expect(single.model).toBe('claude-custom-model')
+    expect(subtitle.model).toBe('claude-custom-model')
   })
 })

@@ -10,20 +10,7 @@ import {
     isSubtitleBatchTranslationMessage,
     parseSubtitleTranslationContent,
 } from './subtitle'
-
-function normalizeOpenAICompatibleUrl(url: string): string {
-    let normalizedUrl = url || '';
-    if (normalizedUrl.endsWith('/')) {
-        normalizedUrl = normalizedUrl.slice(0, -1);
-    }
-    if (normalizedUrl.endsWith('/v1')) {
-        return `${normalizedUrl}/chat/completions`;
-    }
-    if (!normalizedUrl.endsWith('/chat/completions') && !normalizedUrl.includes('/api/generate')) {
-        return `${normalizedUrl}/v1/chat/completions`;
-    }
-    return normalizedUrl;
-}
+import { resolveCustomProviderEndpoint } from '@/entrypoints/utils/providerEndpoint'
 
 async function common(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
@@ -36,9 +23,8 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
             const provider = config.customProviders?.find(p => p.id === config.service);
             if (provider) {
                 token = provider.token || "";
-                url = provider.url;
+                url = resolveCustomProviderEndpoint(provider);
             }
-            url = normalizeOpenAICompatibleUrl(url);
         }
 
         const headers = new Headers({

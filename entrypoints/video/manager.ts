@@ -24,6 +24,11 @@ import { config } from '@/entrypoints/utils/config'
 import { t } from '@/entrypoints/utils/i18n'
 import { urls } from '@/entrypoints/utils/constant'
 import { customModelString, services } from '@/entrypoints/utils/option'
+import {
+    getCustomProviderProtocol,
+    resolveCustomProviderEndpoint,
+    resolveOpenAICompatibleEndpoint,
+} from '@/entrypoints/utils/providerEndpoint'
 
 const EVENT_TYPE = 'fr-subtitle-inject'
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
@@ -374,7 +379,10 @@ function resolveEffectiveSubtitleModel(service: string): string {
     }
 
     model = model.replace(/（.*）/g, '').trim()
-    if (service === services.claude) {
+    const customProvider = service.startsWith('custom_')
+        ? config.customProviders?.find(item => item.id === service)
+        : undefined
+    if (service === services.claude || getCustomProviderProtocol(customProvider) === 'anthropic') {
         if (model === 'claude-3-5-haiku') return 'claude-3-5-haiku-20241022'
         if (model === 'claude-3-5-sonnet') return 'claude-3-5-sonnet-20241022'
         if (model === 'claude-3-opus') return 'claude-3-opus-20240229'
@@ -384,26 +392,16 @@ function resolveEffectiveSubtitleModel(service: string): string {
 
 function resolveSubtitleEndpoint(service: string): string {
     if (service.startsWith('custom_')) {
-        return completeOpenAICompatibleEndpoint(
-            config.customProviders?.find(item => item.id === service)?.url || '',
+        return resolveCustomProviderEndpoint(
+            config.customProviders?.find(item => item.id === service),
         )
     }
-    if (service === services.newapi) return completeOpenAICompatibleEndpoint(config.newApiUrl || '')
+    if (service === services.newapi) return resolveOpenAICompatibleEndpoint(config.newApiUrl || '')
     if (config.proxy?.[service]) return config.proxy[service]
     if (service === services.gemini) return 'https://generativelanguage.googleapis.com/v1beta/models'
     if (service === services.minimax) return 'https://api.minimax.chat/v1/text'
     if (service === services.custom) return config.custom || ''
     return urls[service] || `builtin:${service}`
-}
-
-function completeOpenAICompatibleEndpoint(endpoint: string): string {
-    const trimmed = endpoint.trim().replace(/\/+$/, '')
-    if (!trimmed) return ''
-    if (trimmed.endsWith('/v1')) return `${trimmed}/chat/completions`
-    if (!trimmed.endsWith('/chat/completions') && !trimmed.includes('/api/generate')) {
-        return `${trimmed}/v1/chat/completions`
-    }
-    return trimmed
 }
 
 function beginNewSession() {

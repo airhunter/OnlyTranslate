@@ -19,11 +19,14 @@ interface IExtra {
 export interface CustomProvider {
     id: string;          // 唯一标识，例如 'custom_1712345678'
     name: string;        // 自定义名称，如 '本地 Ollama'
+    protocol?: CustomProviderProtocol; // 兼容接口格式，旧配置默认按 OpenAI 处理
     url: string;         // 接口地址
     token: string;       // API Key
     model: string;       // 选中的模型
     customModel: string; // 自定义模型名
 }
+
+export type CustomProviderProtocol = 'openai' | 'anthropic';
 
 export class Config {
     on: boolean; // 是否开启

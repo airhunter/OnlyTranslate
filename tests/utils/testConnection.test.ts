@@ -9,6 +9,7 @@ const baseConfig = () => ({
   customProviders: [] as Array<{
     id: string
     name: string
+    protocol?: 'openai' | 'anthropic'
     url: string
     token: string
     model: string
@@ -85,6 +86,75 @@ describe('testConnection result codes', () => {
       success: true,
       code: 'success',
       translatedText: '你好',
+    })
+  })
+
+  it('completes custom OpenAI URLs before testing the connection', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ choices: [{ message: { content: '你好' } }] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const config = baseConfig()
+    config.customProviders.push({
+      id: 'custom_openai',
+      name: 'OpenAI gateway',
+      protocol: 'openai',
+      url: 'https://gateway.example/v1',
+      token: 'openai-token',
+      model: 'gpt-test',
+      customModel: '',
+    })
+
+    await expect(testConnection('custom_openai', config)).resolves.toMatchObject({
+      success: true,
+      translatedText: '你好',
+    })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://gateway.example/v1/chat/completions')
+    expect(init.headers).toMatchObject({
+      Authorization: 'Bearer openai-token',
+    })
+  })
+
+  it('uses native Anthropic headers, payload, response parsing, and URL completion', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        content: [{ type: 'text', text: '你好' }],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const config = baseConfig()
+    config.customProviders.push({
+      id: 'custom_anthropic',
+      name: 'Anthropic gateway',
+      protocol: 'anthropic',
+      url: 'https://gateway.example',
+      token: 'anthropic-token',
+      model: 'claude-test',
+      customModel: '',
+    })
+
+    await expect(testConnection('custom_anthropic', config)).resolves.toEqual({
+      success: true,
+      code: 'success',
+      translatedText: '你好',
+    })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://gateway.example/v1/messages')
+    expect(init.headers).toMatchObject({
+      'x-api-key': 'anthropic-token',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    })
+    expect(init.headers).not.toHaveProperty('Authorization')
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      model: 'claude-test',
+      system: expect.any(String),
+      messages: [{ role: 'user', content: 'hello' }],
     })
   })
 })

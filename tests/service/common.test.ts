@@ -13,7 +13,12 @@ const mockConfig = vi.hoisted(() => ({
   proxy: {
     openai: 'https://api.example.com/v1/chat/completions'
   } as Record<string, string>,
-  customProviders: [] as Array<{ id: string; token?: string; url: string }>
+  customProviders: [] as Array<{
+    id: string
+    protocol?: 'openai' | 'anthropic'
+    token?: string
+    url: string
+  }>
 }))
 
 vi.mock('@/entrypoints/utils/config', () => ({
@@ -70,6 +75,10 @@ describe('common OpenAI-compatible service adapter', () => {
   const fetchMock = vi.fn()
 
   beforeEach(() => {
+    mockConfig.service = 'openai'
+    mockConfig.token = { openai: 'test-token' }
+    mockConfig.proxy = { openai: 'https://api.example.com/v1/chat/completions' }
+    mockConfig.customProviders = []
     vi.stubGlobal('fetch', fetchMock)
     fetchMock.mockResolvedValue({
       ok: true,
@@ -106,6 +115,22 @@ describe('common OpenAI-compatible service adapter', () => {
     expect(init.method).toBe('POST')
     expect(headers.get('Authorization')).toBe('Bearer test-token')
     expect(init.body).toBe('{"messages":[]}')
+  })
+
+  it('completes a custom OpenAI-compatible base URL', async () => {
+    mockConfig.service = 'custom_gateway'
+    mockConfig.customProviders = [{
+      id: 'custom_gateway',
+      protocol: 'openai',
+      token: 'custom-token',
+      url: 'https://gateway.example/v1',
+    }]
+
+    await common({ origin: 'Hello', targetLang: 'zh-Hans' })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://gateway.example/v1/chat/completions')
+    expect((init.headers as Headers).get('Authorization')).toBe('Bearer custom-token')
   })
 
   it('uses the batch template and parses JSON array chat completion responses', async () => {

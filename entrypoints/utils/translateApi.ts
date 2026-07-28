@@ -21,6 +21,7 @@ import { storage } from '@wxt-dev/storage';
 import { resolveTranslationDirection } from './translationDirection';
 import { t } from './i18n';
 import { customModelString, defaultOption, services, servicesType } from './option';
+import { getCustomProviderProtocol } from './providerEndpoint';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -137,8 +138,11 @@ function isDefaultPromptForBatch(): boolean {
 
 function supportsBatchTranslation(): boolean {
   const service = config.service;
-  return service.startsWith('custom_')
-    || BATCH_TRANSLATION_SERVICES.has(service);
+  if (service.startsWith('custom_')) {
+    const provider = config.customProviders?.find(item => item.id === service);
+    return getCustomProviderProtocol(provider) === 'openai';
+  }
+  return BATCH_TRANSLATION_SERVICES.has(service);
 }
 
 export function canUseBatchTranslationForCurrentConfig(allowBatch: boolean | undefined = true): boolean {

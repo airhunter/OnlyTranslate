@@ -222,13 +222,25 @@ export function geminiSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
     })
 }
 
-// claude
-export function claudeMsgTemplate(origin: string, targetLang = config.to) {
-    let model = config.model[services.claude];
+function resolveClaudeModel(): string {
+    let model = config.model[services.claude]
+    let customModel = config.customModel[services.claude]
+    if (config.service.startsWith('custom_')) {
+        const provider = config.customProviders?.find(item => item.id === config.service)
+        model = provider?.model || ''
+        customModel = provider?.customModel || ''
+    }
+    model = model === customModelString ? customModel : model
+    model = (model || '').replace(/（.*）/g, '')
     if (model === "claude-3-5-haiku") model = "claude-3-5-haiku-20241022";
     else if (model === "claude-3-5-sonnet") model = "claude-3-5-sonnet-20241022";
     else if (model === "claude-3-opus") model = "claude-3-opus-20240229";
+    return model
+}
 
+// claude
+export function claudeMsgTemplate(origin: string, targetLang = config.to) {
+    const model = resolveClaudeModel()
     let system = config.system_role[config.service] || defaultOption.system_role;
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
@@ -248,11 +260,7 @@ export function claudeMsgTemplate(origin: string, targetLang = config.to) {
 }
 
 export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob) {
-    let model = config.model[services.claude]
-    if (model === 'claude-3-5-haiku') model = 'claude-3-5-haiku-20241022'
-    else if (model === 'claude-3-5-sonnet') model = 'claude-3-5-sonnet-20241022'
-    else if (model === 'claude-3-opus') model = 'claude-3-opus-20240229'
-
+    const model = resolveClaudeModel()
     const prompt = buildSubtitleTranslationPrompt(job)
     return JSON.stringify({
         model,

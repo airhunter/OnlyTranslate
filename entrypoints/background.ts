@@ -16,6 +16,7 @@ import {
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
+import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -229,9 +230,15 @@ export default defineBackground({
             }
 
             // 处理普通翻译请求
-            const serviceHandler = servicesType.isCustom(config.service)
-                ? _service[services.openai]
-                : _service[config.service];
+            const customProvider = servicesType.isCustom(config.service)
+                ? config.customProviders?.find(provider => provider.id === config.service)
+                : undefined
+            const handlerKey = customProvider && getCustomProviderProtocol(customProvider) === 'anthropic'
+                ? services.claude
+                : servicesType.isCustom(config.service)
+                    ? services.openai
+                    : config.service
+            const serviceHandler = _service[handlerKey];
 
             if (!serviceHandler) {
                 return Promise.reject(new Error(`Unsupported translation service: ${config.service}`));

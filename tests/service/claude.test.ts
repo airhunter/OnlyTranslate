@@ -8,7 +8,13 @@ const mockConfig = vi.hoisted(() => ({
   token: {
     claude: 'claude-token'
   } as Record<string, string>,
-  proxy: {} as Record<string, string>
+  proxy: {} as Record<string, string>,
+  customProviders: [] as Array<{
+    id: string
+    protocol?: 'openai' | 'anthropic'
+    url: string
+    token: string
+  }>,
 }))
 
 vi.mock('@/entrypoints/utils/config', () => ({
@@ -59,6 +65,10 @@ describe('Claude service adapter', () => {
   const fetchMock = vi.fn()
 
   beforeEach(() => {
+    mockConfig.service = 'claude'
+    mockConfig.token = { claude: 'claude-token' }
+    mockConfig.proxy = {}
+    mockConfig.customProviders = []
     vi.stubGlobal('fetch', fetchMock)
     fetchMock.mockReset()
     fetchMock.mockResolvedValue({
@@ -109,6 +119,25 @@ describe('Claude service adapter', () => {
 
     expect(mockClaudeMsgTemplate).toHaveBeenCalledWith('Hello', 'zh-Hans')
     expect(mockClaudeSubtitleBatchMsgTemplate).not.toHaveBeenCalled()
+  })
+
+  it('uses a completed Anthropic endpoint and provider token for custom services', async () => {
+    mockConfig.service = 'custom_anthropic'
+    mockConfig.customProviders = [{
+      id: 'custom_anthropic',
+      protocol: 'anthropic',
+      url: 'https://gateway.example/v1',
+      token: 'custom-token',
+    }]
+
+    await claude({ origin: 'Hello', targetLang: 'zh-Hans' })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Headers
+    expect(url).toBe('https://gateway.example/v1/messages')
+    expect(headers.get('x-api-key')).toBe('custom-token')
+    expect(headers.get('anthropic-version')).toBe('2023-06-01')
+    expect(headers.get('Authorization')).toBeNull()
   })
 
   it('continues to reject ordinary batch translation messages', async () => {

@@ -17,12 +17,14 @@ import { services } from '@/entrypoints/utils/option'
 
 function createDependencies(
   service: string,
-  handlers: Record<string, TranslationServiceFunction>
+  handlers: Record<string, TranslationServiceFunction>,
+  customProviders?: InputTranslationDependencies['customProviders'],
 ): InputTranslationDependencies {
   return {
     service,
     sourceLang: 'auto',
-    handlers
+    handlers,
+    customProviders,
   }
 }
 
@@ -75,6 +77,28 @@ describe('input translation service routing', () => {
 
     expect(result).toBe('Custom result')
     expect(common).toHaveBeenCalledOnce()
+  })
+
+  it('routes custom Anthropic-compatible services through the Claude handler', async () => {
+    const claude = vi.fn(async (_message: TranslationServiceMessage) => 'Anthropic result')
+
+    const result = await translateInputWithCurrentService(
+      { text: '你好', targetLang: 'en' },
+      createDependencies('custom_anthropic', {
+        [services.claude]: claude,
+      }, [{
+        id: 'custom_anthropic',
+        name: 'Anthropic gateway',
+        protocol: 'anthropic',
+        url: 'https://gateway.example',
+        token: '',
+        model: '自定义模型',
+        customModel: 'claude-test',
+      }])
+    )
+
+    expect(result).toBe('Anthropic result')
+    expect(claude).toHaveBeenCalledOnce()
   })
 
   it('rejects non-text responses from a single input translation request', async () => {

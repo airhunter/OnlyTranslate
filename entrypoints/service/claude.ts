@@ -6,18 +6,25 @@ import {t} from "@/entrypoints/utils/i18n";
 import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
 import { isSubtitleBatchTranslationMessage, parseSubtitleTranslationContent } from './subtitle'
+import { resolveCustomProviderEndpoint } from '@/entrypoints/utils/providerEndpoint'
 
 async function claude(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     const isSubtitleBatch = isSubtitleBatchTranslationMessage(message)
     if (!isSubtitleBatch) assertSingleTranslationMessage(message);
+    const provider = config.service.startsWith('custom_')
+        ? config.customProviders?.find(item => item.id === config.service)
+        : undefined
+    const token = provider?.token || config.token[services.claude] || ''
     // 构建请求头
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('x-api-key', config.token[services.claude]);
+    if (token) headers.append('x-api-key', token);
     headers.append('anthropic-version', '2023-06-01');
     headers.append('anthropic-dangerous-direct-browser-access', 'true');
 
-    const url = config.proxy[config.service] || urls[services.claude];
+    const url = provider
+        ? resolveCustomProviderEndpoint(provider)
+        : config.proxy[config.service] || urls[services.claude];
 
     try {
         const resp = await fetch(url, {

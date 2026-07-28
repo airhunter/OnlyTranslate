@@ -1,6 +1,10 @@
 import { services, servicesType } from "./option";
 import { urls } from "./constant";
-import type { CustomProvider } from "./model";
+import type { CustomProvider, CustomProviderProtocol } from "./model";
+import {
+  getCustomProviderProtocol,
+  resolveCustomProviderEndpoint,
+} from "./providerEndpoint";
 
 interface TestConnectionConfig {
   token: Record<string, string>;
@@ -133,6 +137,7 @@ async function testAI(
     let token = config.token[service] || "";
     let url = config.proxy[service] || urls[service];
     let currentModel = "gpt-3.5-turbo"; // 默认兜底
+    let protocol: CustomProviderProtocol = service === services.claude ? "anthropic" : "openai";
     
     if (config.model && config.model[service]) {
         currentModel = config.model[service];
@@ -145,8 +150,9 @@ async function testAI(
         const provider = config.customProviders?.find(p => p.id === service);
         if (provider) {
             token = provider.token || "";
-            url = provider.url;
+            url = resolveCustomProviderEndpoint(provider);
             currentModel = provider.model === "自定义模型" ? provider.customModel : provider.model;
+            protocol = getCustomProviderProtocol(provider);
         }
     }
 
@@ -163,27 +169,40 @@ async function testAI(
       "Content-Type": "application/json",
     };
     
-    // 只有在 token 存在时才添加 Authorization 头部
-    if (token) {
+    if (protocol === "anthropic") {
+      if (token) headers["x-api-key"] = token;
+      headers["anthropic-version"] = "2023-06-01";
+      headers["anthropic-dangerous-direct-browser-access"] = "true";
+    } else if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    if (service === services.openrouter) {
+    if (protocol === "openai" && service === services.openrouter) {
       headers["HTTP-Referer"] = "https://github.com/airhunter/OnlyTranslate";
       headers["X-Title"] = "OnlyTranslate";
     }
 
+    const systemPrompt = "你是一个专业的翻译器。请将用户的输入翻译为中文，且只能输出翻译结果，禁止输出任何拼音、解释或额外的英文字符。";
+    const body = protocol === "anthropic"
+      ? {
+          model: currentModel,
+          max_tokens: 100,
+          system: systemPrompt,
+          messages: [{ role: "user", content: "hello" }],
+        }
+      : {
+          model: currentModel || "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: "hello" },
+          ],
+          max_tokens: 100,
+        };
+
     const resp = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        model: currentModel || "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "你是一个专业的翻译器。请将用户的输入翻译为中文，且只能输出翻译结果，禁止输出任何拼音、解释或额外的英文字符。" },
-          { role: "user", content: "hello" },
-        ],
-        max_tokens: 100,
-      }),
+      body: JSON.stringify(body),
       signal,
     });
 
@@ -205,10 +224,19 @@ async function testAI(
     }
 
     const result = asRecord(await resp.json() as unknown);
-    const choices = result?.choices;
-    const firstChoice = Array.isArray(choices) ? asRecord(choices[0]) : null;
-    const message = asRecord(firstChoice?.message);
-    const translatedText = typeof message?.content === "string" ? message.content : "";
+    let translatedText = "";
+    if (protocol === "anthropic") {
+      const content = result?.content;
+      const textBlock = Array.isArray(content)
+        ? content.map(asRecord).find(block => typeof block?.text === "string")
+        : null;
+      translatedText = typeof textBlock?.text === "string" ? textBlock.text : "";
+    } else {
+      const choices = result?.choices;
+      const firstChoice = Array.isArray(choices) ? asRecord(choices[0]) : null;
+      const message = asRecord(firstChoice?.message);
+      translatedText = typeof message?.content === "string" ? message.content : "";
+    }
 
     return { success: true, code: "success", translatedText };
   } catch (error: unknown) {
