@@ -160,6 +160,19 @@ describe('translation templates', () => {
     expect(claude.system).toContain('untrusted data')
   })
 
+  it('applies Claude thinking only when subtitle speed priority is disabled', () => {
+    mockConfig.service = 'claude'
+    mockConfig.thinking.claude = true
+
+    const fast = JSON.parse(claudeSubtitleBatchMsgTemplate(subtitleJob, true))
+    expect(fast.thinking).toBeUndefined()
+    expect(fast.temperature).toBe(0.2)
+
+    const quality = JSON.parse(claudeSubtitleBatchMsgTemplate(subtitleJob, false))
+    expect(quality.thinking).toEqual({ type: 'enabled', budget_tokens: 1024 })
+    expect(quality.temperature).toBeUndefined()
+  })
+
   it('uses the selected custom model in Anthropic-compatible payloads', () => {
     mockConfig.service = 'custom_anthropic'
     mockConfig.customProviders = [{

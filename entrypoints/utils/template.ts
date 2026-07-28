@@ -238,31 +238,38 @@ function resolveClaudeModel(): string {
     return model
 }
 
+function applyClaudeTranslationMode(payload: Record<string, unknown>, fastMode: boolean) {
+    const thinkingEnabled = !fastMode && config.thinking?.[config.service] === true
+    if (!thinkingEnabled) return
+
+    delete payload.temperature
+    payload.thinking = { type: 'enabled', budget_tokens: 1024 }
+}
+
 // claude
-export function claudeMsgTemplate(origin: string, targetLang = config.to) {
+export function claudeMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
     const model = resolveClaudeModel()
     let system = config.system_role[config.service] || defaultOption.system_role;
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
-    return JSON.stringify({
+    const payload: Record<string, unknown> = {
         model: model,
         max_tokens: 4096,
         stream: false,
-        thinking: config.thinking?.[config.service]
-            ? { type: 'enabled', budget_tokens: 1024 }
-            : { type: 'disabled' },
         system: system,
         messages: [
             {role: "user", content: user},
         ]
-    })
+    }
+    applyClaudeTranslationMode(payload, fastMode)
+    return JSON.stringify(payload)
 }
 
-export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob) {
+export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fastMode = true) {
     const model = resolveClaudeModel()
     const prompt = buildSubtitleTranslationPrompt(job)
-    return JSON.stringify({
+    const payload: Record<string, unknown> = {
         model,
         max_tokens: 4096,
         temperature: 0.2,
@@ -270,7 +277,9 @@ export function claudeSubtitleBatchMsgTemplate(job: SubtitleTranslationJob) {
         messages: [
             { role: 'user', content: prompt.user },
         ],
-    })
+    }
+    applyClaudeTranslationMode(payload, fastMode)
+    return JSON.stringify(payload)
 }
 
 // 通义千问

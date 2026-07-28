@@ -76,11 +76,12 @@ describe('per-service thinking request configuration', () => {
     })
 
     mockConfig.service = 'claude'
-    expect(JSON.parse(claudeMsgTemplate('Hello'))).toMatchObject({ thinking: { type: 'disabled' } })
+    expect(JSON.parse(claudeMsgTemplate('Hello'))).not.toHaveProperty('thinking')
     mockConfig.thinking.claude = true
     expect(JSON.parse(claudeMsgTemplate('Hello'))).toMatchObject({
       thinking: { type: 'enabled', budget_tokens: 1024 }
     })
+    expect(JSON.parse(claudeMsgTemplate('Hello', 'zh-Hans', true))).not.toHaveProperty('thinking')
 
     mockConfig.service = 'minimax'
     expect(JSON.parse(minimaxTemplate('Hello'))).toMatchObject({ thinking: { type: 'disabled' } })

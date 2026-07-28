@@ -104,7 +104,7 @@ describe('Claude service adapter', () => {
       { id: 'segment-2', translatedText: '\u6240\u4ee5\u6211\u628a\u5b83\u53d6\u4e86\u56de\u6765\u3002' }
     ])
 
-    expect(mockClaudeSubtitleBatchMsgTemplate).toHaveBeenCalledWith(subtitleJob)
+    expect(mockClaudeSubtitleBatchMsgTemplate).toHaveBeenCalledWith(subtitleJob, true)
     expect(mockClaudeMsgTemplate).not.toHaveBeenCalled()
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
@@ -117,8 +117,28 @@ describe('Claude service adapter', () => {
       targetLang: 'zh-Hans'
     })).resolves.toBe('plain translation')
 
-    expect(mockClaudeMsgTemplate).toHaveBeenCalledWith('Hello', 'zh-Hans')
+    expect(mockClaudeMsgTemplate).toHaveBeenCalledWith('Hello', 'zh-Hans', undefined)
     expect(mockClaudeSubtitleBatchMsgTemplate).not.toHaveBeenCalled()
+  })
+
+  it('forwards quality mode to Anthropic subtitle requests', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: [{
+          type: 'text',
+          text: '[{"id":"segment-1","translation":"译文一"},{"id":"segment-2","translation":"译文二"}]'
+        }]
+      })
+    })
+
+    await claude({
+      type: 'SUBTITLE_BATCH_TRANSLATION',
+      job: subtitleJob,
+      fastMode: false
+    })
+
+    expect(mockClaudeSubtitleBatchMsgTemplate).toHaveBeenCalledWith(subtitleJob, false)
   })
 
   it('uses a completed Anthropic endpoint and provider token for custom services', async () => {
