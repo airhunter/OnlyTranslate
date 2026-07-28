@@ -5,7 +5,7 @@ const mockConfig = vi.hoisted(() => ({
   to: 'zh-Hans',
   model: {
     openai: 'gpt-5-mini',
-    deepseek: 'deepseek-chat',
+    deepseek: 'deepseek-v4-flash',
     gemini: 'gemini-2.5-flash',
     claude: 'claude-sonnet-4-0',
     minimax: 'MiniMax-M3'
@@ -20,7 +20,7 @@ const mockConfig = vi.hoisted(() => ({
 vi.mock('@/entrypoints/utils/config', () => ({ config: mockConfig }))
 vi.mock('@/entrypoints/utils/option', () => ({
   customModelString: 'custom',
-  services: { claude: 'claude' },
+  services: { claude: 'claude', deepseek: 'deepseek' },
   defaultOption: {
     system_role: 'Translate faithfully.',
     user_role: 'Translate {{origin}} into {{to}}.'

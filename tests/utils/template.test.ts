@@ -4,14 +4,15 @@ const mockConfig = vi.hoisted(() => ({
   service: 'openai',
   model: {
     openai: 'gpt-5-mini',
-    deepseek: 'deepseek-reasoner',
+    deepseek: 'deepseek-v4-pro',
     gemini: 'gemini-2.5-flash',
     claude: 'claude-sonnet-4-0'
   } as Record<string, string>,
   customModel: {} as Record<string, string>,
   customProviders: [],
   system_role: {} as Record<string, string>,
-  user_role: {} as Record<string, string>
+  user_role: {} as Record<string, string>,
+  thinking: {} as Record<string, boolean>
 }))
 
 vi.mock('@/entrypoints/utils/config', () => ({
@@ -46,8 +47,9 @@ describe('translation templates', () => {
   beforeEach(() => {
     mockConfig.service = 'openai'
     mockConfig.model.openai = 'gpt-5-mini'
-    mockConfig.model.deepseek = 'deepseek-reasoner'
+    mockConfig.model.deepseek = 'deepseek-v4-pro'
     mockConfig.model.gemini = 'gemini-2.5-flash'
+    mockConfig.thinking = {}
   })
 
   it('tells batch translation to preserve protected inline placeholders', () => {
@@ -78,20 +80,34 @@ describe('translation templates', () => {
     expect(payload.temperature).toBe(1)
   })
 
-  it('switches DeepSeek subtitle requests out of reasoner mode', () => {
+  it('disables DeepSeek thinking for subtitle requests without changing the selected model', () => {
     mockConfig.service = 'deepseek'
 
     const single = JSON.parse(deepseekMsgTemplate('Hello', 'zh-Hans', true))
     const batch = JSON.parse(commonBatchMsgTemplate(['Hello', 'World'], 'zh-Hans', true))
 
     expect(single).toMatchObject({
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-pro',
       thinking: { type: 'disabled' },
     })
     expect(batch).toMatchObject({
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-pro',
       thinking: { type: 'disabled' },
     })
+  })
+
+  it('uses DeepSeek thinking controls for normal batch requests', () => {
+    mockConfig.service = 'deepseek'
+    mockConfig.thinking.deepseek = true
+
+    const payload = JSON.parse(commonBatchMsgTemplate(['Hello'], 'zh-Hans'))
+
+    expect(payload).toMatchObject({
+      model: 'deepseek-v4-pro',
+      thinking: { type: 'enabled' },
+      reasoning_effort: 'high',
+    })
+    expect(payload.temperature).toBeUndefined()
   })
 
   it('disables Gemini 2.5 Flash thinking for fast subtitle requests', () => {

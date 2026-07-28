@@ -9,16 +9,20 @@ function isOpenAIReasoningModel(model: string): boolean {
     return /^(?:gpt-5|o\d(?:-|$))/i.test(model)
 }
 
-function applyFastTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
-    if (!fastMode) return
-
+function applyTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
     if (config.service === services.deepseek) {
-        if (model === 'deepseek-reasoner') {
-            payload.model = 'deepseek-chat'
+        const thinkingEnabled = !fastMode && config.thinking?.[config.service] === true
+        payload.thinking = { type: thinkingEnabled ? 'enabled' : 'disabled' }
+        if (thinkingEnabled) {
+            delete payload.temperature
+            payload.reasoning_effort = 'high'
+        } else {
+            delete payload.reasoning_effort
         }
-        payload.thinking = { type: 'disabled' }
         return
     }
+
+    if (!fastMode) return
 
     if (isOpenAIReasoningModel(model)) {
         delete payload.temperature
@@ -57,7 +61,7 @@ export function commonMsgTemplate(origin: string, targetLang = config.to, fastMo
             {'role': 'user', 'content': user},
         ]
     }
-    applyFastTranslationMode(payload, model, fastMode)
+    applyTranslationMode(payload, model, fastMode)
     return JSON.stringify(payload)
 }
 
@@ -98,7 +102,7 @@ export function commonBatchMsgTemplate(origins: string[], targetLang = config.to
             },
         ]
     }
-    applyFastTranslationMode(payload, model, fastMode)
+    applyTranslationMode(payload, model, fastMode)
     return JSON.stringify(payload)
 }
 
@@ -126,7 +130,7 @@ export function commonSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
             { role: 'user', content: prompt.user },
         ],
     }
-    applyFastTranslationMode(payload, model, fastMode)
+    applyTranslationMode(payload, model, fastMode)
     return JSON.stringify(payload)
 }
 
@@ -142,34 +146,15 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to, fast
     let user = (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
-    if (fastMode && model === 'deepseek-reasoner') {
-        model = 'deepseek-chat'
-    }
-
-    const payload: {
-        model: string;
-        messages: Array<{ role: 'system' | 'user'; content: string }>;
-        temperature?: number;
-        thinking: { type: 'enabled' | 'disabled' };
-        reasoning_effort?: 'high';
-    } = {
+    const payload: Record<string, unknown> = {
         'model': model,
-        thinking: { type: config.thinking?.[config.service] ? 'enabled' : 'disabled' },
+        temperature: 0.7,
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
         ]
     };
-
-    // 如果不是 deepseek-reasoner 模型,则添加 temperature
-    if (model !== 'deepseek-reasoner') {
-        payload.temperature = 0.7;
-    }
-    if (fastMode) {
-        payload.thinking = { type: 'disabled' };
-    } else if (config.thinking?.[config.service]) {
-        payload.reasoning_effort = 'high';
-    }
+    applyTranslationMode(payload, model, fastMode)
 
     return JSON.stringify(payload);
 }

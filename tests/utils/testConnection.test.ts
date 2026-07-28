@@ -4,7 +4,7 @@ import { testConnection } from '@/entrypoints/utils/testConnection'
 const baseConfig = () => ({
   token: {} as Record<string, string>,
   proxy: {} as Record<string, string>,
-  model: { deepseek: 'deepseek-chat' },
+  model: { deepseek: 'deepseek-v4-flash' },
   customModel: {} as Record<string, string>,
   customProviders: [] as Array<{
     id: string

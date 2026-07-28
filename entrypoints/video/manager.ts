@@ -374,7 +374,6 @@ function resolveEffectiveSubtitleModel(service: string): string {
     }
 
     model = model.replace(/（.*）/g, '').trim()
-    if (service === services.deepseek && model === 'deepseek-reasoner') return 'deepseek-chat'
     if (service === services.claude) {
         if (model === 'claude-3-5-haiku') return 'claude-3-5-haiku-20241022'
         if (model === 'claude-3-5-sonnet') return 'claude-3-5-sonnet-20241022'

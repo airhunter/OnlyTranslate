@@ -18,6 +18,35 @@ describe('modelCatalog', () => {
   it('keeps custom model option as fallback', () => {
     expect(appendCustomModelOption(['gpt-4o-mini', 'gpt-4o-mini'])).toEqual(['gpt-4o-mini', customModelString])
     expect(getStaticModelOptions(services.openai)).toContain(customModelString)
+    expect(getStaticModelOptions(services.deepseek)).toEqual([customModelString])
+  })
+
+  it('fetches the current DeepSeek model catalog instead of relying on static model names', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          { id: 'deepseek-v4-flash' },
+          { id: 'deepseek-v4-pro' }
+        ]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchProviderModels(services.deepseek, { token: 'test-key' })).resolves.toEqual([
+      'deepseek-v4-flash',
+      'deepseek-v4-pro',
+      customModelString
+    ])
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.deepseek.com/models',
+      expect.objectContaining({
+        method: 'GET',
+        headers: { Authorization: 'Bearer test-key' }
+      })
+    )
+
+    vi.unstubAllGlobals()
   })
 
   it('fetches and normalizes Gemini model names', async () => {

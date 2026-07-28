@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createAppI18n } from '@/entrypoints/utils/i18n'
 import ServiceGroup from '@/components/options/ServiceGroup.vue'
 
 const mocks = vi.hoisted(() => ({
   config: {
+    __v_isRef: true,
     value: {
       service: 'microsoft',
       to: 'zh-Hans',
@@ -29,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   },
   success: vi.fn(),
   warning: vi.fn(),
+  fetchModels: vi.fn(),
 }))
 
 vi.mock('@/composables/useConfig', () => ({
@@ -42,6 +44,14 @@ vi.mock('element-plus', () => ({
     error: vi.fn(),
   }
 }))
+
+vi.mock('@/entrypoints/utils/modelCatalog', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/entrypoints/utils/modelCatalog')>()
+  return {
+    ...actual,
+    fetchProviderModels: mocks.fetchModels,
+  }
+})
 
 const mountGroup = () => mount(ServiceGroup, {
   global: {
@@ -71,8 +81,13 @@ describe('ServiceGroup', () => {
     mocks.config.value.activeBuiltinProviders = []
     mocks.config.value.customProviders = []
     mocks.config.value.token = {}
+    mocks.config.value.model = {}
+    mocks.config.value.customModel = {}
+    mocks.config.value.proxy = {}
+    mocks.config.value.thinking = {}
     mocks.success.mockReset()
     mocks.warning.mockReset()
+    mocks.fetchModels.mockReset()
   })
 
   it('does not make a newly added custom service current', async () => {
@@ -105,5 +120,28 @@ describe('ServiceGroup', () => {
     expect(mocks.config.value.customProviders).toEqual([])
     expect(mocks.warning).not.toHaveBeenCalled()
     expect(mocks.success).toHaveBeenCalledOnce()
+  })
+
+  it('replaces an unavailable DeepSeek selection with the refreshed provider catalog', async () => {
+    mocks.config.value.activeBuiltinProviders = ['deepseek']
+    mocks.config.value.token.deepseek = 'configured-token'
+    mocks.config.value.model.deepseek = 'retired-model'
+    mocks.fetchModels.mockResolvedValue([
+      'deepseek-v4-flash',
+      'deepseek-v4-pro',
+      '自定义模型',
+    ])
+    const wrapper = mountGroup()
+    const refreshButton = wrapper.find('button[aria-label="刷新模型列表"]')
+
+    expect(refreshButton.exists()).toBe(true)
+    await refreshButton.trigger('click')
+    await flushPromises()
+
+    expect(mocks.fetchModels).toHaveBeenCalledWith('deepseek', {
+      token: 'configured-token',
+      url: 'https://api.deepseek.com/chat/completions',
+    })
+    expect(mocks.config.value.model.deepseek).toBe('deepseek-v4-flash')
   })
 })
