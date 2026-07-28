@@ -48,14 +48,18 @@ const openAICases = [
     'gpt-4.1',
     'gpt-5-chat-latest',
     'gpt-5-mini',
+    'openai/gpt-5-mini',
     'gpt-5.1-2026-01-01',
     'o3-mini-2025-01-31',
+    'anthropic/claude-opus-4-8',
+    'google/gemini-3.6-flash',
     'gpt5',
 ]
 const geminiCases = [
     'models/gemini-2.5-pro',
     'gemini-2.5-flash-lite',
     'gemini-3.6-flash',
+    'google/gemini-3.6-flash',
     'gemini-3.1-pro',
     'gemini-future',
 ]
@@ -63,6 +67,7 @@ const anthropicCases = [
     'claude-haiku-4-5',
     'claude-sonnet-4-6',
     'claude-opus-4-8',
+    'anthropic/claude-opus-4-8',
     'claude-opus-5',
     'claude-fable-5',
     'claude-future',
@@ -182,6 +187,20 @@ describe('translation model request policies', () => {
 
     it('matches the reviewed capability registry', () => {
         expect(policySnapshot()).toMatchSnapshot()
+    })
+
+    it('recognizes provider-qualified models without crossing protocol policies', () => {
+        expect(resolveOpenAITranslationPolicy('openai/gpt-5-mini', false))
+            .toEqual(resolveOpenAITranslationPolicy('gpt-5-mini', false))
+        expect(resolveGeminiTranslationPolicy('google/gemini-3.6-flash', false))
+            .toEqual(resolveGeminiTranslationPolicy('gemini-3.6-flash', false))
+        expect(resolveAnthropicTranslationPolicy('anthropic/claude-opus-4-8', false))
+            .toEqual(resolveAnthropicTranslationPolicy('claude-opus-4-8', false))
+
+        expect(resolveOpenAITranslationPolicy('anthropic/claude-opus-4-8', false))
+            .toEqual({ removeTemperature: false })
+        expect(resolveOpenAITranslationPolicy('google/gemini-3.6-flash', false))
+            .toEqual({ removeTemperature: false })
     })
 
     it('matches the normalized payload matrix for every template surface', () => {

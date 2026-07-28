@@ -2,6 +2,40 @@
 
 exports[`translation model request policies > matches the normalized payload matrix for every template surface 1`] = `
 {
+  "anthropic:anthropic/claude-opus-4-8": {
+    "fast": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": null,
+        "thinking": null,
+      },
+    },
+    "thinking": {
+      "single": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "output_config": {
+          "effort": "medium",
+        },
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
+  },
   "anthropic:claude-fable-5": {
     "fast": {
       "single": {
@@ -268,6 +302,24 @@ exports[`translation model request policies > matches the normalized payload mat
       "subtitle": null,
     },
   },
+  "gemini:google/gemini-3.6-flash": {
+    "fast": {
+      "single": {
+        "thinkingLevel": "minimal",
+      },
+      "subtitle": {
+        "thinkingLevel": "minimal",
+      },
+    },
+    "thinking": {
+      "single": {
+        "thinkingLevel": "medium",
+      },
+      "subtitle": {
+        "thinkingLevel": "medium",
+      },
+    },
+  },
   "gemini:models/gemini-2.5-pro": {
     "fast": {
       "single": {
@@ -283,6 +335,66 @@ exports[`translation model request policies > matches the normalized payload mat
       },
       "subtitle": {
         "thinkingBudget": 1024,
+      },
+    },
+  },
+  "openai:anthropic/claude-opus-4-8": {
+    "fast": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+  },
+  "openai:google/gemini-3.6-flash": {
+    "fast": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "single": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
+      },
+      "subtitle": {
+        "hasTemperature": true,
+        "reasoning_effort": null,
       },
     },
   },
@@ -466,12 +578,56 @@ exports[`translation model request policies > matches the normalized payload mat
       },
     },
   },
+  "openai:openai/gpt-5-mini": {
+    "fast": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "minimal",
+      },
+    },
+    "thinking": {
+      "batch": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "single": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+      "subtitle": {
+        "hasTemperature": false,
+        "reasoning_effort": "medium",
+      },
+    },
+  },
 }
 `;
 
 exports[`translation model request policies > matches the reviewed capability registry 1`] = `
 {
   "anthropic": {
+    "anthropic/claude-opus-4-8": {
+      "fast": {
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "outputConfig": {
+          "effort": "medium",
+        },
+        "removeTemperature": true,
+        "thinking": {
+          "type": "adaptive",
+        },
+      },
+    },
     "claude-fable-5": {
       "fast": {
         "outputConfig": {
@@ -596,6 +752,18 @@ exports[`translation model request policies > matches the reviewed capability re
       "fast": {},
       "thinking": {},
     },
+    "google/gemini-3.6-flash": {
+      "fast": {
+        "thinkingConfig": {
+          "thinkingLevel": "minimal",
+        },
+      },
+      "thinking": {
+        "thinkingConfig": {
+          "thinkingLevel": "medium",
+        },
+      },
+    },
     "models/gemini-2.5-pro": {
       "fast": {
         "thinkingConfig": {
@@ -610,6 +778,22 @@ exports[`translation model request policies > matches the reviewed capability re
     },
   },
   "openai": {
+    "anthropic/claude-opus-4-8": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
+    "google/gemini-3.6-flash": {
+      "fast": {
+        "removeTemperature": false,
+      },
+      "thinking": {
+        "removeTemperature": false,
+      },
+    },
     "gpt-4.1": {
       "fast": {
         "removeTemperature": false,
@@ -657,6 +841,16 @@ exports[`translation model request policies > matches the reviewed capability re
     "o3-mini-2025-01-31": {
       "fast": {
         "reasoningEffort": "low",
+        "removeTemperature": true,
+      },
+      "thinking": {
+        "reasoningEffort": "medium",
+        "removeTemperature": true,
+      },
+    },
+    "openai/gpt-5-mini": {
+      "fast": {
+        "reasoningEffort": "minimal",
         "removeTemperature": true,
       },
       "thinking": {

@@ -1,4 +1,4 @@
-export const REQUEST_POLICY_VERSION = 'ai-request-policy-7178c2e2f3e2'
+export const REQUEST_POLICY_VERSION = 'ai-request-policy-f5de5b8a7c41'
 
 export type OpenAIReasoningEffort = 'none' | 'minimal' | 'low' | 'medium'
 export type GeminiThinkingLevel = 'minimal' | 'low' | 'medium' | 'high'
@@ -30,6 +30,7 @@ export function normalizeTranslationModelId(model: string): string {
     return String(model || '')
         .trim()
         .replace(/^models\//i, '')
+        .replace(/^[a-z0-9._-]+\//i, '')
         .replace(/（.*）/g, '')
         .toLowerCase()
 }
