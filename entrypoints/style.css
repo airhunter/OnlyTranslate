@@ -329,7 +329,11 @@
 
 /* 虚线下划线 */
 .fluent-display-dot-underline {
-    border-bottom: 2px dotted #409eff;
+    text-decoration-line: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: #93a2b7;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
 }
 
 /* 学习模式 */
