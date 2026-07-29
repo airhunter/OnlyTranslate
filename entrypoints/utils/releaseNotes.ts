@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.5.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.5：自定义接口与字幕体验增强',
+        items: [
+          '自定义服务现已支持 OpenAI Compatible 与 Anthropic Compatible 协议，可预览实际请求地址并刷新远程模型列表。',
+          '视频字幕新增速度优先模式，并会根据当前模型能力降低推理延迟；悬停字幕按钮可查看 FastMode 是否生效。',
+          '质量模式连续超时后会自动切换速度优先，批量请求失败时采用受限单条降级，减少字幕长时间卡住。',
+          '改进 Claude 等模型的能力适配、预设与退役迁移，同时保留自定义模型别名并识别带厂商命名空间的模型。',
+          '改进 EPUB 封面与标题页适配、章节前后导航和主题切换，并将译文点状下划线调整为更柔和的青灰色。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.5: Custom Providers and Faster Subtitles',
+        items: [
+          'Custom providers now support OpenAI-compatible and Anthropic-compatible APIs, with request URL previews and remote model list refresh.',
+          'Video subtitles now include a speed-priority mode that reduces reasoning latency when supported; hover over the subtitle button to check whether FastMode is active.',
+          'After consecutive timeouts in quality mode, the current session automatically switches to speed priority, while failed batch requests use a bounded single-item fallback.',
+          'Improved capability handling, presets, and retired-model migration for Claude and other models while preserving custom aliases and recognizing vendor-prefixed model IDs.',
+          'Improved EPUB cover and title-page sizing, previous and next chapter navigation, and theme switching, with a softer blue-gray dotted underline for translated text.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.5：自訂介面與字幕體驗增強',
+        items: [
+          '自訂服務現已支援 OpenAI Compatible 與 Anthropic Compatible 協定，可預覽實際請求位址並重新整理遠端模型清單。',
+          '影片字幕新增速度優先模式，並會依目前模型能力降低推理延遲；將滑鼠停在字幕按鈕上可查看 FastMode 是否生效。',
+          '品質模式連續逾時後會自動切換速度優先，批次請求失敗時採用受限單筆降級，減少字幕長時間卡住。',
+          '改善 Claude 等模型的能力適配、預設與退役遷移，同時保留自訂模型別名並識別帶廠商命名空間的模型。',
+          '改善 EPUB 封面與標題頁適配、章節前後導覽和主題切換，並將譯文點狀底線調整為更柔和的青灰色。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.5：カスタム API と字幕体験を強化',
+        items: [
+          'カスタムサービスで OpenAI 互換 API と Anthropic 互換 API を選択できるようにし、実際のリクエスト URL の確認とリモートモデル一覧の更新に対応しました。',
+          '動画字幕に速度優先モードを追加し、対応モデルでは推論レイテンシーを抑えます。字幕ボタンにポインターを合わせると FastMode の適用状態を確認できます。',
+          '品質優先モードでタイムアウトが続くと速度優先へ自動的に切り替え、バッチリクエスト失敗時は制限付きの個別翻訳へフォールバックします。',
+          'Claude などのモデル能力、プリセット、提供終了モデルの移行を改善し、カスタムモデルの別名を維持したままプロバイダー名付きモデル ID を認識できるようにしました。',
+          'EPUB の表紙とタイトルページの表示、前後の章への移動、テーマ切り替えを改善し、翻訳文の点線をより穏やかなブルーグレーに調整しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.4.0',
     notes: {
       'zh-CN': {
