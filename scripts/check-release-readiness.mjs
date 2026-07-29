@@ -80,6 +80,15 @@ if (!Array.isArray(releaseIt.github.assets) || !releaseIt.github.assets.includes
   fail(`.release-it.json 需要上传 ${expectedAssetPattern}`);
 }
 
+const changelogPaths = releaseIt.plugins?.['@release-it/conventional-changelog']?.gitRawCommitsOpts?.path;
+const requiredChangelogPaths = ['.', ':(exclude)website', ':(exclude)Dockerfile'];
+if (
+  !Array.isArray(changelogPaths) ||
+  requiredChangelogPaths.some((item) => !changelogPaths.includes(item))
+) {
+  fail(`.release-it.json 需要通过 gitRawCommitsOpts.path 排除网站独立发布内容: ${requiredChangelogPaths.join(', ')}`);
+}
+
 if (releaseIt.hooks?.['before:github:release'] !== 'pnpm zip') {
   fail('.release-it.json 需要在 before:github:release 执行 pnpm zip');
 }

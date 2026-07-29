@@ -20,6 +20,7 @@ pnpm exec release-it --release-version
 - `notes` 必须包含 `zh-CN`、`en-US`、`zh-TW`、`ja-JP` 四种语言。
 - 每种语言都需要 `title` 和 `items`。
 - `items` 建议控制在 `3-5` 条，优先描述用户能直接感知到的新功能、优化和修复。
+- 只记录会进入扩展包的变化；网站、商店素材等独立发布内容不写入扩展更新说明。
 - Popup 和 Options 关于页会共用这里的内容，因此不要只写 GitHub Release 面向开发者的变更摘要。
 
 3. 运行发布前校验。
