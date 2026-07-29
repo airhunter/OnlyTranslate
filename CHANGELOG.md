@@ -1,5 +1,30 @@
 # Changelog
 
+# [1.5.0](https://github.com/airhunter/OnlyTranslate/compare/v1.4.0...v1.5.0) (2026-07-29)
+
+
+### Bug Fixes
+
+* **options:** 动态获取 DeepSeek 可用模型 ([a598ceb](https://github.com/airhunter/OnlyTranslate/commit/a598ceb9d68cc4d7e4786c184e9008abe331b345))
+* **options:** 扩展退役 Claude 模型提示 ([0611eaa](https://github.com/airhunter/OnlyTranslate/commit/0611eaac9fcca13e93d0b750ab556fa21f48fdc7))
+* **options:** 更新模型预设并迁移退役 Claude 配置 ([ea82cc9](https://github.com/airhunter/OnlyTranslate/commit/ea82cc9eda062840f3d766a999cb362494d8a051))
+* **service:** 停止改写自定义 Claude 模型别名 ([b26f535](https://github.com/airhunter/OnlyTranslate/commit/b26f535fffe462e745996dccb4df64009691b8e3))
+* **service:** 按模型能力规范化推理参数与缓存策略 ([a5b9bba](https://github.com/airhunter/OnlyTranslate/commit/a5b9bba5ad83dc489cb81effda6d5ef8ae6567c4))
+* **service:** 支持带厂商命名空间的模型识别 ([a184db2](https://github.com/airhunter/OnlyTranslate/commit/a184db261027c5e446cf3bb2fd19c4d70654e590))
+* **service:** 让 Anthropic 字幕请求遵循 FastMode ([1a8283b](https://github.com/airhunter/OnlyTranslate/commit/1a8283b2c7f9382a14d7291bdcf2f793a1765d5c))
+* **ui:** 优化译文点状下划线样式 ([e6c8156](https://github.com/airhunter/OnlyTranslate/commit/e6c81560d13d3a0c8518b392694e8f45ecbda29a))
+* **ui:** 修复电子书阅读体验与浮动球挂载 ([d8d65f4](https://github.com/airhunter/OnlyTranslate/commit/d8d65f4954acf1ec9f70c3888e1903afb91247de))
+* **video:** 为质量模式增加超时熔断与受限降级 ([896c0d9](https://github.com/airhunter/OnlyTranslate/commit/896c0d9053974638037d5f771bd0f5b9b3b391ee))
+* **video:** 完善单条翻译熔断与受限降级 ([7e218cd](https://github.com/airhunter/OnlyTranslate/commit/7e218cd9d0f865e047ec4e28f5c6b3553b7c4f47))
+
+
+### Features
+
+* **options:** 添加自定义接口预览与模型刷新 ([3bbf160](https://github.com/airhunter/OnlyTranslate/commit/3bbf1605135779475a12f83509137e3af85fe2ba))
+* **service:** 支持自定义 OpenAI 与 Anthropic 兼容接口 ([9b0e294](https://github.com/airhunter/OnlyTranslate/commit/9b0e294b0a72bee7426bb349a966927bd6e31d5a))
+* **video:** 在字幕按钮提示 FastMode 状态 ([05105a4](https://github.com/airhunter/OnlyTranslate/commit/05105a416a58ae98383b556443bb581350f51f7e))
+* **video:** 添加字幕翻译速度优先模式 ([f99ef1a](https://github.com/airhunter/OnlyTranslate/commit/f99ef1abd1e87f1398613afcbaf290b8a5d7eac4))
+
 # [1.4.0](https://github.com/airhunter/OnlyTranslate/compare/v1.3.2...v1.4.0) (2026-07-27)
 
 
