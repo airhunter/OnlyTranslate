@@ -316,6 +316,14 @@ export async function translateText(origin: string, context: string = document.t
   return trackedPromise;
 }
 
+export function cacheTranslationResult(origin: string, result: string): void {
+  const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
+  if (!config.useCache || !safeOrigin.trim() || !result || result === safeOrigin) return;
+  const direction = resolveTranslationDirection(safeOrigin);
+  if (!direction.shouldTranslate) return;
+  cache.localSet(safeOrigin, result, direction.targetLang);
+}
+
 /**
  * 当用户离开页面或主动取消翻译时，清空翻译队列
  */

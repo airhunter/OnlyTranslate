@@ -63,6 +63,7 @@ vi.mock('@/entrypoints/utils/translationDirection', () => ({
 }))
 
 import {
+  cacheTranslationResult,
   cancelAllTranslations,
   canUseBatchTranslationForCurrentConfig,
   translateText,
@@ -72,6 +73,7 @@ import { resolveTranslationDirection } from '../../entrypoints/utils/translation
 describe('translateText', () => {
   beforeEach(() => {
     mockConfig.count = 0
+    mockConfig.useCache = true
     mockConfig.service = 'openai'
     mockConfig.model = {
       openai: 'gpt-5-mini'
@@ -188,6 +190,23 @@ describe('translateText', () => {
       origin: 'World'
     }))
     expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'BATCH_TRANSLATION')).toBe(false)
+  })
+
+  it('can bypass cache reads and writes for a transactional translation', async () => {
+    mockCacheLocalGet.mockReturnValue('旧缓存')
+    mockSendMessage.mockResolvedValue('新译文')
+
+    await expect(translateText('Hello', 'Example', { useCache: false })).resolves.toBe('新译文')
+
+    expect(mockCacheLocalGet).not.toHaveBeenCalled()
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({ origin: 'Hello' }))
+    expect(mockCacheLocalSet).not.toHaveBeenCalled()
+  })
+
+  it('commits a staged translation to the current translation cache', () => {
+    cacheTranslationResult('Hello', '新译文')
+
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '新译文', 'zh-Hans')
   })
 
   it('forwards fast mode only when explicitly requested', async () => {

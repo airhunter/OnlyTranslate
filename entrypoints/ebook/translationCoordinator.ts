@@ -1,5 +1,6 @@
 import type { TranslationPriority } from '@/entrypoints/utils/translateQueue';
 import {
+  cacheTranslationResult,
   cancelAllTranslations,
   isTranslationCancelledError,
   translateText,
@@ -12,6 +13,7 @@ import {
   isUnitVisible,
   type EbookTranslationUnit,
 } from './unitizer';
+import type { EbookDisplayMode } from './types';
 
 export interface EbookTranslationStatus {
   total: number;
@@ -23,17 +25,22 @@ export interface EbookTranslationStatus {
 type Translate = (origin: string, context: string, options: {
   allowBatch: true;
   priority: TranslationPriority;
+  useCache?: boolean;
 }) => Promise<string>;
 
 interface CoordinatorOptions {
   translate?: Translate;
+  cacheTranslation?: (origin: string, result: string) => void;
   onStatus?: (status: EbookTranslationStatus) => void;
   captureLocation?: () => string | undefined;
   restoreLocation?: (cfi: string) => Promise<void> | void;
 }
 
+export type EbookRetranslationResult = 'success' | 'failed' | 'cancelled' | 'empty';
+
 const EBOOK_CONTENT_STYLE = `
-  .onlytranslate-ebook-translation { color: #3975d7; margin-block: .35em .7em; }
+  .onlytranslate-ebook-translation { color: #3975d7 !important; margin-block: .35em .7em !important; }
+  [data-onlytranslate-ebook-display="original"] [data-onlytranslate-ebook-translation] { display: none !important; }
   [data-onlytranslate-ebook-display="translation"] [data-onlytranslate-ebook-original="true"].onlytranslate-ebook-has-translation:not(td):not(th) { display: none !important; }
   [data-onlytranslate-ebook-display="translation"] td.onlytranslate-ebook-has-translation > [data-onlytranslate-ebook-original-content],
   [data-onlytranslate-ebook-display="translation"] th.onlytranslate-ebook-has-translation > [data-onlytranslate-ebook-original-content] { display: none !important; }
@@ -48,18 +55,20 @@ export class EbookTranslationCoordinator {
   private pendingInsertions: Array<() => void> = [];
   private insertionTimer?: ReturnType<typeof setTimeout>;
   private readonly translate: Translate;
+  private readonly cacheTranslation: (origin: string, result: string) => void;
 
   constructor(private readonly options: CoordinatorOptions = {}) {
     this.translate = options.translate ?? translateText;
+    this.cacheTranslation = options.cacheTranslation ?? cacheTranslationResult;
   }
 
-  async start(document: Document, context: string, display: number): Promise<void> {
+  async start(document: Document, context: string, displayMode: EbookDisplayMode): Promise<void> {
     this.cancel();
     const generation = this.generation;
     this.document = document;
     this.context = context;
     this.installStyles(document);
-    applyEbookDisplayMode(document, display);
+    applyEbookDisplayMode(document, displayMode);
     this.units = collectEbookTranslationUnits(document);
     this.status = { total: this.units.length, completed: 0, failed: 0, running: this.units.length > 0 };
     this.emitStatus();
@@ -70,6 +79,57 @@ export class EbookTranslationCoordinator {
     await this.flushInsertions();
     this.status.running = false;
     this.emitStatus();
+  }
+
+  async retranslate(): Promise<EbookRetranslationResult> {
+    if (!this.document || this.units.length === 0) return 'empty';
+    const previousStatus = { ...this.status, running: false };
+    this.cancel();
+    const generation = this.generation;
+    const ordered = [...this.units].sort((left, right) => Number(isUnitVisible(right)) - Number(isUnitVisible(left)));
+    this.status = { total: ordered.length, completed: 0, failed: 0, running: true };
+    this.emitStatus();
+
+    const settled = await Promise.allSettled(ordered.map(async unit => {
+      try {
+        const result = await this.requestTranslation(unit, false);
+        if (generation === this.generation) {
+          this.status.completed += 1;
+          this.emitStatus();
+        }
+        return { unit, ...result };
+      } catch (error) {
+        if (generation === this.generation && !isTranslationCancelledError(error)) {
+          this.status.failed += 1;
+          this.emitStatus();
+        }
+        throw error;
+      }
+    }));
+
+    if (generation !== this.generation) return 'cancelled';
+    const rejected = settled.filter(result => result.status === 'rejected');
+    if (rejected.length > 0) {
+      this.status = previousStatus;
+      this.emitStatus();
+      return rejected.every(result => isTranslationCancelledError(result.reason)) ? 'cancelled' : 'failed';
+    }
+
+    const translations = settled
+      .filter((result): result is PromiseFulfilledResult<{
+        unit: EbookTranslationUnit;
+        translated: string;
+        cacheOrigin: string;
+      }> => result.status === 'fulfilled')
+      .map(result => result.value);
+    const cfi = this.options.captureLocation?.();
+    translations.forEach(({ unit, translated }) => insertEbookTranslation(unit, translated));
+    translations.forEach(({ cacheOrigin, translated }) => this.cacheTranslation(cacheOrigin, translated));
+    await this.waitForLayout();
+    if (cfi) await this.options.restoreLocation?.(cfi);
+    this.status = { total: ordered.length, completed: ordered.length, failed: 0, running: false };
+    this.emitStatus();
+    return 'success';
   }
 
   cancel(): void {
@@ -98,17 +158,13 @@ export class EbookTranslationCoordinator {
     this.emitStatus();
   }
 
-  setDisplayMode(display: number): void {
-    if (this.document) applyEbookDisplayMode(this.document, display);
+  setDisplayMode(displayMode: EbookDisplayMode): void {
+    if (this.document) applyEbookDisplayMode(this.document, displayMode);
   }
 
   private async translateUnit(unit: EbookTranslationUnit, generation: number): Promise<void> {
-    const priority: TranslationPriority = isUnitVisible(unit) ? 'high' : 'background';
     try {
-      let translated = await this.translate(unit.sourceHtml || unit.sourceText, this.context, { allowBatch: true, priority });
-      if (!hasAllPlaceholders(translated, unit.placeholders)) {
-        translated = await this.translate(unit.sourceText, this.context, { allowBatch: true, priority });
-      }
+      const { translated } = await this.requestTranslation(unit, true);
       if (generation !== this.generation) return;
       this.queueInsertion(() => insertEbookTranslation(unit, translated));
       this.status.completed += 1;
@@ -119,6 +175,25 @@ export class EbookTranslationCoordinator {
       this.status.failed += 1;
       this.emitStatus();
     }
+  }
+
+  private async requestTranslation(
+    unit: EbookTranslationUnit,
+    useCache: boolean,
+  ): Promise<{ translated: string; cacheOrigin: string }> {
+    const priority: TranslationPriority = isUnitVisible(unit) ? 'high' : 'background';
+    const translateOptions = {
+      allowBatch: true as const,
+      priority,
+      ...(useCache ? {} : { useCache: false }),
+    };
+    let cacheOrigin = unit.sourceHtml || unit.sourceText;
+    let translated = await this.translate(cacheOrigin, this.context, translateOptions);
+    if (!hasAllPlaceholders(translated, unit.placeholders)) {
+      cacheOrigin = unit.sourceText;
+      translated = await this.translate(cacheOrigin, this.context, translateOptions);
+    }
+    return { translated, cacheOrigin };
   }
 
   private queueInsertion(insertion: () => void): void {
@@ -135,12 +210,16 @@ export class EbookTranslationCoordinator {
     const cfi = this.options.captureLocation?.();
     const insertions = this.pendingInsertions.splice(0);
     insertions.forEach(insert => insert());
+    await this.waitForLayout();
+    if (cfi) await this.options.restoreLocation?.(cfi);
+  }
+
+  private async waitForLayout(): Promise<void> {
     await new Promise<void>(resolve => {
       const schedule = this.document?.defaultView?.requestAnimationFrame;
       if (schedule) schedule(() => resolve());
       else setTimeout(resolve, 0);
     });
-    if (cfi) await this.options.restoreLocation?.(cfi);
   }
 
   private installStyles(document: Document): void {

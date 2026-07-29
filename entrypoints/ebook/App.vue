@@ -77,8 +77,21 @@
         <button v-if="needsSettings" class="text-button" @click="openSettings">{{ t('common.settings') }}</button>
       </div>
       <div class="toolbar-controls">
-        <button class="control-button" @click="toggleDisplayMode">
-          {{ config.display === 0 ? t('ebook.displayTranslation') : t('ebook.displayBilingual') }}
+        <button
+          class="control-button"
+          :title="t('ebook.displayMode')"
+          @click="cycleDisplayMode"
+        >
+          {{ t('ebook.displayMode') }} · {{ displayModeLabel }}
+        </button>
+        <button
+          class="control-button retranslate-button"
+          :title="t('ebook.retranslateChapter')"
+          :disabled="translationStatus.running || translationStatus.total === 0"
+          @click="retranslateCurrentChapter"
+        >
+          <span aria-hidden="true">↻</span>
+          <span class="retranslate-button__label">{{ t('ebook.retranslateChapter') }}</span>
         </button>
         <button class="control-button" @click="cycleTheme">{{ t('ebook.theme') }} · {{ themeLabel }}</button>
         <label>{{ t('ebook.fontSize') }}
@@ -184,7 +197,13 @@ import {
 } from './readerController';
 import { loadReaderSettings, saveReaderSettings } from './settings';
 import { EbookTranslationCoordinator, type EbookTranslationStatus } from './translationCoordinator';
-import type { Bookmark, EbookReaderSettings, EbookRecord, StorageEstimate } from './types';
+import type {
+  Bookmark,
+  EbookDisplayMode,
+  EbookReaderSettings,
+  EbookRecord,
+  StorageEstimate,
+} from './types';
 
 interface RecentBook {
   record: EbookRecord;
@@ -217,7 +236,11 @@ const currentChapterHref = ref('');
 const sidebarTab = ref<'toc' | 'bookmarks'>('toc');
 const coverUrls = reactive<Record<string, string>>({});
 const storageEstimate = reactive<StorageEstimate>({ usage: 0, quota: 0, persisted: false });
-const readerSettings = reactive<EbookReaderSettings>({ fontScale: 100, lineHeight: 1.7 });
+const readerSettings = reactive<EbookReaderSettings>({
+  fontScale: 100,
+  lineHeight: 1.7,
+  displayMode: 'bilingual',
+});
 const translationStatus = reactive<EbookTranslationStatus>({ total: 0, completed: 0, failed: 0, running: false });
 const translationNotice = ref('');
 const needsSettings = ref(false);
@@ -228,6 +251,11 @@ let lastLocation: ReaderLocation | undefined;
 let dragDepth = 0;
 
 const themeLabel = computed(() => t(`ebook.theme${config.value.theme === 'dark' ? 'Dark' : config.value.theme === 'light' ? 'Light' : 'Auto'}`));
+const displayModeLabel = computed(() => t(`ebook.display${readerSettings.displayMode === 'original'
+  ? 'Original'
+  : readerSettings.displayMode === 'translation'
+    ? 'Translation'
+    : 'Bilingual'}`));
 
 const flatToc = computed(() => {
   const flatten = (items: NavItem[], depth = 0): FlatNavItem[] => items.flatMap(item => [
@@ -285,7 +313,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('blur', saveProgressImmediately);
 });
 
-watch(() => config.value.display, display => coordinator.setDisplayMode(display));
 watch(actualTheme, theme => void controller.applyTheme(theme));
 watch(() => config.value.uiLocale, preference => {
   locale.value = resolveLocale(preference);
@@ -432,11 +459,30 @@ async function translateChapter(document: Document, chapterLabel: string): Promi
     needsSettings.value = true;
     return;
   }
-  await coordinator.start(document, `${activeBook.value?.title ?? ''} · ${chapterLabel}`, config.value.display);
+  await coordinator.start(document, `${activeBook.value?.title ?? ''} · ${chapterLabel}`, readerSettings.displayMode);
 }
 
 function retryFailed(): void {
   void coordinator.retryFailed();
+}
+
+async function retranslateCurrentChapter(): Promise<void> {
+  translationNotice.value = '';
+  needsSettings.value = false;
+  needsEnable.value = false;
+  if (!config.value.on) {
+    translationNotice.value = t('ebook.translationDisabled');
+    needsEnable.value = true;
+    return;
+  }
+  if (!isServiceConfigured(config.value.service, config.value)) {
+    translationNotice.value = t('ebook.serviceNotConfigured');
+    needsSettings.value = true;
+    return;
+  }
+  const result = await coordinator.retranslate();
+  if (result === 'failed') translationNotice.value = t('ebook.retranslateFailed');
+  if (result === 'empty') translationNotice.value = t('ebook.noTranslatableContent');
 }
 
 function handleLocation(location: ReaderLocation): void {
@@ -548,8 +594,12 @@ function enableTranslation(): void {
   config.value.on = true;
 }
 
-function toggleDisplayMode(): void {
-  config.value.display = config.value.display === 0 ? 1 : 0;
+function cycleDisplayMode(): void {
+  const displayModes: EbookDisplayMode[] = ['original', 'bilingual', 'translation'];
+  const current = displayModes.indexOf(readerSettings.displayMode);
+  readerSettings.displayMode = displayModes[(current + 1) % displayModes.length];
+  coordinator.setDisplayMode(readerSettings.displayMode);
+  void saveReaderSettings({ ...readerSettings });
 }
 
 function cycleTheme(): void {

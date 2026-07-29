@@ -1,6 +1,13 @@
 import { sanitizeTranslatedInlineHtml } from './sanitizer';
+import type { EbookDisplayMode } from './types';
 
 const UNIT_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,li,blockquote,figcaption,td,th';
+const LEAF_DIV_BLOCK_SELECTOR = [
+  UNIT_SELECTOR,
+  'address', 'article', 'aside', 'details', 'dialog', 'div', 'dl', 'fieldset',
+  'figure', 'footer', 'form', 'header', 'main', 'nav', 'ol', 'pre', 'section',
+  'table', 'ul',
+].join(',');
 const PROTECTED_SELECTOR = 'code,kbd,samp,var,math,svg';
 const INLINE_TAGS = [
   'a', 'abbr', 'b', 'br', 'cite', 'del', 'em', 'i', 'ins', 'mark', 'q', 'rp', 'rt',
@@ -38,6 +45,12 @@ function hasTranslatableText(text: string): boolean {
   return normalized.length > 0 && /[\p{L}\p{N}]/u.test(normalized);
 }
 
+function collectCandidateElements(document: Document): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>(`${UNIT_SELECTOR},div`))
+    .filter(element => !element.matches('div')
+      || (!element.closest(UNIT_SELECTOR) && !element.querySelector(LEAF_DIV_BLOCK_SELECTOR)));
+}
+
 function buildSource(element: HTMLElement): { html: string; placeholders: Map<string, string> } {
   const clone = element.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('[data-onlytranslate-ebook-translation]').forEach(node => node.remove());
@@ -57,7 +70,7 @@ function buildSource(element: HTMLElement): { html: string; placeholders: Map<st
 }
 
 export function collectEbookTranslationUnits(document: Document): EbookTranslationUnit[] {
-  const candidates = Array.from(document.querySelectorAll<HTMLElement>(UNIT_SELECTOR));
+  const candidates = collectCandidateElements(document);
   return candidates
     .filter(element => !element.matches('[data-onlytranslate-ebook-translation]'))
     .filter(element => !element.closest('[data-onlytranslate-ebook-translation], [translate="no"], .notranslate'))
@@ -142,8 +155,8 @@ export function insertEbookTranslation(unit: EbookTranslationUnit, translatedHtm
   return translation;
 }
 
-export function applyEbookDisplayMode(document: Document, display: number): void {
-  document.documentElement.dataset.onlytranslateEbookDisplay = display === 0 ? 'translation' : 'bilingual';
+export function applyEbookDisplayMode(document: Document, displayMode: EbookDisplayMode): void {
+  document.documentElement.dataset.onlytranslateEbookDisplay = displayMode;
 }
 
 export function isUnitVisible(unit: EbookTranslationUnit): boolean {

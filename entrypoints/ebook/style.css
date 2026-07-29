@@ -70,6 +70,8 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.035em; }
 .translation-status .text-button { margin-left: 8px; color: inherit; text-decoration: underline; }
 .toolbar-controls { display: flex; align-items: center; gap: 12px; }
 .control-button { height: 34px; padding: 0 10px; border: 1px solid #d9d7d1; border-radius: 8px; background: transparent; color: inherit; font-size: 12px; }
+.control-button:disabled { opacity: .45; cursor: not-allowed; }
+.retranslate-button { display: inline-flex; align-items: center; gap: 5px; }
 .dark .control-button { border-color: #3a3f47; }
 .toolbar-controls label { display: flex; align-items: center; gap: 5px; color: #6e737c; font-size: 12px; }
 .toolbar-controls input { width: 84px; accent-color: #3975d7; }
@@ -111,4 +113,5 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.035em; }
   body { min-width: 680px; }
   .reader-layout { grid-template-columns: 220px minmax(0, 1fr); }
   .toolbar-controls label { display: none; }
+  .retranslate-button__label { display: none; }
 }

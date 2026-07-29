@@ -40,14 +40,18 @@ export interface StorageEstimate {
   persisted: boolean;
 }
 
+export type EbookDisplayMode = 'original' | 'bilingual' | 'translation';
+
 export interface EbookReaderSettings {
   fontScale: number;
   lineHeight: number;
+  displayMode: EbookDisplayMode;
 }
 
 export const DEFAULT_READER_SETTINGS: EbookReaderSettings = {
   fontScale: 100,
   lineHeight: 1.7,
+  displayMode: 'bilingual',
 };
 
 export type EbookMetadataExtractor = (data: ArrayBuffer, file: File) => Promise<EbookImportMetadata>;
