@@ -4,7 +4,7 @@
 
 [English](./README_EN.md) | 中文 | [官方网站](https://onlytranslate.top/)
 
-只译是一款专注阅读体验的浏览器翻译扩展。它可以翻译网页正文、整页内容、划词、悬停文本、输入框、视频字幕和本地 EPUB 电子书，并尽量保留原内容的结构与阅读节奏。
+只译是一款开源双语阅读浏览器扩展：在原页面翻译网页正文、视频字幕和本地 EPUB 电子书，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
@@ -14,6 +14,8 @@
   <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="只译的视频双语字幕效果" width="32%" />
   <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="只译的 EPUB 翻译阅读器" width="32%" />
 </p>
+
+> 如果只译对你有帮助，欢迎点一个 ⭐ **Star** 支持项目，也让更多需要开源双语阅读工具的人发现它。
 
 ## 快速开始
 

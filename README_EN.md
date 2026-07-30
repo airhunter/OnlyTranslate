@@ -4,7 +4,7 @@
 
 [中文](./README.md) | English | [Official website](https://onlytranslate.top/)
 
-OnlyTranslate is a browser extension designed for a focused reading experience. It translates main web content, full pages, selected or hovered text, input fields, video subtitles, and local EPUB ebooks while preserving the original structure and reading flow as much as possible.
+OnlyTranslate is an open-source browser extension for bilingual reading. It translates web content, video subtitles, and local EPUB ebooks in place while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
@@ -14,6 +14,8 @@ OnlyTranslate is a browser extension designed for a focused reading experience. 
   <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="OnlyTranslate bilingual video subtitles" width="32%" />
   <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="OnlyTranslate EPUB translation reader" width="32%" />
 </p>
+
+> If OnlyTranslate helps you, consider giving it a ⭐ **Star** to support the project and help more people discover an open-source bilingual reading tool.
 
 ## Quick Start
 
