@@ -17,6 +17,7 @@ import {
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
+import { buildUninstallFeedbackUrl } from '@/entrypoints/utils/uninstallFeedback'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -36,6 +37,17 @@ export default defineBackground({
     },
     main() {
         const isContextMenuSupported = !!browser.contextMenus
+        const configureUninstallFeedback = () => {
+            if (typeof browser.runtime.setUninstallURL !== 'function') return
+
+            const uninstallUrl = buildUninstallFeedbackUrl(
+                browser.runtime.getManifest().version,
+                browser.i18n.getUILanguage(),
+            )
+            void browser.runtime.setUninstallURL(uninstallUrl).catch((error: unknown) => {
+                console.warn('设置卸载反馈页面失败:', error)
+            })
+        }
         const videoSubtitleCacheMaintenance = new VideoSubtitleCacheMaintenance({
             alarms: browser.alarms,
             prune: () => pruneVideoSubtitleCache(),
@@ -53,8 +65,10 @@ export default defineBackground({
             videoSubtitleCacheMaintenance.handleStorageChanges(changes, areaName)
         })
         void videoSubtitleCacheMaintenance.runNow()
+        configureUninstallFeedback()
 
         browser.runtime.onInstalled.addListener((details: any) => {
+            configureUninstallFeedback()
             void syncReleaseNotesInstallState(
                 details?.reason,
                 browser.runtime.getManifest().version

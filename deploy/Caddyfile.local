@@ -1,8 +1,4 @@
-www.onlytranslate.top {
-	redir https://onlytranslate.top{uri} 308
-}
-
-{$SITE_ADDRESS:onlytranslate.top} {
+:8080 {
 	root * /srv
 
 	encode zstd gzip
@@ -41,9 +37,6 @@ www.onlytranslate.top {
 	}
 
 	@uninstallReport path /internal/uninstall-report /internal/uninstall-report/*
-	basic_auth @uninstallReport argon2id {
-		{$REPORT_USERNAME:admin} {$REPORT_PASSWORD_HASH}
-	}
 	header @uninstallReport {
 		Cache-Control "no-store"
 		X-Robots-Tag "noindex, nofollow, noarchive"

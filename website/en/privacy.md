@@ -5,13 +5,19 @@ description: How the OnlyTranslate browser extension stores local data and uses 
 
 # Privacy notice
 
-Last updated: July 26, 2026
+Last updated: August 3, 2026
 
 OnlyTranslate is a free, open-source browser translation extension. This notice explains what information is stored in your browser, when text is sent to a third-party translation service, and how you can manage that data.
 
 ## No OnlyTranslate account required
 
-OnlyTranslate does not provide a project-operated account system and does not require sign-in or a subscription. The project does not collect usage analytics, browsing history, translation history, or imported ebooks through the extension.
+OnlyTranslate does not provide a project-operated account system and does not require sign-in or a subscription. The project does not collect routine usage analytics, browsing history, translation history, or imported ebooks through the extension.
+
+## Optional uninstall feedback
+
+When supported by the browser, uninstalling OnlyTranslate may open a feedback page on the project website. You can close the page without responding, or voluntarily select fixed options describing the main reason for uninstalling and any first-use obstacle.
+
+If you submit the form, the project stores only the selected categories, extension version, interface language, and submission time. The dedicated feedback log does not store IP addresses, request headers, page URLs, translation content, or a user identifier, and the form does not accept free text. The logs are used only by project maintainers to aggregate product issues and are retained for no more than 90 days.
 
 ## Data stored in your browser
 
@@ -57,4 +63,4 @@ The project continues development from [FluentRead](https://github.com/Bistutu/F
 
 ## Contact and feedback
 
-For questions about this notice, data flow, or a specific feature, contact the maintainers through [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues).
+For questions about this notice, uninstall feedback, data flow, or a specific feature, contact the maintainers through [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues).

@@ -9,13 +9,17 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-onlytranslate.top}
+      REPORT_USERNAME: ${REPORT_USERNAME:-admin}
+      REPORT_PASSWORD_HASH: ${REPORT_PASSWORD_HASH:?请先在 .env 中配置 REPORT_PASSWORD_HASH}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - uninstall_feedback:/var/log/caddy
 
 volumes:
   caddy_data:
   caddy_config:
+  uninstall_feedback:
