@@ -90,7 +90,11 @@ describe('help utilities', () => {
 
   it('keeps the beta ebook guide concise and available in every locale', () => {
     const ebookTopic = helpTopics.find(topic => topic.id === 'ebooks')
-    expect(ebookTopic?.sections).toHaveLength(2)
+    expect(ebookTopic?.sections.map(section => section.id)).toEqual([
+      'ebook-start',
+      'ebook-navigation',
+      'ebook-beta',
+    ])
 
     for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
       const i18n = createAppI18n(locale)
