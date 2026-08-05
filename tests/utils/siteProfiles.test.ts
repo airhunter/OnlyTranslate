@@ -150,6 +150,12 @@ describe('site profile registry', () => {
     expect(siteProfileExpandTargetFns['substack.com']).toBeTypeOf('function')
   })
 
+  it('registers XDA discussion profile', () => {
+    expect(selectCompatFn['xda-developers.com']).toBeTypeOf('function')
+    expect(supplementalCompatFn['xda-developers.com']).toBeTypeOf('function')
+    expect(siteProfileExpandTargetFns['xda-developers.com']).toBeTypeOf('function')
+  })
+
   it('keeps YouTube replace profile registered', () => {
     const node = document.createElement('yt-formatted-string')
     node.textContent = 'Original'

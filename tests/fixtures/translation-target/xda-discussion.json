@@ -1,0 +1,38 @@
+{
+  "name": "XDA smart mode translates thread summary, top post, and comment bodies outside the article",
+  "url": "https://www.xda-developers.com/story-notepad-plus-plus/",
+  "scope": "smart",
+  "html": "xda-discussion.html",
+  "include": [
+    "article-title",
+    "thread-summary-title",
+    "thread-summary-text",
+    "top-post-title",
+    "top-post-text",
+    "comment-first",
+    "comment-second"
+  ],
+  "exclude": [
+    "top-post-author",
+    "top-post-date",
+    "top-post-view",
+    "comment-author",
+    "comment-date",
+    "comment-upvote",
+    "comment-reply",
+    "comment-copy"
+  ],
+  "textIncludes": [
+    "Thread Discussion Summary",
+    "Top Post",
+    "I've been using Notepad++ for a decade now.",
+    "Thanks, XDA."
+  ],
+  "textExcludes": [
+    "View Post",
+    "2025-03-02 20:27:31",
+    "Upvote 12",
+    "Reply",
+    "Copy"
+  ]
+}

@@ -1353,6 +1353,57 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(ids).not.toContain('like')
   })
 
+  it('collects XDA comments inserted outside the initial article content root', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://www.xda-developers.com/story-notepad-plus-plus/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <section id="article-body" class="article-body">
+            <p data-fr-translated="true">The already translated article body remains the smart content root.</p>
+          </section>
+        </article>
+      </main>
+      <footer class="article-footer">
+        <div id="footer-threads" class="footer-threads">
+          <div id="w-comment-feed" class="w-comments-feed">
+            <ul id="comments-feed-list" class="comments-feed-list">
+              <li id="new-comment" class="comments-feed-item">
+                <div class="w-thread-author-usercards">
+                  <span id="new-comment-author">Eric</span>
+                </div>
+                <div class="user-comment" data-is-comment="true">
+                  <p id="new-comment-text">Awesome! I just donated. I use Notepad++.</p>
+                </div>
+                <div id="new-comment-date" class="user-date">2025-03-02 00:48:03</div>
+                <div class="w-user-comment-footer-option">
+                  <button id="new-comment-reply">Reply</button>
+                  <button id="new-comment-copy">Copy</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </footer>
+    `
+
+    const nodes = collectDynamicTranslationNodes(
+      document.querySelector('#new-comment')!,
+      document.querySelector('#article-body')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const ids = nodes.map(node => node.id)
+
+    expect(ids).toContain('new-comment-text')
+    expect(ids).not.toContain('new-comment-author')
+    expect(ids).not.toContain('new-comment-date')
+    expect(ids).not.toContain('new-comment-reply')
+    expect(ids).not.toContain('new-comment-copy')
+  })
+
   it('collects Substack comment paragraphs inserted outside the initial article content root', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://aakash.substack.com/p/why-jet-engines-arent-made-in-china'),

@@ -81,14 +81,14 @@ export function decideTranslationTarget(
         };
     }
 
-    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
-    if (filterSkip?.policy === 'hard-skip') {
-        return skipDecision(node, filterSkip, candidate, context);
-    }
-
     const profileAllow = profile?.allowTarget?.(node, context);
     if (profileAllow) {
         return allowDecision(node, profileAllow, candidate, context);
+    }
+
+    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
+    if (filterSkip?.policy === 'hard-skip') {
+        return skipDecision(node, filterSkip, candidate, context);
     }
 
     const contentUnitDecision = getCachedContentUnitDecision(context.grabOptions?.scanContext, node, classifyContentUnit);

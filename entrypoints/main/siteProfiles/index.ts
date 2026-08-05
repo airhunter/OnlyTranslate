@@ -29,6 +29,7 @@ import type {
     SupplementalCompatFn
 } from './types';
 import { xProfile } from './x';
+import { xdaDevelopersProfile } from './xdaDevelopers';
 import { youtubeProfile } from './youtube';
 import { ynetNewsProfile } from './ynetNews';
 import { ziggitProfile } from './ziggit';
@@ -61,6 +62,7 @@ export const siteProfiles: SiteProfile[] = [
     cnnProfile,
     youtubeProfile,
     xProfile,
+    xdaDevelopersProfile,
     githubProfile,
     stackOverflowProfile,
     mediumProfile,
