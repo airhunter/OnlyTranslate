@@ -1,5 +1,20 @@
 # Changelog
 
+# [1.6.0](https://github.com/airhunter/OnlyTranslate/compare/v1.5.0...v1.6.0) (2026-08-05)
+
+
+### Bug Fixes
+
+* **content:** 修复 XDA 讨论区内容漏翻 ([e22e072](https://github.com/airhunter/OnlyTranslate/commit/e22e07208226b2f3618c3583c5b8524c02770b2e))
+* **popup:** 修复服务下拉菜单显示不全 ([1696e58](https://github.com/airhunter/OnlyTranslate/commit/1696e588d0a92429e1cdd48da93cadb901410f4a))
+
+
+### Features
+
+* **ebook:** 优化章节导航与键盘操作 ([cadd554](https://github.com/airhunter/OnlyTranslate/commit/cadd5546c4c7068cb0ec340cac2ed6a28803fb4e))
+* **ebook:** 完善阅读模式与整章重译 ([c828433](https://github.com/airhunter/OnlyTranslate/commit/c8284332f662859e5b5d93d819405e2f30189876))
+* **feedback:** 添加多语言卸载问卷与匿名统计 ([eb9f5c3](https://github.com/airhunter/OnlyTranslate/commit/eb9f5c3e3ccb0654613a5ca2fe3dd11f3fa78dd3))
+
 # [1.5.0](https://github.com/airhunter/OnlyTranslate/compare/v1.4.0...v1.5.0) (2026-07-29)
 
 
