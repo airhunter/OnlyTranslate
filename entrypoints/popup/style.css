@@ -25,3 +25,7 @@ body {
     padding: 0;
     text-align: left;
 }
+
+.popup-service-select-popper .el-select-dropdown__wrap {
+    max-height: 180px;
+}

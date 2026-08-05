@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -89,6 +91,8 @@ vi.mock('@/entrypoints/utils/modelMigration', () => ({
 
 import Main from '@/components/Main.vue';
 
+const popupStyles = readFileSync(resolve(process.cwd(), 'entrypoints/popup/style.css'), 'utf8');
+
 describe('Popup ebook shelf', () => {
   let wrapper: ReturnType<typeof mount> | undefined;
 
@@ -121,6 +125,29 @@ describe('Popup ebook shelf', () => {
   });
 
   afterEach(() => wrapper?.unmount());
+
+  it('keeps the translation service menu within the popup viewport', async () => {
+    wrapper = mount(Main, {
+      global: {
+        plugins: [createAppI18n()],
+        stubs: {
+          ElTooltip: { template: '<div><slot /></div>' },
+          ElIcon: { template: '<span><slot /></span>' },
+          ElSwitch: true,
+          ElEmpty: true,
+          ElSelect: true,
+          ElOption: true,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('.service-select').attributes('popper-class')).toBe('popup-service-select-popper');
+
+    const rule = popupStyles.match(/\.popup-service-select-popper\s+\.el-select-dropdown__wrap\s*\{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    expect(rule?.[1]).toContain('max-height: 180px');
+  });
 
   it('switches to the inline shelf without opening a tab, then deep-links the selected book', async () => {
     wrapper = mount(Main, {

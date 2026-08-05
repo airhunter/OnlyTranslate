@@ -131,7 +131,13 @@
           </el-tooltip>
         </span>
         <div class="setting-control">
-          <el-select v-model="config.service" :placeholder="t('popup.servicePlaceholder')" class="service-select" @change="handleServiceChange">
+          <el-select
+            v-model="config.service"
+            :placeholder="t('popup.servicePlaceholder')"
+            class="service-select"
+            popper-class="popup-service-select-popper"
+            @change="handleServiceChange"
+          >
             <el-option class="select-left" v-for="item in availableServices" :key="item.value"
               :label="item.label" :value="item.value" :disabled="item.disabled"
               :class="{ 'select-divider': item.disabled, 'select-action': item.isAction }" />
