@@ -32,6 +32,8 @@ export interface ChapterContinuationState {
   nextLabel?: string;
 }
 
+export type EbookReaderKeyboardAction = 'previous-chapter' | 'next-chapter' | 'page-up' | 'page-down';
+
 export const EBOOK_RENDITION_OPTIONS = {
   width: '100%',
   height: '100%',
@@ -44,6 +46,7 @@ interface ReaderControllerOptions {
   onLocation?: (location: ReaderLocation) => void;
   onChapter?: (document: Document, chapterHref: string, chapterLabel: string) => void;
   onChapterContinuation?: (state: ChapterContinuationState) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
 }
 
 interface RenderedSection {
@@ -53,6 +56,16 @@ interface RenderedSection {
 }
 
 const CHAPTER_END_THRESHOLD = 32;
+const READER_SHORTCUT_BLOCKING_SELECTOR = [
+  'input',
+  'textarea',
+  'select',
+  'button',
+  'a[href]',
+  '[contenteditable="true"]',
+  '[role="textbox"]',
+  '[role="slider"]'
+].join(', ');
 
 export const EBOOK_THEME_COLORS = {
   light: {
@@ -82,6 +95,30 @@ export function hasReachedChapterEnd(
 ): boolean {
   if (clientHeight <= 0 || scrollHeight <= 0) return false;
   return scrollHeight - scrollTop - clientHeight <= CHAPTER_END_THRESHOLD;
+}
+
+export function resolveEbookReaderKeyboardAction(event: KeyboardEvent): EbookReaderKeyboardAction | undefined {
+  if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return undefined;
+
+  const eventTarget = event.target as (EventTarget & {
+    closest?: (selector: string) => Element | null;
+    nodeType?: number;
+    ownerDocument?: Document | null;
+  }) | null;
+  if (eventTarget?.closest?.(READER_SHORTCUT_BLOCKING_SELECTOR)) return undefined;
+
+  const targetDocument = eventTarget?.nodeType === 9
+    ? eventTarget as unknown as Document
+    : eventTarget?.ownerDocument ?? undefined;
+  const selection = targetDocument?.getSelection();
+  if (selection && !selection.isCollapsed) return undefined;
+
+  if (event.key === 'ArrowLeft' && !event.shiftKey && !event.repeat) return 'previous-chapter';
+  if (event.key === 'ArrowRight' && !event.shiftKey && !event.repeat) return 'next-chapter';
+  if (event.key === 'PageUp' && !event.shiftKey) return 'page-up';
+  if (event.key === 'PageDown' && !event.shiftKey) return 'page-down';
+  if (event.key === ' ') return event.shiftKey ? 'page-up' : 'page-down';
+  return undefined;
 }
 
 export function estimateSpineProgress(
@@ -194,7 +231,9 @@ export class EbookReaderController {
   private restoringLayout = false;
   private theme: 'light' | 'dark' = 'light';
   private sectionCount = 1;
+  private readonly keyboardDocuments = new Set<Document>();
   private readonly handleScroll = () => this.updateChapterContinuation();
+  private readonly handleContentKeyDown = (event: KeyboardEvent) => this.options.onKeyDown?.(event);
 
   constructor(private readonly options: ReaderControllerOptions = {}) {}
 
@@ -248,6 +287,7 @@ export class EbookReaderController {
 
     rendition.hooks.content.register((contents: Contents) => {
       this.currentContents = contents;
+      this.attachKeyboardHandler(contents.document);
       applyEbookDocumentTheme(contents.document, this.theme);
       fitEbookImagePage(contents.document, {
         width: container.clientWidth,
@@ -299,6 +339,10 @@ export class EbookReaderController {
 
   close(): void {
     this.scrollContainer?.removeEventListener('scroll', this.handleScroll);
+    this.keyboardDocuments.forEach(document => {
+      document.removeEventListener('keydown', this.handleContentKeyDown, true);
+    });
+    this.keyboardDocuments.clear();
     this.resizeObserver?.disconnect();
     this.rendition?.destroy();
     this.book?.destroy();
@@ -329,6 +373,16 @@ export class EbookReaderController {
     const previous = this.currentSection?.prev?.();
     if (!previous?.href || !this.rendition) return false;
     await this.rendition.display(previous.href);
+    return true;
+  }
+
+  scrollByViewport(direction: -1 | 1): boolean {
+    const container = this.scrollContainer;
+    if (!container || container.clientHeight <= 0) return false;
+
+    const distance = Math.max(1, Math.round(container.clientHeight * 0.9));
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    container.scrollTop = Math.min(maxScrollTop, Math.max(0, container.scrollTop + direction * distance));
     return true;
   }
 
@@ -458,6 +512,12 @@ export class EbookReaderController {
     if (!view) return;
     this.resizeObserver = new ResizeObserver(() => this.updateChapterContinuation());
     this.resizeObserver.observe(view);
+  }
+
+  private attachKeyboardHandler(document: Document): void {
+    if (!this.options.onKeyDown || this.keyboardDocuments.has(document)) return;
+    document.addEventListener('keydown', this.handleContentKeyDown, true);
+    this.keyboardDocuments.add(document);
   }
 
   private async displayWithFallback(...targets: Array<string | undefined>): Promise<void> {

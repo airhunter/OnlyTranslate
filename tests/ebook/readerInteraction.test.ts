@@ -11,11 +11,49 @@ import {
   estimateSpineProgress,
   findBookmarkAtCfi,
   hasReachedChapterEnd,
+  resolveEbookReaderKeyboardAction,
   resolveEbookNavigation,
   resolveEbookNavigationHref,
 } from '../../entrypoints/ebook/readerController';
 
 describe('ebook reader interactions', () => {
+  it('maps reader keyboard shortcuts and ignores unsafe key events', () => {
+    const resolveKey = (target: EventTarget, key: string, init: KeyboardEventInit = {}) => {
+      let action: ReturnType<typeof resolveEbookReaderKeyboardAction> = undefined;
+      target.addEventListener('keydown', event => {
+        action = resolveEbookReaderKeyboardAction(event as KeyboardEvent);
+      }, { once: true });
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
+      return action;
+    };
+
+    expect(resolveKey(document.body, 'ArrowLeft')).toBe('previous-chapter');
+    expect(resolveKey(document.body, 'ArrowRight')).toBe('next-chapter');
+    expect(resolveKey(document.body, 'PageUp')).toBe('page-up');
+    expect(resolveKey(document.body, 'PageDown')).toBe('page-down');
+    expect(resolveKey(document.body, ' ')).toBe('page-down');
+    expect(resolveKey(document.body, ' ', { shiftKey: true })).toBe('page-up');
+    expect(resolveKey(document.body, 'ArrowRight', { repeat: true })).toBeUndefined();
+    expect(resolveKey(document.body, 'ArrowRight', { ctrlKey: true })).toBeUndefined();
+    expect(resolveKey(document.body, 'ArrowRight', { shiftKey: true })).toBeUndefined();
+
+    const input = document.createElement('input');
+    document.body.append(input);
+    expect(resolveKey(input, 'ArrowRight')).toBeUndefined();
+    input.remove();
+
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'Selected reader text';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    document.getSelection()?.removeAllRanges();
+    document.getSelection()?.addRange(range);
+    expect(resolveKey(paragraph, 'ArrowRight')).toBeUndefined();
+    document.getSelection()?.removeAllRanges();
+    paragraph.remove();
+  });
+
   it('accepts one dropped file and rejects empty or multi-file drops', () => {
     const epub = new File(['book'], 'book.epub', { type: 'application/epub+zip' });
 
@@ -83,6 +121,39 @@ describe('ebook reader interactions', () => {
 
     await expect(controller.continueToPreviousChapter()).resolves.toBe(true);
     expect(display).toHaveBeenCalledWith('xhtml/ch01.xhtml');
+  });
+
+  it('scrolls the current chapter by ninety percent of the viewport', () => {
+    const scrollContainer = document.createElement('div');
+    Object.defineProperties(scrollContainer, {
+      clientHeight: { configurable: true, value: 500 },
+      scrollHeight: { configurable: true, value: 2000 },
+    });
+    scrollContainer.scrollTop = 400;
+    const controller = new EbookReaderController();
+    Object.assign(controller, { scrollContainer });
+
+    expect(controller.scrollByViewport(1)).toBe(true);
+    expect(scrollContainer.scrollTop).toBe(850);
+    expect(controller.scrollByViewport(-1)).toBe(true);
+    expect(scrollContainer.scrollTop).toBe(400);
+  });
+
+  it('forwards keyboard events from EPUB documents and removes the listener on close', () => {
+    const onKeyDown = vi.fn();
+    const controller = new EbookReaderController({ onKeyDown });
+    const ebookDocument = document.implementation.createHTMLDocument('Chapter');
+    const attachKeyboardHandler = controller as unknown as {
+      attachKeyboardHandler(document: Document): void;
+    };
+
+    attachKeyboardHandler.attachKeyboardHandler(ebookDocument);
+    ebookDocument.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(onKeyDown).toHaveBeenCalledOnce();
+
+    controller.close();
+    ebookDocument.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(onKeyDown).toHaveBeenCalledOnce();
   });
 
   it('provides both neighboring chapter labels at the end of a section', () => {

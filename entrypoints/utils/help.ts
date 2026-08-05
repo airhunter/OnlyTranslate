@@ -162,6 +162,17 @@ export const helpTopics: HelpTopic[] = [
         ],
       },
       {
+        id: 'ebook-navigation',
+        titleKey: 'help.topics.ebooks.navigationTitle',
+        bodyKey: 'help.topics.ebooks.navigationBody',
+        stepKeys: [
+          'help.topics.ebooks.navigationStep1',
+          'help.topics.ebooks.navigationStep2',
+          'help.topics.ebooks.navigationStep3',
+          'help.topics.ebooks.navigationStep4',
+        ],
+      },
+      {
         id: 'ebook-beta',
         titleKey: 'help.topics.ebooks.betaTitle',
         bodyKey: 'help.topics.ebooks.betaBody',

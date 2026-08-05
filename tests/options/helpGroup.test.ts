@@ -39,6 +39,8 @@ describe('HelpGroup', () => {
     expect(wrapper.text()).toContain('第一次翻译网页')
     expect(wrapper.text()).toContain('输入框翻译')
     expect(wrapper.text()).toContain('电子书翻译（Beta）')
+    expect(wrapper.text()).toContain('章节导航与键盘操作')
+    expect(wrapper.text()).toContain('Shift + Space')
     expect(wrapper.text()).toContain('翻译缓存与清理')
     expect(wrapper.text()).toContain('自定义网关')
     expect(wrapper.text()).toContain('查看字幕 FastMode 状态')
@@ -60,6 +62,10 @@ describe('HelpGroup', () => {
 
     await search.setValue('公测')
     expect(wrapper.text()).toContain('电子书翻译（Beta）')
+    expect(wrapper.findAll('.help-topic')).toHaveLength(1)
+
+    await search.setValue('PageDown')
+    expect(wrapper.text()).toContain('章节导航与键盘操作')
     expect(wrapper.findAll('.help-topic')).toHaveLength(1)
 
     await search.setValue('完全不存在的关键词')

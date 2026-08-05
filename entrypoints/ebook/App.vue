@@ -68,6 +68,30 @@
         <strong>{{ activeBook.title }}</strong>
         <span>{{ activeBook.author || t('ebook.unknownAuthor') }}</span>
       </div>
+      <nav class="chapter-toolbar-navigation" :aria-label="t('ebook.chapterNavigation')">
+        <button
+          class="chapter-toolbar-button"
+          :title="`${t('ebook.continuePreviousChapter')} (←)`"
+          :aria-label="`${t('ebook.continuePreviousChapter')} (←)`"
+          aria-keyshortcuts="ArrowLeft"
+          :disabled="!chapterContinuation.previousHref || chapterNavigationPending"
+          @click="continueToPreviousChapter"
+        >
+          <span aria-hidden="true">‹</span>
+          <span class="chapter-toolbar-button__label">{{ t('ebook.previousChapter') }}</span>
+        </button>
+        <button
+          class="chapter-toolbar-button"
+          :title="`${t('ebook.continueNextChapter')} (→)`"
+          :aria-label="`${t('ebook.continueNextChapter')} (→)`"
+          aria-keyshortcuts="ArrowRight"
+          :disabled="!chapterContinuation.nextHref || chapterNavigationPending"
+          @click="continueToNextChapter"
+        >
+          <span class="chapter-toolbar-button__label">{{ t('ebook.nextChapter') }}</span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </nav>
       <div class="translation-status" :class="{ 'translation-status--warning': translationNotice }">
         <span v-if="translationNotice">{{ translationNotice }}</span>
         <span v-else-if="translationStatus.running">{{ t('ebook.translating', translationStatus) }}</span>
@@ -100,6 +124,39 @@
         <label>{{ t('ebook.lineHeight') }}
           <input v-model.number="readerSettings.lineHeight" type="range" min="1.2" max="2.6" step="0.1" @change="applyReaderSettings" />
         </label>
+        <details class="reader-shortcuts">
+          <summary
+            class="icon-button reader-shortcuts__trigger"
+            :title="t('ebook.keyboardShortcuts')"
+            :aria-label="t('ebook.keyboardShortcuts')"
+          >
+            <svg class="reader-shortcuts__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+              <path d="M6 9h.01M9 9h.01M12 9h.01M15 9h.01M18 9h.01M6 12.5h.01M9 12.5h.01M12 12.5h.01M15 12.5h.01M18 12.5h.01M7 16h10" />
+            </svg>
+          </summary>
+          <div class="reader-shortcuts__panel">
+            <strong>{{ t('ebook.keyboardShortcuts') }}</strong>
+            <dl>
+              <div class="reader-shortcut-row">
+                <dt><kbd>←</kbd><kbd>→</kbd></dt>
+                <dd>{{ t('ebook.shortcutChapterNavigation') }}</dd>
+              </div>
+              <div class="reader-shortcut-row">
+                <dt><kbd>PgUp</kbd><kbd>PgDn</kbd></dt>
+                <dd>{{ t('ebook.shortcutPageNavigation') }}</dd>
+              </div>
+              <div class="reader-shortcut-row">
+                <dt><kbd>Space</kbd></dt>
+                <dd>{{ t('ebook.shortcutScrollDown') }}</dd>
+              </div>
+              <div class="reader-shortcut-row">
+                <dt><kbd>Shift</kbd><span aria-hidden="true">+</span><kbd>Space</kbd></dt>
+                <dd>{{ t('ebook.shortcutScrollUp') }}</dd>
+              </div>
+            </dl>
+          </div>
+        </details>
         <button
           class="icon-button"
           :class="{ 'icon-button--active': currentBookmark }"
@@ -148,19 +205,9 @@
         <Transition name="continuation">
           <div
             v-if="chapterContinuation.atChapterEnd"
-            class="chapter-continuation"
-            :class="{ 'chapter-continuation--single': !chapterContinuation.previousHref }"
+            class="chapter-continuation chapter-continuation--single"
           >
-            <button
-              v-if="chapterContinuation.previousHref"
-              class="chapter-continuation__button chapter-continuation__button--previous"
-              @click="continueToPreviousChapter"
-            >
-              <b aria-hidden="true">←</b>
-              <span>{{ t('ebook.continuePreviousChapter') }}</span>
-              <strong>{{ chapterContinuation.previousLabel }}</strong>
-            </button>
-            <button class="chapter-continuation__button" @click="continueReading">
+            <button class="chapter-continuation__button" :disabled="chapterNavigationPending" @click="continueReading">
               <span>{{ chapterContinuation.nextHref ? t('ebook.continueNextChapter') : t('ebook.bookFinished') }}</span>
               <strong>{{ chapterContinuation.nextLabel || t('ebook.backToLibrary') }}</strong>
               <b aria-hidden="true">→</b>
@@ -192,6 +239,7 @@ import {
   EbookReaderController,
   extractEpubMetadata,
   findBookmarkAtCfi,
+  resolveEbookReaderKeyboardAction,
   type ChapterContinuationState,
   type ReaderLocation,
 } from './readerController';
@@ -246,6 +294,7 @@ const translationNotice = ref('');
 const needsSettings = ref(false);
 const needsEnable = ref(false);
 const chapterContinuation = reactive<ChapterContinuationState>({ atChapterEnd: false });
+const chapterNavigationPending = ref(false);
 let progressTimer: ReturnType<typeof setTimeout> | undefined;
 let lastLocation: ReaderLocation | undefined;
 let dragDepth = 0;
@@ -286,6 +335,7 @@ const controller = new EbookReaderController({
     void translateChapter(document, label);
   },
   onChapterContinuation: state => Object.assign(chapterContinuation, state),
+  onKeyDown: handleReaderKeyDown,
 });
 
 onMounted(async () => {
@@ -301,6 +351,7 @@ onMounted(async () => {
   }
   window.addEventListener('pagehide', saveProgressImmediately);
   window.addEventListener('blur', saveProgressImmediately);
+  window.addEventListener('keydown', handleReaderKeyDown);
 });
 
 onBeforeUnmount(() => {
@@ -311,6 +362,7 @@ onBeforeUnmount(() => {
   clearCoverUrls();
   window.removeEventListener('pagehide', saveProgressImmediately);
   window.removeEventListener('blur', saveProgressImmediately);
+  window.removeEventListener('keydown', handleReaderKeyDown);
 });
 
 watch(actualTheme, theme => void controller.applyTheme(theme));
@@ -523,15 +575,36 @@ function display(target: string): void {
   void controller.display(target);
 }
 
-async function continueToPreviousChapter(): Promise<void> {
+async function continueToPreviousChapter(): Promise<boolean> {
+  return navigateToAdjacentChapter('previous');
+}
+
+async function continueToNextChapter(): Promise<boolean> {
+  return navigateToAdjacentChapter('next');
+}
+
+async function navigateToAdjacentChapter(direction: 'previous' | 'next'): Promise<boolean> {
+  const href = direction === 'previous' ? chapterContinuation.previousHref : chapterContinuation.nextHref;
+  if (!href || chapterNavigationPending.value) return false;
+
+  chapterNavigationPending.value = true;
   chapterContinuation.atChapterEnd = false;
-  await controller.continueToPreviousChapter();
+  try {
+    return direction === 'previous'
+      ? await controller.continueToPreviousChapter()
+      : await controller.continueToNextChapter();
+  } finally {
+    chapterNavigationPending.value = false;
+  }
 }
 
 async function continueReading(): Promise<void> {
   const hasNextChapter = Boolean(chapterContinuation.nextHref);
+  if (hasNextChapter) {
+    await continueToNextChapter();
+    return;
+  }
   chapterContinuation.atChapterEnd = false;
-  if (hasNextChapter && await controller.continueToNextChapter()) return;
   if (progressTimer) clearTimeout(progressTimer);
   progressTimer = undefined;
   const book = activeBook.value;
@@ -546,6 +619,30 @@ async function continueReading(): Promise<void> {
     });
   }
   await leaveReader();
+}
+
+function handleReaderKeyDown(event: KeyboardEvent): void {
+  if (!activeBook.value) return;
+
+  const action = resolveEbookReaderKeyboardAction(event);
+  if (!action) return;
+
+  if (action === 'previous-chapter') {
+    if (!chapterContinuation.previousHref || chapterNavigationPending.value) return;
+    event.preventDefault();
+    void continueToPreviousChapter();
+    return;
+  }
+
+  if (action === 'next-chapter') {
+    if (!chapterContinuation.nextHref || chapterNavigationPending.value) return;
+    event.preventDefault();
+    void continueToNextChapter();
+    return;
+  }
+
+  const didScroll = controller.scrollByViewport(action === 'page-up' ? -1 : 1);
+  if (didScroll) event.preventDefault();
 }
 
 function isCurrentChapter(href: string): boolean {
