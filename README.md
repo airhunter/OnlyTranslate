@@ -7,7 +7,7 @@
 只译是一款开源双语阅读浏览器扩展：在原页面翻译网页正文、视频字幕和本地 EPUB 电子书，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
 
 <p align="center">
   <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="只译的真实网页识文翻译效果" width="32%" />
@@ -19,7 +19,7 @@
 
 ## 快速开始
 
-1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi) 安装只译，打开需要翻译的普通网页。
+1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608) 安装只译，打开需要翻译的普通网页。
 2. 点击浏览器工具栏中的只译图标，选择一个可用的翻译服务。微软翻译、Google 翻译等免配置服务可以直接使用；AI 服务需要先填写对应的 API Key。
 3. 初次使用建议选择「双语对照 + 识文」，然后点击「翻译当前页面」。需要恢复时，再次点击「还原原文」。
 
@@ -83,7 +83,7 @@ Popup 右上角的「更多」菜单提供清除缓存和帮助入口。帮助�
 
 ### Chrome 扩展商店
 
-[只译 - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
+[只译 - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
 
 ### 手动安装
 

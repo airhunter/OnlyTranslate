@@ -7,7 +7,7 @@
 OnlyTranslate is an open-source browser extension for bilingual reading. It translates web content, video subtitles, and local EPUB ebooks in place while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
 
 <p align="center">
   <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="OnlyTranslate Smart translation on a real webpage" width="32%" />
@@ -19,7 +19,7 @@ OnlyTranslate is an open-source browser extension for bilingual reading. It tran
 
 ## Quick Start
 
-1. Install OnlyTranslate from the [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi), then open a regular webpage you want to translate.
+1. Install OnlyTranslate from the [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608), then open a regular webpage you want to translate.
 2. Select the OnlyTranslate icon in the browser toolbar and choose an available translation service. No-setup services such as Microsoft Translator and Google Translate can be used immediately; AI services require their corresponding API keys.
 3. For your first translation, try **Bilingual + Smart**, then select **Translate current page**. Select **Restore original** whenever you want to undo the translation.
 
@@ -83,7 +83,7 @@ Subtitle translation requires a readable source subtitle track provided by the v
 
 ### Chrome Web Store
 
-[OnlyTranslate - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi)
+[OnlyTranslate - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
 
 ### Manual Installation
 
