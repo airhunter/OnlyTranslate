@@ -23,9 +23,7 @@
       "infile": "CHANGELOG.md",
       "gitRawCommitsOpts": {
         "path": [
-          ".",
-          ":(exclude)website",
-          ":(exclude)Dockerfile"
+          "."
         ]
       }
     }

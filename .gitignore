@@ -19,9 +19,6 @@ docs/.vitepress/cache
 docs/.vitepress/.temp
 docs/.temp
 docs/.cache
-website/.vitepress/dist
-website/.vitepress/cache
-website/.vitepress/.temp
 
 # Development
 web-ext.config.ts
@@ -66,7 +63,6 @@ Thumbs.db
 *.crx
 *.xpi
 *.bak
-deploy/artifacts/
 
 # Demo working files
 store-assets/demos/**/*.wav
