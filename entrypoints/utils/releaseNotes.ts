@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.7.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.7：翻译稳定性与私下反馈',
+        items: [
+          '设置页新增“私下反馈”，可按需附带最近的本地翻译诊断或页面地址，并在提交前预览；诊断不包含原文、译文、密钥或自定义接口地址。',
+          '扩展 OpenAI、DeepSeek、智谱、Kimi、SiliconCloud、Grok、OpenRouter、Gemini 和 Claude 等模型的推理能力适配，减少不必要的思考延迟与参数不兼容。',
+          '优化网页翻译的重试策略：瞬时网络和限流错误会退避重试，无法恢复的错误会更快显示原因，减少失败段落长时间等待。',
+          '恢复微软免配置翻译并改用新的 Edge 文本接口；新安装默认使用 Google，微软和 Google 仅在双语对照模式下可用。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.7: More Reliable Translation and Private Feedback',
+        items: [
+          'Added Private Feedback in Settings, with optional recent local diagnostics and page URL attachments plus a preview before submission. Diagnostics exclude source text, translations, keys, and custom endpoint URLs.',
+          'Expanded reasoning-capability handling across OpenAI, DeepSeek, GLM, Kimi, SiliconCloud, Grok, OpenRouter, Gemini, Claude, and related models to avoid unnecessary thinking latency and incompatible parameters.',
+          'Improved webpage retry behavior: transient network and rate-limit failures back off and retry, while nonrecoverable errors surface sooner instead of leaving paragraphs waiting.',
+          'Restored no-configuration Microsoft translation through the new Edge text endpoint. New installs now default to Google, while Microsoft and Google are limited to bilingual mode.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.7：翻譯穩定性與私下回饋',
+        items: [
+          '設定頁新增「私下回饋」，可依需要附帶最近的本機翻譯診斷或頁面地址，並在提交前預覽；診斷不包含原文、譯文、金鑰或自訂介面地址。',
+          '擴充 OpenAI、DeepSeek、智譜、Kimi、SiliconCloud、Grok、OpenRouter、Gemini 和 Claude 等模型的推理能力適配，減少不必要的思考延遲與參數不相容。',
+          '改善網頁翻譯的重試策略：暫時性網路和頻率限制錯誤會退避重試，無法恢復的錯誤會更快顯示原因，減少失敗段落長時間等待。',
+          '恢復微軟免設定翻譯並改用新的 Edge 文字介面；新安裝預設使用 Google，微軟和 Google 僅可在雙語對照模式下使用。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.7：翻訳の安定性と非公開フィードバック',
+        items: [
+          '設定に「非公開フィードバック」を追加しました。最近のローカル診断やページ URL を任意で添付し、送信前に確認できます。診断には原文、翻訳文、キー、カスタムエンドポイント URL は含まれません。',
+          'OpenAI、DeepSeek、GLM、Kimi、SiliconCloud、Grok、OpenRouter、Gemini、Claude などの推論機能への対応を拡充し、不要な思考待ちや非対応パラメータを減らしました。',
+          'ウェブページ翻訳の再試行を改善しました。一時的なネットワーク障害やレート制限は待機後に再試行し、回復不能なエラーは早めに理由を表示します。',
+          '設定不要の Microsoft 翻訳を新しい Edge テキストエンドポイントで復旧しました。新規インストールでは Google を既定とし、Microsoft と Google は対訳表示でのみ利用できます。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.6.0',
     notes: {
       'zh-CN': {
@@ -33,8 +74,7 @@ export const releaseNotes: ReleaseNote[] = [
           '电子书新增仅原文、双语和仅译文三种独立显示模式，并支持绕过缓存重新翻译整章；失败时会保留原译文和阅读位置。',
           '电子书顶部新增上一章、下一章导航，并支持方向键、Page Up、Page Down、Space 等阅读快捷键；键盘图标可随时查看按键说明。',
           '改进 XDA Developers 的识文翻译，讨论摘要、Top Post、评论正文及动态加载的新评论现在都会纳入翻译。',
-          '修复扩展弹窗中翻译服务下拉菜单过高、底部服务选项显示不全的问题。',
-          '恢复微软免配置翻译并改用新的 Edge 文本接口；新安装默认使用 Google，微软和 Google 仅在双语对照模式下可用。'
+          '修复扩展弹窗中翻译服务下拉菜单过高、底部服务选项显示不全的问题。'
         ]
       },
       'en-US': {
@@ -43,8 +83,7 @@ export const releaseNotes: ReleaseNote[] = [
           'Ebooks now have separate Original, Bilingual, and Translation-only display modes, plus full-chapter retranslation that bypasses the cache while preserving the previous translation and reading position on failure.',
           'Added Previous and Next chapter controls to the ebook toolbar, along with Arrow, Page Up, Page Down, and Space keyboard controls and an always-available keyboard guide.',
           'Improved Smart translation on XDA Developers so discussion summaries, Top Posts, comment text, and newly loaded comments are included.',
-          'Fixed the translation service menu in the extension popup being too tall and clipping provider options near the bottom.',
-          'Restored no-configuration Microsoft translation through the new Edge text endpoint. New installs now default to Google, while Microsoft and Google are limited to bilingual mode.'
+          'Fixed the translation service menu in the extension popup being too tall and clipping provider options near the bottom.'
         ]
       },
       'zh-TW': {
@@ -53,8 +92,7 @@ export const releaseNotes: ReleaseNote[] = [
           '電子書新增僅原文、雙語和僅譯文三種獨立顯示模式，並支援略過快取重新翻譯整章；失敗時會保留原譯文和閱讀位置。',
           '電子書頂部新增上一章、下一章導覽，並支援方向鍵、Page Up、Page Down、Space 等閱讀快捷鍵；鍵盤圖示可隨時查看按鍵說明。',
           '改善 XDA Developers 的識文翻譯，討論摘要、Top Post、留言正文及動態載入的新留言現在都會納入翻譯。',
-          '修正擴充功能彈窗中的翻譯服務下拉選單過高、底部服務選項顯示不完整的問題。',
-          '恢復微軟免設定翻譯並改用新的 Edge 文字介面；新安裝預設使用 Google，微軟和 Google 僅可在雙語對照模式下使用。'
+          '修正擴充功能彈窗中的翻譯服務下拉選單過高、底部服務選項顯示不完整的問題。'
         ]
       },
       'ja-JP': {
@@ -63,8 +101,7 @@ export const releaseNotes: ReleaseNote[] = [
           '電子書籍に原文のみ、対訳、翻訳のみの表示モードを追加し、キャッシュを使わない章全体の再翻訳にも対応しました。失敗時は以前の翻訳と読書位置を維持します。',
           '電子書籍の上部に前後の章へ移動するボタンを追加し、矢印キー、Page Up、Page Down、Space による読書操作とキーボードガイドを利用できるようにしました。',
           'XDA Developers のスマート翻訳を改善し、ディスカッション要約、Top Post、コメント本文、後から読み込まれるコメントも翻訳対象にしました。',
-          '拡張機能のポップアップで翻訳サービスのメニューが高くなりすぎ、下部の選択肢が見切れる問題を修正しました。',
-          '設定不要の Microsoft 翻訳を新しい Edge テキストエンドポイントで復旧しました。新規インストールでは Google を既定とし、Microsoft と Google は対訳表示でのみ利用できます。'
+          '拡張機能のポップアップで翻訳サービスのメニューが高くなりすぎ、下部の選択肢が見切れる問題を修正しました。'
         ]
       }
     }
