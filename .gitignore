@@ -71,10 +71,6 @@ store-assets/demos/**/*.epub
 store-assets/demos/**/source-recording*.mp4
 store-assets/demos/**/*-clean.mp4
 
-# Local promotion drafts
-docs/promotion/growth-playbook.md
-docs/promotion/sspai-matrix-draft.md
-
 # Local env files
 .env*.local
 
