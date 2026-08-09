@@ -39,6 +39,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 .idea
 .continue/
+.claude/settings.local.json
 *.suo
 *.ntvs*
 *.njsproj
