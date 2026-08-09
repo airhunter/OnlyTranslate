@@ -1,5 +1,22 @@
 # Changelog
 
+# [1.7.0](https://github.com/airhunter/OnlyTranslate/compare/v1.6.0...v1.7.0) (2026-08-09)
+
+
+### Bug Fixes
+
+* **service:** 修复微软免配置翻译链路 ([aed8b23](https://github.com/airhunter/OnlyTranslate/commit/aed8b238864212695790976dadf7639c7c152a2d))
+
+
+### Features
+
+* **feedback:** 增加可选翻译诊断与私有反馈 ([383bf01](https://github.com/airhunter/OnlyTranslate/commit/383bf011efa479b63a7ccebb7a20af671d11e109))
+
+
+### Performance Improvements
+
+* **service:** 降低多模型翻译推理与重试延迟 ([9d5b877](https://github.com/airhunter/OnlyTranslate/commit/9d5b8773c31a7cb29fd4ed956f4e70ca0b9d267d))
+
 # [1.6.0](https://github.com/airhunter/OnlyTranslate/compare/v1.5.0...v1.6.0) (2026-08-05)
 
 
