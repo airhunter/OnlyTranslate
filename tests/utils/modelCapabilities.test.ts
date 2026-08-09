@@ -9,7 +9,17 @@ const mockConfig = vi.hoisted(() => ({
         claude: 'claude-haiku-4-5',
     } as Record<string, string>,
     customModel: {} as Record<string, string>,
-    customProviders: [],
+    customProviders: [] as Array<{
+        id: string
+        name: string
+        protocol?: 'openai' | 'anthropic'
+        url: string
+        token: string
+        model: string
+        customModel: string
+    }>,
+    proxy: {} as Record<string, string>,
+    newApiUrl: '',
     system_role: {} as Record<string, string>,
     user_role: {} as Record<string, string>,
     thinking: {} as Record<string, boolean>,
@@ -19,8 +29,10 @@ vi.mock('@/entrypoints/utils/config', () => ({ config: mockConfig }))
 
 import {
     REQUEST_POLICY_VERSION,
+    inferOpenAICompatibleProvider,
     resolveAnthropicTranslationPolicy,
     resolveGeminiTranslationPolicy,
+    resolveOpenAICompatibleTranslationPolicy,
     resolveOpenAITranslationPolicy,
 } from '@/entrypoints/utils/modelCapabilities'
 import {
@@ -50,6 +62,7 @@ const openAICases = [
     'gpt-5-mini',
     'openai/gpt-5-mini',
     'gpt-5.1-2026-01-01',
+    'gpt-5.6-terra',
     'o3-mini-2025-01-31',
     'anthropic/claude-opus-4-8',
     'google/gemini-3.6-flash',
@@ -72,6 +85,19 @@ const anthropicCases = [
     'claude-fable-5',
     'claude-future',
 ]
+const compatibleCases = [
+    ['deepseek', 'deepseek-v4-flash'],
+    ['zhipu', 'glm-4.5'],
+    ['moonshot', 'kimi-k2.6'],
+    ['moonshot', 'kimi-k3'],
+    ['dashscope', 'qwen3.6-flash'],
+    ['dashscope', 'deepseek-v4-flash'],
+    ['siliconflow', 'Qwen/Qwen3-8B'],
+    ['xai', 'grok-4.3'],
+    ['xai', 'grok-4.5'],
+    ['openrouter', 'google/gemini-3.6-flash'],
+    ['openrouter', 'deepseek/deepseek-r1'],
+] as const
 
 function policySnapshot() {
     return {
@@ -94,6 +120,13 @@ function policySnapshot() {
             {
                 fast: resolveAnthropicTranslationPolicy(model, false),
                 thinking: resolveAnthropicTranslationPolicy(model, true),
+            },
+        ])),
+        compatible: Object.fromEntries(compatibleCases.map(([provider, model]) => [
+            `${provider}:${model}`,
+            {
+                fast: resolveOpenAICompatibleTranslationPolicy(provider, model, false),
+                thinking: resolveOpenAICompatibleTranslationPolicy(provider, model, true),
             },
         ])),
     }
@@ -178,6 +211,9 @@ describe('translation model request policies', () => {
         mockConfig.model.openai = 'gpt-5-mini'
         mockConfig.model.gemini = 'gemini-2.5-pro'
         mockConfig.model.claude = 'claude-haiku-4-5'
+        mockConfig.customProviders = []
+        mockConfig.proxy = {}
+        mockConfig.newApiUrl = ''
         mockConfig.thinking = {
             openai: true,
             gemini: true,
@@ -201,6 +237,101 @@ describe('translation model request policies', () => {
             .toEqual({ removeTemperature: false })
         expect(resolveOpenAITranslationPolicy('google/gemini-3.6-flash', false))
             .toEqual({ removeTemperature: false })
+    })
+
+    it('infers compatible request policies from built-in services, endpoints, and models', () => {
+        expect(inferOpenAICompatibleProvider('zhipu', 'glm-4.5')).toBe('zhipu')
+        expect(inferOpenAICompatibleProvider(
+            'custom_bailian',
+            'qwen3.6-flash',
+            'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        )).toBe('dashscope')
+        expect(inferOpenAICompatibleProvider(
+            'custom_kimi',
+            'kimi-k2.6',
+            'https://api.moonshot.cn/v1/chat/completions',
+        )).toBe('moonshot')
+        expect(inferOpenAICompatibleProvider('newapi', 'gpt-5.6-terra')).toBe('openai')
+        expect(inferOpenAICompatibleProvider('custom_unknown', 'vendor/model')).toBe('generic')
+    })
+
+    it('applies vendor fast-mode controls to single, batch, and subtitle payloads', () => {
+        const cases = [
+            {
+                service: 'zhipu',
+                model: 'glm-4.5',
+                expected: { thinking: { type: 'disabled' } },
+            },
+            {
+                service: 'moonshot',
+                model: 'kimi-k2.6',
+                expected: { thinking: { type: 'disabled' }, temperature: 0.6 },
+            },
+            {
+                service: 'siliconCloud',
+                model: 'Qwen/Qwen3-8B',
+                expected: { enable_thinking: false },
+            },
+            {
+                service: 'grok',
+                model: 'grok-4.3',
+                expected: { reasoning_effort: 'none' },
+                removesTemperature: true,
+            },
+            {
+                service: 'openrouter',
+                model: 'google/gemini-3.6-flash',
+                expected: { reasoning: { effort: 'minimal' } },
+                removesTemperature: true,
+            },
+        ]
+
+        for (const { service, model, expected, removesTemperature } of cases) {
+            mockConfig.service = service
+            mockConfig.model[service] = model
+            mockConfig.thinking[service] = false
+            for (const payload of [
+                JSON.parse(commonMsgTemplate('Hello', 'zh-Hans', true)),
+                JSON.parse(commonBatchMsgTemplate(['Hello'], 'zh-Hans', true)),
+                JSON.parse(commonSubtitleBatchMsgTemplate(subtitleJob, true)),
+            ]) {
+                expect(payload).toMatchObject(expected)
+                if (removesTemperature) expect(payload).not.toHaveProperty('temperature')
+            }
+        }
+    })
+
+    it('disables Qwen thinking for Bailian custom and proxy endpoints', () => {
+        mockConfig.service = 'custom_bailian'
+        mockConfig.customProviders = [{
+            id: 'custom_bailian',
+            name: 'Bailian',
+            protocol: 'openai',
+            url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+            token: '',
+            model: '自定义模型',
+            customModel: 'qwen3.6-flash',
+        }]
+
+        for (const payload of [
+            JSON.parse(commonMsgTemplate('Hello', 'zh-Hans', true)),
+            JSON.parse(commonBatchMsgTemplate(['Hello'], 'zh-Hans', true)),
+            JSON.parse(commonSubtitleBatchMsgTemplate(subtitleJob, true)),
+        ]) {
+            expect(payload).toMatchObject({
+                model: 'qwen3.6-flash',
+                enable_thinking: false,
+            })
+        }
+
+        mockConfig.service = 'openai'
+        mockConfig.model.openai = 'qwen3.6-flash'
+        mockConfig.proxy.openai = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+
+        expect(JSON.parse(commonMsgTemplate('Hello', 'zh-Hans', true))).toMatchObject({
+            model: 'qwen3.6-flash',
+            enable_thinking: false,
+        })
     })
 
     it('matches the normalized payload matrix for every template surface', () => {

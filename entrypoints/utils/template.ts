@@ -4,30 +4,35 @@ import {config} from "@/entrypoints/utils/config";
 import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
 import { buildSubtitleTranslationPrompt } from '@/entrypoints/service/subtitle'
 import {
+    inferOpenAICompatibleProvider,
     resolveAnthropicTranslationPolicy,
     resolveGeminiTranslationPolicy,
-    resolveOpenAITranslationPolicy,
+    resolveOpenAICompatibleTranslationPolicy,
 } from './modelCapabilities'
 import { resolveConfiguredTranslationModel } from './modelSelection'
 
 // openai 格式的消息模板（通用模板）
 function applyTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
     const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
-    if (config.service === services.deepseek) {
-        payload.thinking = { type: thinkingWanted ? 'enabled' : 'disabled' }
-        if (thinkingWanted) {
-            delete payload.temperature
-            payload.reasoning_effort = 'high'
-        } else {
-            delete payload.reasoning_effort
-        }
-        return
-    }
+    const customProvider = config.service.startsWith('custom_')
+        ? config.customProviders?.find(provider => provider.id === config.service)
+        : undefined
+    const endpoint = customProvider?.url
+        || (config.service === services.newapi ? config.newApiUrl : config.proxy?.[config.service])
+        || ''
+    const provider = inferOpenAICompatibleProvider(config.service, model, endpoint)
+    const policy = resolveOpenAICompatibleTranslationPolicy(provider, model, thinkingWanted)
 
+    delete payload.enable_thinking
     delete payload.reasoning_effort
-    const policy = resolveOpenAITranslationPolicy(model, thinkingWanted)
+    delete payload.reasoning
+    delete payload.thinking
     if (policy.removeTemperature) delete payload.temperature
+    if (policy.temperature !== undefined) payload.temperature = policy.temperature
     if (policy.reasoningEffort) payload.reasoning_effort = policy.reasoningEffort
+    if (policy.reasoning) payload.reasoning = policy.reasoning
+    if (policy.thinking) payload.thinking = policy.thinking
+    if (policy.enableThinking !== undefined) payload.enable_thinking = policy.enableThinking
 }
 
 export function commonMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {

@@ -81,6 +81,40 @@ function getRetryDelay(retryCount: number, baseDelay: number): number {
   return Math.min(baseDelay * (2 ** retryCount), MAX_RETRY_DELAY);
 }
 
+function getTranslationErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error ?? '');
+}
+
+function getTranslationErrorStatus(error: unknown): number | undefined {
+  const match = /\b([45]\d{2})\b/.exec(getTranslationErrorMessage(error));
+  if (!match) return undefined;
+  const status = Number.parseInt(match[1], 10);
+  return Number.isFinite(status) ? status : undefined;
+}
+
+export function isRetryableTranslationError(error: unknown): boolean {
+  const status = getTranslationErrorStatus(error);
+  if (status !== undefined) {
+    return status === 408
+      || status === 409
+      || status === 425
+      || status === 429
+      || status >= 500;
+  }
+
+  const message = getTranslationErrorMessage(error).toLowerCase();
+  return /(?:timeout|timed out|network|failed to fetch|load failed|connection|econn|socket|temporarily unavailable|超时|网络|连接|暂时不可用)/.test(message);
+}
+
+function canRetryTranslationError(error: unknown, retryCount: number, maxRetries: number): boolean {
+  if (!isRetryableTranslationError(error)) return false;
+  const message = getTranslationErrorMessage(error).toLowerCase();
+  const effectiveMaxRetries = /(?:timeout|timed out|超时)/.test(message)
+    ? Math.min(maxRetries, 1)
+    : maxRetries;
+  return retryCount < effectiveMaxRetries;
+}
+
 function buildInFlightTranslationKey(
   origin: string,
   context: string,
@@ -249,7 +283,7 @@ export async function translateText(origin: string, context: string = document.t
           throw error;
         }
 
-        if (retryCount < maxRetries) {
+        if (canRetryTranslationError(error, retryCount, maxRetries)) {
           if (isDev) {
             console.log(`[翻译API] 翻译失败，${retryCount + 1}/${maxRetries} 次重试，原因:`, error);
           }

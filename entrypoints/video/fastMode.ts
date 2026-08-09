@@ -1,5 +1,6 @@
 import type { CustomProvider } from '@/entrypoints/utils/model'
 import {
+    inferOpenAICompatibleProvider,
     supportsTranslationFastMode,
     type TranslationFastModeProtocol,
 } from '@/entrypoints/utils/modelCapabilities'
@@ -21,20 +22,24 @@ const OPENAI_COMPATIBLE_FAST_MODE_SERVICES = new Set<string>([
     services.openrouter,
     services.grok,
     services.newapi,
+    services.zhipu,
 ])
 
 function resolveFastModeProtocol(
     service: string,
+    model: string,
     configuration: VideoFastModeConfiguration,
 ): TranslationFastModeProtocol | null {
-    if (service === services.deepseek) return 'deepseek'
     if (service === services.gemini) return 'gemini'
     if (service === services.claude) return 'anthropic'
     if (service.startsWith('custom_')) {
         const provider = configuration.customProviders?.find(item => item.id === service)
-        return getCustomProviderProtocol(provider)
+        if (getCustomProviderProtocol(provider) === 'anthropic') return 'anthropic'
+        return inferOpenAICompatibleProvider(service, model, provider?.url)
     }
-    if (OPENAI_COMPATIBLE_FAST_MODE_SERVICES.has(service)) return 'openai'
+    if (service === services.deepseek || OPENAI_COMPATIBLE_FAST_MODE_SERVICES.has(service)) {
+        return inferOpenAICompatibleProvider(service, model)
+    }
     return null
 }
 
@@ -42,10 +47,8 @@ export function isVideoFastModeEffective(
     service: string,
     configuration: VideoFastModeConfiguration,
 ): boolean {
-    const protocol = resolveFastModeProtocol(service, configuration)
+    const model = resolveConfiguredTranslationModel(service, configuration)
+    const protocol = resolveFastModeProtocol(service, model, configuration)
     if (!protocol) return false
-    return supportsTranslationFastMode(
-        protocol,
-        resolveConfiguredTranslationModel(service, configuration),
-    )
+    return supportsTranslationFastMode(protocol, model)
 }

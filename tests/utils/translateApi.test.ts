@@ -66,6 +66,7 @@ import {
   cacheTranslationResult,
   cancelAllTranslations,
   canUseBatchTranslationForCurrentConfig,
+  isRetryableTranslationError,
   translateText,
 } from '../../entrypoints/utils/translateApi'
 import { resolveTranslationDirection } from '../../entrypoints/utils/translationDirection'
@@ -147,8 +148,8 @@ describe('translateText', () => {
   it('uses exponential backoff between retries', async () => {
     vi.useFakeTimers()
     mockSendMessage
-      .mockRejectedValueOnce(new Error('temporary failure'))
-      .mockRejectedValueOnce(new Error('temporary failure again'))
+      .mockRejectedValueOnce(new Error('network failure'))
+      .mockRejectedValueOnce(new Error('network failure again'))
       .mockResolvedValueOnce('最终译文')
 
     const translation = translateText('Retry me', 'Example', {
@@ -173,6 +174,45 @@ describe('translateText', () => {
     expect(mockSendMessage).toHaveBeenCalledTimes(3)
 
     await expect(translation).resolves.toBe('最终译文')
+    vi.useRealTimers()
+  })
+
+  it('retries only transient transport and upstream failures', () => {
+    expect(isRetryableTranslationError(new Error('Translation failed: 400 Bad Request'))).toBe(false)
+    expect(isRetryableTranslationError(new Error('Translation failed: 401 Unauthorized'))).toBe(false)
+    expect(isRetryableTranslationError(new Error('Translation failed: 429 Too Many Requests'))).toBe(true)
+    expect(isRetryableTranslationError(new Error('Translation failed: 503 Service Unavailable'))).toBe(true)
+    expect(isRetryableTranslationError(new Error('Failed to fetch'))).toBe(true)
+    expect(isRetryableTranslationError(new Error('翻译请求超时'))).toBe(true)
+    expect(isRetryableTranslationError(new Error('Unexpected translation response'))).toBe(false)
+  })
+
+  it('does not retry a deterministic bad-request failure', async () => {
+    mockSendMessage.mockRejectedValue(new Error('Translation failed: 400 Bad Request'))
+
+    await expect(translateText('Invalid request', 'Example', {
+      maxRetries: 3,
+      retryDelay: 1,
+      useCache: false
+    })).rejects.toThrow('400 Bad Request')
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+  })
+
+  it('caps request-timeout retries at one attempt', async () => {
+    vi.useFakeTimers()
+    mockSendMessage.mockRejectedValue(new Error('Translation request timed out'))
+
+    const translation = translateText('Timeout request', 'Example', {
+      maxRetries: 3,
+      retryDelay: 100,
+      useCache: false
+    })
+    const rejection = expect(translation).rejects.toThrow('timed out')
+
+    await vi.advanceTimersByTimeAsync(100)
+    await rejection
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
     vi.useRealTimers()
   })
 

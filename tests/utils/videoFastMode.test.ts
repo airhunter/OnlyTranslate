@@ -19,6 +19,9 @@ describe('video FastMode effect', () => {
         expect(isVideoFastModeEffective(services.deepseek, {
             model: { [services.deepseek]: 'deepseek-reasoner' },
         })).toBe(true)
+        expect(isVideoFastModeEffective(services.zhipu, {
+            model: { [services.zhipu]: 'glm-4.5' },
+        })).toBe(true)
     })
 
     it('recognizes custom providers according to their transport protocol', () => {
@@ -42,6 +45,17 @@ describe('video FastMode effect', () => {
                 token: '',
                 model: 'gpt-5.1',
                 customModel: '',
+            }],
+        })).toBe(true)
+        expect(isVideoFastModeEffective('custom_bailian', {
+            customProviders: [{
+                id: 'custom_bailian',
+                name: 'Bailian',
+                protocol: 'openai',
+                url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                token: '',
+                model: customModelString,
+                customModel: 'qwen3.6-flash',
             }],
         })).toBe(true)
     })
