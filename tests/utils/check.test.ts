@@ -76,6 +76,27 @@ describe('checkConfig', () => {
         expect(checkConfig()).toBe(false)
         expect(sendErrorMessage).toHaveBeenCalled()
     })
+
+    it.each([services.google, services.microsoft])(
+        'rejects translation-only mode for %s',
+        (service) => {
+            runtimeConfig.service = service
+            runtimeConfig.display = 0
+
+            expect(checkConfig()).toBe(false)
+            expect(sendErrorMessage).toHaveBeenCalledWith(expect.stringContaining('translation-only'))
+        },
+    )
+
+    it('allows translation-only mode for configured AI services', () => {
+        runtimeConfig.service = services.openai
+        runtimeConfig.token[services.openai] = 'configured-token'
+        runtimeConfig.model[services.openai] = 'gpt-5-mini'
+        runtimeConfig.display = 0
+
+        expect(checkConfig()).toBe(true)
+        expect(sendErrorMessage).not.toHaveBeenCalled()
+    })
 })
 
 describe('contentPostHandler', () => {

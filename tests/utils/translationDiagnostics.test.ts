@@ -17,6 +17,13 @@ describe('translation diagnostics privacy and classification', () => {
     expect(classifyTranslationDiagnosticError(new Error('invalid JSON response'))).toBe('response_parse')
   })
 
+  it('classifies a removed Microsoft endpoint explicitly', () => {
+    const error = new Error('Microsoft endpoint failed: HTTP 404 private response body')
+    error.name = 'MicrosoftEndpointUnavailableError'
+
+    expect(classifyTranslationDiagnosticError(error)).toBe('microsoft_endpoint_unavailable')
+  })
+
   it('uses a shared session and records retry attempt metadata', () => {
     const metadata = createDiagnosticMetadata({
       sessionId: 'webpage-test', scene: 'webpage', startedAt: 100, pageUrl: 'https://example.com/a?secret=1',

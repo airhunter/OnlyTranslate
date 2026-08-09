@@ -50,6 +50,7 @@ import HelpGroup from '@/components/options/HelpGroup.vue'
 import AboutGroup from '@/components/options/AboutGroup.vue'
 import { resolveOptionsRoute, type OptionsPanel } from '@/entrypoints/utils/help'
 import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration'
+import { consumeDisplayModeMigrationNotice } from '@/entrypoints/utils/displayModeMigration'
 import '../../styles/theme.css'
 import '../../styles/settings-row.css'
 import 'element-plus/theme-chalk/base.css'
@@ -69,6 +70,10 @@ loadConfig().then(() => {
   void consumeClaudeModelMigrationNotice().then((notice) => {
     if (!notice) return
     ElMessage.info(t('common.modelMigrated', { from: notice.from, to: notice.to }))
+  })
+  void consumeDisplayModeMigrationNotice().then((notice) => {
+    if (!notice) return
+    ElMessage.info(t('common.displayModeMigrated'))
   })
 })
 

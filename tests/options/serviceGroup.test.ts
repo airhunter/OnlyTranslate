@@ -163,7 +163,7 @@ describe('ServiceGroup', () => {
     expect(mocks.config.value.customProviders[0].customModel).toBe('claude-opus-4-1')
   })
 
-  it('falls back to Microsoft when removing an unconfigured current service', async () => {
+  it('falls back to Google when removing an unconfigured current service', async () => {
     mocks.config.value.service = 'custom_pending'
     mocks.config.value.customProviders = [{
       id: 'custom_pending',
@@ -180,7 +180,7 @@ describe('ServiceGroup', () => {
     expect(removeButton).toBeDefined()
     await removeButton!.trigger('click')
 
-    expect(mocks.config.value.service).toBe('microsoft')
+    expect(mocks.config.value.service).toBe('google')
     expect(mocks.config.value.customProviders).toEqual([])
     expect(mocks.warning).not.toHaveBeenCalled()
     expect(mocks.success).toHaveBeenCalledOnce()

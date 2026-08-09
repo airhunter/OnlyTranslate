@@ -5,6 +5,10 @@ import {
   applyRetiredClaudeModelMigration,
   saveClaudeModelMigrationNotice,
 } from '@/entrypoints/utils/modelMigration'
+import {
+  applyTranslationOnlyCompatibilityMigration,
+  saveDisplayModeMigrationNotice,
+} from '@/entrypoints/utils/displayModeMigration'
 
 // Singleton — shared across all useConfig() calls so components never hold
 // stale defaults that overwrite the user's saved settings on save.
@@ -41,20 +45,35 @@ export function useConfig() {
     const value = await storage.getItem('local:config')
     if (typeof value === 'string' && value) {
       const parsedConfig = JSON.parse(value) as Partial<Config>
-      const migration = applyRetiredClaudeModelMigration(parsedConfig)
-      if (migration.status === 'target-missing') {
+      let shouldPersistMigration = false
+      const modelMigration = applyRetiredClaudeModelMigration(parsedConfig)
+      if (modelMigration.status === 'target-missing') {
         console.warn(
-          `Skipped Claude model migration because target "${migration.notice.to}" is not a current preset.`,
+          `Skipped Claude model migration because target "${modelMigration.notice.to}" is not a current preset.`,
         )
-      } else if (migration.status === 'migrated') {
-        const migratedJson = JSON.stringify(parsedConfig)
-        _lastWrittenJson = migratedJson
-        await storage.setItem('local:config', migratedJson)
+      } else if (modelMigration.status === 'migrated') {
+        shouldPersistMigration = true
         try {
-          await saveClaudeModelMigrationNotice(migration.notice)
+          await saveClaudeModelMigrationNotice(modelMigration.notice)
         } catch (error) {
           console.warn('Failed to save Claude model migration notice:', error)
         }
+      }
+
+      const displayModeMigration = applyTranslationOnlyCompatibilityMigration(parsedConfig)
+      if (displayModeMigration.status === 'migrated') {
+        shouldPersistMigration = true
+        try {
+          await saveDisplayModeMigrationNotice(displayModeMigration.notice)
+        } catch (error) {
+          console.warn('Failed to save display mode migration notice:', error)
+        }
+      }
+
+      if (shouldPersistMigration) {
+        const migratedJson = JSON.stringify(parsedConfig)
+        _lastWrittenJson = migratedJson
+        await storage.setItem('local:config', migratedJson)
       }
       Object.assign(config.value, parsedConfig)
     }

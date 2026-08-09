@@ -81,25 +81,14 @@ export async function testConnection(
 
 async function testMicrosoft(signal: AbortSignal): Promise<ConnectionTestResult> {
   try {
-    const authResp = await fetch("https://edge.microsoft.com/translate/auth", {
-      signal,
-    });
-
-    if (!authResp.ok) {
-      return { success: false, code: "request-failed", detail: `${authResp.status} ${authResp.statusText}` };
-    }
-
-    const jwtToken = await authResp.text();
-
     const translateResp = await fetch(
-      "https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh&api-version=3.0",
+      "https://edge.microsoft.com/translate/translatetext?from=&to=zh-Hans&isEnterpriseClient=false",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${jwtToken}`,
         },
-        body: JSON.stringify([{ Text: "hello" }]),
+        body: JSON.stringify(["hello"]),
         signal,
       }
     );

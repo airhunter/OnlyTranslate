@@ -352,7 +352,7 @@
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
-import { customModelString, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
+import { customModelString, defaultOption, options, services, servicesType, isServiceConfigured } from '@/entrypoints/utils/option'
 import { urls } from '@/entrypoints/utils/constant'
 import { useConfig } from '@/composables/useConfig'
 import { testConnection, type ConnectionTestResult } from '@/entrypoints/utils/testConnection'
@@ -554,7 +554,7 @@ const removeService = (service: any) => {
       ElMessage.warning(t('options.service.removeCurrentBlocked'))
       return
     }
-    config.value.service = services.microsoft
+    config.value.service = defaultOption.service
   }
   if (service.isCustom) {
     const index = config.value.customProviders.findIndex((p: any) => p.id === service.id)

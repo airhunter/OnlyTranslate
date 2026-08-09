@@ -18,7 +18,7 @@ vi.mock('../../entrypoints/utils/model', () => ({
     hotkey = 'Alt+W'
     style = 1
     display = 1
-    service = 'microsoft'
+    service = 'google'
     token = {}
     ak = ''
     sk = ''
@@ -69,7 +69,7 @@ describe('useConfig', () => {
   it('returns a config ref with default Config values', () => {
     const { config } = useConfig()
     expect(config.value.on).toBe(true)
-    expect(config.value.service).toBe('microsoft')
+    expect(config.value.service).toBe('google')
     expect(config.value.theme).toBe('auto')
     expect(config.value.display).toBe(1)
     expect(config.value.thinking).toEqual({})

@@ -1,4 +1,4 @@
-import { customModelString, isServiceConfigured, services, servicesType } from "./option";
+import { customModelString, isServiceConfigured, servicesType, supportsTranslationOnlyMode } from "./option";
 import { sendErrorMessage } from "./tip";
 import { config } from "@/entrypoints/utils/config";
 import { t } from "@/entrypoints/utils/i18n";
@@ -19,8 +19,8 @@ export function checkConfig(): boolean {
         }
     }
 
-    if (config.display === 0 && config.service === services.google) {
-        sendErrorMessage(t("runtime.googleTranslationOnlyUnsupported"));
+    if (config.display === 0 && !supportsTranslationOnlyMode(config.service)) {
+        sendErrorMessage(t("runtime.translationOnlyUnsupported"));
         return false;
     }
 

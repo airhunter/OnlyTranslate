@@ -1,8 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { Config } from '@/entrypoints/utils/model'
-import { isServiceConfigured, options, services } from '@/entrypoints/utils/option'
+import {
+  defaultOption,
+  isServiceConfigured,
+  options,
+  services,
+  supportsTranslationOnlyMode,
+} from '@/entrypoints/utils/option'
 
 describe('service options', () => {
+  it('uses Google as the default service for new configurations', () => {
+    expect(defaultOption.service).toBe(services.google)
+    expect(new Config().service).toBe(services.google)
+  })
+
+  it('keeps unsafe HTML-based services out of translation-only mode', () => {
+    expect(supportsTranslationOnlyMode(services.google)).toBe(false)
+    expect(supportsTranslationOnlyMode(services.microsoft)).toBe(false)
+    expect(supportsTranslationOnlyMode(services.openai)).toBe(true)
+  })
+
   it('offers manual, repeated-character, and automatic input preview triggers', () => {
     expect(options.inputBoxTranslationTrigger.map(item => item.value)).toEqual([
       'disabled',

@@ -79,14 +79,19 @@ vi.mock('@/composables/useReleaseNotes', () => ({
 }));
 
 vi.mock('@/entrypoints/utils/option', () => ({
+  defaultOption: { service: 'google' },
   options: { display: [], services: [] },
   isServiceConfigured: () => true,
+  supportsTranslationOnlyMode: () => true,
 }));
 
 vi.mock('@/entrypoints/utils/help', () => ({ openOptionsPanel: vi.fn() }));
 vi.mock('@/entrypoints/utils/cache', () => ({ cache: { clean: vi.fn() } }));
 vi.mock('@/entrypoints/utils/modelMigration', () => ({
   consumeClaudeModelMigrationNotice: vi.fn(async () => null),
+}));
+vi.mock('@/entrypoints/utils/displayModeMigration', () => ({
+  consumeDisplayModeMigrationNotice: vi.fn(async () => null),
 }));
 
 import Main from '@/components/Main.vue';

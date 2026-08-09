@@ -168,7 +168,7 @@ export const options = {
     ],
     services: [
         {value: "builtin", label: "内置服务", disabled: true},
-        {value: services.microsoft, label: "微软翻译", hint: "免配置，开箱即用"},
+        {value: services.microsoft, label: "微软翻译", hint: "免配置，仅支持双语对照"},
         {value: services.google, label: "Google 翻译", hint: "免配置，适合双语对照"},
         {value: services.chromeTranslator, label: "Chrome 内置 AI 翻译", hint: "本地模型，无需 API Key"},
         {value: services.deepL, label: "DeepL", hint: "翻译质量稳定，需 API Key"},
@@ -279,7 +279,7 @@ export const defaultOption = {
     style: 1,
     display: 1,
     hotkey: "Control",
-    service: services.microsoft,
+    service: services.google,
     custom: "http://localhost:11434/v1/chat/completions",
     deeplx: "http://localhost:1188/translate",
     system_role: "You are a professional, authentic machine translation engine.",
@@ -295,6 +295,15 @@ export const defaultOption = {
     inputBoxTranslationTrigger: "disabled",
     inputBoxTranslationTarget: "en",
 };
+
+const TRANSLATION_ONLY_UNSUPPORTED_SERVICES = new Set<string>([
+    services.google,
+    services.microsoft,
+]);
+
+export function supportsTranslationOnlyMode(service: string): boolean {
+    return !TRANSLATION_ONLY_UNSUPPORTED_SERVICES.has(service);
+}
 
 export function isServiceConfigured(service: string, config: Config): boolean {
     if (service === services.microsoft || service === services.google || service === services.chromeTranslator) {

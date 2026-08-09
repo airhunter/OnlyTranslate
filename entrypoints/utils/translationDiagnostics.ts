@@ -88,7 +88,11 @@ export function sanitizeDiagnosticPageUrl(value: string | undefined): string | u
 export function classifyTranslationDiagnosticError(error: unknown): string {
   const message = (error instanceof Error ? error.message : String(error ?? '')).toLowerCase()
   const status = /\b([45]\d{2})\b/.exec(message)?.[1]
+  const errorName = error instanceof Error ? error.name : ''
   if (status) {
+    if (status === '404' && errorName === 'MicrosoftEndpointUnavailableError') {
+      return 'microsoft_endpoint_unavailable'
+    }
     if (status === '401' || status === '403') return 'authentication'
     if (status === '408') return 'timeout'
     if (status === '429') return 'rate_limit'

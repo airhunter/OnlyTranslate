@@ -47,6 +47,43 @@ describe('testConnection result codes', () => {
     })
   })
 
+  it('tests Microsoft through the unauthenticated Edge text endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([{ translations: [{ text: '你好' }] }]),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(testConnection('microsoft', baseConfig())).resolves.toEqual({
+      success: true,
+      code: 'success',
+      translatedText: '你好',
+    })
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(
+      'https://edge.microsoft.com/translate/translatetext?from=&to=zh-Hans&isEnterpriseClient=false',
+    )
+    expect(init.headers).not.toHaveProperty('Authorization')
+    expect(JSON.parse(String(init.body))).toEqual(['hello'])
+  })
+
+  it('includes Microsoft endpoint status details when the connection test fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      text: vi.fn().mockResolvedValue('endpoint unavailable'),
+    }))
+
+    await expect(testConnection('microsoft', baseConfig())).resolves.toEqual({
+      success: false,
+      code: 'request-failed',
+      detail: '404 Not Found endpoint unavailable',
+    })
+  })
+
   it.each([
     [401, 'auth-failed'],
     [404, 'not-found'],

@@ -4,6 +4,10 @@ import {
     applyRetiredClaudeModelMigration,
     saveClaudeModelMigrationNotice,
 } from './modelMigration'
+import {
+    applyTranslationOnlyCompatibilityMigration,
+    saveDisplayModeMigrationNotice,
+} from './displayModeMigration'
 
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
@@ -49,18 +53,33 @@ async function loadConfig() {
                     parsedConfig.activeBuiltinProviders = Array.from(activeSet);
                 }
 
-                const migration = applyRetiredClaudeModelMigration(parsedConfig)
-                if (migration.status === 'target-missing') {
+                let shouldPersistMigration = false
+                const modelMigration = applyRetiredClaudeModelMigration(parsedConfig)
+                if (modelMigration.status === 'target-missing') {
                     console.warn(
-                        `Skipped Claude model migration because target "${migration.notice.to}" is not a current preset.`,
+                        `Skipped Claude model migration because target "${modelMigration.notice.to}" is not a current preset.`,
                     )
-                } else if (migration.status === 'migrated') {
-                    await storage.setItem('local:config', JSON.stringify(parsedConfig))
+                } else if (modelMigration.status === 'migrated') {
+                    shouldPersistMigration = true
                     try {
-                        await saveClaudeModelMigrationNotice(migration.notice)
+                        await saveClaudeModelMigrationNotice(modelMigration.notice)
                     } catch (error) {
                         console.warn('Failed to save Claude model migration notice:', error)
                     }
+                }
+
+                const displayModeMigration = applyTranslationOnlyCompatibilityMigration(parsedConfig)
+                if (displayModeMigration.status === 'migrated') {
+                    shouldPersistMigration = true
+                    try {
+                        await saveDisplayModeMigrationNotice(displayModeMigration.notice)
+                    } catch (error) {
+                        console.warn('Failed to save display mode migration notice:', error)
+                    }
+                }
+
+                if (shouldPersistMigration) {
+                    await storage.setItem('local:config', JSON.stringify(parsedConfig))
                 }
 
                 // 如果配置有效，合并到当前 config 中

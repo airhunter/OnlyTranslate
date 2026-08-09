@@ -11,7 +11,14 @@
           <span class="setting-label">{{ t('options.appearance.displayMode') }}</span>
           <div class="setting-control">
             <el-select v-model="config.display" :placeholder="t('options.appearance.displayModePlaceholder')">
-              <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="optionLabel(item)" :value="item.value" />
+              <el-option
+                class="select-left"
+                v-for="item in options.display"
+                :key="item.value"
+                :label="optionLabel(item)"
+                :value="item.value"
+                :disabled="item.value === 0 && !supportsTranslationOnlyMode(config.service)"
+              />
             </el-select>
           </div>
         </div>
@@ -52,7 +59,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { options } from '@/entrypoints/utils/option'
+import { options, supportsTranslationOnlyMode } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
 import { useI18n } from 'vue-i18n'
 

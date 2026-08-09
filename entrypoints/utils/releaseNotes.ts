@@ -33,7 +33,8 @@ export const releaseNotes: ReleaseNote[] = [
           '电子书新增仅原文、双语和仅译文三种独立显示模式，并支持绕过缓存重新翻译整章；失败时会保留原译文和阅读位置。',
           '电子书顶部新增上一章、下一章导航，并支持方向键、Page Up、Page Down、Space 等阅读快捷键；键盘图标可随时查看按键说明。',
           '改进 XDA Developers 的识文翻译，讨论摘要、Top Post、评论正文及动态加载的新评论现在都会纳入翻译。',
-          '修复扩展弹窗中翻译服务下拉菜单过高、底部服务选项显示不全的问题。'
+          '修复扩展弹窗中翻译服务下拉菜单过高、底部服务选项显示不全的问题。',
+          '恢复微软免配置翻译并改用新的 Edge 文本接口；新安装默认使用 Google，微软和 Google 仅在双语对照模式下可用。'
         ]
       },
       'en-US': {
@@ -42,7 +43,8 @@ export const releaseNotes: ReleaseNote[] = [
           'Ebooks now have separate Original, Bilingual, and Translation-only display modes, plus full-chapter retranslation that bypasses the cache while preserving the previous translation and reading position on failure.',
           'Added Previous and Next chapter controls to the ebook toolbar, along with Arrow, Page Up, Page Down, and Space keyboard controls and an always-available keyboard guide.',
           'Improved Smart translation on XDA Developers so discussion summaries, Top Posts, comment text, and newly loaded comments are included.',
-          'Fixed the translation service menu in the extension popup being too tall and clipping provider options near the bottom.'
+          'Fixed the translation service menu in the extension popup being too tall and clipping provider options near the bottom.',
+          'Restored no-configuration Microsoft translation through the new Edge text endpoint. New installs now default to Google, while Microsoft and Google are limited to bilingual mode.'
         ]
       },
       'zh-TW': {
@@ -51,7 +53,8 @@ export const releaseNotes: ReleaseNote[] = [
           '電子書新增僅原文、雙語和僅譯文三種獨立顯示模式，並支援略過快取重新翻譯整章；失敗時會保留原譯文和閱讀位置。',
           '電子書頂部新增上一章、下一章導覽，並支援方向鍵、Page Up、Page Down、Space 等閱讀快捷鍵；鍵盤圖示可隨時查看按鍵說明。',
           '改善 XDA Developers 的識文翻譯，討論摘要、Top Post、留言正文及動態載入的新留言現在都會納入翻譯。',
-          '修正擴充功能彈窗中的翻譯服務下拉選單過高、底部服務選項顯示不完整的問題。'
+          '修正擴充功能彈窗中的翻譯服務下拉選單過高、底部服務選項顯示不完整的問題。',
+          '恢復微軟免設定翻譯並改用新的 Edge 文字介面；新安裝預設使用 Google，微軟和 Google 僅可在雙語對照模式下使用。'
         ]
       },
       'ja-JP': {
@@ -60,7 +63,8 @@ export const releaseNotes: ReleaseNote[] = [
           '電子書籍に原文のみ、対訳、翻訳のみの表示モードを追加し、キャッシュを使わない章全体の再翻訳にも対応しました。失敗時は以前の翻訳と読書位置を維持します。',
           '電子書籍の上部に前後の章へ移動するボタンを追加し、矢印キー、Page Up、Page Down、Space による読書操作とキーボードガイドを利用できるようにしました。',
           'XDA Developers のスマート翻訳を改善し、ディスカッション要約、Top Post、コメント本文、後から読み込まれるコメントも翻訳対象にしました。',
-          '拡張機能のポップアップで翻訳サービスのメニューが高くなりすぎ、下部の選択肢が見切れる問題を修正しました。'
+          '拡張機能のポップアップで翻訳サービスのメニューが高くなりすぎ、下部の選択肢が見切れる問題を修正しました。',
+          '設定不要の Microsoft 翻訳を新しい Edge テキストエンドポイントで復旧しました。新規インストールでは Google を既定とし、Microsoft と Google は対訳表示でのみ利用できます。'
         ]
       }
     }

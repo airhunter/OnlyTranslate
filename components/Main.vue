@@ -117,7 +117,14 @@
         <span class="setting-label">{{ t('popup.displayMode') }}</span>
         <div class="setting-control">
           <el-select v-model="config.display" :placeholder="t('popup.displayModePlaceholder')">
-            <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="optionLabel(item)" :value="item.value" />
+            <el-option
+              class="select-left"
+              v-for="item in options.display"
+              :key="item.value"
+              :label="optionLabel(item)"
+              :value="item.value"
+              :disabled="item.value === 0 && !supportsTranslationOnlyMode(config.service)"
+            />
           </el-select>
         </div>
       </div>
@@ -299,7 +306,7 @@
 
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { options, isServiceConfigured } from "../entrypoints/utils/option";
+import { defaultOption, options, isServiceConfigured, supportsTranslationOnlyMode } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
 import { useReleaseNotes } from '@/composables/useReleaseNotes'
 import { Bell, ChatDotRound } from '@element-plus/icons-vue'
@@ -313,6 +320,7 @@ import { EbookImportError, EbookRepository } from '@/entrypoints/ebook/repositor
 import { getEbookPageUrl } from '@/entrypoints/ebook/url';
 import type { EbookRecord } from '@/entrypoints/ebook/types';
 import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration';
+import { consumeDisplayModeMigrationNotice } from '@/entrypoints/utils/displayModeMigration';
 
 interface PopupEbook {
   record: EbookRecord;
@@ -450,14 +458,18 @@ loadConfig().then(() => {
   previousService.value = config.value.service || ''
   // 检查当前服务是否已配置，未配置则回退到默认服务
   if (!isServiceConfigured(config.value.service, config.value)) {
-    config.value.service = 'microsoft' // microsoft 总是可用的
-    previousService.value = 'microsoft'
+    config.value.service = defaultOption.service
+    previousService.value = defaultOption.service
   }
   // 查询当前页面翻译状态
   checkTranslationStatus()
   void consumeClaudeModelMigrationNotice().then((notice) => {
     if (!notice) return
     ElMessage.info(t('common.modelMigrated', { from: notice.from, to: notice.to }))
+  })
+  void consumeDisplayModeMigrationNotice().then((notice) => {
+    if (!notice) return
+    ElMessage.info(t('common.displayModeMigrated'))
   })
 })
 
@@ -485,10 +497,10 @@ const availableServices = computed(() => {
       currentGroupHeader = item;
       currentGroupItems = [];
     } else {
-      // This is a regular service - check if it's configured
-      // Also apply the existing Google filter based on display mode
-      const isGoogleDisplayFilter = item.value === 'google' && config.value.display !== 1;
-      if (!isGoogleDisplayFilter && isServiceConfigured(item.value, config.value)) {
+      // This is a regular service - check if it's configured and compatible with the display mode
+      const isDisplayModeIncompatible = config.value.display === 0
+        && !supportsTranslationOnlyMode(item.value);
+      if (!isDisplayModeIncompatible && isServiceConfigured(item.value, config.value)) {
         currentGroupItems.push(item);
       }
     }
