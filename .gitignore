@@ -65,13 +65,6 @@ Thumbs.db
 *.xpi
 *.bak
 
-# Demo working files
-store-assets/demos/**/*.wav
-store-assets/demos/**/*.mov
-store-assets/demos/**/*.epub
-store-assets/demos/**/source-recording*.mp4
-store-assets/demos/**/*-clean.mp4
-
 # Local env files
 .env*.local
 

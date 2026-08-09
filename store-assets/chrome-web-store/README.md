@@ -11,7 +11,7 @@
 
 `zh-CN` 目录中的五张 PNG 均为 1280 × 800，建议按编号顺序上传：
 
-1. `01-web-translation.png`：真实网页识文演示，突出“正文双语、侧栏不打扰”。源文件位于 `../promotion/source/smart-real-page.zh-CN.html`。
+1. `01-web-translation.png`：真实网页识文演示，突出“正文双语、侧栏不打扰”。源文件位于 `source/smart-real-page.zh-CN.html`。
 2. `02-video-subtitles.png`：视频双语字幕，保留。
 3. `03-ebook-reader-beta.png`：本地 EPUB 翻译阅读器（Beta），保留。
 4. `04-popup-bookshelf.png`：Popup 书架和最近阅读入口，保留为辅助说明。
