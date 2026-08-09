@@ -1,7 +1,7 @@
 import {_service} from "@/entrypoints/service/_service";
 import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
-import {services, servicesType} from "@/entrypoints/utils/option";
+import {customModelString, services, servicesType} from "@/entrypoints/utils/option";
 import {syncReleaseNotesInstallState} from "@/entrypoints/utils/releaseNotes";
 import {t} from "@/entrypoints/utils/i18n";
 import {
@@ -18,6 +18,13 @@ import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintena
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
 import { buildUninstallFeedbackUrl } from '@/entrypoints/utils/uninstallFeedback'
+import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
+import {
+    recordTranslationDiagnosticCacheHit,
+    recordTranslationDiagnosticRequest,
+    recordTranslationDiagnosticVisible,
+    type TranslationDiagnosticMetadata,
+} from '@/entrypoints/utils/translationDiagnostics'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -29,6 +36,65 @@ function isTranslationMessage(message: any): boolean {
         && Array.isArray(message.origins)
         && message.origins.length > 0
         && message.origins.every((origin: unknown) => typeof origin === 'string' && origin.trim().length > 0);
+}
+
+function countTranslationCharacters(message: any): number {
+    if (typeof message?.origin === 'string') return message.origin.length
+    if (Array.isArray(message?.origins)) {
+        return message.origins.reduce((total: number, origin: unknown) => (
+            total + (typeof origin === 'string' ? origin.length : 0)
+        ), 0)
+    }
+    if (isSubtitleBatchTranslationMessage(message)) {
+        return message.job.entries.reduce((total, entry) => total + entry.text.length, 0)
+    }
+    return 0
+}
+
+function resolveDiagnosticService(): string {
+    return servicesType.isCustom(config.service) ? 'custom' : config.service
+}
+
+function resolveDiagnosticModel(): string {
+    if (servicesType.isCustom(config.service)) return 'custom'
+    const configuredModel = config.model?.[config.service]
+    if (configuredModel === customModelString) return 'custom'
+    return resolveConfiguredTranslationModel(config.service, config) || 'none'
+}
+
+function runTranslationWithDiagnostics(serviceHandler: (message: any) => Promise<any>, message: any) {
+    const startedAt = Date.now()
+    const diagnostics = message.diagnostics as TranslationDiagnosticMetadata | undefined
+    const diagnosticService = resolveDiagnosticService()
+    const diagnosticModel = resolveDiagnosticModel()
+    const request = serviceHandler(message)
+    if (!diagnostics) return request
+
+    return request.then(
+        result => {
+            void recordTranslationDiagnosticRequest({
+                metadata: diagnostics,
+                service: diagnosticService,
+                model: diagnosticModel,
+                characters: countTranslationCharacters(message),
+                durationMs: Date.now() - startedAt,
+                success: true,
+            }).catch(() => undefined)
+            return result
+        },
+        error => {
+            void recordTranslationDiagnosticRequest({
+                metadata: diagnostics,
+                service: diagnosticService,
+                model: diagnosticModel,
+                characters: countTranslationCharacters(message),
+                durationMs: Date.now() - startedAt,
+                success: false,
+                error,
+            }).catch(() => undefined)
+            throw error
+        },
+    )
 }
 
 export default defineBackground({
@@ -187,6 +253,18 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any) => {
+            if (message?.type === 'TRANSLATION_DIAGNOSTIC_VISIBLE' && typeof message.sessionId === 'string') {
+                return recordTranslationDiagnosticVisible(message.sessionId)
+                    .then(() => ({ success: true }))
+            }
+
+            if (message?.type === 'TRANSLATION_DIAGNOSTIC_CACHE_HIT') {
+                return recordTranslationDiagnosticCacheHit({
+                    context: message.context ?? {},
+                    characters: Number(message.characters) || 0,
+                }).then(() => ({ success: true }))
+            }
+
             if (message?.type === 'CLEAR_VIDEO_SUBTITLE_CACHE') {
                 return clearVideoSubtitleCache()
                     .then(removed => ({ success: true, removed }))
@@ -198,13 +276,43 @@ export default defineBackground({
 
             // 处理输入框翻译请求
             if (message?.type === 'inputBoxTranslation') {
+                const diagnostics = message.diagnostics as TranslationDiagnosticMetadata | undefined
+                const startedAt = Date.now()
+                const diagnosticService = resolveDiagnosticService()
+                const diagnosticModel = resolveDiagnosticModel()
                 return translateInputWithCurrentService({
                     text: message.text,
                     targetLang: message.targetLang,
                     context: message.context,
+                    diagnostics,
                 })
-                    .then(translatedText => ({ success: true, translatedText }))
-                    .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+                    .then(translatedText => {
+                        if (diagnostics) {
+                            void recordTranslationDiagnosticRequest({
+                                metadata: diagnostics,
+                                service: diagnosticService,
+                                model: diagnosticModel,
+                                characters: typeof message.text === 'string' ? message.text.length : 0,
+                                durationMs: Date.now() - startedAt,
+                                success: true,
+                            }).catch(() => undefined)
+                        }
+                        return { success: true, translatedText }
+                    })
+                    .catch(error => {
+                        if (diagnostics) {
+                            void recordTranslationDiagnosticRequest({
+                                metadata: diagnostics,
+                                service: diagnosticService,
+                                model: diagnosticModel,
+                                characters: typeof message.text === 'string' ? message.text.length : 0,
+                                durationMs: Date.now() - startedAt,
+                                success: false,
+                                error,
+                            }).catch(() => undefined)
+                        }
+                        return { success: false, error: error instanceof Error ? error.message : String(error) }
+                    });
             }
 
             // 处理 Chrome AI 翻译可用性检查
@@ -258,7 +366,7 @@ export default defineBackground({
                 return Promise.reject(new Error(`Unsupported translation service: ${config.service}`));
             }
 
-            return serviceHandler(message);
+            return runTranslationWithDiagnostics(serviceHandler, message);
         });
     }
 });

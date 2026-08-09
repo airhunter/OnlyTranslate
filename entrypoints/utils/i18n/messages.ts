@@ -1,4 +1,5 @@
 import { helpMessages } from './helpMessages'
+import { privateFeedbackMessages } from './privateFeedbackMessages'
 
 export const messages = {
   'zh-CN': {
@@ -222,6 +223,7 @@ export const messages = {
       dismiss: '知道了，不再显示'
     },
     help: helpMessages['zh-CN'],
+    privateFeedback: privateFeedbackMessages['zh-CN'],
     contextMenu: {
       translateFullPage: '全文翻译',
       restoreOriginal: '撤销翻译',
@@ -746,6 +748,7 @@ export const messages = {
       dismiss: 'Got it, do not show again'
     },
     help: helpMessages['en-US'],
+    privateFeedback: privateFeedbackMessages['en-US'],
     contextMenu: {
       translateFullPage: 'Translate full page',
       restoreOriginal: 'Restore original',
@@ -1270,6 +1273,7 @@ export const messages = {
       dismiss: '知道了，不再顯示'
     },
     help: helpMessages['zh-TW'],
+    privateFeedback: privateFeedbackMessages['zh-TW'],
     contextMenu: {
       translateFullPage: '全文翻譯',
       restoreOriginal: '撤銷翻譯',
@@ -1794,6 +1798,7 @@ export const messages = {
       dismiss: '了解、今後表示しない'
     },
     help: helpMessages['ja-JP'],
+    privateFeedback: privateFeedbackMessages['ja-JP'],
     contextMenu: {
       translateFullPage: 'ページ全体を翻訳',
       restoreOriginal: '原文に戻す',

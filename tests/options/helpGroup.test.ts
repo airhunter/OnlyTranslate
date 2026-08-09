@@ -11,6 +11,15 @@ vi.mock('webextension-polyfill', () => ({
   },
 }))
 
+vi.mock('@/entrypoints/utils/translationDiagnostics', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/entrypoints/utils/translationDiagnostics')>()
+  return {
+    ...original,
+    getRecentTranslationDiagnostics: vi.fn().mockResolvedValue([]),
+    clearTranslationDiagnostics: vi.fn().mockResolvedValue(undefined),
+  }
+})
+
 describe('HelpGroup', () => {
   afterEach(() => {
     vi.restoreAllMocks()
@@ -72,16 +81,35 @@ describe('HelpGroup', () => {
     expect(wrapper.get('[data-testid="help-empty"]').text()).toContain('没有找到相关内容')
   })
 
-  it('provides anchored contents and opens a sanitized feedback issue', async () => {
+  it('provides private and public feedback entries', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
     const wrapper = mount(HelpGroup, {
       global: { plugins: [createAppI18n('zh-CN')] },
     })
 
     expect(wrapper.get('.help-toc-link').attributes('href')).toBe('#help-topic-quick-start')
-    await wrapper.get('.help-action').trigger('click')
+    expect(wrapper.get('.help-hero').find('[data-testid="open-private-feedback"]').exists()).toBe(true)
+    expect(wrapper.get('.help-hero').find('[data-testid="open-public-feedback"]').exists()).toBe(true)
+    await wrapper.get('[data-testid="open-private-feedback"]').trigger('click')
+    expect(wrapper.find('[data-testid="private-feedback-form"]').exists()).toBe(true)
+    expect(wrapper.get('.help-hero').element.nextElementSibling).toBe(wrapper.get('[data-testid="private-feedback-form"]').element)
+
+    await wrapper.get('[data-testid="open-public-feedback"]').trigger('click')
 
     expect(open).toHaveBeenCalledTimes(1)
     expect(String(open.mock.calls[0][0])).toContain('github.com/airhunter/OnlyTranslate/issues/new')
+  })
+
+  it('describes the diagnostic ranges and page URL handling explicitly', async () => {
+    const wrapper = mount(HelpGroup, {
+      global: { plugins: [createAppI18n('en-US')] },
+    })
+
+    await wrapper.get('[data-testid="open-private-feedback"]').trigger('click')
+    await wrapper.get('[data-testid="include-diagnostics"]').setValue(true)
+
+    expect(wrapper.text()).toContain('Most recent translation')
+    expect(wrapper.text()).toContain('3 most recent translations')
+    expect(wrapper.text()).toContain('query parameters are retained')
   })
 })

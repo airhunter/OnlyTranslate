@@ -10,6 +10,11 @@ import { config } from '@/entrypoints/utils/config'
 import { detectlang } from '@/entrypoints/utils/common'
 import { defaultOption, services, servicesType } from '@/entrypoints/utils/option'
 import { enqueueTranslation } from '@/entrypoints/utils/translateQueue'
+import {
+    createDiagnosticMetadata,
+    createTranslationDiagnosticId,
+    type TranslationDiagnosticContext,
+} from '@/entrypoints/utils/translationDiagnostics'
 
 const REQUEST_TIMEOUT_MS = 45_000
 const MAX_SINGLE_RETRIES = 3
@@ -220,7 +225,9 @@ async function requestStructuredBatch(
     lane: SubtitleTranslationLane,
     fastMode: boolean,
     signal?: AbortSignal,
+    diagnosticContext?: TranslationDiagnosticContext,
 ): Promise<SubtitleTranslationResult[]> {
+    const queuedAt = Date.now()
     const response = await withAbort(enqueueTranslation(
         () => {
             if (signal?.aborted) throw createAbortError()
@@ -230,6 +237,7 @@ async function requestStructuredBatch(
                 sourceLang: job.sourceLanguage,
                 targetLang: job.targetLanguage,
                 fastMode,
+                diagnostics: createDiagnosticMetadata(diagnosticContext, 0, queuedAt),
             }), signal, REQUEST_TIMEOUT_MS)
         },
         { priority: lane === 'foreground' ? 'high' : 'background' },
@@ -268,6 +276,7 @@ async function requestSingleSubtitle(
     onQualityRequestResult?: SubtitleTranslationOptions['onQualityRequestResult'],
     retryCount = 0,
     signal?: AbortSignal,
+    diagnosticContext?: TranslationDiagnosticContext,
 ): Promise<string> {
     if (signal?.aborted) throw createAbortError()
     try {
@@ -277,6 +286,7 @@ async function requestSingleSubtitle(
             sourceLang: job.sourceLanguage,
             targetLang: job.targetLanguage,
             fastMode,
+            diagnostics: createDiagnosticMetadata(diagnosticContext, retryCount, Date.now()),
         }), signal, policy.requestTimeoutMs)
         const result = normalizeRuntimeText(response)
         if (!result) throw new Error('Subtitle translation response is empty')
@@ -299,6 +309,7 @@ async function requestSingleSubtitle(
             onQualityRequestResult,
             retryCount + 1,
             signal,
+            diagnosticContext,
         )
     }
 }
@@ -343,6 +354,7 @@ async function translateWithSingles(
     fastMode: boolean,
     policy: SingleTranslationPolicy = DEFAULT_SINGLE_POLICY,
     reportQualityResults = false,
+    diagnosticContext?: TranslationDiagnosticContext,
 ): Promise<SubtitleTranslationResult[]> {
     const {
         signal: parentSignal,
@@ -375,6 +387,7 @@ async function translateWithSingles(
                         reportQualityResults ? onQualityRequestResult : undefined,
                         0,
                         signal,
+                        diagnosticContext,
                     ),
                     { priority },
                 ), signal)
@@ -412,6 +425,12 @@ export async function translateSubtitleBatch(
 ): Promise<SubtitleTranslationResult[]> {
     const { signal, lane, onQualityRequestResult } = options
     const fastMode = options.effectiveFastMode ?? config.videoSubtitleFastMode !== false
+    const diagnosticContext: TranslationDiagnosticContext = {
+        sessionId: createTranslationDiagnosticId('video'),
+        scene: 'video',
+        startedAt: Date.now(),
+        pageUrl: typeof document === 'undefined' ? undefined : document.location.href,
+    }
     const direction = resolveSubtitleDirection(rawJob)
     const job: SubtitleTranslationJob = {
         ...rawJob,
@@ -430,7 +449,7 @@ export async function translateSubtitleBatch(
 
     if (canUseStructuredSubtitleTranslation()) {
         try {
-            const results = await requestStructuredBatch(job, lane, fastMode, signal)
+            const results = await requestStructuredBatch(job, lane, fastMode, signal, diagnosticContext)
             if (!fastMode) notifyQualityRequestResult(onQualityRequestResult, 'success')
             return results.map(result => ({ ...result, cacheable: true }))
         } catch (error) {
@@ -440,7 +459,7 @@ export async function translateSubtitleBatch(
                 notifyQualityRequestResult(onQualityRequestResult, result)
                 if (signal?.aborted) return []
             }
-            return translateWithSingles(job, options, false, true, DEGRADED_SINGLE_POLICY)
+            return translateWithSingles(job, options, false, true, DEGRADED_SINGLE_POLICY, false, diagnosticContext)
         }
     }
 
@@ -451,6 +470,7 @@ export async function translateSubtitleBatch(
         fastMode,
         DEFAULT_SINGLE_POLICY,
         !fastMode && servicesType.isAI(config.service),
+        diagnosticContext,
     )
 }
 

@@ -22,6 +22,11 @@ import { resolveTranslationDirection } from './translationDirection';
 import { t } from './i18n';
 import { customModelString, defaultOption, services, servicesType } from './option';
 import { getCustomProviderProtocol } from './providerEndpoint';
+import {
+  createDiagnosticMetadata,
+  createTranslationDiagnosticId,
+  type TranslationDiagnosticContext,
+} from './translationDiagnostics';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -230,6 +235,12 @@ export async function translateText(origin: string, context: string = document.t
     return origin;
   }
 
+  const diagnosticContext: TranslationDiagnosticContext = {
+    ...options.diagnostics,
+    sessionId: options.diagnostics?.sessionId ?? createTranslationDiagnosticId(),
+    startedAt: options.diagnostics?.startedAt ?? Date.now(),
+  };
+
   const inFlightKey = buildInFlightTranslationKey(
     safeOrigin,
     context,
@@ -247,6 +258,11 @@ export async function translateText(origin: string, context: string = document.t
       if (isDev) {
         console.log('[翻译API] 命中缓存，直接返回缓存结果');
       }
+      void browser.runtime.sendMessage({
+        type: 'TRANSLATION_DIAGNOSTIC_CACHE_HIT',
+        context: diagnosticContext,
+        characters: safeOrigin.length,
+      }).catch(() => undefined);
       return cachedResult;
     }
   }
@@ -258,7 +274,9 @@ export async function translateText(origin: string, context: string = document.t
 
   const requestGeneration = cancellationGeneration;
 
-  const executeSingleTranslation = (text: string): Promise<string> => enqueueTranslation(async () => {
+  const executeSingleTranslation = (text: string): Promise<string> => {
+    const queuedAt = Date.now();
+    return enqueueTranslation(async () => {
     const translationTask = async (retryCount: number = 0): Promise<string> => {
       try {
         assertNotCancelled(requestGeneration);
@@ -269,6 +287,7 @@ export async function translateText(origin: string, context: string = document.t
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
             ...(fastMode ? { fastMode: true } : {}),
+            diagnostics: createDiagnosticMetadata(diagnosticContext, retryCount, queuedAt),
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
@@ -297,9 +316,12 @@ export async function translateText(origin: string, context: string = document.t
     };
 
     return translationTask();
-  }, { priority });
+    }, { priority });
+  };
 
-  const executeBatchTranslation = (texts: string[]): Promise<string[]> => enqueueTranslation(async () => {
+  const executeBatchTranslation = (texts: string[]): Promise<string[]> => {
+    const queuedAt = Date.now();
+    return enqueueTranslation(async () => {
     assertNotCancelled(requestGeneration);
     const response = await Promise.race([
       browser.runtime.sendMessage({
@@ -309,6 +331,7 @@ export async function translateText(origin: string, context: string = document.t
         sourceLang: direction.sourceLang,
         targetLang: direction.targetLang,
         ...(fastMode ? { fastMode: true } : {}),
+        diagnostics: createDiagnosticMetadata(diagnosticContext, 0, queuedAt),
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
@@ -321,7 +344,8 @@ export async function translateText(origin: string, context: string = document.t
     }
 
     return response;
-  }, { priority });
+    }, { priority });
+  };
 
   const translationPromise = shouldUseBatchTranslation(allowBatch, safeOrigin)
     ? enqueueBatchTranslation({
@@ -389,4 +413,6 @@ export interface TranslateOptions {
   priority?: TranslationPriority;
   /** 低延迟翻译模式：服务适配器应关闭或压低 Thinking/Reasoning */
   fastMode?: boolean;
+  /** 本地性能诊断的会话信息；不会记录原文、译文、密钥或接口地址。 */
+  diagnostics?: TranslationDiagnosticContext;
 } 

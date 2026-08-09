@@ -290,7 +290,12 @@ const getTranslation = async () => {
   
   try {
     // 使用当前配置的翻译服务进行翻译
-    const result = await translateText(selectedText.value);
+    const result = await translateText(selectedText.value, document.title, {
+      diagnostics: {
+        scene: 'selection',
+        pageUrl: document.location.href,
+      },
+    });
     translationResult.value = result;
   } catch (err) {
     error.value = t('selection.failed');

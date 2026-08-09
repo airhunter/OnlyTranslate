@@ -109,11 +109,11 @@ describe('input box translation', () => {
     }))
 
     await vi.waitFor(() => expect(document.querySelector('.fluent-input-candidate-text')).not.toBeNull())
-    expect(runtime.sendMessage).toHaveBeenCalledWith({
+    expect(runtime.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'inputBoxTranslation',
       text: 'hello',
       targetLang: 'zh-Hans'
-    })
+    }))
     expect(textarea.value).toBe('  hello\n\n  ')
 
     document.dispatchEvent(new KeyboardEvent('keydown', {
@@ -151,11 +151,11 @@ describe('input box translation', () => {
     })
     expect(textarea.value).toBe('hello')
     expect(triggerEvent.defaultPrevented).toBe(true)
-    expect(runtime.sendMessage).toHaveBeenCalledWith({
+    expect(runtime.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'inputBoxTranslation',
       text: 'hello',
       targetLang: 'zh-Hans'
-    })
+    }))
     expect(inputListener).not.toHaveBeenCalled()
     expect(changeListener).not.toHaveBeenCalled()
 
@@ -372,11 +372,11 @@ describe('input box translation', () => {
     }
 
     await vi.waitFor(() => expect(document.querySelector('.fluent-input-candidate-text')).not.toBeNull())
-    expect(runtime.sendMessage).toHaveBeenCalledWith({
+    expect(runtime.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'inputBoxTranslation',
       text: 'hello',
       targetLang: 'en'
-    })
+    }))
     expect(textarea.value).toBe('hello  ')
     expect(document.querySelector('.fluent-input-candidate-text')?.textContent).toBe('你好  ')
   })
@@ -438,11 +438,11 @@ describe('input box translation', () => {
     await vi.waitFor(() => {
       expect(document.querySelector('.fluent-input-candidate-text')).not.toBeNull()
     })
-    expect(runtime.sendMessage).toHaveBeenCalledWith({
+    expect(runtime.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'inputBoxTranslation',
       text: fullText,
       targetLang: 'en'
-    })
+    }))
     expect(editorBridge.replace).toHaveBeenCalledWith(proxy, fullText)
     expect(proxy.value).toContain('那就没必要写正文')
 
@@ -533,11 +533,11 @@ describe('input box translation', () => {
     await vi.waitFor(() => {
       expect(document.querySelector('.fluent-input-candidate-text')?.textContent).toBe('こんにちは')
     })
-    expect(runtime.sendMessage).toHaveBeenLastCalledWith({
+    expect(runtime.sendMessage).toHaveBeenLastCalledWith(expect.objectContaining({
       type: 'inputBoxTranslation',
       text: '你好',
       targetLang: 'ja'
-    })
+    }))
     expect(textarea.value).toBe('你好')
   })
 

@@ -138,7 +138,7 @@ describe('video subtitle translator', () => {
       expect(mockEnqueueTranslation).toHaveBeenCalledTimes(1)
       expect(mockEnqueueTranslation).toHaveBeenCalledWith(expect.any(Function), { priority: 'high' })
       expect(mockSendMessage).toHaveBeenCalledTimes(1)
-      expect(mockSendMessage).toHaveBeenCalledWith({
+      expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
         type: 'SUBTITLE_BATCH_TRANSLATION',
         job: expect.objectContaining({
           trackKey: job.trackKey,
@@ -151,7 +151,7 @@ describe('video subtitle translator', () => {
         sourceLang: 'en',
         targetLang: 'zh-Hans',
         fastMode: true,
-      })
+      }))
       expect(mockSendMessage.mock.calls[0][0]).not.toHaveProperty('useCache')
     },
   )
@@ -338,13 +338,13 @@ describe('video subtitle translator', () => {
     expect(canUseStructuredSubtitleTranslation()).toBe(false)
     expect(mockSendMessage).toHaveBeenCalledTimes(2)
     expect(mockSendMessage.mock.calls.some(([message]) => message.type === 'SUBTITLE_BATCH_TRANSLATION')).toBe(false)
-    expect(mockSendMessage).toHaveBeenNthCalledWith(1, {
+    expect(mockSendMessage).toHaveBeenNthCalledWith(1, expect.objectContaining({
       context: job.title,
       origin: 'She said it worked.',
       sourceLang: 'en',
       targetLang: 'zh-Hans',
       fastMode: true,
-    })
+    }))
     expect(mockSendMessage.mock.calls[0][0]).not.toHaveProperty('useCache')
   })
 

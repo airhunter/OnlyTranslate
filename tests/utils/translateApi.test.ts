@@ -273,13 +273,13 @@ describe('translateText', () => {
 
     await expect(Promise.all([first, second])).resolves.toEqual(['你好', '世界'])
     expect(mockSendMessage).toHaveBeenCalledTimes(1)
-    expect(mockSendMessage).toHaveBeenCalledWith({
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
       type: 'BATCH_TRANSLATION',
       origins: ['Hello', 'World'],
       context: 'Example',
       sourceLang: 'en',
       targetLang: 'zh-Hans'
-    })
+    }))
     expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '你好', 'zh-Hans')
     expect(mockCacheLocalSet).toHaveBeenCalledWith('World', '世界', 'zh-Hans')
   })
@@ -302,7 +302,9 @@ describe('translateText', () => {
   it('does not batch cache hits', async () => {
     vi.useFakeTimers()
     mockCacheLocalGet.mockImplementation((origin: string) => origin === 'Hello' ? '缓存译文' : null)
-    mockSendMessage.mockResolvedValueOnce('世界')
+    mockSendMessage.mockImplementation(async (message: { type?: string }) => (
+      message.type === 'TRANSLATION_DIAGNOSTIC_CACHE_HIT' ? { success: true } : '世界'
+    ))
 
     const first = translateText('Hello', 'Example', { allowBatch: true })
     const second = translateText('World', 'Example', { allowBatch: true })
@@ -310,7 +312,7 @@ describe('translateText', () => {
     await vi.advanceTimersByTimeAsync(40)
 
     await expect(Promise.all([first, second])).resolves.toEqual(['缓存译文', '世界'])
-    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
     expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
       origin: 'World'
     }))

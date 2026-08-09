@@ -4,11 +4,13 @@ import { config } from '@/entrypoints/utils/config'
 import { services, servicesType } from '@/entrypoints/utils/option'
 import type { CustomProvider } from '@/entrypoints/utils/model'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
+import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
 
 export interface InputTranslationRequest {
   text: string
   targetLang: string
   context?: string
+  diagnostics?: TranslationDiagnosticMetadata
 }
 
 export interface InputTranslationDependencies {
@@ -46,7 +48,8 @@ export async function translateInputWithCurrentService(
     origin: request.text,
     context: request.context ?? '',
     sourceLang: dependencies.sourceLang,
-    targetLang: request.targetLang
+    targetLang: request.targetLang,
+    diagnostics: request.diagnostics,
   })
   if (typeof result !== 'string') {
     throw new Error('Input translation service returned a non-text response')

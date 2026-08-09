@@ -100,9 +100,9 @@ describe('options i18n render', () => {
   })
 
   it.each([
-    ['zh-CN', '“只译” (OnlyTranslate) 隐私权政策', '最后更新日期', '我们不收集'],
-    ['en-US', 'OnlyTranslate Privacy Policy', 'Last updated', 'We do not collect'],
-    ['zh-TW', '「只譯」(OnlyTranslate) 隱私權政策', '最後更新日期', '我們不會收集'],
+    ['zh-CN', '“只译” (OnlyTranslate) 隐私权政策', '最后更新日期', '不会自动收集'],
+    ['en-US', 'OnlyTranslate Privacy Policy', 'Last updated', 'does not automatically collect'],
+    ['zh-TW', '「只譯」(OnlyTranslate) 隱私權政策', '最後更新日期', '不會自動收集'],
     ['ja-JP', '「OnlyTranslate」プライバシーポリシー', '最終更新日', '個人情報'],
   ])('renders the localized privacy policy for %s', (locale, title, meta, body) => {
     const i18n = createAppI18n(locale as 'zh-CN' | 'en-US' | 'zh-TW' | 'ja-JP')

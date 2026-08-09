@@ -3,6 +3,11 @@ import {
   findCodeMirrorRoot,
   type InputBoxEditorBridge
 } from './inputBoxEditorBridge'
+import {
+  createDiagnosticMetadata,
+  createTranslationDiagnosticId,
+} from '@/entrypoints/utils/translationDiagnostics'
+import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
 
 export type InputBoxTranslationTrigger =
   | 'disabled'
@@ -27,6 +32,7 @@ export interface InputBoxTranslationRuntime {
     type: 'inputBoxTranslation'
     text: string
     targetLang?: string
+    diagnostics?: TranslationDiagnosticMetadata
   }) => Promise<{
     success?: boolean
     translatedText?: string
@@ -881,11 +887,18 @@ async function translateInputText(
   let result: Awaited<ReturnType<InputBoxTranslationRuntime['sendMessage']>>
 
   try {
+    const queuedAt = Date.now()
     result = await Promise.race([
       context.runtime.sendMessage({
         type: 'inputBoxTranslation',
         text,
-        targetLang
+        targetLang,
+        diagnostics: createDiagnosticMetadata({
+          sessionId: createTranslationDiagnosticId('input'),
+          scene: 'input',
+          startedAt: queuedAt,
+          pageUrl: context.document.location.href,
+        }, 0, queuedAt),
       }),
       new Promise<never>((_, reject) => {
         timeoutId = context.setTimeout(() => {

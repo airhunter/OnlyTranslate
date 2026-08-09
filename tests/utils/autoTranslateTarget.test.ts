@@ -101,7 +101,9 @@ describe('resolveAutoTranslateTarget behavior', () => {
     handleBtnTranslation(button)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(translateText).toHaveBeenCalledWith('Start action', document.title)
+    expect(translateText).toHaveBeenCalledWith('Start action', document.title, expect.objectContaining({
+      diagnostics: expect.objectContaining({ scene: 'hover' }),
+    }))
     expect(button.innerText).toBe('开始操作')
   })
 

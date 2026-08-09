@@ -14,6 +14,10 @@ import {
   type EbookTranslationUnit,
 } from './unitizer';
 import type { EbookDisplayMode } from './types';
+import {
+  createTranslationDiagnosticId,
+  type TranslationDiagnosticContext,
+} from '@/entrypoints/utils/translationDiagnostics';
 
 export interface EbookTranslationStatus {
   total: number;
@@ -26,6 +30,7 @@ type Translate = (origin: string, context: string, options: {
   allowBatch: true;
   priority: TranslationPriority;
   useCache?: boolean;
+  diagnostics?: TranslationDiagnosticContext;
 }) => Promise<string>;
 
 interface CoordinatorOptions {
@@ -56,6 +61,7 @@ export class EbookTranslationCoordinator {
   private insertionTimer?: ReturnType<typeof setTimeout>;
   private readonly translate: Translate;
   private readonly cacheTranslation: (origin: string, result: string) => void;
+  private diagnosticContext?: TranslationDiagnosticContext;
 
   constructor(private readonly options: CoordinatorOptions = {}) {
     this.translate = options.translate ?? translateText;
@@ -67,6 +73,11 @@ export class EbookTranslationCoordinator {
     const generation = this.generation;
     this.document = document;
     this.context = context;
+    this.diagnosticContext = {
+      sessionId: createTranslationDiagnosticId('ebook'),
+      scene: 'ebook',
+      startedAt: Date.now(),
+    };
     this.installStyles(document);
     applyEbookDisplayMode(document, displayMode);
     this.units = collectEbookTranslationUnits(document);
@@ -86,6 +97,11 @@ export class EbookTranslationCoordinator {
     const previousStatus = { ...this.status, running: false };
     this.cancel();
     const generation = this.generation;
+    this.diagnosticContext = {
+      sessionId: createTranslationDiagnosticId('ebook'),
+      scene: 'ebook',
+      startedAt: Date.now(),
+    };
     const ordered = [...this.units].sort((left, right) => Number(isUnitVisible(right)) - Number(isUnitVisible(left)));
     this.status = { total: ordered.length, completed: 0, failed: 0, running: true };
     this.emitStatus();
@@ -185,6 +201,7 @@ export class EbookTranslationCoordinator {
     const translateOptions = {
       allowBatch: true as const,
       priority,
+      diagnostics: this.diagnosticContext,
       ...(useCache ? {} : { useCache: false }),
     };
     let cacheOrigin = unit.sourceHtml || unit.sourceText;
@@ -210,6 +227,16 @@ export class EbookTranslationCoordinator {
     const cfi = this.options.captureLocation?.();
     const insertions = this.pendingInsertions.splice(0);
     insertions.forEach(insert => insert());
+    const sessionId = this.diagnosticContext?.sessionId;
+    if (sessionId) {
+      const extensionBrowser = (globalThis as typeof globalThis & {
+        browser?: { runtime?: { sendMessage?: (message: unknown) => Promise<unknown> } }
+      }).browser;
+      void extensionBrowser?.runtime?.sendMessage?.({
+        type: 'TRANSLATION_DIAGNOSTIC_VISIBLE',
+        sessionId,
+      })?.catch(() => undefined);
+    }
     await this.waitForLayout();
     if (cfi) await this.options.restoreLocation?.(cfi);
   }

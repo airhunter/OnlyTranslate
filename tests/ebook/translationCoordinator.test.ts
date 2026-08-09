@@ -33,8 +33,8 @@ describe('EbookTranslationCoordinator', () => {
 
     await coordinator.start(document, 'Book · Chapter', 'bilingual');
 
-    expect(translate).toHaveBeenNthCalledWith(1, 'Visible paragraph', 'Book · Chapter', { allowBatch: true, priority: 'high' });
-    expect(translate).toHaveBeenNthCalledWith(2, 'Background paragraph', 'Book · Chapter', { allowBatch: true, priority: 'background' });
+    expect(translate).toHaveBeenNthCalledWith(1, 'Visible paragraph', 'Book · Chapter', expect.objectContaining({ allowBatch: true, priority: 'high' }));
+    expect(translate).toHaveBeenNthCalledWith(2, 'Background paragraph', 'Book · Chapter', expect.objectContaining({ allowBatch: true, priority: 'background' }));
     expect(document.querySelectorAll('[data-onlytranslate-ebook-translation]')).toHaveLength(2);
     expect(statuses.at(-1)).toEqual({ total: 2, completed: 2, failed: 0, running: false });
   });
@@ -100,16 +100,16 @@ describe('EbookTranslationCoordinator', () => {
     await coordinator.start(document, 'Chapter', 'bilingual');
     await expect(coordinator.retranslate()).resolves.toBe('success');
 
-    expect(translate).toHaveBeenNthCalledWith(3, 'First paragraph', 'Chapter', {
+    expect(translate).toHaveBeenNthCalledWith(3, 'First paragraph', 'Chapter', expect.objectContaining({
       allowBatch: true,
       priority: 'high',
       useCache: false,
-    });
-    expect(translate).toHaveBeenNthCalledWith(4, 'Second paragraph', 'Chapter', {
+    }));
+    expect(translate).toHaveBeenNthCalledWith(4, 'Second paragraph', 'Chapter', expect.objectContaining({
       allowBatch: true,
       priority: 'high',
       useCache: false,
-    });
+    }));
     expect(Array.from(document.querySelectorAll('[data-onlytranslate-ebook-translation]')).map(node => node.textContent))
       .toEqual(['新译一', '新译二']);
     expect(cacheTranslation).toHaveBeenCalledTimes(2);

@@ -29,6 +29,7 @@ import {
     type TranslateOptions
 } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
+import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
 import {
@@ -88,7 +89,7 @@ interface AutoTranslateTarget {
     grabOptions?: GrabAllNodeOptions;
 }
 
-type TranslationRequestOptions = Pick<TranslateOptions, 'allowBatch' | 'priority'>;
+type TranslationRequestOptions = Pick<TranslateOptions, 'allowBatch' | 'priority' | 'diagnostics'>;
 
 interface BilingualTranslationOptions extends TranslationRequestOptions {
     removeExisting?: boolean;
@@ -113,9 +114,16 @@ export function resolveAutoTranslateTarget(scope: string): AutoTranslateTarget {
 }
 
 function translateFirstLineText(textNode: Text, origin: string): void {
-    translateText(origin, document.title)
+    const diagnostics = {
+        sessionId: createTranslationDiagnosticId('hover'),
+        scene: 'hover' as const,
+        startedAt: Date.now(),
+        pageUrl: document.location.href,
+    };
+    translateText(origin, document.title, { diagnostics })
         .then((text: string) => {
             textNode.textContent = text;
+            notifyDiagnosticVisible({ diagnostics });
         })
         .catch((error: Error) => {
             if (isTranslationCancelledError(error)) return;
@@ -247,6 +255,13 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     if (!nodes.length) return;
 
+    const diagnosticContext = {
+        sessionId: createTranslationDiagnosticId('webpage'),
+        scene: 'webpage' as const,
+        startedAt: Date.now(),
+        pageUrl: document.location.href,
+    };
+
     setAutoTranslating(true);
     const translateAutoTarget = (
         node: Element,
@@ -269,8 +284,8 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         node.setAttribute(TRANSLATED_ATTR, 'true');
 
         const translation = config.display === styles.bilingualTranslation
-            ? handleBilingualTranslation(node, false, { removeExisting: false, ...requestOptions })
-            : handleSingleTranslation(node, false, requestOptions);
+            ? handleBilingualTranslation(node, false, { removeExisting: false, ...requestOptions, diagnostics: diagnosticContext })
+            : handleSingleTranslation(node, false, { ...requestOptions, diagnostics: diagnosticContext });
 
         // 停止观察该节点
         activeObserver?.unobserve(node);
@@ -563,6 +578,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
             if (content) {
                 bilingualAppendChild(node, content);
+                notifyDiagnosticVisible(options);
                 return;
             }
 
@@ -570,6 +586,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
                 text = await translateText(plainOrigin, document.title, options);
             }
             bilingualAppendChild(node, text);
+            notifyDiagnosticVisible(options);
         })
         .catch((error: Error) => {
             spinner.remove();
@@ -622,6 +639,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
             cache.localSetDual(oldOuterHtml, newOuterHtml);
             cache.set(translationState.htmlSet, newOuterHtml, 250);
             translationState.htmlSet.delete(oldOuterHtml);
+            notifyDiagnosticVisible(options);
         })
         .catch((error: Error) => {
             spinner.remove();
@@ -641,11 +659,18 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
         return;
     }
 
-    translateText(origin, document.title)
+    const diagnostics = {
+        sessionId: createTranslationDiagnosticId('hover'),
+        scene: 'hover' as const,
+        startedAt: Date.now(),
+        pageUrl: document.location.href,
+    };
+    translateText(origin, document.title, { diagnostics })
         .then((text: string) => {
             if (!text || text === origin) return;
             cache.localSetDual(origin, text);
             node.innerText = text;
+            notifyDiagnosticVisible({ diagnostics });
         }).catch((error: unknown) => {
             if (isTranslationCancelledError(error)) return;
             console.error('调用失败:', error);
@@ -672,6 +697,18 @@ function bilingualAppendChild(node: HTMLElement, text: string | Node) {
 
     const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
     if (fn) fn(node, newNode, appendTarget);
+}
+
+function notifyDiagnosticVisible(options: TranslationRequestOptions): void {
+    const sessionId = options.diagnostics?.sessionId;
+    if (!sessionId) return;
+    const extensionBrowser = (globalThis as typeof globalThis & {
+        browser?: { runtime?: { sendMessage?: (message: unknown) => Promise<unknown> } }
+    }).browser;
+    void extensionBrowser?.runtime?.sendMessage?.({
+        type: 'TRANSLATION_DIAGNOSTIC_VISIBLE',
+        sessionId,
+    })?.catch(() => undefined);
 }
 
 function applyBilingualInsertionLayout(appendTarget: HTMLElement, translationNode: HTMLElement): void {

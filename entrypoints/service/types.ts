@@ -1,4 +1,5 @@
 import type { SubtitleTranslationJob, SubtitleTranslationResult } from '@/entrypoints/video/types'
+import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
 
 interface TranslationServiceBaseMessage {
     context?: string;
@@ -6,6 +7,8 @@ interface TranslationServiceBaseMessage {
     targetLang?: string;
     /** 实时字幕等低延迟场景使用：服务适配器应关闭或压低模型推理。 */
     fastMode?: boolean;
+    /** 仅包含本地性能诊断元数据，不包含原文、译文、密钥或接口地址。 */
+    diagnostics?: TranslationDiagnosticMetadata;
 }
 
 export interface SingleTranslationServiceMessage extends TranslationServiceBaseMessage {

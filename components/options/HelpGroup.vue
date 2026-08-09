@@ -1,10 +1,24 @@
 <template>
   <div class="help-group">
     <section class="help-hero">
-      <div>
+      <div class="help-hero-copy">
         <p class="help-kicker">{{ t('help.kicker') }}</p>
         <h2>{{ t('help.title') }}</h2>
         <p>{{ t('help.subtitle') }}</p>
+        <div class="help-actions">
+          <button
+            type="button"
+            class="help-action help-action--primary"
+            data-testid="open-private-feedback"
+            :aria-expanded="showPrivateFeedback"
+            @click="showPrivateFeedback = !showPrivateFeedback"
+          >
+            {{ t('privateFeedback.privateButton') }}
+          </button>
+          <button type="button" class="help-action" data-testid="open-public-feedback" @click="openPublicFeedback">
+            {{ t('privateFeedback.publicButton') }}
+          </button>
+        </div>
       </div>
 
       <label class="help-search">
@@ -17,6 +31,8 @@
         />
       </label>
     </section>
+
+    <PrivateFeedbackForm v-if="showPrivateFeedback" @close="showPrivateFeedback = false" />
 
     <div v-if="filteredTopics.length" class="help-documentation">
       <nav class="help-toc" :aria-label="t('help.kicker')">
@@ -80,11 +96,6 @@
       <p>{{ t('help.emptyBody') }}</p>
     </div>
 
-    <div class="help-actions">
-      <button type="button" class="help-action" @click="openFeedback">
-        {{ t('help.actions.feedback') }}
-      </button>
-    </div>
   </div>
 </template>
 
@@ -93,9 +104,11 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import browser from 'webextension-polyfill'
 import { buildFeedbackIssueUrl, helpTopics } from '@/entrypoints/utils/help'
+import PrivateFeedbackForm from './PrivateFeedbackForm.vue'
 
 const { t, locale } = useI18n()
 const query = ref('')
+const showPrivateFeedback = ref(false)
 
 const normalizedQuery = computed(() => query.value.trim().toLocaleLowerCase(locale.value))
 
@@ -122,7 +135,7 @@ const filteredTopics = computed(() => {
   })
 })
 
-const openFeedback = () => {
+const openPublicFeedback = () => {
   const url = buildFeedbackIssueUrl({
     version: browser.runtime.getManifest().version,
     locale: locale.value,
@@ -360,7 +373,9 @@ const openFeedback = () => {
 
 .help-actions {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .help-action {
@@ -376,6 +391,17 @@ const openFeedback = () => {
 .help-action:hover {
   border-color: var(--fr-accent-color);
   color: var(--fr-accent-color);
+}
+
+.help-action--primary {
+  border-color: var(--fr-accent-color);
+  background: var(--fr-accent-color);
+  color: #fff;
+}
+
+.help-action--primary:hover {
+  color: #fff;
+  filter: brightness(1.06);
 }
 
 .help-empty {
