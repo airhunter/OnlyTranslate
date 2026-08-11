@@ -1,4 +1,5 @@
 import { IDBFactory } from 'fake-indexeddb';
+import { Blob as NodeBlob } from 'node:buffer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EbookImportError, EbookRepository } from '../../entrypoints/ebook/repository';
 
@@ -24,7 +25,10 @@ describe('EbookRepository', () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => repository.close());
+  afterEach(() => {
+    repository.close();
+    vi.unstubAllGlobals();
+  });
 
   it('saves the EPUB blob and metadata only after parsing succeeds', async () => {
     const file = new File(['epub-one'], 'one.epub', { type: 'application/epub+zip' });
@@ -109,5 +113,64 @@ describe('EbookRepository', () => {
   it('validates the file extension and empty files', async () => {
     await expect(repository.importBook(new File(['x'], 'book.pdf'), metadata)).rejects.toMatchObject({ code: 'INVALID_FILE' });
     await expect(repository.importBook(new File([], 'empty.epub'), metadata)).rejects.toMatchObject({ code: 'EMPTY_FILE' });
+  });
+
+  it('backs up and restores EPUB files, progress, and bookmarks while preserving other books', async () => {
+    vi.stubGlobal('Blob', NodeBlob);
+    const backedUpBook = (await repository.importBook(new File(['book-to-back-up'], 'backup.epub'), metadata)).book;
+    await repository.saveProgress({
+      bookId: backedUpBook.bookId,
+      cfi: 'epubcfi(/6/4)',
+      chapterHref: 'chapter-two.xhtml',
+      percentage: .45,
+      updatedAt: 10,
+    });
+    await repository.addBookmark({
+      bookId: backedUpBook.bookId,
+      cfi: 'epubcfi(/6/6)',
+      chapterHref: 'chapter-two.xhtml',
+      chapterLabel: 'Chapter two',
+      excerpt: 'Saved excerpt',
+    });
+    const backup = await repository.createBackup();
+    const backupBytes = await backup.arrayBuffer();
+    const manifestLength = new DataView(backupBytes).getUint32(8, true);
+    const manifest = JSON.parse(new TextDecoder().decode(backupBytes.slice(12, 12 + manifestLength)));
+    expect(manifest.books[0]).toMatchObject({ epubLength: 15, coverLength: 5 });
+
+    repository.close();
+    indexedDb = new IDBFactory();
+    repository = new EbookRepository(indexedDb, storageManager);
+    const otherBook = (await repository.importBook(new File(['other-book'], 'other.epub'), metadata)).book;
+    const replacedBook = (await repository.importBook(new File(['book-to-back-up'], 'renamed.epub'), metadata)).book;
+    await repository.saveProgress({ bookId: replacedBook.bookId, percentage: .9, updatedAt: 20 });
+    await repository.addBookmark({ bookId: replacedBook.bookId, cfi: 'epubcfi(/6/8)' });
+
+    await expect(repository.restoreBackup(backup)).resolves.toEqual({ bookCount: 1, bookmarkCount: 1 });
+    expect((await repository.listRecentBooks()).map(book => book.bookId)).toEqual(expect.arrayContaining([
+      backedUpBook.bookId,
+      otherBook.bookId,
+    ]));
+    expect(await repository.getProgress(backedUpBook.bookId)).toMatchObject({ percentage: .45, cfi: 'epubcfi(/6/4)' });
+    expect(await repository.listBookmarks(backedUpBook.bookId)).toEqual([
+      expect.objectContaining({ cfi: 'epubcfi(/6/6)', excerpt: 'Saved excerpt' }),
+    ]);
+    expect(await (await repository.getBook(backedUpBook.bookId))?.fileBlob.text()).toBe('book-to-back-up');
+  });
+
+  it('rejects a corrupted backup before changing the existing library', async () => {
+    vi.stubGlobal('Blob', NodeBlob);
+    const backedUpBook = (await repository.importBook(new File(['original-book'], 'backup.epub'), metadata)).book;
+    const backupBytes = new Uint8Array(await (await repository.createBackup()).arrayBuffer());
+    backupBytes[backupBytes.length - 1] ^= 0xff;
+
+    repository.close();
+    indexedDb = new IDBFactory();
+    repository = new EbookRepository(indexedDb, storageManager);
+    const existing = (await repository.importBook(new File(['existing-book'], 'existing.epub'), metadata)).book;
+
+    await expect(repository.restoreBackup(new Blob([backupBytes]))).rejects.toMatchObject({ code: 'INVALID_BACKUP' });
+    expect((await repository.listRecentBooks()).map(book => book.bookId)).toEqual([existing.bookId]);
+    expect(await repository.getBook(backedUpBook.bookId)).toBeUndefined();
   });
 });

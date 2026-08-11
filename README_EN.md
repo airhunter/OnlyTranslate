@@ -51,9 +51,9 @@ If Smart mode misses content, switch to Full page and translate again. For dynam
 Choose **Ebooks** at the bottom of the popup to import an EPUB directly, view recently read books, or continue reading. The full reader uses vertical scrolling, automatically translates the current chapter, and supports bilingual or translation-only display, table-of-contents navigation, themes, font size, line spacing, and location bookmarks.
 
 - The first release supports local DRM-free EPUB files only. PDF, MOBI, and DRM-protected books are not supported.
-- Books, reading progress, and bookmarks are stored in the current browser profile. Cloud sync, export, notes, and AI analysis are not included.
+- Books, reading progress, and bookmarks are stored in the current browser profile. You can back up and restore them from the full library; cloud sync, notes, and AI analysis are not included.
 - The EPUB file itself is never uploaded. Chapter text is sent to the selected translation provider only when translation begins.
-- Removing a book also deletes its reading progress and bookmarks. Uninstalling the extension or clearing extension data removes the local library.
+- Removing a book also deletes its reading progress and bookmarks. Uninstalling the extension or clearing extension data removes the local library, so use **Back up library** first.
 - Imported books remain readable while the extension is disabled, but automatic translation pauses.
 
 ## Supported Platforms

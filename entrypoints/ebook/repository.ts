@@ -5,6 +5,11 @@ import type {
   ReadingState,
   StorageEstimate,
 } from './types';
+import {
+  createEbookBackup,
+  EbookBackupError,
+  readEbookBackup,
+} from './backup';
 
 const DATABASE_NAME = 'onlytranslate-ebooks';
 const DATABASE_VERSION = 1;
@@ -193,6 +198,72 @@ export class EbookRepository {
     const transaction = database.transaction(BOOKMARKS_STORE, 'readwrite');
     transaction.objectStore(BOOKMARKS_STORE).delete(bookmarkId);
     await transactionDone(transaction);
+  }
+
+  async createBackup(): Promise<Blob> {
+    const database = await this.open();
+    const transaction = database.transaction([BOOKS_STORE, PROGRESS_STORE, BOOKMARKS_STORE], 'readonly');
+    const [books, progressEntries, bookmarks] = await Promise.all([
+      requestResult(transaction.objectStore(BOOKS_STORE).getAll()) as Promise<EbookRecord[]>,
+      requestResult(transaction.objectStore(PROGRESS_STORE).getAll()) as Promise<ReadingState[]>,
+      requestResult(transaction.objectStore(BOOKMARKS_STORE).getAll()) as Promise<Bookmark[]>,
+    ]);
+    await transactionDone(transaction);
+
+    const progressByBook = new Map(progressEntries.map(progress => [progress.bookId, progress]));
+    const bookmarksByBook = new Map<string, Bookmark[]>();
+    bookmarks.forEach(bookmark => {
+      const grouped = bookmarksByBook.get(bookmark.bookId) ?? [];
+      grouped.push(bookmark);
+      bookmarksByBook.set(bookmark.bookId, grouped);
+    });
+    return await createEbookBackup(books.map(record => ({
+      record,
+      progress: progressByBook.get(record.bookId),
+      bookmarks: bookmarksByBook.get(record.bookId) ?? [],
+    })));
+  }
+
+  async restoreBackup(source: Blob): Promise<{ bookCount: number; bookmarkCount: number }> {
+    const backup = await readEbookBackup(source);
+    const database = await this.open();
+    const transaction = database.transaction([BOOKS_STORE, PROGRESS_STORE, BOOKMARKS_STORE], 'readwrite');
+    const bookStore = transaction.objectStore(BOOKS_STORE);
+    const progressStore = transaction.objectStore(PROGRESS_STORE);
+    const bookmarkStore = transaction.objectStore(BOOKMARKS_STORE);
+    let bookmarkCount = 0;
+
+    try {
+      for (const entry of backup.entries) {
+        const existingBookmarkKeys = await requestResult(bookmarkStore.index('bookId').getAllKeys(entry.record.bookId));
+        existingBookmarkKeys.forEach(key => bookmarkStore.delete(key));
+        bookStore.put(entry.record);
+        if (entry.progress) progressStore.put(entry.progress);
+        else progressStore.delete(entry.record.bookId);
+        entry.bookmarks.forEach(bookmark => {
+          bookmarkStore.add({ ...bookmark, id: crypto.randomUUID() });
+          bookmarkCount += 1;
+        });
+      }
+      await transactionDone(transaction);
+      try {
+        await this.storageManager?.persist?.();
+      } catch {
+        // The restored data is already committed; persistence is best-effort.
+      }
+      return { bookCount: backup.entries.length, bookmarkCount };
+    } catch (error) {
+      try {
+        transaction.abort();
+      } catch {
+        // The browser may already have aborted the transaction.
+      }
+      if (isQuotaExceededError(error) || transaction.error?.name === 'QuotaExceededError') {
+        throw new EbookBackupError('INSUFFICIENT_STORAGE', 'There is not enough browser storage to restore this backup', { cause: error });
+      }
+      if (error instanceof EbookBackupError) throw error;
+      throw new EbookBackupError('INVALID_BACKUP', 'The ebook backup could not be restored', { cause: error });
+    }
   }
 
   async estimateStorage(): Promise<StorageEstimate> {

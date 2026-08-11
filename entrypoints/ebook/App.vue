@@ -12,18 +12,28 @@
       <strong>{{ t('ebook.dropActive') }}</strong>
     </div>
     <header class="library-header">
-      <div>
+      <div class="library-header-copy">
         <p class="eyebrow">OnlyTranslate</p>
         <h1>{{ t('ebook.libraryTitle') }}</h1>
         <p class="subtitle">{{ t('ebook.librarySubtitle') }}</p>
       </div>
-      <button class="primary-button" :disabled="importing" @click="chooseFile">
-        {{ importing ? t('common.processing') : t('ebook.importEpub') }}
-      </button>
+      <div class="library-header-actions">
+        <button class="secondary-button" :disabled="libraryBusy" @click="chooseBackupFile">
+          {{ restoring ? t('common.processing') : t('ebook.restoreLibrary') }}
+        </button>
+        <button class="secondary-button" :disabled="libraryBusy || !books.length" @click="backupLibrary">
+          {{ backingUp ? t('common.processing') : t('ebook.backupLibrary') }}
+        </button>
+        <button class="primary-button" :disabled="libraryBusy" @click="chooseFile">
+          {{ importing ? t('common.processing') : t('ebook.importEpub') }}
+        </button>
+      </div>
       <input ref="fileInput" class="visually-hidden" type="file" accept=".epub,application/epub+zip" @change="importFile" />
+      <input ref="backupFileInput" class="visually-hidden" type="file" :accept="EBOOK_BACKUP_EXTENSION" @change="restoreLibrary" />
     </header>
 
-    <section v-if="errorMessage" class="notice notice--error">{{ errorMessage }}</section>
+    <section v-if="errorMessage" class="notice notice--error" role="alert">{{ errorMessage }}</section>
+    <section v-else-if="noticeMessage" class="notice notice--success" role="status">{{ noticeMessage }}</section>
     <section v-if="books.length" class="book-grid" :aria-label="t('ebook.recentBooks')">
       <article v-for="item in books" :key="item.record.bookId" class="book-card">
         <div class="cover">
@@ -50,14 +60,17 @@
       <div class="empty-icon">EPUB</div>
       <h2>{{ t('ebook.emptyTitle') }}</h2>
       <p>{{ t('ebook.emptyDescription') }}</p>
-      <button class="primary-button" @click="chooseFile">{{ t('ebook.importEpub') }}</button>
+      <button class="primary-button" :disabled="libraryBusy" @click="chooseFile">{{ t('ebook.importEpub') }}</button>
       <span class="drop-hint">{{ t('ebook.dropHint') }}</span>
     </section>
 
     <footer class="storage-summary">
-      <strong>{{ t('ebook.bookStorageUsage', { usage: formatBytes(bookStorageUsage) }) }}</strong>
-      <span> · {{ t('ebook.storageUsage', { usage: formatBytes(storageEstimate.usage), quota: formatBytes(storageEstimate.quota) }) }}</span>
-      <span v-if="storageEstimate.persisted"> · {{ t('ebook.persistentStorage') }}</span>
+      <div>
+        <strong>{{ t('ebook.bookStorageUsage', { usage: formatBytes(bookStorageUsage) }) }}</strong>
+        <span> · {{ t('ebook.storageUsage', { usage: formatBytes(storageEstimate.usage), quota: formatBytes(storageEstimate.quota) }) }}</span>
+        <span v-if="storageEstimate.persisted"> · {{ t('ebook.persistentStorage') }}</span>
+      </div>
+      <p>{{ t('ebook.uninstallWarning') }}</p>
     </footer>
   </main>
 
@@ -232,6 +245,7 @@ import { useConfig } from '@/composables/useConfig';
 import { useTheme } from '@/composables/useTheme';
 import { isServiceConfigured } from '@/entrypoints/utils/option';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
+import { EBOOK_BACKUP_EXTENSION, EbookBackupError } from './backup';
 import { EbookImportError, EbookRepository } from './repository';
 import { selectDroppedFile } from './dropImport';
 import { getRequestedEbookId } from './url';
@@ -268,6 +282,7 @@ const { actualTheme } = useTheme(config);
 
 const repository = new EbookRepository();
 const fileInput = ref<HTMLInputElement>();
+const backupFileInput = ref<HTMLInputElement>();
 const viewer = ref<HTMLElement>();
 const books = ref<RecentBook[]>([]);
 const bookmarks = ref<Bookmark[]>([]);
@@ -276,8 +291,11 @@ const activeBook = ref<EbookRecord>();
 const activeBookIsTemporary = ref(false);
 const loadingLibrary = ref(true);
 const importing = ref(false);
+const backingUp = ref(false);
+const restoring = ref(false);
 const draggingFile = ref(false);
 const errorMessage = ref('');
+const noticeMessage = ref('');
 const currentProgress = ref(0);
 const currentLocationCfi = ref('');
 const currentChapterHref = ref('');
@@ -317,6 +335,7 @@ const flatToc = computed(() => {
 const bookStorageUsage = computed(() => books.value.reduce((total, item) => (
   total + item.record.fileSize + (item.record.coverBlob?.size ?? 0)
 ), 0));
+const libraryBusy = computed(() => importing.value || backingUp.value || restoring.value);
 
 const currentBookmark = computed(() => findBookmarkAtCfi(bookmarks.value, currentLocationCfi.value));
 
@@ -386,6 +405,10 @@ function chooseFile(): void {
   fileInput.value?.click();
 }
 
+function chooseBackupFile(): void {
+  backupFileInput.value?.click();
+}
+
 async function importFile(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -397,6 +420,7 @@ async function importFile(event: Event): Promise<void> {
 async function importSelectedFile(file: File): Promise<void> {
   importing.value = true;
   errorMessage.value = '';
+  noticeMessage.value = '';
   try {
     const result = await repository.importBook(file, extractEpubMetadata);
     await refreshLibrary();
@@ -409,6 +433,49 @@ async function importSelectedFile(file: File): Promise<void> {
     errorMessage.value = importErrorText(error);
   } finally {
     importing.value = false;
+  }
+}
+
+async function backupLibrary(): Promise<void> {
+  if (!books.value.length) return;
+  backingUp.value = true;
+  errorMessage.value = '';
+  noticeMessage.value = '';
+  try {
+    const backup = await repository.createBackup();
+    const url = URL.createObjectURL(backup);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `onlytranslate-bookshelf-${new Date().toISOString().slice(0, 10)}${EBOOK_BACKUP_EXTENSION}`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    noticeMessage.value = t('ebook.backupComplete', { count: books.value.length });
+  } catch {
+    errorMessage.value = t('ebook.backupFailed');
+  } finally {
+    backingUp.value = false;
+  }
+}
+
+async function restoreLibrary(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file || !window.confirm(t('ebook.restoreConfirm'))) return;
+
+  restoring.value = true;
+  errorMessage.value = '';
+  noticeMessage.value = '';
+  try {
+    const result = await repository.restoreBackup(file);
+    await refreshLibrary();
+    noticeMessage.value = t('ebook.restoreComplete', result);
+  } catch (error) {
+    errorMessage.value = backupErrorText(error);
+  } finally {
+    restoring.value = false;
   }
 }
 
@@ -651,13 +718,13 @@ function isCurrentChapter(href: string): boolean {
 }
 
 function handleDragEnter(event: DragEvent): void {
-  if (!hasDraggedFiles(event) || importing.value) return;
+  if (!hasDraggedFiles(event) || libraryBusy.value) return;
   dragDepth += 1;
   draggingFile.value = true;
 }
 
 function handleDragOver(event: DragEvent): void {
-  if (!hasDraggedFiles(event) || importing.value || !event.dataTransfer) return;
+  if (!hasDraggedFiles(event) || libraryBusy.value || !event.dataTransfer) return;
   event.dataTransfer.dropEffect = 'copy';
 }
 
@@ -670,7 +737,7 @@ function handleDragLeave(event: DragEvent): void {
 async function handleDrop(event: DragEvent): Promise<void> {
   dragDepth = 0;
   draggingFile.value = false;
-  if (importing.value || !event.dataTransfer) return;
+  if (libraryBusy.value || !event.dataTransfer) return;
   const selection = selectDroppedFile(event.dataTransfer.files);
   if (!selection.file) {
     if (selection.error === 'MULTIPLE') errorMessage.value = t('ebook.dropSingleFile');
@@ -735,6 +802,13 @@ function importErrorText(error: unknown): string {
     PARSE_FAILED: 'ebook.parseFailed',
   };
   return t(keyByCode[error.code]);
+}
+
+function backupErrorText(error: unknown): string {
+  if (!(error instanceof EbookBackupError)) return t('ebook.restoreFailed');
+  if (error.code === 'UNSUPPORTED_VERSION') return t('ebook.unsupportedBackup');
+  if (error.code === 'INSUFFICIENT_STORAGE') return t('ebook.insufficientStorage');
+  return t('ebook.invalidBackup');
 }
 
 function formatTime(timestamp: number): string {

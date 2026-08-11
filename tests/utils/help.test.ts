@@ -93,6 +93,7 @@ describe('help utilities', () => {
     expect(ebookTopic?.sections.map(section => section.id)).toEqual([
       'ebook-start',
       'ebook-navigation',
+      'ebook-backup',
       'ebook-beta',
     ])
 
@@ -100,6 +101,7 @@ describe('help utilities', () => {
       const i18n = createAppI18n(locale)
       expect(i18n.global.t('help.topics.ebooks.title')).toContain('Beta')
       expect(i18n.global.t('help.topics.ebooks.betaBody')).toContain('EPUB')
+      expect(i18n.global.t('help.topics.ebooks.backupStep1')).toContain('.onlytranslate-ebooks')
     }
   })
 

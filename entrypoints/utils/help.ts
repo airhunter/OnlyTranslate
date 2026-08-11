@@ -173,6 +173,16 @@ export const helpTopics: HelpTopic[] = [
         ],
       },
       {
+        id: 'ebook-backup',
+        titleKey: 'help.topics.ebooks.backupTitle',
+        bodyKey: 'help.topics.ebooks.backupBody',
+        stepKeys: [
+          'help.topics.ebooks.backupStep1',
+          'help.topics.ebooks.backupStep2',
+          'help.topics.ebooks.backupStep3',
+        ],
+      },
+      {
         id: 'ebook-beta',
         titleKey: 'help.topics.ebooks.betaTitle',
         bodyKey: 'help.topics.ebooks.betaBody',
