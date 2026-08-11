@@ -1,7 +1,7 @@
 import { checkConfig, searchClassName, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
-import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
+import { insertFailedTip, insertLoadingSpinner, showExtensionReloadedTip } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import {
     beautyHTML,
@@ -24,6 +24,7 @@ import { config } from "@/entrypoints/utils/config";
 import { getBackgroundTranslationSlotLimit } from "@/entrypoints/utils/translateQueue";
 import {
     isTranslationCancelledError,
+    isExtensionContextInvalidatedError,
     translateText,
     cancelAllTranslations,
     type TranslateOptions
@@ -63,6 +64,8 @@ const translationState = {
     nodeIdCounter: 0
 };
 
+let hasReportedInvalidatedExtensionContext = false;
+
 export const originalContents = translationState.originalContents;
 
 function setAutoTranslating(value: boolean): void {
@@ -81,6 +84,33 @@ function clearBackgroundTranslationTimer(): void {
         clearTimeout(translationState.backgroundTimer);
         translationState.backgroundTimer = null;
     }
+}
+
+function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElement): boolean {
+    if (!isExtensionContextInvalidatedError(error)) return false;
+    if (hasReportedInvalidatedExtensionContext) {
+        clearUnfinishedAutoTranslation(failedNode);
+        return true;
+    }
+
+    hasReportedInvalidatedExtensionContext = true;
+    const unfinishedNodes = new Set<HTMLElement>([failedNode]);
+    document.querySelectorAll<HTMLElement>('.only-translate-loading').forEach(element => {
+        if (element.parentElement) unfinishedNodes.add(element.parentElement);
+        element.remove();
+    });
+    setAutoTranslating(false);
+    clearHoverTimer();
+    clearBackgroundTranslationTimer();
+    translationState.observer?.disconnect();
+    translationState.observer = null;
+    translationState.mutationObserver?.disconnect();
+    translationState.mutationObserver = null;
+    cancelAllTranslations();
+    unfinishedNodes.forEach(clearUnfinishedAutoTranslation);
+    clearStaleBilingualTranslationMarkers();
+    showExtensionReloadedTip();
+    return true;
 }
 
 interface AutoTranslateTarget {
@@ -223,6 +253,7 @@ export function restoreOriginalContent() {
     setAutoTranslating(false);
     translationState.htmlSet.clear(); // 清空防抖集合
     translationState.nodeIdCounter = 0; // 重置节点ID计数器
+    hasReportedInvalidatedExtensionContext = false;
     
     // 7. 消除可能存在的全局样式污染
     const tempStyleElements = document.querySelectorAll('style[data-fr-temp-style]');
@@ -590,6 +621,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
         })
         .catch((error: Error) => {
             spinner.remove();
+            if (stopForInvalidatedExtensionContext(error, node)) return;
             if (isTranslationCancelledError(error)) {
                 translationState.htmlSet.delete(nodeOuterHTML);
                 clearUnfinishedAutoTranslation(node);
@@ -643,6 +675,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
         })
         .catch((error: Error) => {
             spinner.remove();
+            if (stopForInvalidatedExtensionContext(error, node)) return;
             if (isTranslationCancelledError(error)) {
                 clearUnfinishedAutoTranslation(node);
                 return;

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockCanUseBatchTranslationForCurrentConfig = vi.hoisted(() => vi.fn(() => false))
 const mockHasForegroundTranslationWork = vi.hoisted(() => vi.fn(() => false))
+const mockCancelAllTranslations = vi.hoisted(() => vi.fn())
+const mockInsertFailedTip = vi.hoisted(() => vi.fn())
+const mockShowExtensionReloadedTip = vi.hoisted(() => vi.fn())
 const mockConfig = vi.hoisted(() => ({
   translationScope: 'smart',
   on: true,
@@ -23,8 +26,11 @@ vi.mock('@/entrypoints/utils/config', () => ({
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
   canUseBatchTranslationForCurrentConfig: mockCanUseBatchTranslationForCurrentConfig,
-  cancelAllTranslations: vi.fn(),
+  cancelAllTranslations: mockCancelAllTranslations,
   hasForegroundTranslationWork: mockHasForegroundTranslationWork,
+  isExtensionContextInvalidatedError: vi.fn((error: unknown) => {
+    return error instanceof Error && /extension context invalidated|receiving end does not exist/i.test(error.message)
+  }),
   isTranslationCancelledError: vi.fn((error: unknown) => {
     return error instanceof Error && error.name === 'TranslationCancelledError'
   }),
@@ -32,8 +38,9 @@ vi.mock('@/entrypoints/utils/translateApi', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/icon', () => ({
-  insertFailedTip: vi.fn(),
-  insertLoadingSpinner: vi.fn(() => ({ remove: vi.fn() }))
+  insertFailedTip: mockInsertFailedTip,
+  insertLoadingSpinner: vi.fn(() => ({ remove: vi.fn() })),
+  showExtensionReloadedTip: mockShowExtensionReloadedTip
 }))
 
 vi.mock('@/entrypoints/utils/translationDirection', () => ({
@@ -854,6 +861,36 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(caption.hasAttribute(TRANSLATED_ATTR)).toBe(false)
       expect(caption.hasAttribute(TRANSLATED_ID_ATTR)).toBe(false)
       expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('stops webpage translation and asks for one refresh when the extension context is invalidated', async () => {
+    vi.mocked(translateText).mockRejectedValue(new Error('Extension context invalidated.'))
+    document.body.innerHTML = `
+      <article>
+        <p id="first">The first uncached paragraph needs the extension runtime.</p>
+        <p id="second">The second uncached paragraph would fail for the same reason.</p>
+      </article>
+    `
+
+    document.querySelectorAll<HTMLElement>('p').forEach((node, index) => {
+      node.setAttribute(TRANSLATED_ATTR, 'true')
+      node.setAttribute(TRANSLATED_ID_ATTR, `failed-${index}`)
+    })
+
+    try {
+      await Promise.all([
+        handleBilingualTranslation(document.querySelector('#first')!, false),
+        handleBilingualTranslation(document.querySelector('#second')!, false)
+      ])
+
+      expect(mockCancelAllTranslations).toHaveBeenCalledTimes(1)
+      expect(mockShowExtensionReloadedTip).toHaveBeenCalledTimes(1)
+      expect(mockInsertFailedTip).not.toHaveBeenCalled()
+      expect(document.querySelector(`[${TRANSLATED_ATTR}="true"]`)).toBeNull()
+      expect(document.querySelector(`[${TRANSLATED_ID_ATTR}]`)).toBeNull()
     } finally {
       restoreOriginalContent()
     }

@@ -57,6 +57,11 @@ export function isTranslationCancelledError(error: unknown): boolean {
     || (typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'TranslationCancelledError');
 }
 
+export function isExtensionContextInvalidatedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /extension context invalidated|receiving end does not exist/i.test(message);
+}
+
 function normalizeRuntimeTranslationResult(result: unknown): string {
   if (typeof result === 'string') return result;
 

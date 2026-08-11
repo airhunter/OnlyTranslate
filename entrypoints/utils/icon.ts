@@ -55,6 +55,10 @@ export function insertFailedTip(
   node.appendChild(wrapper);
 }
 
+export function showExtensionReloadedTip() {
+  sendErrorMessage(t("runtime.inputTranslationReloadPage"));
+}
+
 // 处理重试按钮点击事件
 function handleRetryClick(node: HTMLElement, wrapper: HTMLElement) {
   return (event: MouseEvent) => {

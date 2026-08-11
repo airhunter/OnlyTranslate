@@ -66,6 +66,7 @@ import {
   cacheTranslationResult,
   cancelAllTranslations,
   canUseBatchTranslationForCurrentConfig,
+  isExtensionContextInvalidatedError,
   isRetryableTranslationError,
   translateText,
 } from '../../entrypoints/utils/translateApi'
@@ -185,6 +186,12 @@ describe('translateText', () => {
     expect(isRetryableTranslationError(new Error('Failed to fetch'))).toBe(true)
     expect(isRetryableTranslationError(new Error('翻译请求超时'))).toBe(true)
     expect(isRetryableTranslationError(new Error('Unexpected translation response'))).toBe(false)
+  })
+
+  it('recognizes extension runtime failures that require a page refresh', () => {
+    expect(isExtensionContextInvalidatedError(new Error('Extension context invalidated.'))).toBe(true)
+    expect(isExtensionContextInvalidatedError(new Error('Could not establish connection. Receiving end does not exist.'))).toBe(true)
+    expect(isExtensionContextInvalidatedError(new Error('Failed to fetch'))).toBe(false)
   })
 
   it('does not retry a deterministic bad-request failure', async () => {
