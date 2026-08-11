@@ -15,8 +15,8 @@ const mocks = vi.hoisted(() => ({
   translateSubtitleBatch: vi.fn(),
   createCacheSession: vi.fn(),
   cacheSessions: [] as Array<{
-    hydrate: ReturnType<typeof vi.fn<any[], any>>
-    commitMany: ReturnType<typeof vi.fn<any[], any>>
+    hydrate: ReturnType<typeof vi.fn>
+    commitMany: ReturnType<typeof vi.fn>
   }>,
   schedulerOptions: [] as Array<{
     sessionId: string
