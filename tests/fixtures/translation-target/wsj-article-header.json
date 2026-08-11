@@ -1,0 +1,9 @@
+{
+  "name": "WSJ article header supplements the main headline outside the article body",
+  "url": "https://www.wsj.com/business/china-us-ai-model-costs-53a12e96",
+  "scope": "smart",
+  "html": "wsj-article-header.html",
+  "contentRootContains": ["#article-title", "#article-paragraph"],
+  "include": ["article-title", "article-dek", "article-paragraph"],
+  "exclude": ["breadcrumb", "byline", "advertisement", "most-popular"]
+}

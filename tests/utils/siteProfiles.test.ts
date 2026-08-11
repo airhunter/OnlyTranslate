@@ -453,4 +453,31 @@ describe('site profile registry', () => {
     expect(targets).toContain(document.querySelector('#article-title'))
     expect(targets).not.toContain(document.querySelector('#ad-title'))
   })
+
+  it('supplements WSJ article headlines without collecting nearby navigation or recommendations', () => {
+    document.body.innerHTML = `
+      <main>
+        <div class="article-container">
+          <div class="article-header">
+            <nav><a id="breadcrumb" href="/business">Business</a></nav>
+            <div class="crawler">
+              <div><h1 id="article-title">Corporate America Has Suddenly Decided to Stop Blowing Money on AI</h1></div>
+              <h2 id="article-dek">Companies big and small are mixing models and changing the economics of the industry</h2>
+            </div>
+          </div>
+          <article><p>Companies are adding lower-priced models alongside their existing artificial intelligence providers.</p></article>
+        </div>
+        <section class="further-reading">
+          <h2 id="related-title">Further Reading</h2>
+        </section>
+      </main>
+    `
+
+    const targets = supplementalCompatFn['wsj.com']?.(document.body, { mode: 'smart' }) ?? []
+
+    expect(targets).toContain(document.querySelector('#article-title'))
+    expect(targets).toContain(document.querySelector('#article-dek'))
+    expect(targets).not.toContain(document.querySelector('#breadcrumb'))
+    expect(targets).not.toContain(document.querySelector('#related-title'))
+  })
 })
