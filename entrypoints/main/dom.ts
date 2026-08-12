@@ -1,6 +1,6 @@
 import { keepSelectorCompatFn, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
-import { html } from 'js-beautify';
+import beautify from 'js-beautify';
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
     getCachedContentFilterDecision,
@@ -1319,7 +1319,7 @@ export function beautyHTML(text: string): string {
     // 1. 先替换 SVG 中的大小写敏感词
     // 2. 再使用 js-beautify 格式化 HTML
     text = replaceSensitiveWords(text);
-    return html(text)
+    return beautify.html(text)
 }
 
 // 替换 svg 标签中的一些大小写敏感的词（html 不区分大小写，但 svg 标签区分大小写）
