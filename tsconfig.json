@@ -1,6 +1,6 @@
 {
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node"
+    "noUncheckedIndexedAccess": false
   }
 }

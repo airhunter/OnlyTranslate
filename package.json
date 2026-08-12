@@ -13,9 +13,6 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "vue-tsc --noEmit",
     "postinstall": "wxt prepare",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
     "test": "vitest run",
     "test:content": "vitest run tests/utils/proseSignals.test.ts tests/utils/autoTranslateTargetFixtures.test.ts tests/utils/autoTranslateTarget.test.ts tests/utils/contentDetector.test.ts tests/utils/contentFilter.test.ts tests/utils/contentUnitClassifier.test.ts tests/utils/translationTarget.test.ts tests/utils/siteProfiles.test.ts",
     "test:input-page": "node scripts/serve-input-translation-test.mjs",
@@ -41,24 +38,22 @@
     "@release-it/conventional-changelog": "^11.0.1",
     "@types/crypto-js": "^4.2.2",
     "@types/webextension-polyfill": "^0.12.1",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.8",
     "@vue/test-utils": "^2.4.6",
     "@wxt-dev/webextension-polyfill": "^1.0.0",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.8.9",
     "release-it": "^20.0.0",
     "typescript": "^5.7.3",
-    "vite": "^5.4.21",
-    "vitepress": "^1.6.3",
+    "vite": "^7.3.6",
     "vitest": "^3.2.7",
     "vue": "^3.5.13",
     "vue-tsc": "^2.2.0",
-    "wxt": "^0.20.18"
+    "web-ext": "^10.6.0",
+    "wxt": "^0.21.4"
   },
-  "packageManager": "pnpm@9.12.1+sha1.7084e7df42ee1d221994c2c2599277a2a937f050",
-  "pnpm": {
-    "overrides": {
-      "fx-runner@1.4.0>shell-quote": "1.10.0"
-    }
-  }
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@9.12.1+sha1.7084e7df42ee1d221994c2c2599277a2a937f050"
 }
