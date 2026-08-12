@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  epubjs@0.3.93>@xmldom/xmldom: 0.8.13
+
 importers:
 
   .:
@@ -1038,10 +1041,9 @@ packages:
       webextension-polyfill: '*'
       wxt: '>=0.20.0'
 
-  '@xmldom/xmldom@0.7.13':
-    resolution: {integrity: sha512-lm2GW5PkosIzccsaZIz7tp8cPADSIlIHWDFTR1N0SzfinhhYgeIQjFMz4rYzanCScr3DqQLeomUDArp6MWKm+g==}
+  '@xmldom/xmldom@0.8.13':
+    resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
-    deprecated: this version has critical issues, please update to the latest version
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -4137,7 +4139,7 @@ snapshots:
       webextension-polyfill: 0.12.0
       wxt: 0.21.4(eslint@9.39.4(jiti@2.6.1))(rollup@4.62.4)(typescript@5.7.3)(vite@7.3.6(jiti@2.6.1))(web-ext@10.6.0(jiti@2.6.1))
 
-  '@xmldom/xmldom@0.7.13': {}
+  '@xmldom/xmldom@0.8.13': {}
 
   abbrev@2.0.0: {}
 
@@ -4725,7 +4727,7 @@ snapshots:
   epubjs@0.3.93:
     dependencies:
       '@types/localforage': 0.0.34
-      '@xmldom/xmldom': 0.7.13
+      '@xmldom/xmldom': 0.8.13
       core-js: 3.49.0
       event-emitter: 0.3.5
       jszip: 3.10.1
