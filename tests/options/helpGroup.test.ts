@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createAppI18n } from '@/entrypoints/utils/i18n'
+import { submitPrivateFeedback } from '@/entrypoints/utils/privateFeedback'
 import HelpGroup from '@/components/options/HelpGroup.vue'
 
 vi.mock('webextension-polyfill', () => ({
@@ -20,9 +21,18 @@ vi.mock('@/entrypoints/utils/translationDiagnostics', async (importOriginal) => 
   }
 })
 
+vi.mock('@/entrypoints/utils/privateFeedback', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/entrypoints/utils/privateFeedback')>()
+  return {
+    ...original,
+    submitPrivateFeedback: vi.fn().mockResolvedValue('OT-20260813-TEST'),
+  }
+})
+
 describe('HelpGroup', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it.each([
@@ -111,5 +121,31 @@ describe('HelpGroup', () => {
     expect(wrapper.text()).toContain('Most recent translation')
     expect(wrapper.text()).toContain('3 most recent translations')
     expect(wrapper.text()).toContain('query parameters are retained')
+    expect(wrapper.find('[data-testid="private-feedback-email"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="include-contact"]').setValue(true)
+    const email = wrapper.get('[data-testid="private-feedback-email"]')
+    expect(email.attributes('type')).toBe('email')
+    expect(email.attributes('maxlength')).toBe('254')
+    expect(email.attributes('required')).toBeDefined()
+    expect(wrapper.text()).toContain('used only to follow up on this feedback')
+  })
+
+  it('submits contact details only after explicit opt-in', async () => {
+    const wrapper = mount(HelpGroup, {
+      global: { plugins: [createAppI18n('zh-CN')] },
+    })
+
+    await wrapper.get('[data-testid="open-private-feedback"]').trigger('click')
+    await wrapper.get('[data-testid="private-feedback-message"]').setValue('页面翻译失败')
+    await wrapper.get('[data-testid="include-contact"]').setValue(true)
+    await wrapper.get('[data-testid="private-feedback-email"]').setValue(' user@example.com ')
+    await wrapper.get('[data-testid="submit-private-feedback"]').trigger('click')
+
+    await vi.waitFor(() => expect(submitPrivateFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      schemaVersion: 1,
+      message: '页面翻译失败',
+      contact: { email: 'user@example.com', consent: true },
+    })))
   })
 })

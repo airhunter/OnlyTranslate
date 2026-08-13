@@ -66,6 +66,28 @@
       />
     </div>
 
+    <div class="private-feedback__option">
+      <label class="private-feedback__check">
+        <input v-model="includeContact" type="checkbox" data-testid="include-contact" />
+        <strong>{{ t('privateFeedback.contact') }}</strong>
+        <small>{{ t('privateFeedback.optional') }}</small>
+      </label>
+      <p>{{ t('privateFeedback.contactHint') }}</p>
+      <label v-if="includeContact" class="private-feedback__contact-field">
+        <span>{{ t('privateFeedback.contactEmail') }}</span>
+        <input
+          v-model="contactEmail"
+          class="private-feedback__email"
+          type="email"
+          autocomplete="email"
+          maxlength="254"
+          required
+          :placeholder="t('privateFeedback.contactPlaceholder')"
+          data-testid="private-feedback-email"
+        />
+      </label>
+    </div>
+
     <p v-if="statusMessage" class="private-feedback__status" :class="{ 'private-feedback__status--success': submittedId }">
       {{ statusMessage }}
     </p>
@@ -90,6 +112,7 @@ import {
 } from '@/entrypoints/utils/translationDiagnostics'
 import {
   describeBrowser,
+  normalizeFeedbackEmail,
   sanitizeFeedbackPageUrl,
   selectFeedbackDiagnostics,
   submitPrivateFeedback,
@@ -108,6 +131,8 @@ const diagnosticRange = ref<FeedbackDiagnosticRange>('latest')
 const diagnostics = ref<TranslationDiagnosticSession[]>([])
 const includePageUrl = ref(false)
 const pageUrl = ref('')
+const includeContact = ref(false)
+const contactEmail = ref('')
 const submitting = ref(false)
 const submittedId = ref('')
 const statusMessage = ref('')
@@ -156,6 +181,13 @@ async function submit() {
     statusMessage.value = t('privateFeedback.invalidUrl')
     return
   }
+  const normalizedContactEmail = includeContact.value
+    ? normalizeFeedbackEmail(contactEmail.value)
+    : undefined
+  if (includeContact.value && !normalizedContactEmail) {
+    statusMessage.value = t('privateFeedback.invalidEmail')
+    return
+  }
 
   const payload: PrivateFeedbackPayload = {
     type: 'extension_feedback',
@@ -165,6 +197,9 @@ async function submit() {
     locale: locale.value,
     category: category.value,
     message: normalizedMessage,
+    ...(normalizedContactEmail
+      ? { contact: { email: normalizedContactEmail, consent: true } as const }
+      : {}),
     ...(normalizedPageUrl ? { pageUrl: normalizedPageUrl } : {}),
     ...(diagnosticBlock.value ? { diagnostics: diagnosticBlock.value } : {}),
   }
@@ -191,11 +226,12 @@ async function submit() {
 .private-feedback__header p, .private-feedback__option p { color: var(--el-text-color-secondary); font-size: 13px; line-height: 1.65; margin: 6px 0 0; }
 .private-feedback__close { border: 0; background: transparent; color: var(--el-text-color-secondary); cursor: pointer; font-size: 24px; height: 32px; }
 .private-feedback__field { display: grid; gap: 7px; margin-top: 18px; color: var(--el-text-color-primary); font-size: 13px; font-weight: 650; }
-.private-feedback__field select, .private-feedback__field textarea, .private-feedback__url { box-sizing: border-box; width: 100%; border: 1px solid var(--fr-border-color); border-radius: 8px; background: var(--fr-bg-color); color: var(--fr-text-color-primary); font: inherit; padding: 10px 12px; }
+.private-feedback__field select, .private-feedback__field textarea, .private-feedback__url, .private-feedback__email { box-sizing: border-box; width: 100%; border: 1px solid var(--fr-border-color); border-radius: 8px; background: var(--fr-bg-color); color: var(--fr-text-color-primary); font: inherit; padding: 10px 12px; }
 .private-feedback__field textarea { resize: vertical; }
 .private-feedback__option { margin-top: 18px; border-top: 1px solid var(--fr-border-color-lighter); padding-top: 16px; }
 .private-feedback__check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .private-feedback__check small { color: var(--el-text-color-secondary); font-weight: 400; }
+.private-feedback__contact-field { display: grid; gap: 7px; margin-top: 10px; font-size: 13px; font-weight: 650; }
 .private-feedback__retention { font-size: 12px !important; }
 .private-feedback__diagnostics-controls { display: flex; gap: 20px; margin-top: 12px; font-size: 13px; }
 .private-feedback__preview { margin-top: 12px; }

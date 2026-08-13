@@ -13,12 +13,28 @@ export interface PrivateFeedbackPayload {
   locale: string
   category: string
   message: string
+  contact?: {
+    email: string
+    consent: true
+  }
   pageUrl?: string
   diagnostics?: {
     formatVersion: 1
     browser: string
     sessions: FeedbackDiagnosticSession[]
   }
+}
+
+export function normalizeFeedbackEmail(value: string): string | undefined {
+  const normalized = value.trim()
+  if (
+    !normalized
+    || normalized.length > 254
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
+  ) {
+    return undefined
+  }
+  return normalized
 }
 
 export function describeBrowser(userAgent: string): string {

@@ -1,6 +1,6 @@
 # OnlyTranslate Privacy Policy
 
-Last updated: August 2026
+Last updated: August 13, 2026
 
 OnlyTranslate is committed to protecting your privacy. This Privacy Policy explains how our browser extension handles your data.
 
@@ -18,7 +18,7 @@ When “Local cache” is enabled, the extension also stores translated video su
 The extension also keeps up to 5 translation performance diagnostics locally for no more than 24 hours. These diagnostics include only text size, request and cache counts, queue and API timings, time to first result and completion, service, a known model or `custom` marker, retries, and error types. They do not contain source text, translations, API keys, custom model names, or endpoints. You can clear them at any time from the feedback interface.
 
 **4. Private feedback you choose to submit**
-Private feedback stores the message, category, extension version, interface language, and submission time. Diagnostics and the page URL are both off by default and are included only when you explicitly enable them after reviewing the preview. An explicitly submitted page URL retains its query string and has its `#` fragment removed; query parameters may contain tokens or personal information, so review them before submitting. Feedback is retained for no more than 90 days, and we do not persist IP addresses or request headers.
+Private feedback stores the message, category, extension version, interface language, and submission time. Diagnostics, the page URL, and a contact email are off by default and are included only when you explicitly enable the corresponding option. An explicitly submitted page URL retains its query string and has its `#` fragment removed; query parameters may contain tokens or personal information, so review them before submitting. A contact email and follow-up consent you voluntarily provide are used only by project maintainers to follow up on that feedback and are retained with it for no more than 90 days. We do not persist IP addresses or request headers.
 
 **5. Third-party services**
 Because translation data is sent directly to the third-party API server that you configure, its processing is governed by that service provider's privacy policy.

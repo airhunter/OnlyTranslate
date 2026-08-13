@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   describeBrowser,
+  normalizeFeedbackEmail,
   sanitizeFeedbackPageUrl,
   selectFeedbackDiagnostics,
   submitPrivateFeedback,
@@ -31,6 +32,12 @@ function session(id: string, pageUrl?: string): TranslationDiagnosticSession {
 }
 
 describe('private feedback data', () => {
+  it('normalizes valid contact emails and rejects invalid values', () => {
+    expect(normalizeFeedbackEmail(' user@example.com ')).toBe('user@example.com')
+    expect(normalizeFeedbackEmail('not-an-email')).toBeUndefined()
+    expect(normalizeFeedbackEmail(`a@${'b'.repeat(250)}.com`)).toBeUndefined()
+  })
+
   it('keeps an explicitly submitted query string but removes the fragment', () => {
     expect(sanitizeFeedbackPageUrl('https://comuniq.xyz/post?t=1439#part')).toBe('https://comuniq.xyz/post?t=1439')
     expect(sanitizeFeedbackPageUrl('chrome-extension://secret/options.html')).toBeUndefined()
@@ -63,6 +70,11 @@ describe('private feedback data', () => {
     await expect(submitPrivateFeedback({
       type: 'extension_feedback', schemaVersion: 1, source: 'extension', version: '1.7.0',
       locale: 'zh-CN', category: 'performance', message: '慢',
+      contact: { email: 'user@example.com', consent: true },
     }, fetcher)).resolves.toBe('OT-20260809-ABC')
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      schemaVersion: 1,
+      contact: { email: 'user@example.com', consent: true },
+    })
   })
 })
