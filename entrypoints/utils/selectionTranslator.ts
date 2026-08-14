@@ -1,65 +1,126 @@
 import { createApp } from 'vue';
 import type { App, ComponentPublicInstance } from 'vue';
+import type { ContentScriptContext } from 'wxt/utils/content-script-context';
+import {
+  createShadowRootUi,
+  type ShadowRootContentScriptUi,
+} from 'wxt/utils/content-script-ui/shadow-root';
 import SelectionTranslator from '@/components/SelectionTranslator.vue';
+import selectionTranslatorStyles from '@/components/SelectionTranslator.css?inline';
 import { config } from '@/entrypoints/utils/config';
 import { storage } from '@wxt-dev/storage';
 
+const SELECTION_TRANSLATOR_HOST_ID = 'only-translate-selection-translator-container';
+
+interface MountedSelectionTranslator {
+  app: App<Element>;
+  instance: ComponentPublicInstance;
+}
+
 let selectionTranslatorInstance: ComponentPublicInstance | null = null;
-let app: App<Element> | null = null;
+let contentScriptContext: ContentScriptContext | null = null;
+let selectionTranslatorUi: ShadowRootContentScriptUi<MountedSelectionTranslator> | null = null;
+let selectionTranslatorUiPromise: Promise<ShadowRootContentScriptUi<MountedSelectionTranslator>> | null = null;
+let shouldBeMounted = false;
+
+export function initializeSelectionTranslator(context: ContentScriptContext) {
+  contentScriptContext = context;
+}
+
+function canMountSelectionTranslator() {
+  return !config.disableSelectionTranslator && config.selectionTranslatorMode !== 'disabled';
+}
+
+async function ensureSelectionTranslatorUi() {
+  if (selectionTranslatorUi) return selectionTranslatorUi;
+  if (selectionTranslatorUiPromise) return selectionTranslatorUiPromise;
+  if (!contentScriptContext) {
+    throw new Error('Selection translator content script context is not initialized');
+  }
+
+  selectionTranslatorUiPromise = createShadowRootUi<MountedSelectionTranslator>(contentScriptContext, {
+    name: 'only-translate-selection-translator',
+    position: 'overlay',
+    anchor: 'body',
+    zIndex: 2147483647,
+    css: selectionTranslatorStyles,
+    isolateEvents: true,
+    onMount(container) {
+      container.classList.add('notranslate');
+      container.setAttribute('translate', 'no');
+      const app = createApp(SelectionTranslator);
+      const instance = app.mount(container);
+      selectionTranslatorInstance = instance;
+      return { app, instance };
+    },
+    onRemove(mounted) {
+      mounted?.app.unmount();
+      if (selectionTranslatorInstance === mounted?.instance) {
+        selectionTranslatorInstance = null;
+      }
+    },
+  }).then(ui => {
+    ui.shadowHost.id = SELECTION_TRANSLATOR_HOST_ID;
+    ui.shadowHost.classList.add('notranslate');
+    ui.shadowHost.setAttribute('translate', 'no');
+    selectionTranslatorUi = ui;
+    return ui;
+  }).finally(() => {
+    selectionTranslatorUiPromise = null;
+  });
+
+  return selectionTranslatorUiPromise;
+}
 
 /**
  * 挂载选词翻译组件
  */
-export function mountSelectionTranslator() {
+export async function mountSelectionTranslator() {
   // 如果已存在实例或配置禁用了此功能，则不创建
-  if (selectionTranslatorInstance || config.disableSelectionTranslator || config.selectionTranslatorMode === 'disabled') {
-    return;
+  if (!canMountSelectionTranslator()) {
+    shouldBeMounted = false;
+    return null;
   }
 
-  // 创建容器元素
-  const container = document.createElement('div');
-  container.id = 'only-translate-selection-translator-container';
-  document.body.appendChild(container);
+  shouldBeMounted = true;
+  if (selectionTranslatorInstance) return selectionTranslatorInstance;
 
-  // 创建Vue应用实例
-  app = createApp(SelectionTranslator);
+  try {
+    const ui = await ensureSelectionTranslatorUi();
+    if (!shouldBeMounted || !canMountSelectionTranslator()) return null;
 
-  // 挂载应用
-  selectionTranslatorInstance = app.mount(container);
+    if (!ui.mounted) {
+      ui.mount();
+    }
 
-  return selectionTranslatorInstance;
+    return selectionTranslatorInstance;
+  } catch (error) {
+    console.error('Failed to mount selection translator:', error);
+    return null;
+  }
 }
 
 /**
  * 卸载选词翻译组件
  */
 export function unmountSelectionTranslator() {
-  if (selectionTranslatorInstance && app) {
-    // 获取容器
-    const container = document.getElementById('only-translate-selection-translator-container');
-    
-    // 卸载Vue应用
-    app.unmount();
-    selectionTranslatorInstance = null;
-    app = null;
-    
-    // 移除容器
-    if (container) {
-      container.remove();
-    }
+  shouldBeMounted = false;
+  if (selectionTranslatorUi?.mounted) {
+    selectionTranslatorUi.remove();
   }
+  selectionTranslatorInstance = null;
 }
 
 /**
  * 切换选词翻译组件的启用状态
  */
 export function toggleSelectionTranslator() {
-  if (selectionTranslatorInstance) {
+  if (shouldBeMounted || selectionTranslatorInstance) {
     unmountSelectionTranslator();
     config.disableSelectionTranslator = true;
   } else {
     config.disableSelectionTranslator = false;
-    mountSelectionTranslator();
+    void mountSelectionTranslator();
   }
   
   // 保存配置到存储

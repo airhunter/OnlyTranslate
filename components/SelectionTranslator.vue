@@ -1,6 +1,5 @@
 <template>
-  <teleport to="body">
-    <div ref="selection-ref" class="fr-selection-translator-wrapper">
+  <div ref="selection-ref" class="fr-selection-translator-wrapper">
       <!-- 小红点指示器 -->
       <div v-if="showIndicator" 
           class="fr-selection-indicator" 
@@ -78,23 +77,22 @@
           </div>
         </div>
       </div>
+  </div>
+
+  <!-- 复制成功提示 -->
+  <div v-if="copySuccess" class="fr-copy-success-toast" :class="{ 'fr-dark-theme': isDarkTheme }">
+    <div class="fr-copy-success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
     </div>
-    
-    <!-- 复制成功提示 -->
-    <div v-if="copySuccess" class="fr-copy-success-toast" :class="{ 'fr-dark-theme': isDarkTheme }">
-      <div class="fr-copy-success-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </div>
-      <span>{{ t('selection.copied') }}</span>
-    </div>
-  </teleport>
+    <span>{{ t('selection.copied') }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, useTemplateRef, watchEffect } from 'vue';
-import { translateText } from '@/entrypoints/utils/translateApi';
+import { isTranslationCancelledError, translateText } from '@/entrypoints/utils/translateApi';
 import { config } from '@/entrypoints/utils/config';
 import { autoPlacement, autoUpdate, computePosition, flip, hide, inline, offset, shift } from '@floating-ui/dom';
 import { t } from '@/entrypoints/utils/i18n';
@@ -112,14 +110,48 @@ const isHoveringTooltip = ref(false);
 const copySuccess = ref(false);
 const isPlaying = ref(false);
 const audioElement = ref<HTMLAudioElement | null>(null);
-const lastSelectedText = ref(''); // 用于存储上一次选择的文本
 const isSelecting = ref(false); // 标记用户是否正在选择文本中
 const debounceTimer = ref<number | null>(null); // 防抖定时器
 const currentPlayingText = ref(''); // 当前正在播放的文本
 const isFirefox = ref(false); // 是否为Firefox浏览器
 const isDarkTheme = ref(false); // 主题状态
 
+interface SelectionSession {
+  id: number;
+  text: string;
+  range: Range;
+  context: string;
+}
+
+const activeSelectionSession = ref<SelectionSession | null>(null);
+const isInteractingWithSelectionUi = ref(false);
+let nextSelectionSessionId = 0;
+let activeTranslationController: AbortController | null = null;
+let activeTranslationRequestId = 0;
+
 const containerRef = useTemplateRef('selection-ref');
+
+const getEventPath = (event: Event) => (
+  typeof event.composedPath === 'function' ? event.composedPath() : [event.target]
+);
+
+const isEventInsideSelectionUi = (event: Event) => {
+  const container = containerRef.value;
+  if (!container) return false;
+
+  return getEventPath(event).some(node => (
+    node === container || (node instanceof Node && container.contains(node))
+  ));
+};
+
+const eventPathMatches = (event: Event, selector: string) => (
+  getEventPath(event).some(node => node instanceof Element && node.matches(selector))
+);
+
+const isSelectionUiFocused = () => {
+  const root = containerRef.value?.getRootNode();
+  return root instanceof ShadowRoot && root.activeElement !== null;
+};
 
 // 自动更新小红点位置
 watchEffect((onClean) => {
@@ -154,7 +186,29 @@ watch([showIndicator, showTooltip], ([isIndicatorVisible, isTooltipVisible]) => 
   if (isIndicatorVisible || isTooltipVisible) return;
 
   selectRange.value = null;
+  activeSelectionSession.value = null;
 });
+
+const cancelActiveTranslation = () => {
+  activeTranslationRequestId += 1;
+  activeTranslationController?.abort();
+  activeTranslationController = null;
+  isLoading.value = false;
+};
+
+const commitSelectionSession = (text: string, range: Range) => {
+  cancelActiveTranslation();
+  const session: SelectionSession = {
+    id: ++nextSelectionSessionId,
+    text,
+    range,
+    context: document.title,
+  };
+  activeSelectionSession.value = session;
+  selectedText.value = session.text;
+  selectRange.value = session.range;
+  showIndicator.value = true;
+};
 
 // 防抖函数
 const debounce = (fn: Function, delay: number) => {
@@ -186,15 +240,6 @@ const handleTextSelection = () => {
       return;
     }
     
-    // 如果选中的文本与上次相同，重新显示指示器（避免因为相同文本而不显示的问题）
-    if (selectedTextContent === lastSelectedText.value) {
-      // 重新显示指示器，但不重新获取翻译
-      const range = selection.getRangeAt(0);
-      selectRange.value = range;
-      showIndicator.value = true;
-      return;
-    }
-    
     // 忽略过短的选择（避免意外触发）
     if (selectedTextContent.length < 2) {
       hideIndicator();
@@ -211,11 +256,8 @@ const handleTextSelection = () => {
     // 获取选中文本位置信息
     const range = selection.getRangeAt(0);
     
-    // 保存选中文本和位置
-    selectedText.value = selectedTextContent;
-    lastSelectedText.value = selectedTextContent;
-    selectRange.value = range;
-    showIndicator.value = true;
+    // 每次选区都创建独立会话；即使文本相同，也不能复用旧请求状态。
+    commitSelectionSession(selectedTextContent, range);
   }, 200); // 200ms防抖延迟，减少延迟提高响应性
 };
 
@@ -276,6 +318,7 @@ const hideIndicator = () => {
 
 // 关闭翻译弹窗
 const closeTooltip = () => {
+  cancelActiveTranslation();
   showTooltip.value = false;
   // 当关闭弹窗时停止音频播放
   stopAudio();
@@ -283,25 +326,50 @@ const closeTooltip = () => {
 
 // 获取翻译结果
 const getTranslation = async () => {
-  if (!selectedText.value) return;
+  const session = activeSelectionSession.value;
+  if (!session) return;
+
+  cancelActiveTranslation();
+  const requestId = ++activeTranslationRequestId;
+  const controller = new AbortController();
+  activeTranslationController = controller;
   
   isLoading.value = true;
   error.value = '';
   
   try {
     // 使用当前配置的翻译服务进行翻译
-    const result = await translateText(selectedText.value, document.title, {
+    const result = await translateText(session.text, session.context, {
+      signal: controller.signal,
       diagnostics: {
         scene: 'selection',
         pageUrl: document.location.href,
       },
     });
+
+    if (
+      controller.signal.aborted
+      || requestId !== activeTranslationRequestId
+      || activeSelectionSession.value?.id !== session.id
+    ) {
+      return;
+    }
     translationResult.value = result;
   } catch (err) {
+    if (
+      controller.signal.aborted
+      || requestId !== activeTranslationRequestId
+      || isTranslationCancelledError(err)
+    ) {
+      return;
+    }
     error.value = t('selection.failed');
     console.error('Translation error:', err);
   } finally {
-    isLoading.value = false;
+    if (requestId === activeTranslationRequestId) {
+      activeTranslationController = null;
+      isLoading.value = false;
+    }
   }
 };
 
@@ -328,14 +396,10 @@ const copyTranslation = () => {
 const toggleAudio = (text: string, e?: Event) => {
   if (!text) return;
 
-  // 阻止事件冒泡，避免触发外部点击事件导致弹窗关闭
-  // 针对Firefox兼容性问题，优先使用传入的事件对象，否则使用全局event
+  // 用户点击音频按钮时阻止冒泡；程序化调用没有事件对象，无需处理。
   if (e) {
     e.stopPropagation();
     e.preventDefault();
-  } else if (event) {
-    event.stopPropagation();
-    event.preventDefault();
   }
   
   // 确保弹窗不会消失
@@ -415,9 +479,6 @@ const stopAudio = (e?: Event) => {
   if (e) {
     e.stopPropagation();
     e.preventDefault();
-  } else if (event) {
-    event.stopPropagation();
-    event.preventDefault();
   }
   
   if (audioElement.value) {
@@ -535,6 +596,21 @@ const updateTheme = () => {
   isDarkTheme.value = getCurrentTheme();
 };
 
+watch(
+  [showTooltip, () => activeSelectionSession.value?.id ?? 0],
+  ([isTooltipVisible]) => {
+    if (isTooltipVisible) {
+      void getTranslation();
+      return;
+    }
+
+    cancelActiveTranslation();
+    if (isPlaying.value) {
+      stopAudio();
+    }
+  }
+);
+
 // 监听事件
 onMounted(() => {
   // 检测浏览器类型
@@ -559,11 +635,27 @@ onMounted(() => {
   systemThemeHandler = handleSystemThemeChange;
   
   // 定义事件监听器函数
-  mouseDownHandler = () => {
+  mouseDownHandler = (event: MouseEvent) => {
+    if (isEventInsideSelectionUi(event)) {
+      isInteractingWithSelectionUi.value = true;
+      isSelecting.value = false;
+      return;
+    }
+
+    isInteractingWithSelectionUi.value = false;
     isSelecting.value = true;
   };
   
-  mouseUpHandler = () => {
+  mouseUpHandler = (event: MouseEvent) => {
+    if (isEventInsideSelectionUi(event)) {
+      isSelecting.value = false;
+      window.setTimeout(() => {
+        isInteractingWithSelectionUi.value = false;
+      }, 0);
+      return;
+    }
+
+    isInteractingWithSelectionUi.value = false;
     isSelecting.value = false;
     handleTextSelection();
   };
@@ -577,6 +669,8 @@ onMounted(() => {
   // 添加selectionchange事件作为备用机制（使用节流限制频率）
   let lastSelectionChangeTime = 0;
   selectionChangeHandler = () => {
+    if (isInteractingWithSelectionUi.value || isSelectionUiFocused()) return;
+
     const now = Date.now();
     // 节流：只有在500ms内没有处理过selectionchange且不在选择过程中时才处理
     if (now - lastSelectionChangeTime > 500 && !isSelecting.value) {
@@ -592,39 +686,17 @@ onMounted(() => {
   
   document.addEventListener('selectionchange', selectionChangeHandler);
   
-  // 更新clickHandler定义，添加selectionchange的清理
-  const originalClickHandler = clickHandler;
-  clickHandler = (e: Event) => {
-    originalClickHandler(e);
-  };
-  
-  // 监听翻译显示状态的变化
-  watch(showTooltip, async (newValue: boolean) => {
-    if (newValue) {
-      // 当显示弹窗时，加载翻译结果
-      await getTranslation();
-    } else if (isPlaying.value) {
-      // 当关闭弹窗时，停止播放
-      stopAudio();
-    }
-  });
-  
   // 定义点击事件处理函数
   clickHandler = (e: Event) => {
-    // 检查点击事件是否发生在指示器或弹窗之外
-    const target = e.target as HTMLElement;
-    const isOutsideIndicator = !target.closest('.fr-selection-indicator');
-    const isOutsideTooltip = !target.closest('.fr-translation-tooltip');
-    
     // 检查点击事件是否发生在音频按钮上
-    const isAudioButton = target.closest('.fr-text-audio-btn') || target.closest('.fr-stop-audio-btn');
+    const isAudioButton = eventPathMatches(e, '.fr-text-audio-btn, .fr-stop-audio-btn');
     
     // 如果点击在音频按钮上，不要隐藏弹窗
     if (isAudioButton) {
       return;
     }
     
-    if (isOutsideIndicator && isOutsideTooltip && showIndicator.value) {
+    if (!isEventInsideSelectionUi(e) && showIndicator.value) {
       hideIndicator();
       closeTooltip();
     }
@@ -635,14 +707,16 @@ onMounted(() => {
 });
 
 // 存储事件监听器函数的引用，用于正确移除
-let mouseDownHandler: () => void;
-let mouseUpHandler: () => void;
+let mouseDownHandler: (event: MouseEvent) => void;
+let mouseUpHandler: (event: MouseEvent) => void;
 let clickHandler: (e: Event) => void;
 let selectionChangeHandler: () => void;
 let systemThemeHandler: () => void;
 
 // 清理事件监听 (修复清理逻辑)
 onBeforeUnmount(() => {
+  cancelActiveTranslation();
+
   // 正确移除事件监听器
   if (mouseDownHandler) {
     document.removeEventListener('mousedown', mouseDownHandler);
@@ -682,517 +756,3 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style scoped>
-.fr-selection-translator-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9998;
-  width: 350px;
-}
-
-.fr-selection-indicator {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background-color: #5BB5F5;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 9999;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  animation: pulse 1.5s infinite;
-}
-
-[data-placement="left"] .fr-selection-indicator {
-  bottom: 0;
-  right: 4px;
-}
-[data-placement="right"] .fr-selection-indicator {
-  bottom: 0;
-  left: 4px;
-}
-[data-placement="top-start"] .fr-selection-indicator {
-  left: 0;
-  bottom: 4px;
-}
-[data-placement="top-end"] .fr-selection-indicator {
-  right: 0;
-  bottom: 4px;
-}
-[data-placement="bottom-start"] .fr-selection-indicator {
-  left: 0;
-  top: 4px;
-}
-[data-placement="bottom-end"] .fr-selection-indicator {
-  right: 0;
-  top: 4px;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(91, 181, 245, 0.7);
-  }
-  70% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 10px rgba(91, 181, 245, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(91, 181, 245, 0);
-  }
-}
-
-.fr-translation-tooltip {
-  position: absolute;
-  background-color: white !important;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  width: 350px; /* 增加宽度 */
-  transition: opacity 0.2s ease;
-}
-
-[data-placement="left"] .fr-translation-tooltip {
-  top: -10px;
-  right: 5px;
-}
-[data-placement="right"] .fr-translation-tooltip {
-  top: -10px;
-  left: 5px;
-}
-[data-placement="top-start"] .fr-translation-tooltip {
-  left: 1px;
-  bottom: 5px;
-}
-[data-placement="top-end"] .fr-translation-tooltip {
-  right: 1px;
-  bottom: 5px;
-}
-[data-placement="bottom-start"] .fr-translation-tooltip {
-  left: 1px;
-  top: 5px;
-}
-[data-placement="bottom-end"] .fr-translation-tooltip {
-  right: 1px;
-  top: 5px;
-}
-
-.fr-tooltip-header {
-  padding: 8px 12px;
-  background-color: #f5f5f5 !important;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e8e8e8;
-  position: sticky; /* 使header粘性定位 */
-  top: 0;
-  z-index: 1;
-}
-
-.fr-tooltip-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.fr-action-btn, .fr-copy-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.fr-action-btn:hover, .fr-copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #333;
-}
-
-.fr-close-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  color: #999;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-}
-
-.fr-close-btn:hover {
-  color: #666;
-}
-
-.fr-tooltip-content {
-  padding: 12px;
-  background-color: white !important;
-  overflow-y: auto; /* 添加垂直滚动 */
-  max-height: 350px; /* 增加最大高度 */
-  scrollbar-width: thin; /* 细滚动条 */
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-}
-
-.fr-original-text pre,
-.fr-translation-result pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit !important;
-}
-
-.fr-original-text {
-  margin-bottom: 8px;
-  color: #666 !important;
-  font-size: 14px;
-  word-break: break-word;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed #eee;
-  position: relative;
-}
-
-.fr-translation-result {
-  color: #333 !important;
-  font-size: 15px;
-  font-weight: 500;
-  word-break: break-word;
-  margin-top: 8px;
-  line-height: 1.5;
-  position: relative;
-}
-
-.fr-loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
-  border-radius: 50%;
-  margin: 10px auto;
-  animation: spin 1s linear infinite;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-loading-spinner {
-  border: 2px solid #444;
-  border-top: 2px solid #69c0ff;
-}
-
-/* 静态加载样式 */
-.fr-loading-spinner.fr-static {
-  animation: none;
-  background: radial-gradient(circle, rgb(230, 151, 171) 30%, rgba(230, 151, 171, 0.6) 70%);
-  border: 2px solid rgb(200, 121, 141);
-  box-shadow: 0 0 10px rgba(230, 151, 171, 0.5);
-  position: relative;
-}
-
-/* 添加光泽效果 */
-.fr-loading-spinner.fr-static::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.fr-error-message {
-  color: #ff4d4f;
-  text-align: center;
-  padding: 10px;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-error-message {
-  color: #ff7875;
-}
-
-/* 文本内播放按钮 */
-.fr-text-audio-btn {
-  position: absolute;
-  right: 4px;
-  top: 4px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-}
-
-.fr-original-text:hover .fr-text-audio-btn,
-.fr-translation-result:hover .fr-text-audio-btn {
-  opacity: 1;
-}
-
-.fr-text-audio-btn:hover {
-  color: #1890ff;
-  background-color: rgba(24, 144, 255, 0.1);
-}
-
-/* 自定义滚动条样式 */
-.fr-tooltip-content::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.fr-tooltip-content::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 3px;
-}
-
-.fr-tooltip-content::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-/* 暗黑模式适配 */
-.fr-translation-tooltip.fr-dark-theme {
-  background-color: #1f1f1f !important;
-  border: 1px solid #333;
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-tooltip-header {
-  background-color: #2a2a2a !important;
-  border-bottom: 1px solid #444;
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-tooltip-header span {
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-original-text {
-  color: #ffffff !important;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-original-text pre {
-  color: #ffffff !important;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-translation-result {
-  color: #ffffff !important;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-translation-result pre {
-  color: #ffffff !important;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-close-btn {
-  color: #bbb;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-close-btn:hover {
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-tooltip-content {
-  background-color: #1f1f1f !important;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-tooltip-content::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-.fr-translation-container {
-  position: relative;
-}
-
-.fr-no-select {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  cursor: default;
-}
-
-/* 移除不需要的选择样式 */
-.user-select-text::selection {
-  background-color: #409eff;
-  color: white;
-}
-
-.fr-translation-result, .fr-original-text {
-  padding: 8px;
-  border-radius: 4px;
-  background: transparent;
-  transition: background-color 0.15s ease;
-}
-
-.fr-translation-result:hover, .fr-original-text:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-translation-result:hover, 
-.fr-translation-tooltip.fr-dark-theme .fr-original-text:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.fr-copy-success-toast {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 10010;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: toast-fade 1.5s ease forwards;
-}
-
-.fr-copy-success-icon {
-  color: #52c41a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 内部播放状态提示 */
-.fr-playing-status {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background-color: rgba(24, 144, 255, 0.1);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #1890ff;
-  font-size: 13px;
-  animation: pulse-light 1.5s infinite;
-}
-
-/* 修复Firefox浏览器中动画丢失的问题 */
-@-moz-document url-prefix() {
-  .fr-playing-status {
-    animation-name: moz-pulse-light;
-  }
-  
-  @keyframes moz-pulse-light {
-    0% {
-      background-color: rgba(24, 144, 255, 0.05);
-    }
-    50% {
-      background-color: rgba(24, 144, 255, 0.15);
-    }
-    100% {
-      background-color: rgba(24, 144, 255, 0.05);
-    }
-  }
-}
-
-.fr-playing-status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@keyframes pulse-light {
-  0% {
-    background-color: rgba(24, 144, 255, 0.05);
-  }
-  50% {
-    background-color: rgba(24, 144, 255, 0.15);
-  }
-  100% {
-    background-color: rgba(24, 144, 255, 0.05);
-  }
-}
-
-.fr-stop-audio-btn {
-  background: none;
-  border: none;
-  color: #1890ff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 50%;
-  margin-left: auto;
-  transition: background-color 0.2s;
-}
-
-.fr-stop-audio-btn:hover {
-  background-color: rgba(24, 144, 255, 0.2);
-}
-
-/* 暗黑模式适配 */
-.fr-translation-tooltip.fr-dark-theme .fr-playing-status {
-  background-color: rgba(64, 169, 255, 0.15);
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-stop-audio-btn {
-  color: #69c0ff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-stop-audio-btn:hover {
-  background-color: rgba(64, 169, 255, 0.2);
-}
-
-/* 移除外部播放提示样式，改为内部显示 */
-.fr-audio-playing-toast {
-  display: none;
-}
-
-@keyframes toast-fade {
-  0% { opacity: 0; transform: translate(-50%, -40%); }
-  20% { opacity: 1; transform: translate(-50%, -50%); }
-  80% { opacity: 1; transform: translate(-50%, -50%); }
-  100% { opacity: 0; transform: translate(-50%, -60%); }
-}
-
-.fr-copy-success-toast.fr-dark-theme {
-  background-color: rgba(0, 0, 0, 0.85);
-}
-
-.fr-copy-success-toast.fr-dark-theme .fr-copy-success-icon {
-  color: #73d13d;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-action-btn,
-.fr-translation-tooltip.fr-dark-theme .fr-copy-btn,
-.fr-translation-tooltip.fr-dark-theme .fr-text-audio-btn {
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-action-btn:hover,
-.fr-translation-tooltip.fr-dark-theme .fr-copy-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-.fr-translation-tooltip.fr-dark-theme .fr-text-audio-btn:hover {
-  color: #69c0ff;
-  background-color: rgba(24, 144, 255, 0.15);
-}
-</style> 

@@ -87,6 +87,62 @@ function assertNotCancelled(startGeneration: number): void {
   }
 }
 
+function assertSignalNotAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new TranslationCancelledError();
+  }
+}
+
+function withAbortSignal<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new TranslationCancelledError());
+
+  return new Promise<T>((resolve, reject) => {
+    const handleAbort = () => reject(new TranslationCancelledError());
+    signal.addEventListener('abort', handleAbort, { once: true });
+
+    promise.then(resolve, reject).finally(() => {
+      signal.removeEventListener('abort', handleAbort);
+    });
+  });
+}
+
+function waitForRetry(delay: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return new Promise(resolve => setTimeout(resolve, delay));
+  }
+  if (signal.aborted) {
+    return Promise.reject(new TranslationCancelledError());
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', handleAbort);
+      resolve();
+    }, delay);
+    const handleAbort = () => {
+      clearTimeout(timer);
+      reject(new TranslationCancelledError());
+    };
+    signal.addEventListener('abort', handleAbort, { once: true });
+  });
+}
+
+function withRequestTimeout<T>(promise: Promise<T>, timeout: number, signal?: AbortSignal): Promise<T> {
+  let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutTimer = setTimeout(
+      () => reject(new Error(t('runtime.translationRequestTimeout'))),
+      timeout
+    );
+  });
+
+  return withAbortSignal(Promise.race([promise, timeoutPromise]), signal)
+    .finally(() => {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+    });
+}
+
 function getRetryDelay(retryCount: number, baseDelay: number): number {
   return Math.min(baseDelay * (2 ** retryCount), MAX_RETRY_DELAY);
 }
@@ -224,7 +280,10 @@ export async function translateText(origin: string, context: string = document.t
     allowBatch = false,
     priority = 'normal',
     fastMode = false,
+    signal,
   } = options;
+
+  assertSignalNotAborted(signal);
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
 
@@ -253,7 +312,10 @@ export async function translateText(origin: string, context: string = document.t
     direction.targetLang,
     fastMode,
   );
-  const inFlight = inFlightTranslations.get(inFlightKey);
+  // 带独立取消信号的调用不共享进行中的 Promise，避免一个调用者取消时
+  // 连带影响整页翻译或其他调用者。
+  const shouldTrackInFlight = !signal;
+  const inFlight = shouldTrackInFlight ? inFlightTranslations.get(inFlightKey) : undefined;
   if (inFlight) return inFlight;
 
   // 检查缓存
@@ -284,8 +346,9 @@ export async function translateText(origin: string, context: string = document.t
     return enqueueTranslation(async () => {
     const translationTask = async (retryCount: number = 0): Promise<string> => {
       try {
+        assertSignalNotAborted(signal);
         assertNotCancelled(requestGeneration);
-        const response = await Promise.race([
+        const response = await withRequestTimeout(
           browser.runtime.sendMessage({
             context,
             origin: text,
@@ -294,10 +357,10 @@ export async function translateText(origin: string, context: string = document.t
             ...(fastMode ? { fastMode: true } : {}),
             diagnostics: createDiagnosticMetadata(diagnosticContext, retryCount, queuedAt),
           }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
-          )
-        ]);
+          timeout,
+          signal
+        );
+        assertSignalNotAborted(signal);
         assertNotCancelled(requestGeneration);
         const result = normalizeRuntimeTranslationResult(response);
 
@@ -312,7 +375,7 @@ export async function translateText(origin: string, context: string = document.t
             console.log(`[翻译API] 翻译失败，${retryCount + 1}/${maxRetries} 次重试，原因:`, error);
           }
 
-          await new Promise(resolve => setTimeout(resolve, getRetryDelay(retryCount, retryDelay)));
+          await waitForRetry(getRetryDelay(retryCount, retryDelay), signal);
           return translationTask(retryCount + 1);
         }
 
@@ -327,8 +390,9 @@ export async function translateText(origin: string, context: string = document.t
   const executeBatchTranslation = (texts: string[]): Promise<string[]> => {
     const queuedAt = Date.now();
     return enqueueTranslation(async () => {
+    assertSignalNotAborted(signal);
     assertNotCancelled(requestGeneration);
-    const response = await Promise.race([
+    const response = await withRequestTimeout(
       browser.runtime.sendMessage({
         type: 'BATCH_TRANSLATION',
         origins: texts,
@@ -338,10 +402,10 @@ export async function translateText(origin: string, context: string = document.t
         ...(fastMode ? { fastMode: true } : {}),
         diagnostics: createDiagnosticMetadata(diagnosticContext, 0, queuedAt),
       }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(t('runtime.translationRequestTimeout'))), timeout)
-      )
-    ]);
+      timeout,
+      signal
+    );
+    assertSignalNotAborted(signal);
     assertNotCancelled(requestGeneration);
 
     if (!Array.isArray(response) || response.length !== texts.length || !response.every(item => typeof item === 'string' && item.trim().length > 0)) {
@@ -352,7 +416,8 @@ export async function translateText(origin: string, context: string = document.t
     }, { priority });
   };
 
-  const translationPromise = shouldUseBatchTranslation(allowBatch, safeOrigin)
+  // 可独立取消的交互请求不进入延迟批处理，确保取消后不会留下待发送的批次。
+  const translationPromise = !signal && shouldUseBatchTranslation(allowBatch, safeOrigin)
     ? enqueueBatchTranslation({
       key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang, fastMode),
       origin: safeOrigin,
@@ -368,6 +433,10 @@ export async function translateText(origin: string, context: string = document.t
     }
     return result;
   });
+
+  if (!shouldTrackInFlight) {
+    return withAbortSignal(cacheAwarePromise, signal);
+  }
 
   const trackedPromise = cacheAwarePromise.finally(() => {
     if (inFlightTranslations.get(inFlightKey) === trackedPromise) {
@@ -418,6 +487,8 @@ export interface TranslateOptions {
   priority?: TranslationPriority;
   /** 低延迟翻译模式：服务适配器应关闭或压低 Thinking/Reasoning */
   fastMode?: boolean;
+  /** 仅取消当前调用者的等待、重试和结果回写，不影响其他翻译任务。 */
+  signal?: AbortSignal;
   /** 本地性能诊断的会话信息；不会记录原文、译文、密钥或接口地址。 */
   diagnostics?: TranslationDiagnosticContext;
 } 

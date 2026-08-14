@@ -3,7 +3,11 @@ import { cache } from "./utils/cache";
 import './style.css';
 import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, setFloatingBallTranslationState, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
-import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
+import {
+    initializeSelectionTranslator,
+    mountSelectionTranslator,
+    unmountSelectionTranslator
+} from "@/entrypoints/utils/selectionTranslator";
 import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
 import { t } from "@/entrypoints/utils/i18n";
 import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
@@ -19,9 +23,10 @@ import { setupContentUiMounting } from "@/entrypoints/content/contentUiMounting"
 export default defineContentScript({
     matches: ['<all_urls>'],  // 匹配所有页面
     runAt: 'document_end',  // DOM 解析完成后注册页面能力，扩展 UI 会等待 window.load
-    async main() {
+    async main(ctx) {
         await configReady // 等待配置加载完成
         if (config.on === false) return; // 如果配置关闭，则不执行任何操作
+        initializeSelectionTranslator(ctx);
         const inputBoxTranslation = setupInputBoxTranslation({
             config,
             document,
@@ -66,7 +71,7 @@ export default defineContentScript({
                 }
 
                 if (config.disableSelectionTranslator !== true) {
-                    mountSelectionTranslator();
+                    void mountSelectionTranslator();
                 }
 
                 setupOnboardingWidgets();

@@ -146,6 +146,74 @@ describe('translateText', () => {
     })
   })
 
+  it('cancels only the translation call associated with an abort signal', async () => {
+    const resolvers: Array<(value: string) => void> = []
+    mockSendMessage.mockImplementation(() => new Promise(resolve => {
+      resolvers.push(resolve)
+    }))
+
+    const sharedTranslation = translateText('Same text', 'Example', { useCache: false })
+    const controller = new AbortController()
+    const scopedTranslation = translateText('Same text', 'Example', {
+      signal: controller.signal,
+      useCache: false
+    })
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+
+    const scopedRejection = expect(scopedTranslation).rejects.toMatchObject({
+      name: 'TranslationCancelledError'
+    })
+    controller.abort()
+    await scopedRejection
+
+    resolvers[0]('保留的共享译文')
+    resolvers[1]('应被丢弃的划词译文')
+
+    await expect(sharedTranslation).resolves.toBe('保留的共享译文')
+  })
+
+  it('does not send or retry a translation after its signal is aborted', async () => {
+    vi.useFakeTimers()
+    mockSendMessage.mockRejectedValueOnce(new Error('network failure'))
+    const controller = new AbortController()
+
+    const translation = translateText('Abort retry', 'Example', {
+      maxRetries: 3,
+      retryDelay: 100,
+      signal: controller.signal,
+      useCache: false
+    })
+    const rejection = expect(translation).rejects.toMatchObject({
+      name: 'TranslationCancelledError'
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+
+    controller.abort()
+    await rejection
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  it('rejects an already-aborted call before entering the translation queue', async () => {
+    const controller = new AbortController()
+    controller.abort()
+
+    await expect(translateText('Do not send', 'Example', {
+      signal: controller.signal,
+      useCache: false
+    })).rejects.toMatchObject({
+      name: 'TranslationCancelledError'
+    })
+
+    expect(mockEnqueueTranslation).not.toHaveBeenCalled()
+    expect(mockSendMessage).not.toHaveBeenCalled()
+  })
+
   it('uses exponential backoff between retries', async () => {
     vi.useFakeTimers()
     mockSendMessage
