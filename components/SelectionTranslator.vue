@@ -1,758 +1,552 @@
 <template>
-  <div ref="selection-ref" class="fr-selection-translator-wrapper">
-      <!-- 小红点指示器 -->
-      <div v-if="showIndicator" 
-          class="fr-selection-indicator" 
-          @mouseenter="handleMouseEnter"
-          @mouseleave="handleMouseLeave">
-      </div>
-    
-      <!-- 翻译结果弹窗 -->
-      <div v-if="showTooltip" 
-          class="fr-translation-tooltip" 
-          :class="{ 'fr-dark-theme': isDarkTheme }"
-          @mouseenter="handleMouseEnterTooltip"
-          @mouseleave="handleMouseLeaveTooltip">
-        <div class="fr-tooltip-header">
-          <span>{{ t('selection.title') }}<small>（{{ t('selection.via') }}）</small></span>
-          <div class="fr-tooltip-actions">
-            <button class="fr-action-btn" @click="copyTranslation" :title="t('selection.copyTranslation')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-            <button class="fr-close-btn" @click="closeTooltip">×</button>
-          </div>
-        </div>
-        <div class="fr-tooltip-content">
-          <div v-if="isLoading" :class="['fr-loading-spinner', { 'fr-static': !config.animations }]"></div>
-          <div v-else-if="error" class="fr-error-message">{{ error }}</div>
-          <div v-else class="fr-translation-container">
-            <!-- 原文显示（双语模式才显示） -->
-            <div v-if="config.selectionTranslatorMode === 'bilingual'" class="fr-original-text fr-no-select">
-              <pre>{{ selectedText }}</pre>
-              <button class="fr-text-audio-btn" @click="(e) => toggleAudio(selectedText, e)" :title="t('selection.playOriginal')">
-                <svg v-if="isPlaying && currentPlayingText === selectedText" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="6" y="4" width="4" height="16"></rect>
-                  <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                </svg>
-              </button>
-            </div>
-            <!-- 译文显示（双语模式和只显示译文模式都显示） -->
-            <div v-if="config.selectionTranslatorMode === 'bilingual' || config.selectionTranslatorMode === 'translation-only'" class="fr-translation-result fr-no-select">
-              <pre>{{ translationResult }}</pre>
-              <button class="fr-text-audio-btn" @click="(e) => toggleAudio(translationResult, e)" :title="t('selection.playTranslation')">
-                <svg v-if="isPlaying && currentPlayingText === translationResult" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="6" y="4" width="4" height="16"></rect>
-                  <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                </svg>
-              </button>
-            </div>
-            
-            <!-- 播放状态提示 - 显示在弹窗内部 -->
-            <div v-if="isPlaying" class="fr-playing-status">
-              <div class="fr-playing-status-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                </svg>
-              </div>
-              <span>{{ t('selection.playing', { type: currentPlayingText === selectedText ? t('selection.original') : t('selection.translation') }) }}</span>
-              <button class="fr-stop-audio-btn" @click="(e) => stopAudio(e)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="6" y="4" width="4" height="16"></rect>
-                  <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-  </div>
-
-  <!-- 复制成功提示 -->
-  <div v-if="copySuccess" class="fr-copy-success-toast" :class="{ 'fr-dark-theme': isDarkTheme }">
-    <div class="fr-copy-success-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
+  <div
+    ref="selection-ref"
+    class="fr-selection-translator-wrapper"
+    :class="{ 'fr-dark-theme': isDarkTheme, 'fr-static': !config.animations }"
+  >
+    <div v-if="showToolbar" class="fr-selection-toolbar" role="toolbar" :aria-label="t('selection.title')">
+      <button
+        type="button"
+        class="fr-toolbar-btn fr-toolbar-btn--primary"
+        :title="t('selection.translate')"
+        :aria-label="t('selection.translate')"
+        @click="openTranslationPanel"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 4h7M8.5 2v2m-5 4h10m-8.5 0c.6 2.1 1.8 4 3.5 5.4M12 8c-.6 2.1-1.8 4-3.5 5.4m0 0A13 13 0 0 1 5 16m3.5-2.6A13 13 0 0 0 12 16m3.5-5 4 10m-5.6-4h7.2" />
+        </svg>
+      </button>
+      <span class="fr-toolbar-divider"></span>
+      <button
+        type="button"
+        class="fr-toolbar-btn"
+        :class="{ 'is-active': isPlaying && currentPlayingText === selectedText }"
+        :title="t('selection.speak')"
+        :aria-label="t('selection.speak')"
+        @click="event => toggleAudio(selectedText, event)"
+      >
+        <svg v-if="isPlaying && currentPlayingText === selectedText" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+          <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M11 5 6.5 9H3v6h3.5L11 19V5Zm4.5 3.5a5 5 0 0 1 0 7M18 5.5a9 9 0 0 1 0 13" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="fr-toolbar-btn"
+        :title="t('selection.close')"
+        :aria-label="t('selection.close')"
+        @click="closeAll"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
     </div>
-    <span>{{ t('selection.copied') }}</span>
+
+    <section v-if="showPanel" class="fr-translation-panel" :aria-label="t('selection.title')">
+      <header class="fr-panel-header">
+        <div class="fr-panel-brand">
+          <span class="fr-brand-mark">译</span>
+          <span>{{ t('selection.title') }}</span>
+        </div>
+        <div class="fr-panel-header-actions">
+          <button
+            v-if="config.selectionTranslatorMode === 'translation-only'"
+            type="button"
+            class="fr-icon-btn"
+            :title="t('selection.copyOriginal')"
+            @click="copyText(selectedText, 'original')"
+          >
+            <svg v-if="copiedTarget === 'original'" class="fr-check-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+            <svg v-else viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+          </button>
+          <button type="button" class="fr-icon-btn fr-close-btn" :title="t('selection.close')" @click="closeAll">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="fr-panel-content">
+        <article v-if="config.selectionTranslatorMode === 'bilingual'" class="fr-text-block fr-text-block--original">
+          <div class="fr-text-block-header">
+            <span>{{ t('selection.original') }}</span>
+            <div class="fr-text-actions">
+              <button type="button" class="fr-icon-btn" :title="t('selection.copyOriginal')" @click="copyText(selectedText, 'original')">
+                <svg v-if="copiedTarget === 'original'" class="fr-check-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <svg v-else viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              </button>
+              <button type="button" class="fr-icon-btn" :class="{ 'is-active': isPlaying && currentPlayingText === selectedText }" :title="t('selection.playOriginal')" @click="event => toggleAudio(selectedText, event)">
+                <svg v-if="isPlaying && currentPlayingText === selectedText" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Zm4.5 3.5a5 5 0 0 1 0 7"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="fr-selectable-text">{{ selectedText }}</div>
+        </article>
+
+        <article class="fr-text-block fr-text-block--translation">
+          <div class="fr-text-block-header">
+            <span>{{ t('selection.translation') }}</span>
+            <div v-if="translationResult" class="fr-text-actions">
+              <button type="button" class="fr-icon-btn" :title="t('selection.copyTranslation')" @click="copyText(translationResult, 'translation')">
+                <svg v-if="copiedTarget === 'translation'" class="fr-check-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                <svg v-else viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              </button>
+              <button type="button" class="fr-icon-btn" :class="{ 'is-active': isPlaying && currentPlayingText === translationResult }" :title="t('selection.playTranslation')" @click="event => toggleAudio(translationResult, event)">
+                <svg v-if="isPlaying && currentPlayingText === translationResult" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Zm4.5 3.5a5 5 0 0 1 0 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="isLoading" class="fr-loading-state" aria-live="polite">
+            <span class="fr-loading-dot"></span><span class="fr-loading-dot"></span><span class="fr-loading-dot"></span>
+          </div>
+          <div v-else-if="error" class="fr-error-state">
+            <span>{{ error }}</span>
+            <button type="button" @click="regenerateTranslation">{{ t('selection.regenerate') }}</button>
+          </div>
+          <div v-else class="fr-selectable-text fr-translation-text">{{ translationResult }}</div>
+        </article>
+      </div>
+
+      <footer class="fr-panel-footer">
+        <label class="fr-select-wrap" :title="t('selection.service')">
+          <span class="fr-field-label">{{ t('selection.service') }}</span>
+          <select v-model="activeService" @change="handleServiceChange">
+            <option v-for="service in availableServices" :key="service.value" :value="service.value">
+              {{ service.label }}
+            </option>
+          </select>
+        </label>
+
+        <label v-if="showModelSelector" class="fr-select-wrap fr-select-wrap--model" :title="t('selection.model')">
+          <span class="fr-field-label">{{ t('selection.model') }}</span>
+          <select v-model="activeModel" @change="handleModelChange">
+            <option v-for="model in availableModels" :key="model.value" :value="model.value">{{ model.label }}</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          class="fr-regenerate-btn"
+          :class="{ 'is-spinning': isLoading && config.animations }"
+          :disabled="isLoading"
+          :title="t('selection.regenerate')"
+          @click="regenerateTranslation"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v6h-6M4 18v-6h6M18.5 9A7 7 0 0 0 6.2 6.2L4 9m16 6-2.2 2.8A7 7 0 0 1 5.5 15"/></svg>
+        </button>
+      </footer>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, useTemplateRef, watchEffect } from 'vue';
-import { isTranslationCancelledError, translateText } from '@/entrypoints/utils/translateApi';
-import { config } from '@/entrypoints/utils/config';
-import { autoPlacement, autoUpdate, computePosition, flip, hide, inline, offset, shift } from '@floating-ui/dom';
-import { t } from '@/entrypoints/utils/i18n';
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { autoUpdate, computePosition, flip, hide, offset, shift, type VirtualElement } from '@floating-ui/dom'
+import { storage } from '@wxt-dev/storage'
+import { config } from '@/entrypoints/utils/config'
+import { isTranslationCancelledError, translateText } from '@/entrypoints/utils/translateApi'
+import { customModelString, isServiceConfigured, options, servicesType } from '@/entrypoints/utils/option'
+import { getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
+import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
+import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
+import { t } from '@/entrypoints/utils/i18n'
 
-// 状态变量
-const selectedText = ref('');
-const translationResult = ref('');
-const selectRange = ref<Range | null>(null);
-const showIndicator = ref(false);
-const showTooltip = ref(false);
-const isLoading = ref(false);
-const error = ref('');
-const hideTooltipTimer = ref<number | null>(null);
-const isHoveringTooltip = ref(false);
-const copySuccess = ref(false);
-const isPlaying = ref(false);
-const audioElement = ref<HTMLAudioElement | null>(null);
-const isSelecting = ref(false); // 标记用户是否正在选择文本中
-const debounceTimer = ref<number | null>(null); // 防抖定时器
-const currentPlayingText = ref(''); // 当前正在播放的文本
-const isFirefox = ref(false); // 是否为Firefox浏览器
-const isDarkTheme = ref(false); // 主题状态
+type CopyTarget = 'original' | 'translation'
+type ServiceOption = { value: string; label: string }
+type ModelOption = { value: string; label: string }
 
 interface SelectionSession {
-  id: number;
-  text: string;
-  range: Range;
-  context: string;
+  id: number
+  text: string
+  range: Range
+  anchor: Range | VirtualElement
+  context: string
 }
 
-const activeSelectionSession = ref<SelectionSession | null>(null);
-const isInteractingWithSelectionUi = ref(false);
-let nextSelectionSessionId = 0;
-let activeTranslationController: AbortController | null = null;
-let activeTranslationRequestId = 0;
+const selectedText = ref('')
+const translationResult = ref('')
+const showToolbar = ref(false)
+const showPanel = ref(false)
+const isLoading = ref(false)
+const error = ref('')
+const copiedTarget = ref<CopyTarget | null>(null)
+const isPlaying = ref(false)
+const currentPlayingText = ref('')
+const isSelecting = ref(false)
+const isInteractingWithSelectionUi = ref(false)
+const isDarkTheme = ref(false)
+const activeSelectionSession = ref<SelectionSession | null>(null)
+const activeService = ref(config.service)
+const activeModel = ref('')
+const containerRef = useTemplateRef('selection-ref')
 
-const containerRef = useTemplateRef('selection-ref');
+let nextSelectionSessionId = 0
+let activeTranslationController: AbortController | null = null
+let activeTranslationRequestId = 0
+let activePlaybackId = 0
+let debounceTimer: number | null = null
+let copyTimer: number | null = null
+let mouseDownHandler: (event: MouseEvent) => void
+let mouseUpHandler: (event: MouseEvent) => void
+let clickHandler: (event: Event) => void
+let selectionChangeHandler: () => void
+let systemThemeHandler: () => void
 
 const getEventPath = (event: Event) => (
   typeof event.composedPath === 'function' ? event.composedPath() : [event.target]
-);
+)
 
 const isEventInsideSelectionUi = (event: Event) => {
-  const container = containerRef.value;
-  if (!container) return false;
+  const container = containerRef.value
+  if (!container) return false
+  return getEventPath(event).some(node => node === container || (node instanceof Node && container.contains(node)))
+}
 
-  return getEventPath(event).some(node => (
-    node === container || (node instanceof Node && container.contains(node))
-  ));
-};
+const isNodeInsideSelectionUi = (node: Node | null) => {
+  const container = containerRef.value
+  return Boolean(container && node && (node === container || container.contains(node)))
+}
 
-const eventPathMatches = (event: Event, selector: string) => (
-  getEventPath(event).some(node => node instanceof Element && node.matches(selector))
-);
+const isSelectionInsideUi = () => {
+  const selection = window.getSelection()
+  return Boolean(selection && (
+    isNodeInsideSelectionUi(selection.anchorNode)
+    || isNodeInsideSelectionUi(selection.focusNode)
+  ))
+}
 
-const isSelectionUiFocused = () => {
-  const root = containerRef.value?.getRootNode();
-  return root instanceof ShadowRoot && root.activeElement !== null;
-};
+const createPointerAnchor = (event?: MouseEvent): VirtualElement | undefined => {
+  if (!event || (event.clientX === 0 && event.clientY === 0)) return undefined
+  const rect = new DOMRect(event.clientX, event.clientY, 1, 1)
+  return { getBoundingClientRect: () => rect }
+}
 
-// 自动更新小红点位置
-watchEffect((onClean) => {
-  const isPositioningActive = showIndicator.value || showTooltip.value;
-  const range = selectRange.value;
-  const container = containerRef.value;
-  if (!isPositioningActive || !range || !container) return;
+watchEffect(onCleanup => {
+  const session = activeSelectionSession.value
+  const container = containerRef.value
+  if ((!showToolbar.value && !showPanel.value) || !session || !container) return
 
   const updatePosition = () => {
-    computePosition(range, container, {
-      placement: 'right',
+    computePosition(session.anchor, container, {
+      placement: showPanel.value ? 'bottom-start' : 'top-start',
       strategy: 'fixed',
-      middleware: [offset(2), flip({fallbackPlacements: ['left', 'right', 'top-start', 'top-end', 'bottom-start', 'bottom-end'], padding: {top: 100, bottom: 100} }), shift(), hide(), inline()],
-    }).then(({ x, y, placement, middlewareData }) => {
+      middleware: [
+        offset(showPanel.value ? 10 : 8),
+        flip({ padding: 12 }),
+        shift({ padding: 12 }),
+        hide(),
+      ],
+    }).then(({ x, y, middlewareData }) => {
       Object.assign(container.style, {
-        left: `${x}px`,
-        top: `${y}px`,
+        left: x + 'px',
+        top: y + 'px',
         visibility: middlewareData.hide?.referenceHidden ? 'hidden' : 'visible',
-      });
-      container.setAttribute('data-placement', placement);
+      })
     })
   }
 
-  const cb = autoUpdate(range, container, updatePosition, {
-    animationFrame: true,
-  });
+  const cleanup = autoUpdate(session.anchor, container, updatePosition, { animationFrame: true })
+  onCleanup(cleanup)
+})
 
-  onClean(cb);
-});
+watch([showToolbar, showPanel], ([toolbarVisible, panelVisible]) => {
+  if (toolbarVisible || panelVisible) return
+  activeSelectionSession.value = null
+})
 
-watch([showIndicator, showTooltip], ([isIndicatorVisible, isTooltipVisible]) => {
-  if (isIndicatorVisible || isTooltipVisible) return;
+const availableServices = computed<ServiceOption[]>(() => {
+  const result: ServiceOption[] = []
+  for (const item of options.services) {
+    if (!item.disabled && isServiceConfigured(item.value, config)) {
+      result.push({ value: item.value, label: item.label })
+    }
+  }
+  for (const provider of config.customProviders ?? []) {
+    if (isServiceConfigured(provider.id, config)) {
+      result.push({ value: provider.id, label: provider.name || provider.id })
+    }
+  }
+  if (!result.some(item => item.value === activeService.value)) {
+    const fallbackLabel = options.services.find(item => item.value === activeService.value)?.label ?? activeService.value
+    result.unshift({ value: activeService.value, label: fallbackLabel })
+  }
+  return result
+})
 
-  selectRange.value = null;
-  activeSelectionSession.value = null;
-});
+const availableModels = computed<ModelOption[]>(() => {
+  const service = activeService.value
+  if (!servicesType.isUseModel(service)) return []
+
+  if (servicesType.isCustom(service)) {
+    const provider = config.customProviders?.find(item => item.id === service)
+    if (!provider) return []
+    const value = provider.model || provider.customModel || ''
+    return value ? [{ value, label: resolveConfiguredTranslationModel(service, config) || value }] : []
+  }
+
+  const values = getStaticModelOptions(service)
+    .filter(value => value !== customModelString || Boolean(config.customModel?.[service]))
+  const configured = config.model?.[service]
+  if (configured && !values.includes(configured)) values.unshift(configured)
+  return values.map(value => ({
+    value,
+    label: value === customModelString
+      ? (config.customModel?.[service] || customModelString)
+      : value,
+  }))
+})
+
+const showModelSelector = computed(() => availableModels.value.length > 0)
+
+const syncActiveModel = () => {
+  const service = activeService.value
+  if (servicesType.isCustom(service)) {
+    activeModel.value = config.customProviders?.find(item => item.id === service)?.model || ''
+  } else {
+    activeModel.value = config.model?.[service] || availableModels.value[0]?.value || ''
+  }
+}
+
+const saveConfig = () => storage.setItem('local:config', JSON.stringify(config))
 
 const cancelActiveTranslation = () => {
-  activeTranslationRequestId += 1;
-  activeTranslationController?.abort();
-  activeTranslationController = null;
-  isLoading.value = false;
-};
+  activeTranslationRequestId += 1
+  activeTranslationController?.abort()
+  activeTranslationController = null
+  isLoading.value = false
+}
 
-const commitSelectionSession = (text: string, range: Range) => {
-  cancelActiveTranslation();
+const stopAudio = () => {
+  activePlaybackId += 1
+  stopTts()
+  isPlaying.value = false
+  currentPlayingText.value = ''
+}
+
+const closeAll = () => {
+  cancelActiveTranslation()
+  stopAudio()
+  showToolbar.value = false
+  showPanel.value = false
+  translationResult.value = ''
+  error.value = ''
+}
+
+const commitSelectionSession = (text: string, range: Range, event?: MouseEvent) => {
+  cancelActiveTranslation()
+  stopAudio()
   const session: SelectionSession = {
     id: ++nextSelectionSessionId,
     text,
     range,
+    anchor: createPointerAnchor(event) ?? range,
     context: document.title,
-  };
-  activeSelectionSession.value = session;
-  selectedText.value = session.text;
-  selectRange.value = session.range;
-  showIndicator.value = true;
-};
-
-// 防抖函数
-const debounce = (fn: Function, delay: number) => {
-  if (debounceTimer.value) {
-    clearTimeout(debounceTimer.value);
   }
-  debounceTimer.value = window.setTimeout(() => {
-    fn();
-    debounceTimer.value = null;
-  }, delay);
-};
+  activeSelectionSession.value = session
+  selectedText.value = text
+  translationResult.value = ''
+  error.value = ''
+  activeService.value = config.service
+  syncActiveModel()
+  showPanel.value = false
+  showToolbar.value = true
+}
 
-// 处理文本选择事件 (使用防抖优化)
-const handleTextSelection = () => {
-  // 如果用户正在选择中，不立即处理
-  if (isSelecting.value) return;
-  
-  debounce(() => {
-    const selection = window.getSelection();
+const handleTextSelection = (event?: MouseEvent) => {
+  if (isSelecting.value || isInteractingWithSelectionUi.value || isSelectionInsideUi()) return
+  if (debounceTimer !== null) window.clearTimeout(debounceTimer)
+  debounceTimer = window.setTimeout(() => {
+    debounceTimer = null
+    const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0) {
-      hideIndicator();
-      return;
+      closeAll()
+      return
     }
-    
-    const selectedTextContent = selection.toString().trim();
-    
-    // 如果选中的文本为空，则不处理
-    if (!selectedTextContent) {
-      return;
+    const text = selection.toString().trim()
+    if (!text || text.length < 2 || text.length > 4096) {
+      closeAll()
+      return
     }
-    
-    // 忽略过短的选择（避免意外触发）
-    if (selectedTextContent.length < 2) {
-      hideIndicator();
-      return;
-    }
-    
-    // 忽略过长的选择（避免处理大段文本导致性能问题）
-    const maxTextLength = 4096; // 设置最大字符数限制
-    if (selectedTextContent.length > maxTextLength) {
-      hideIndicator();
-      return;
-    }
-    
-    // 获取选中文本位置信息
-    const range = selection.getRangeAt(0);
-    
-    // 每次选区都创建独立会话；即使文本相同，也不能复用旧请求状态。
-    commitSelectionSession(selectedTextContent, range);
-  }, 200); // 200ms防抖延迟，减少延迟提高响应性
-};
+    commitSelectionSession(text, selection.getRangeAt(0), event)
+  }, 160)
+}
 
-// 鼠标进入指示器
-const handleMouseEnter = () => {
-  clearHideTooltipTimer();
-  showTooltip.value = true;
-};
+const getTranslation = async (useCache = config.useCache) => {
+  const session = activeSelectionSession.value
+  if (!session) return
 
-// 鼠标离开指示器
-const handleMouseLeave = () => {
-  // 如果鼠标不在tooltip上，则设置定时器隐藏tooltip
-  if (!isHoveringTooltip.value) {
-    setHideTooltipTimer();
-  }
-};
+  cancelActiveTranslation()
+  const requestId = ++activeTranslationRequestId
+  const controller = new AbortController()
+  activeTranslationController = controller
+  isLoading.value = true
+  error.value = ''
 
-// 鼠标进入弹窗
-const handleMouseEnterTooltip = () => {
-  isHoveringTooltip.value = true;
-  clearHideTooltipTimer();
-};
-
-// 鼠标离开弹窗
-const handleMouseLeaveTooltip = () => {
-  isHoveringTooltip.value = false;
-  
-  // 如果当前正在播放音频，不自动隐藏弹窗
-  if (isPlaying.value) return;
-  
-  setHideTooltipTimer();
-};
-
-// 设置隐藏弹窗的定时器
-const setHideTooltipTimer = () => {
-  clearHideTooltipTimer();
-  hideTooltipTimer.value = window.setTimeout(() => {
-    // 如果当前正在播放音频，不隐藏弹窗
-    if (isPlaying.value) return;
-    
-    showTooltip.value = false;
-  }, 250); // 250毫秒后隐藏
-};
-
-// 清除隐藏弹窗的定时器
-const clearHideTooltipTimer = () => {
-  if (hideTooltipTimer.value !== null) {
-    clearTimeout(hideTooltipTimer.value);
-    hideTooltipTimer.value = null;
-  }
-};
-
-// 隐藏指示器
-const hideIndicator = () => {
-  showIndicator.value = false;
-  setHideTooltipTimer();
-};
-
-// 关闭翻译弹窗
-const closeTooltip = () => {
-  cancelActiveTranslation();
-  showTooltip.value = false;
-  // 当关闭弹窗时停止音频播放
-  stopAudio();
-};
-
-// 获取翻译结果
-const getTranslation = async () => {
-  const session = activeSelectionSession.value;
-  if (!session) return;
-
-  cancelActiveTranslation();
-  const requestId = ++activeTranslationRequestId;
-  const controller = new AbortController();
-  activeTranslationController = controller;
-  
-  isLoading.value = true;
-  error.value = '';
-  
   try {
-    // 使用当前配置的翻译服务进行翻译
     const result = await translateText(session.text, session.context, {
       signal: controller.signal,
-      diagnostics: {
-        scene: 'selection',
-        pageUrl: document.location.href,
-      },
-    });
-
+      useCache,
+      diagnostics: { scene: 'selection', pageUrl: document.location.href },
+    })
     if (
       controller.signal.aborted
       || requestId !== activeTranslationRequestId
       || activeSelectionSession.value?.id !== session.id
-    ) {
-      return;
-    }
-    translationResult.value = result;
-  } catch (err) {
-    if (
-      controller.signal.aborted
-      || requestId !== activeTranslationRequestId
-      || isTranslationCancelledError(err)
-    ) {
-      return;
-    }
-    error.value = t('selection.failed');
-    console.error('Translation error:', err);
+    ) return
+    translationResult.value = result
+  } catch (cause) {
+    if (controller.signal.aborted || requestId !== activeTranslationRequestId || isTranslationCancelledError(cause)) return
+    error.value = t('selection.failed')
+    console.error('Selection translation failed:', cause)
   } finally {
     if (requestId === activeTranslationRequestId) {
-      activeTranslationController = null;
-      isLoading.value = false;
+      activeTranslationController = null
+      isLoading.value = false
     }
   }
-};
+}
 
-// 复制翻译文本
-const copyTranslation = () => {
-  if (!translationResult.value) return;
-  
-  // 使用navigator.clipboard API复制文本
-  navigator.clipboard.writeText(translationResult.value)
-    .then(() => {
-      // 显示复制成功消息
-      copySuccess.value = true;
-      // 1.5秒后隐藏消息
-      setTimeout(() => {
-        copySuccess.value = false;
-      }, 1500);
-    })
-    .catch(err => {
-      console.error('复制失败:', err);
-    });
-};
+const openTranslationPanel = () => {
+  showToolbar.value = false
+  showPanel.value = true
+  void getTranslation()
+}
 
-// 播放或停止文本语音
-const toggleAudio = (text: string, e?: Event) => {
-  if (!text) return;
+const regenerateTranslation = () => {
+  translationResult.value = ''
+  void getTranslation(false)
+}
 
-  // 用户点击音频按钮时阻止冒泡；程序化调用没有事件对象，无需处理。
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
+const copyText = async (text: string, target: CopyTarget) => {
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedTarget.value = target
+    if (copyTimer !== null) window.clearTimeout(copyTimer)
+    copyTimer = window.setTimeout(() => {
+      copiedTarget.value = null
+      copyTimer = null
+    }, 1200)
+  } catch (cause) {
+    console.error('Copy failed:', cause)
   }
-  
-  // 确保弹窗不会消失
-  clearHideTooltipTimer();
-  isHoveringTooltip.value = true;
+}
 
-  // 如果当前正在播放同一文本，则停止播放
+const toggleAudio = async (text: string, event?: Event) => {
+  event?.preventDefault()
+  event?.stopPropagation()
+  if (!text) return
   if (isPlaying.value && currentPlayingText.value === text) {
-    stopAudio(e);
-    return;
+    stopAudio()
+    return
   }
-  
-  // 如果正在播放其他文本，先停止
-  if (isPlaying.value) {
-    stopAudio(e);
-  }
-  
-  // 检测语言
-  const language = detectLanguage(text);
-  
-  // 创建语音合成URL
-  const speechUrl = createSpeechUrl(text, language);
-  
-  // 创建音频元素前先设置状态，解决Firefox中状态更新不及时的问题
-  isPlaying.value = true;
-  currentPlayingText.value = text;
-  
-  // 创建音频元素
-  const audio = new Audio(speechUrl);
-  audioElement.value = audio;
-  
-  // 监听播放开始事件
-  audio.onplay = () => {
-    // 确保状态已更新
-    isPlaying.value = true;
-    currentPlayingText.value = text;
-  };
-  
-  // 监听播放结束事件
-  audio.onended = () => {
-    isPlaying.value = false;
-    audioElement.value = null;
-    currentPlayingText.value = '';
-  };
-  
-  // 监听错误事件
-  audio.onerror = (e) => {
-    console.error('音频播放失败:', e);
-    isPlaying.value = false;
-    audioElement.value = null;
-    currentPlayingText.value = '';
-    
-    // 不要尝试使用Web Speech API作为备选，避免重复播放
-    // tryWebSpeechAPI(text, language);
-  };
-  
-  // 开始播放
-  const playPromise = audio.play();
-  
-  // 处理播放Promise
-  if (playPromise !== undefined) {
-    playPromise.catch(err => {
-      console.error('音频播放出错:', err);
-      isPlaying.value = false;
-      audioElement.value = null;
-      currentPlayingText.value = '';
-      
-      // 尝试使用Web Speech API作为备选，只在Google TTS失败时使用
-      tryWebSpeechAPI(text, language);
-    });
-  }
-};
 
-// 停止音频播放
-const stopAudio = (e?: Event) => {
-  // 阻止事件冒泡
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
+  stopAudio()
+  const playbackId = ++activePlaybackId
+  isPlaying.value = true
+  currentPlayingText.value = text
+  try {
+    await speakText(text, {
+      engine: config.ttsEngine,
+      voice: config.ttsVoice?.[config.ttsEngine] || '',
+    })
+  } catch (cause) {
+    console.error('Text to speech failed:', cause)
+  } finally {
+    if (playbackId === activePlaybackId) {
+      isPlaying.value = false
+      currentPlayingText.value = ''
+    }
   }
-  
-  if (audioElement.value) {
-    audioElement.value.pause();
-    audioElement.value = null;
-  }
-  
-  // 停止Web Speech API
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
-  
-  isPlaying.value = false;
-  currentPlayingText.value = '';
-};
+}
 
-// 检测语言
-const detectLanguage = (text: string): string => {
-  // 简单的语言检测，可根据实际需求完善
-  // 检测是否包含中文字符
-  const hasChinese = /[\u4e00-\u9fa5]/.test(text);
-  if (hasChinese) return 'zh-CN';
-  
-  // 检测是否包含日文字符
-  const hasJapanese = /[\u3040-\u30ff]/.test(text);
-  if (hasJapanese) return 'ja-JP';
-  
-  // 检测是否包含韩文字符
-  const hasKorean = /[\uAC00-\uD7A3]/.test(text);
-  if (hasKorean) return 'ko-KR';
-  
-  // 检测是否包含俄文字符
-  const hasRussian = /[\u0400-\u04FF]/.test(text);
-  if (hasRussian) return 'ru-RU';
-  
-  // 检测是否包含德文特殊字符
-  const hasGerman = /[äöüßÄÖÜ]/.test(text);
-  if (hasGerman) return 'de-DE';
-  
-  // 检测是否包含法文特殊字符
-  const hasFrench = /[àâçéèêëîïôùûüÿæœÀÂÇÉÈÊËÎÏÔÙÛÜŸÆŒ]/.test(text);
-  if (hasFrench) return 'fr-FR';
-  
-  // 检测是否包含西班牙文特殊字符
-  const hasSpanish = /[áéíóúüñÁÉÍÓÚÜÑ]/.test(text);
-  if (hasSpanish) return 'es-ES';
-  
-  // 默认返回英语
-  return 'en-US';
-};
+const handleServiceChange = async () => {
+  config.service = activeService.value
+  syncActiveModel()
+  await saveConfig()
+  regenerateTranslation()
+}
 
-// 创建语音合成URL
-const createSpeechUrl = (text: string, language: string): string => {
-  // 使用Google Text-to-Speech API
-  const encodedText = encodeURIComponent(text);
-  return `https://translate.google.com/translate_tts?ie=UTF-8&tl=${language}&client=tw-ob&q=${encodedText}`;
-};
-
-// 使用Web Speech API作为备选方案
-const tryWebSpeechAPI = (text: string, language: string) => {
-  // 如果已经在播放，不要重复播放
-  if (isPlaying.value) return;
-  
-  // 检查浏览器是否支持Web Speech API
-  if ('speechSynthesis' in window) {
-    // 停止任何可能正在播放的内容
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language;
-    
-    // 设置状态
-    isPlaying.value = true;
-    currentPlayingText.value = text;
-    
-    utterance.onstart = () => {
-      // 确保状态已更新
-      isPlaying.value = true;
-      currentPlayingText.value = text;
-    };
-    
-    utterance.onend = () => {
-      isPlaying.value = false;
-      currentPlayingText.value = '';
-    };
-    
-    utterance.onerror = () => {
-      isPlaying.value = false;
-      currentPlayingText.value = '';
-    };
-    
-    window.speechSynthesis.speak(utterance);
+const handleModelChange = async () => {
+  const service = activeService.value
+  if (servicesType.isCustom(service)) {
+    const provider = config.customProviders?.find(item => item.id === service)
+    if (provider) provider.model = activeModel.value
   } else {
-    console.error('此浏览器不支持语音合成');
+    config.model[service] = activeModel.value
   }
-};
+  await saveConfig()
+  regenerateTranslation()
+}
 
-// 检测是否为Firefox浏览器
-const detectFirefox = () => {
-  return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-};
-
-// 获取当前主题状态
-const getCurrentTheme = () => {
-  const currentTheme = config.theme || 'auto';
-  if (currentTheme === 'auto') {
-    // 自动模式下检测系统主题
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return currentTheme === 'dark';
-};
-
-// 更新主题状态
 const updateTheme = () => {
-  isDarkTheme.value = getCurrentTheme();
-};
+  const theme = config.theme || 'auto'
+  isDarkTheme.value = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+}
 
-watch(
-  [showTooltip, () => activeSelectionSession.value?.id ?? 0],
-  ([isTooltipVisible]) => {
-    if (isTooltipVisible) {
-      void getTranslation();
-      return;
-    }
-
-    cancelActiveTranslation();
-    if (isPlaying.value) {
-      stopAudio();
-    }
-  }
-);
-
-// 监听事件
 onMounted(() => {
-  // 检测浏览器类型
-  isFirefox.value = detectFirefox();
-  
-  // 初始化主题状态
-  updateTheme();
-  
-  // 监听主题变化
-  watch(() => config.theme, updateTheme, { immediate: true });
-  
-  // 监听系统主题变化（用于自动模式）
-  const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  const handleSystemThemeChange = () => {
-    if (config.theme === 'auto') {
-      updateTheme();
-    }
-  };
-  darkModeMediaQuery.addEventListener('change', handleSystemThemeChange);
-  
-  // 保存系统主题监听器引用供清理使用
-  systemThemeHandler = handleSystemThemeChange;
-  
-  // 定义事件监听器函数
-  mouseDownHandler = (event: MouseEvent) => {
-    if (isEventInsideSelectionUi(event)) {
-      isInteractingWithSelectionUi.value = true;
-      isSelecting.value = false;
-      return;
-    }
+  updateTheme()
+  watch(() => config.theme, updateTheme, { immediate: true })
 
-    isInteractingWithSelectionUi.value = false;
-    isSelecting.value = true;
-  };
-  
-  mouseUpHandler = (event: MouseEvent) => {
-    if (isEventInsideSelectionUi(event)) {
-      isSelecting.value = false;
-      window.setTimeout(() => {
-        isInteractingWithSelectionUi.value = false;
-      }, 0);
-      return;
-    }
+  const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  systemThemeHandler = () => {
+    if (config.theme === 'auto') updateTheme()
+  }
+  darkModeMediaQuery.addEventListener('change', systemThemeHandler)
 
-    isInteractingWithSelectionUi.value = false;
-    isSelecting.value = false;
-    handleTextSelection();
-  };
-  
-  // 鼠标按下时，标记开始选择
-  document.addEventListener('mousedown', mouseDownHandler);
-  
-  // 鼠标抬起时，标记选择结束，并处理选中文本
-  document.addEventListener('mouseup', mouseUpHandler);
-  
-  // 添加selectionchange事件作为备用机制（使用节流限制频率）
-  let lastSelectionChangeTime = 0;
+  mouseDownHandler = event => {
+    if (isEventInsideSelectionUi(event)) {
+      isInteractingWithSelectionUi.value = true
+      isSelecting.value = false
+      return
+    }
+    isInteractingWithSelectionUi.value = false
+    isSelecting.value = true
+  }
+
+  mouseUpHandler = event => {
+    if (isEventInsideSelectionUi(event)) {
+      isSelecting.value = false
+      window.setTimeout(() => { isInteractingWithSelectionUi.value = false }, 0)
+      return
+    }
+    isInteractingWithSelectionUi.value = false
+    isSelecting.value = false
+    handleTextSelection(event)
+  }
+
+  let lastSelectionChangeAt = 0
   selectionChangeHandler = () => {
-    if (isInteractingWithSelectionUi.value || isSelectionUiFocused()) return;
+    if (isInteractingWithSelectionUi.value || isSelecting.value || isSelectionInsideUi()) return
+    const now = Date.now()
+    if (now - lastSelectionChangeAt < 500) return
+    lastSelectionChangeAt = now
+    window.setTimeout(() => handleTextSelection(), 100)
+  }
 
-    const now = Date.now();
-    // 节流：只有在500ms内没有处理过selectionchange且不在选择过程中时才处理
-    if (now - lastSelectionChangeTime > 500 && !isSelecting.value) {
-      lastSelectionChangeTime = now;
-      // 延迟处理，确保选择操作完成
-      setTimeout(() => {
-        if (!isSelecting.value) {
-          handleTextSelection();
-        }
-      }, 100);
-    }
-  };
-  
-  document.addEventListener('selectionchange', selectionChangeHandler);
-  
-  // 定义点击事件处理函数
-  clickHandler = (e: Event) => {
-    // 检查点击事件是否发生在音频按钮上
-    const isAudioButton = eventPathMatches(e, '.fr-text-audio-btn, .fr-stop-audio-btn');
-    
-    // 如果点击在音频按钮上，不要隐藏弹窗
-    if (isAudioButton) {
-      return;
-    }
-    
-    if (!isEventInsideSelectionUi(e) && showIndicator.value) {
-      hideIndicator();
-      closeTooltip();
-    }
-  };
-  
-  // 添加点击页面其他区域时隐藏指示器和弹窗
-  document.addEventListener('click', clickHandler);
-});
+  clickHandler = event => {
+    if (!isEventInsideSelectionUi(event) && (showToolbar.value || showPanel.value)) closeAll()
+  }
 
-// 存储事件监听器函数的引用，用于正确移除
-let mouseDownHandler: (event: MouseEvent) => void;
-let mouseUpHandler: (event: MouseEvent) => void;
-let clickHandler: (e: Event) => void;
-let selectionChangeHandler: () => void;
-let systemThemeHandler: () => void;
+  document.addEventListener('mousedown', mouseDownHandler)
+  document.addEventListener('mouseup', mouseUpHandler)
+  document.addEventListener('selectionchange', selectionChangeHandler)
+  document.addEventListener('click', clickHandler)
+})
 
-// 清理事件监听 (修复清理逻辑)
 onBeforeUnmount(() => {
-  cancelActiveTranslation();
-
-  // 正确移除事件监听器
-  if (mouseDownHandler) {
-    document.removeEventListener('mousedown', mouseDownHandler);
-  }
-  if (mouseUpHandler) {
-    document.removeEventListener('mouseup', mouseUpHandler);
-  }
-  if (clickHandler) {
-    document.removeEventListener('click', clickHandler);
-  }
-  if (selectionChangeHandler) {
-    document.removeEventListener('selectionchange', selectionChangeHandler);
-  }
-  
-  // 移除系统主题监听器
-  if (systemThemeHandler) {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    darkModeMediaQuery.removeEventListener('change', systemThemeHandler);
-  }
-  
-  // 清理所有定时器
-  clearHideTooltipTimer();
-  if (debounceTimer.value) {
-    clearTimeout(debounceTimer.value);
-    debounceTimer.value = null;
-  }
-  
-  // 停止所有音频播放
-  if (audioElement.value) {
-    audioElement.value.pause();
-    audioElement.value = null;
-  }
-  
-  // 停止Web Speech API
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
-});
+  cancelActiveTranslation()
+  stopAudio()
+  document.removeEventListener('mousedown', mouseDownHandler)
+  document.removeEventListener('mouseup', mouseUpHandler)
+  document.removeEventListener('selectionchange', selectionChangeHandler)
+  document.removeEventListener('click', clickHandler)
+  if (systemThemeHandler) window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeHandler)
+  if (debounceTimer !== null) window.clearTimeout(debounceTimer)
+  if (copyTimer !== null) window.clearTimeout(copyTimer)
+})
 </script>

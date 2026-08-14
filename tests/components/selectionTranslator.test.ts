@@ -19,7 +19,24 @@ const mockAutoUpdate = vi.hoisted(() => vi.fn((_: unknown, __: unknown, update: 
 const mockConfig = vi.hoisted(() => ({
   animations: false,
   selectionTranslatorMode: 'bilingual',
-  theme: 'light'
+  theme: 'light',
+  service: 'google',
+  token: {},
+  model: {},
+  customModel: {},
+  customProviders: [],
+  useCache: true,
+  ttsEngine: 'system',
+  ttsVoice: {}
+}))
+
+vi.mock('@wxt-dev/storage', () => ({
+  storage: { setItem: vi.fn().mockResolvedValue(undefined) }
+}))
+
+vi.mock('@/entrypoints/utils/ttsClient', () => ({
+  speakText: vi.fn().mockResolvedValue({ engine: 'system', fallback: false }),
+  stopTts: vi.fn()
 }))
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
@@ -53,6 +70,7 @@ vi.mock('@floating-ui/dom', () => ({
 interface PendingTranslation {
   text: string
   signal: AbortSignal
+  useCache?: boolean
   resolve: (value: string) => void
 }
 
@@ -61,6 +79,7 @@ describe('SelectionTranslator', () => {
   let currentSelection: Selection | null = null
   let getSelectionSpy: ReturnType<typeof vi.spyOn>
   let pendingTranslations: PendingTranslation[] = []
+  let writeClipboard: ReturnType<typeof vi.fn>
 
   const setSelection = async (text: string) => {
     currentSelection = {
@@ -77,9 +96,9 @@ describe('SelectionTranslator', () => {
   }
 
   const openTooltip = async () => {
-    const indicator = document.querySelector<HTMLElement>('.fr-selection-indicator')
-    expect(indicator).not.toBeNull()
-    indicator?.dispatchEvent(new MouseEvent('mouseenter'))
+    const translateButton = document.querySelector<HTMLElement>('.fr-toolbar-btn--primary')
+    expect(translateButton).not.toBeNull()
+    translateButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await nextTick()
     await flushPromises()
   }
@@ -93,11 +112,16 @@ describe('SelectionTranslator', () => {
     mockTranslateText.mockReset()
     mockComputePosition.mockClear()
     mockAutoUpdate.mockClear()
-    mockTranslateText.mockImplementation((text: string, _: string, options: { signal: AbortSignal }) => (
+    mockTranslateText.mockImplementation((text: string, _: string, options: { signal: AbortSignal; useCache?: boolean }) => (
       new Promise<string>(resolve => {
-        pendingTranslations.push({ text, signal: options.signal, resolve })
+        pendingTranslations.push({ text, signal: options.signal, useCache: options.useCache, resolve })
       })
     ))
+    writeClipboard = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: writeClipboard }
+    })
     getSelectionSpy = vi.spyOn(window, 'getSelection').mockImplementation(() => currentSelection)
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
@@ -131,17 +155,20 @@ describe('SelectionTranslator', () => {
 
     await setSelection('second selection')
 
-    expect(pendingTranslations).toHaveLength(2)
+    expect(pendingTranslations).toHaveLength(1)
     expect(pendingTranslations[0].signal.aborted).toBe(true)
+    await openTooltip()
+
+    expect(pendingTranslations).toHaveLength(2)
     expect(pendingTranslations[1].text).toBe('second selection')
 
     pendingTranslations[1].resolve('第二个译文')
     await flushPromises()
-    expect(document.querySelector('.fr-translation-result pre')?.textContent).toBe('第二个译文')
+    expect(document.querySelector('.fr-translation-text')?.textContent).toBe('第二个译文')
 
     pendingTranslations[0].resolve('迟到的第一个译文')
     await flushPromises()
-    expect(document.querySelector('.fr-translation-result pre')?.textContent).toBe('第二个译文')
+    expect(document.querySelector('.fr-translation-text')?.textContent).toBe('第二个译文')
   })
 
   it('aborts the active request when the tooltip is closed', async () => {
@@ -156,7 +183,7 @@ describe('SelectionTranslator', () => {
     await nextTick()
 
     expect(request.signal.aborted).toBe(true)
-    expect(document.querySelector('.fr-translation-tooltip')).toBeNull()
+    expect(document.querySelector('.fr-translation-panel')).toBeNull()
   })
 
   it('aborts the active request when the component is unmounted', async () => {
@@ -172,10 +199,10 @@ describe('SelectionTranslator', () => {
 
   it('keeps the existing selection length boundaries', async () => {
     await setSelection('a')
-    expect(document.querySelector('.fr-selection-indicator')).toBeNull()
+    expect(document.querySelector('.fr-selection-toolbar')).toBeNull()
 
     await setSelection('ab')
-    expect(document.querySelector('.fr-selection-indicator')).not.toBeNull()
+    expect(document.querySelector('.fr-selection-toolbar')).not.toBeNull()
 
     const pageTarget = document.createElement('div')
     document.body.appendChild(pageTarget)
@@ -183,6 +210,62 @@ describe('SelectionTranslator', () => {
     await nextTick()
 
     await setSelection('a'.repeat(4097))
-    expect(document.querySelector('.fr-selection-indicator')).toBeNull()
+    expect(document.querySelector('.fr-selection-toolbar')).toBeNull()
+  })
+
+  it('copies the original and translation independently', async () => {
+    await setSelection('copy source')
+    await openTooltip()
+    pendingTranslations[0].resolve('复制译文')
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('button[title="selection.copyOriginal"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+    expect(writeClipboard).toHaveBeenLastCalledWith('copy source')
+
+    document.querySelector<HTMLElement>('button[title="selection.copyTranslation"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+    expect(writeClipboard).toHaveBeenLastCalledWith('复制译文')
+  })
+
+  it('keeps the panel open when selecting text inside it', async () => {
+    await setSelection('page selection')
+    await openTooltip()
+    pendingTranslations[0].resolve('panel translation')
+    await flushPromises()
+
+    const internalText = document.querySelector<HTMLElement>('.fr-translation-text')
+    expect(internalText).not.toBeNull()
+    currentSelection = {
+      rangeCount: 1,
+      toString: () => 'panel translation',
+      getRangeAt: () => ({}) as Range,
+      anchorNode: internalText?.firstChild ?? null,
+      focusNode: internalText?.firstChild ?? null,
+    } as unknown as Selection
+
+    internalText?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    internalText?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+    await vi.advanceTimersByTimeAsync(200)
+    await nextTick()
+
+    expect(mockTranslateText).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('.fr-translation-panel')).not.toBeNull()
+  })
+
+  it('bypasses the cache when translating again', async () => {
+    await setSelection('regenerate source')
+    await openTooltip()
+    pendingTranslations[0].resolve('first result')
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('.fr-regenerate-btn')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+
+    expect(pendingTranslations).toHaveLength(2)
+    expect(pendingTranslations[1].useCache).toBe(false)
   })
 })

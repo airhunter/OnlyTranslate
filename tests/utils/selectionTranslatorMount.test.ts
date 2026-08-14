@@ -8,7 +8,15 @@ const mockConfig = vi.hoisted(() => ({
   animations: false,
   disableSelectionTranslator: false,
   selectionTranslatorMode: 'bilingual',
-  theme: 'light'
+  theme: 'light',
+  service: 'google',
+  token: {},
+  model: {},
+  customModel: {},
+  customProviders: [],
+  useCache: true,
+  ttsEngine: 'system',
+  ttsVoice: {}
 }))
 
 vi.mock('@/entrypoints/utils/config', () => ({
@@ -28,6 +36,11 @@ vi.mock('@/entrypoints/utils/translateApi', () => ({
 
 vi.mock('@/entrypoints/utils/i18n', () => ({
   t: (key: string) => key
+}))
+
+vi.mock('@/entrypoints/utils/ttsClient', () => ({
+  speakText: vi.fn().mockResolvedValue({ engine: 'system', fallback: false }),
+  stopTts: vi.fn()
 }))
 
 vi.mock('@/components/SelectionTranslator.css?inline', () => ({
@@ -144,15 +157,15 @@ describe('selection translator Shadow DOM mounting', () => {
     await vi.advanceTimersByTimeAsync(200)
     await nextTick()
 
-    shadow?.querySelector<HTMLElement>('.fr-selection-indicator')
-      ?.dispatchEvent(new MouseEvent('mouseenter'))
+    shadow?.querySelector<HTMLElement>('.fr-toolbar-btn--primary')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }))
     await nextTick()
     await flushPromises()
 
     expect(mockTranslateText).toHaveBeenCalledTimes(1)
-    expect(shadow?.querySelector('.fr-translation-tooltip')).not.toBeNull()
+    expect(shadow?.querySelector('.fr-translation-panel')).not.toBeNull()
 
-    const header = shadow?.querySelector<HTMLElement>('.fr-tooltip-header')
+    const header = shadow?.querySelector<HTMLElement>('.fr-panel-header')
     header?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }))
     header?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true }))
     header?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }))
@@ -160,7 +173,7 @@ describe('selection translator Shadow DOM mounting', () => {
     await nextTick()
 
     expect(mockTranslateText).toHaveBeenCalledTimes(1)
-    expect(shadow?.querySelector('.fr-translation-tooltip')).not.toBeNull()
+    expect(shadow?.querySelector('.fr-translation-panel')).not.toBeNull()
 
   })
 })

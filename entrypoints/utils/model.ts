@@ -27,6 +27,7 @@ export interface CustomProvider {
 }
 
 export type CustomProviderProtocol = 'openai' | 'anthropic';
+export type TtsEngine = 'system' | 'edge';
 
 export class Config {
     on: boolean; // 是否开启
@@ -81,6 +82,8 @@ export class Config {
     customProviders: CustomProvider[]; // 动态自定义网关池
     activeBuiltinProviders: string[]; // 用户手动启用/留存在面板的内置预设服务 ID
     translationScope: 'smart' | 'full'; // 翻译范围：smart=智能识别主内容，full=翻译整个页面
+    ttsEngine: TtsEngine; // 朗读引擎：system=系统语音，edge=Edge 在线语音
+    ttsVoice: IMapping; // 各朗读引擎选中的音色，空字符串表示自动匹配语言
 
     constructor() {
         this.on = true;
@@ -135,6 +138,8 @@ export class Config {
         this.customProviders = []; // 默认没有自定义节点
         this.activeBuiltinProviders = []; // 默认空的启用列表，加载时会进行迁移
         this.translationScope = 'smart'; // 默认智能识别主内容
+        this.ttsEngine = 'system'; // 默认优先使用浏览器提供的系统语音
+        this.ttsVoice = {}; // 默认按文本语言自动匹配音色
     }
 }
 

@@ -25,6 +25,7 @@ import {
     recordTranslationDiagnosticVisible,
     type TranslationDiagnosticMetadata,
 } from '@/entrypoints/utils/translationDiagnostics'
+import { handleTtsBackgroundMessage } from '@/entrypoints/utils/ttsBackground'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -253,6 +254,9 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any) => {
+            const ttsResponse = handleTtsBackgroundMessage(message)
+            if (ttsResponse) return ttsResponse
+
             if (message?.type === 'TRANSLATION_DIAGNOSTIC_VISIBLE' && typeof message.sessionId === 'string') {
                 return recordTranslationDiagnosticVisible(message.sessionId)
                     .then(() => ({ success: true }))

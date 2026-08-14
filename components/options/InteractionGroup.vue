@@ -37,7 +37,44 @@
       </div>
     </div>
 
-    <!-- 卡片2：输入框增强 -->
+    <!-- 卡片2：语音设置 -->
+    <div class="setting-card">
+      <div class="setting-card-header">
+        <h3 class="setting-card-title">{{ t('options.interaction.voiceTitle') }}</h3>
+        <p class="setting-card-desc">{{ t('options.interaction.voiceDesc') }}</p>
+      </div>
+      <div class="setting-card-body">
+        <div class="setting-row">
+          <span class="setting-label">{{ t('options.interaction.voiceEngine') }}</span>
+          <div class="setting-control">
+            <el-select v-model="config.ttsEngine">
+              <el-option :label="t('options.interaction.systemVoiceRecommended')" value="system" />
+              <el-option :label="t('options.interaction.edgeOnlineVoice')" value="edge" />
+            </el-select>
+          </div>
+        </div>
+
+        <div class="setting-row setting-row--expanded">
+          <span class="setting-label">{{ t('options.interaction.voiceTone') }}</span>
+          <div class="setting-control setting-control--full voice-control">
+            <el-select v-model="selectedVoice" filterable :loading="isLoadingVoices">
+              <el-option :label="t('options.interaction.autoVoice')" value="" />
+              <el-option
+                v-for="voice in voiceOptions"
+                :key="voice.id"
+                :label="voice.lang ? `${voice.name} · ${voice.lang}` : voice.name"
+                :value="voice.id"
+              />
+            </el-select>
+            <el-button :loading="isPreviewingVoice" @click="previewVoice">
+              {{ t('options.interaction.previewVoice') }}
+            </el-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡片3：输入框增强 -->
     <div class="setting-card">
       <div class="setting-card-header">
         <h3 class="setting-card-title">{{ t('options.interaction.inputTitle') }}</h3>
@@ -73,7 +110,7 @@
       </div>
     </div>
 
-    <!-- 卡片3：快捷键与指令 -->
+    <!-- 卡片4：快捷键与指令 -->
     <div class="setting-card">
       <div class="setting-card-header">
         <h3 class="setting-card-title">{{ t('options.interaction.hotkeyTitle') }}</h3>
@@ -129,7 +166,7 @@
       </div>
     </div>
 
-    <!-- 卡片4：全文面板组件 -->
+    <!-- 卡片5：全文面板组件 -->
     <div class="setting-card">
       <div class="setting-card-header">
         <h3 class="setting-card-title">{{ t('options.interaction.fullPageTitle') }}</h3>
@@ -167,7 +204,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { options } from '@/entrypoints/utils/option'
 import { useConfig } from '@/composables/useConfig'
 import { defineAsyncComponent } from 'vue'
@@ -176,10 +213,52 @@ import { parseHotkey } from '@/entrypoints/utils/hotkey'
 import browser from 'webextension-polyfill'
 import { InfoFilled, Edit } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import type { TtsEngine } from '@/entrypoints/utils/model'
+import { getTtsVoices, speakText, stopTts } from '@/entrypoints/utils/ttsClient'
+import type { TtsVoiceOption } from '@/entrypoints/utils/edgeTts'
 
 const CustomHotkeyInput = defineAsyncComponent(() => import('@/components/CustomHotkeyInput.vue'))
 const { config } = useConfig()
 const { t } = useI18n()
+
+const voiceOptions = ref<TtsVoiceOption[]>([])
+const isLoadingVoices = ref(false)
+const isPreviewingVoice = ref(false)
+let voiceRequestId = 0
+const selectedVoice = computed({
+  get: () => config.value.ttsVoice?.[config.value.ttsEngine] || '',
+  set: (value: string) => {
+    if (!config.value.ttsVoice) config.value.ttsVoice = {}
+    config.value.ttsVoice[config.value.ttsEngine] = value
+  },
+})
+
+watch(() => config.value.ttsEngine, async engine => {
+  stopTts()
+  const requestId = ++voiceRequestId
+  isLoadingVoices.value = true
+  const voices = await getTtsVoices(engine as TtsEngine)
+  if (requestId !== voiceRequestId) return
+  voiceOptions.value = voices
+  isLoadingVoices.value = false
+}, { immediate: true })
+
+const previewVoice = async () => {
+  if (isPreviewingVoice.value) return
+  isPreviewingVoice.value = true
+  try {
+    await speakText(t('options.interaction.voicePreviewText'), {
+      engine: config.value.ttsEngine,
+      voice: selectedVoice.value,
+    })
+  } catch {
+    ElMessage.error(t('options.interaction.voicePreviewFailed'))
+  } finally {
+    isPreviewingVoice.value = false
+  }
+}
+
+onBeforeUnmount(stopTts)
 
 type OptionLike = { label: string; labelKey?: string }
 const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
@@ -310,6 +389,15 @@ const getCustomHotkeyDisplayName = () => {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.55;
+}
+
+.voice-control {
+  display: flex;
+  gap: 8px;
+}
+
+.voice-control .el-select {
+  flex: 1;
 }
 
 /* Card inner rows customization */

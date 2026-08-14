@@ -25,12 +25,19 @@ export default defineConfig({
         name: 'OnlyTranslate',
         artifactTemplate: '{{name}}-v{{version}}-{{browser}}.zip',
     },
-    manifest: {
+    manifest: ({ browser }) => ({
         name: '__MSG_extName__',
         description: '__MSG_extDescription__',
         homepage_url: 'https://onlytranslate.top/',
         default_locale: 'zh_CN',
-        permissions: ['storage', 'contextMenus', 'offscreen', 'alarms', 'unlimitedStorage'],
+        permissions: [
+            'storage',
+            'contextMenus',
+            'offscreen',
+            'alarms',
+            'unlimitedStorage',
+            ...(browser === 'firefox' ? [] : ['tts']),
+        ],
         host_permissions: ['<all_urls>'],
         action: {
             default_title: '__MSG_extName__',
@@ -54,6 +61,6 @@ export default defineConfig({
                 run_at: 'document_start',
             } as any,
         ],
-    },
+    }),
 
 });
