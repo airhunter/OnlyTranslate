@@ -2,7 +2,7 @@
   "name": "只译",
   "description": "给认真读外语内容的人：网页、视频字幕和 EPUB 都能双语翻译。",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

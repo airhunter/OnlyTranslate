@@ -1,5 +1,27 @@
 # Changelog
 
+# [1.8.0](https://github.com/airhunter/OnlyTranslate/compare/v1.7.0...v1.8.0) (2026-08-15)
+
+
+### Bug Fixes
+
+* **build:** 修复开发依赖安全漏洞 ([9a160e4](https://github.com/airhunter/OnlyTranslate/commit/9a160e4cd2de5431d4442af5063c50e3732af539))
+* **content:** 修复 WSJ 文章标题漏译 ([40d123a](https://github.com/airhunter/OnlyTranslate/commit/40d123a6cb3688224e5e21b3938c4d550c2c86b5))
+* **content:** 收敛扩展重载后的整页翻译失败 ([b6a3223](https://github.com/airhunter/OnlyTranslate/commit/b6a322377d051921ceaa80d787f5c882c711629e))
+* **content:** 更新 HTML 格式化依赖 ([c087129](https://github.com/airhunter/OnlyTranslate/commit/c0871296423d9f777456839f951f590658f75cca))
+* **content:** 隔离划词翻译界面并收紧请求生命周期 ([c767c06](https://github.com/airhunter/OnlyTranslate/commit/c767c061ffac1456e8845d1c4b17c5d1fea10f8b))
+* **deps:** 更新第一批安全依赖 ([7884ec6](https://github.com/airhunter/OnlyTranslate/commit/7884ec6c1ea183747e54ed6e722426b7458475ba))
+* **ebook:** 更新 EPUB XML 解析依赖 ([baca930](https://github.com/airhunter/OnlyTranslate/commit/baca9308dad0201b892a87938c94d228f47fdfb4))
+
+
+### Features
+
+* **content:** 增加自适应划词解析 ([af2462a](https://github.com/airhunter/OnlyTranslate/commit/af2462a62e07f96f0cec082110eaf8bce06c5fb2))
+* **content:** 完善划词翻译与朗读设置 ([92f6fec](https://github.com/airhunter/OnlyTranslate/commit/92f6fecb168da8abfb6e63c3860092a9265ed871))
+* **content:** 重做划词翻译交互并增加双引擎朗读 ([0268b28](https://github.com/airhunter/OnlyTranslate/commit/0268b2862dbff0a324806638a7a7b7dc7d97e4dd))
+* **ebook:** 增加书架备份与恢复 ([75556b4](https://github.com/airhunter/OnlyTranslate/commit/75556b4149e06f49ff16b7aa9f382629bbd47df2))
+* **feedback:** 增加可选联系邮箱 ([c5ae496](https://github.com/airhunter/OnlyTranslate/commit/c5ae496eb24d882fc153255af6c5057413f1cc36))
+
 # [1.7.0](https://github.com/airhunter/OnlyTranslate/compare/v1.6.0...v1.7.0) (2026-08-09)
 
 
