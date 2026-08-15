@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.8.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.8：划词翻译与语言解析',
+        items: [
+          '重做划词翻译：选中文字后在鼠标附近显示轻量工具栏；结果卡片支持选择与复制原文、译文，切换服务、重新翻译，并可拖动且不会跑出可视区。',
+          '新增自适应语言解析：单词或短语显示发音、词性、释义和语境用法；句子显示译文、结构、语法点与重点表达，并复用已配置的 AI 服务。',
+          '新增划词朗读，可使用 Chrome/Edge 系统语音或 Edge 在线语音，按文本语言自动匹配音色，并支持自动、女声和男声偏好。',
+          '电子书书架新增备份与恢复，可迁移 EPUB 文件、阅读进度和书签；恢复时会合并书架，不删除其他电子书。',
+          '改进网页翻译稳定性，修复扩展重新加载后的整页翻译失败和 WSJ 文章标题漏译，并完成相关依赖与构建工具的安全更新。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.8: Selection Translation and Language Analysis',
+        items: [
+          'Rebuilt selection translation around a lightweight toolbar near the pointer. The result card now supports selecting and copying source and translated text, switching providers, retranslating, dragging, and automatic viewport containment.',
+          'Added adaptive language analysis: words and short phrases show pronunciation, part of speech, definitions, and contextual usage, while sentences show translation, structure, grammar points, and key expressions using a configured AI provider.',
+          'Added read-aloud for selected text with Chrome/Edge system voices or Edge online voices, automatic language matching, and Auto, Female, or Male voice preferences.',
+          'Added ebook library backup and restore for EPUB files, reading progress, and bookmarks. Restoring merges the backup without deleting other ebooks.',
+          'Improved webpage translation reliability by fixing full-page translation after extension reloads and missing WSJ article titles, alongside security updates for dependencies and the build toolchain.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.8：劃詞翻譯與語言解析',
+        items: [
+          '重新設計劃詞翻譯：選取文字後在滑鼠附近顯示輕量工具列；結果卡片支援選取與複製原文、譯文，切換服務、重新翻譯，並可拖曳且不會移出可視範圍。',
+          '新增自適應語言解析：單字或短語顯示發音、詞性、釋義和語境用法；句子顯示譯文、結構、文法重點與重要表達，並沿用已設定的 AI 服務。',
+          '新增劃詞朗讀，可使用 Chrome/Edge 系統語音或 Edge 線上語音，依文字語言自動配對音色，並支援自動、女聲和男聲偏好。',
+          '電子書書架新增備份與還原，可移轉 EPUB 檔案、閱讀進度和書籤；還原時會合併書架，不會刪除其他電子書。',
+          '改善網頁翻譯穩定性，修正擴充功能重新載入後的整頁翻譯失敗和 WSJ 文章標題漏譯，並完成相關相依套件與建置工具的安全更新。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.8：選択翻訳と言語解析',
+        items: [
+          '選択翻訳を刷新し、テキスト選択後にポインター付近へ軽量ツールバーを表示します。結果カードでは原文と訳文の選択・コピー、サービス切り替え、再翻訳、ドラッグ移動ができ、画面外へのはみ出しも防ぎます。',
+          '適応型の言語解析を追加しました。単語や短い語句では発音、品詞、意味、文脈上の用法を、文では翻訳、構造、文法ポイント、重要表現を、設定済みの AI サービスで表示します。',
+          '選択テキストの読み上げを追加しました。Chrome/Edge のシステム音声または Edge オンライン音声を使用でき、言語の自動判定と自動・女性・男性の音声設定に対応します。',
+          '電子書籍の本棚にバックアップと復元を追加しました。EPUB ファイル、読書進捗、ブックマークを移行でき、復元時も他の電子書籍は削除されません。',
+          '拡張機能の再読み込み後にページ全体の翻訳が失敗する問題と WSJ の記事タイトルが翻訳されない問題を修正し、関連する依存関係とビルドツールのセキュリティ更新も行いました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.7.0',
     notes: {
       'zh-CN': {
