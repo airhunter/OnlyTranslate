@@ -121,6 +121,23 @@ describe('Claude service adapter', () => {
     expect(mockClaudeSubtitleBatchMsgTemplate).not.toHaveBeenCalled()
   })
 
+  it('forwards an isolated prompt for selection analysis', async () => {
+    const prompt = {
+      system: 'Analyze language safely.',
+      user: 'Selected text: "ephemeral"',
+      responseFormat: 'json' as const,
+    }
+
+    await claude({
+      type: 'SELECTION_ANALYSIS',
+      origin: 'ephemeral',
+      targetLang: 'zh-Hans',
+      prompt,
+    })
+
+    expect(mockClaudeMsgTemplate).toHaveBeenCalledWith('ephemeral', 'zh-Hans', undefined, prompt)
+  })
+
   it('forwards quality mode to Anthropic subtitle requests', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

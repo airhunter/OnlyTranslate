@@ -10,6 +10,11 @@ const mockConfig = vi.hoisted(() => ({
   count: 0,
   useCache: true,
   service: 'openai',
+  to: 'zh-Hans',
+  token: {
+    openai: 'test-token'
+  } as Record<string, string>,
+  newApiUrl: '',
   model: {
     openai: 'gpt-5-mini'
   } as Record<string, string>,
@@ -63,6 +68,7 @@ vi.mock('@/entrypoints/utils/translationDirection', () => ({
 }))
 
 import {
+  analyzeSelectionText,
   cacheTranslationResult,
   cancelAllTranslations,
   canUseBatchTranslationForCurrentConfig,
@@ -72,11 +78,16 @@ import {
 } from '../../entrypoints/utils/translateApi'
 import { resolveTranslationDirection } from '../../entrypoints/utils/translationDirection'
 
-describe('translateText', () => {
+describe('translateApi', () => {
   beforeEach(() => {
     mockConfig.count = 0
     mockConfig.useCache = true
     mockConfig.service = 'openai'
+    mockConfig.to = 'zh-Hans'
+    mockConfig.token = {
+      openai: 'test-token'
+    }
+    mockConfig.newApiUrl = ''
     mockConfig.model = {
       openai: 'gpt-5-mini'
     }
@@ -105,6 +116,56 @@ describe('translateText', () => {
     expect(mockSendMessage).not.toHaveBeenCalled()
     expect(mockCacheLocalGet).not.toHaveBeenCalled()
     expect(mockStorageSetItem).not.toHaveBeenCalled()
+  })
+
+  it('sends a selection analysis request with an isolated prompt and parses the result', async () => {
+    mockSendMessage.mockResolvedValue(JSON.stringify({
+      kind: 'term',
+      term: 'behind',
+      pronunciation: '/bɪˈhaɪnd/',
+      partOfSpeech: 'preposition',
+      definition: '在……后面',
+      contextualMeaning: '表示某个现象背后的原因',
+      example: 'the reasons behind the change',
+      difficulty: 'A2',
+      notes: ['也可表示支持某人'],
+    }))
+
+    await expect(analyzeSelectionText({
+      text: 'behind',
+      surroundingContext: "Behind Britain's Digital ID Laws",
+      pageTitle: 'Example article',
+    })).resolves.toMatchObject({
+      kind: 'term',
+      term: 'behind',
+      contextualMeaning: '表示某个现象背后的原因',
+    })
+
+    expect(mockEnqueueTranslation).toHaveBeenCalledWith(expect.any(Function), { priority: 'high' })
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'SELECTION_ANALYSIS',
+      origin: 'behind',
+      context: 'Example article',
+      sourceLang: 'auto',
+      targetLang: 'zh-Hans',
+      prompt: expect.objectContaining({
+        responseFormat: 'json',
+        system: expect.stringContaining('language-learning assistant'),
+        user: expect.stringContaining("Behind Britain's Digital ID Laws"),
+      }),
+    }))
+    expect(mockCacheLocalGet).not.toHaveBeenCalled()
+    expect(mockCacheLocalSet).not.toHaveBeenCalled()
+    expect(mockStorageSetItem).not.toHaveBeenCalled()
+  })
+
+  it('requires a configured AI service before analyzing a selection', async () => {
+    mockConfig.service = 'google'
+
+    await expect(analyzeSelectionText({ text: 'behind' })).rejects.toBeInstanceOf(Error)
+
+    expect(mockEnqueueTranslation).not.toHaveBeenCalled()
+    expect(mockSendMessage).not.toHaveBeenCalled()
   })
 
   it('normalizes nullish input to an empty result without sending a request', async () => {

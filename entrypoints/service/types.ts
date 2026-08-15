@@ -1,6 +1,12 @@
 import type { SubtitleTranslationJob, SubtitleTranslationResult } from '@/entrypoints/video/types'
 import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
 
+export interface AiTextActionPrompt {
+    system: string;
+    user: string;
+    responseFormat?: 'json';
+}
+
 interface TranslationServiceBaseMessage {
     context?: string;
     sourceLang?: string;
@@ -9,6 +15,8 @@ interface TranslationServiceBaseMessage {
     fastMode?: boolean;
     /** 仅包含本地性能诊断元数据，不包含原文、译文、密钥或接口地址。 */
     diagnostics?: TranslationDiagnosticMetadata;
+    /** 翻译以外的 AI 文本操作可传入独立提示词，不读取用户的翻译 Prompt。 */
+    prompt?: AiTextActionPrompt;
 }
 
 export interface SingleTranslationServiceMessage extends TranslationServiceBaseMessage {

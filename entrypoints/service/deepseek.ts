@@ -34,7 +34,9 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
                 ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
                 : isBatch
                     ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
-                    : deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode)
+                    : message.prompt
+                        ? deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
+                        : deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {

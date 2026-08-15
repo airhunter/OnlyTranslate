@@ -58,7 +58,9 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
                 ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
                 : isBatch
                     ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
-                    : commonMsgTemplate(message.origin, message.targetLang, message.fastMode)
+                    : message.prompt
+                        ? commonMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
+                        : commonMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {

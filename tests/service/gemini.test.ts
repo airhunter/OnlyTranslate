@@ -121,6 +121,23 @@ describe('Gemini service adapter', () => {
     expect(mockGeminiSubtitleBatchMsgTemplate).not.toHaveBeenCalled()
   })
 
+  it('forwards an isolated prompt for selection analysis', async () => {
+    const prompt = {
+      system: 'Analyze language safely.',
+      user: 'Selected text: "ephemeral"',
+      responseFormat: 'json' as const,
+    }
+
+    await gemini({
+      type: 'SELECTION_ANALYSIS',
+      origin: 'ephemeral',
+      targetLang: 'zh-Hans',
+      prompt,
+    })
+
+    expect(mockGeminiMsgTemplate).toHaveBeenCalledWith('ephemeral', 'zh-Hans', undefined, prompt)
+  })
+
   it('continues to reject ordinary batch translation messages', async () => {
     await expect(gemini({
       type: 'BATCH_TRANSLATION',

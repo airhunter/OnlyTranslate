@@ -20,13 +20,18 @@ import { cache } from './cache';
 import { storage } from '@wxt-dev/storage';
 import { resolveTranslationDirection } from './translationDirection';
 import { t } from './i18n';
-import { customModelString, defaultOption, services, servicesType } from './option';
+import { customModelString, defaultOption, isServiceConfigured, services, servicesType } from './option';
 import { getCustomProviderProtocol } from './providerEndpoint';
 import {
   createDiagnosticMetadata,
   createTranslationDiagnosticId,
   type TranslationDiagnosticContext,
 } from './translationDiagnostics';
+import {
+  buildSelectionAnalysisPrompt,
+  parseSelectionAnalysisResponse,
+  type SelectionAnalysisResult,
+} from './selectionAnalysis';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -253,6 +258,83 @@ export function canUseBatchTranslationForCurrentConfig(allowBatch: boolean | und
 }
 
 export { hasForegroundTranslationWork };
+
+export interface AnalyzeSelectionInput {
+  text: string;
+  surroundingContext?: string;
+  pageTitle?: string;
+}
+
+export interface AnalyzeSelectionOptions {
+  maxRetries?: number;
+  retryDelay?: number;
+  timeout?: number;
+  priority?: TranslationPriority;
+  signal?: AbortSignal;
+}
+
+export async function analyzeSelectionText(
+  input: AnalyzeSelectionInput,
+  options: AnalyzeSelectionOptions = {},
+): Promise<SelectionAnalysisResult> {
+  const text = typeof input.text === 'string' ? input.text.trim() : '';
+  if (!text) throw new Error('Selection analysis input is empty');
+  if (!servicesType.isAI(config.service) || !isServiceConfigured(config.service, config)) {
+    throw new Error(t('selection.analysisRequiresAi'));
+  }
+
+  const {
+    maxRetries = 1,
+    retryDelay = 1000,
+    timeout = 60000,
+    priority = 'high',
+    signal,
+  } = options;
+  assertSignalNotAborted(signal);
+
+  const { kind, prompt } = buildSelectionAnalysisPrompt({
+    text,
+    context: input.surroundingContext,
+    pageTitle: input.pageTitle,
+    targetLanguage: config.to,
+  });
+  const requestGeneration = cancellationGeneration;
+
+  return enqueueTranslation(async () => {
+    const run = async (retryCount = 0): Promise<SelectionAnalysisResult> => {
+      try {
+        assertSignalNotAborted(signal);
+        assertNotCancelled(requestGeneration);
+        const response = await withRequestTimeout(
+          browser.runtime.sendMessage({
+            type: 'SELECTION_ANALYSIS',
+            origin: text,
+            context: input.pageTitle || '',
+            sourceLang: 'auto',
+            targetLang: config.to,
+            prompt,
+          }),
+          timeout,
+          signal,
+        );
+        assertSignalNotAborted(signal);
+        assertNotCancelled(requestGeneration);
+        const content = normalizeRuntimeTranslationResult(response).trim();
+        if (!content) throw new Error(t('runtime.upstreamNoContent'));
+        return parseSelectionAnalysisResponse(content, kind);
+      } catch (error) {
+        if (isTranslationCancelledError(error)) throw error;
+        if (canRetryTranslationError(error, retryCount, maxRetries)) {
+          await waitForRetry(getRetryDelay(retryCount, retryDelay), signal);
+          return run(retryCount + 1);
+        }
+        throw error;
+      }
+    };
+
+    return run();
+  }, { priority });
+}
 
 function shouldUseBatchTranslation(
   allowBatch: boolean | undefined,

@@ -32,7 +32,9 @@ async function zhipu(message: TranslationServiceMessage): Promise<TranslationSer
     const resp = await fetch(urls[services.zhipu], {
         method: method.POST,
         headers: headers,
-        body: commonMsgTemplate(message.origin, message.targetLang)
+        body: message.prompt
+            ? commonMsgTemplate(message.origin, message.targetLang, false, message.prompt)
+            : commonMsgTemplate(message.origin, message.targetLang, false)
     });
 
     if (resp.ok) {

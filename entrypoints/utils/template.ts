@@ -10,6 +10,7 @@ import {
     resolveOpenAICompatibleTranslationPolicy,
 } from './modelCapabilities'
 import { resolveConfiguredTranslationModel } from './modelSelection'
+import type { AiTextActionPrompt } from '@/entrypoints/service/types'
 
 // openai 格式的消息模板（通用模板）
 function applyTranslationMode(payload: Record<string, unknown>, model: string, fastMode: boolean) {
@@ -35,7 +36,12 @@ function applyTranslationMode(payload: Record<string, unknown>, model: string, f
     if (policy.enableThinking !== undefined) payload.enable_thinking = policy.enableThinking
 }
 
-export function commonMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
+export function commonMsgTemplate(
+    origin: string,
+    targetLang = config.to,
+    fastMode = false,
+    prompt?: AiTextActionPrompt,
+) {
     // 检测是否使用自定义模型
     let model = config.model[config.service];
     let customModel = config.customModel[config.service];
@@ -53,13 +59,13 @@ export function commonMsgTemplate(origin: string, targetLang = config.to, fastMo
     // 删除模型名称中的中文括号及其内容，如"gpt-4（推荐）" -> "gpt-4"
     model = model.replace(/（.*）/g, "");
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    const system = prompt?.system || config.system_role[config.service] || defaultOption.system_role;
+    const user = prompt?.user || (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const payload: Record<string, unknown> = {
         'model': model,
-        "temperature": 1.0,
+        "temperature": prompt ? 0.2 : 1.0,
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -137,20 +143,25 @@ export function commonSubtitleBatchMsgTemplate(job: SubtitleTranslationJob, fast
 }
 
 // deepseek
-export function deepseekMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
+export function deepseekMsgTemplate(
+    origin: string,
+    targetLang = config.to,
+    fastMode = false,
+    prompt?: AiTextActionPrompt,
+) {
     // 检测是否使用自定义模型
     let model = config.model[config.service] === customModelString ? config.customModel[config.service] : config.model[config.service]
 
     // 删除模型名称中的中文括号及其内容，如"gpt-4（推荐）" -> "gpt-4"
     model = model.replace(/（.*）/g, "");
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    const system = prompt?.system || config.system_role[config.service] || defaultOption.system_role;
+    const user = prompt?.user || (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const payload: Record<string, unknown> = {
         'model': model,
-        temperature: 0.7,
+        temperature: prompt ? 0.2 : 0.7,
         'messages': [
             {'role': 'system', 'content': system},
             {'role': 'user', 'content': user},
@@ -162,23 +173,31 @@ export function deepseekMsgTemplate(origin: string, targetLang = config.to, fast
 }
 
 // gemini
-export function geminiMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
+export function geminiMsgTemplate(
+    origin: string,
+    targetLang = config.to,
+    fastMode = false,
+    prompt?: AiTextActionPrompt,
+) {
     const model = config.model[config.service] === customModelString
         ? config.customModel[config.service]
         : config.model[config.service]
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    const user = prompt?.user || (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
     const policy = resolveGeminiTranslationPolicy(model, thinkingWanted)
+    const generationConfig: Record<string, unknown> = policy.thinkingConfig
+        ? { thinkingConfig: policy.thinkingConfig }
+        : {}
+    if (prompt?.responseFormat === 'json') generationConfig.responseMimeType = 'application/json'
     const payload: Record<string, unknown> = {
-        "generationConfig": policy.thinkingConfig
-            ? { thinkingConfig: policy.thinkingConfig }
-            : {},
+        "generationConfig": generationConfig,
         "contents": [
             {"role": "user", "parts": [{"text": user}]},
         ]
     }
+    if (prompt?.system) payload.systemInstruction = { parts: [{ text: prompt.system }] }
 
     return JSON.stringify(payload)
 }
@@ -223,16 +242,22 @@ function applyClaudeTranslationMode(
 }
 
 // claude
-export function claudeMsgTemplate(origin: string, targetLang = config.to, fastMode = false) {
+export function claudeMsgTemplate(
+    origin: string,
+    targetLang = config.to,
+    fastMode = false,
+    prompt?: AiTextActionPrompt,
+) {
     const model = resolveClaudeModel()
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    const system = prompt?.system || config.system_role[config.service] || defaultOption.system_role;
+    const user = prompt?.user || (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     const payload: Record<string, unknown> = {
         model: model,
         max_tokens: 4096,
         stream: false,
+        ...(prompt ? { temperature: 0.2 } : {}),
         system: system,
         messages: [
             {role: "user", content: user},
@@ -316,16 +341,16 @@ export function yiyanMsgTemplate(origin: string, targetLang = config.to) {
     })
 }
 
-export function minimaxTemplate(origin: string, targetLang = config.to) {
+export function minimaxTemplate(origin: string, targetLang = config.to, prompt?: AiTextActionPrompt) {
 
-    let system = config.system_role[config.service] || defaultOption.system_role;
-    let user = (config.user_role[config.service] || defaultOption.user_role)
+    const system = prompt?.system || config.system_role[config.service] || defaultOption.system_role;
+    const user = prompt?.user || (config.user_role[config.service] || defaultOption.user_role)
         .replace('{{to}}', targetLang).replace('{{origin}}', origin);
 
     return JSON.stringify({
         model: "MiniMax-Text-01",
         stream: false,
-        temperature: 0.7,
+        temperature: prompt ? 0.2 : 0.7,
         thinking: { type: config.thinking?.[config.service] ? 'adaptive' : 'disabled' },
         messages: [
             {role: 'system', content: system},

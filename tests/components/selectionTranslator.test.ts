@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 import SelectionTranslator from '@/components/SelectionTranslator.vue'
 
 const mockTranslateText = vi.hoisted(() => vi.fn())
+const mockAnalyzeSelectionText = vi.hoisted(() => vi.fn())
 const mockComputePosition = vi.hoisted(() => vi.fn().mockResolvedValue({
   x: 12,
   y: 24,
@@ -21,13 +22,14 @@ const mockConfig = vi.hoisted(() => ({
   selectionTranslatorMode: 'bilingual',
   theme: 'light',
   service: 'google',
-  token: {},
-  model: {},
+  token: { openai: 'token' },
+  model: { openai: 'gpt-5-mini' },
   customModel: {},
   customProviders: [],
   useCache: true,
   ttsEngine: 'system',
-  ttsVoice: {}
+  ttsVoice: {},
+  ttsVoiceGender: 'auto'
 }))
 
 vi.mock('@wxt-dev/storage', () => ({
@@ -40,6 +42,7 @@ vi.mock('@/entrypoints/utils/ttsClient', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
+  analyzeSelectionText: mockAnalyzeSelectionText,
   isTranslationCancelledError: (error: unknown) => (
     typeof error === 'object'
     && error !== null
@@ -103,14 +106,49 @@ describe('SelectionTranslator', () => {
     await flushPromises()
   }
 
+  const openAnalysis = async () => {
+    const analysisButton = document.querySelector<HTMLElement>('button[title="selection.analyze"]')
+    expect(analysisButton).not.toBeNull()
+    analysisButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    await flushPromises()
+  }
+
   beforeEach(() => {
     vi.useFakeTimers()
     document.body.innerHTML = ''
     document.title = 'Selection test page'
     currentSelection = null
     pendingTranslations = []
+    mockConfig.service = 'google'
     mockTranslateText.mockReset()
-    mockComputePosition.mockClear()
+    mockAnalyzeSelectionText.mockReset()
+    mockAnalyzeSelectionText.mockResolvedValue({
+      kind: 'term',
+      term: 'ephemeral',
+      pronunciation: '/ɪˈfem.ər.əl/',
+      partOfSpeech: 'adjective',
+      definition: '短暂的',
+      contextualMeaning: '在语境中指持续时间很短',
+      example: 'ephemeral beauty',
+      difficulty: 'C1',
+      translation: '',
+      overview: '',
+      structure: '',
+      grammarPoints: [],
+      expressions: [],
+      notes: [],
+      summary: '',
+    })
+    mockComputePosition.mockReset()
+    mockComputePosition.mockResolvedValue({
+      x: 12,
+      y: 24,
+      placement: 'right',
+      middlewareData: {
+        hide: { referenceHidden: false }
+      }
+    })
     mockAutoUpdate.mockClear()
     mockTranslateText.mockImplementation((text: string, _: string, options: { signal: AbortSignal; useCache?: boolean }) => (
       new Promise<string>(resolve => {
@@ -238,6 +276,94 @@ describe('SelectionTranslator', () => {
     await openTooltip()
     expect(document.querySelectorAll('.fr-panel-footer select')).toHaveLength(1)
     expect(document.querySelector('[title="selection.model"]')).toBeNull()
+  })
+
+  it('opens adaptive analysis with a configured AI service and renders its result', async () => {
+    await setSelection('ephemeral')
+    await openAnalysis()
+
+    expect(mockAnalyzeSelectionText).toHaveBeenCalledWith(expect.objectContaining({
+      text: 'ephemeral',
+      pageTitle: 'Selection test page',
+    }), expect.objectContaining({ signal: expect.any(AbortSignal) }))
+    expect(document.querySelector('.fr-analysis-term-heading')?.textContent).toContain('ephemeral')
+    expect(document.querySelector('.fr-analysis-result')?.textContent).toContain('短暂的')
+    expect(mockConfig.service).toBe('openai')
+  })
+
+  it('keeps an oversized panel origin inside the viewport', async () => {
+    await setSelection('viewport constrained selection')
+    mockComputePosition.mockResolvedValue({
+      x: -180,
+      y: -240,
+      placement: 'top',
+      middlewareData: {
+        hide: { referenceHidden: false }
+      }
+    })
+
+    await openAnalysis()
+
+    const container = document.querySelector<HTMLElement>('.fr-selection-translator-wrapper')
+    expect(container?.style.left).toBe('12px')
+    expect(container?.style.top).toBe('12px')
+  })
+
+  it('drags the panel by its header and resets manual positioning for a new selection', async () => {
+    await setSelection('draggable selection')
+    await openAnalysis()
+
+    const container = document.querySelector<HTMLElement>('.fr-selection-translator-wrapper')
+    const header = document.querySelector<HTMLElement>('.fr-panel-header')
+    expect(container).not.toBeNull()
+    expect(header).not.toBeNull()
+    vi.spyOn(container!, 'getBoundingClientRect').mockImplementation(() => new DOMRect(
+      Number.parseFloat(container?.style.left || '12'),
+      Number.parseFloat(container?.style.top || '24'),
+      430,
+      360,
+    ))
+
+    header?.dispatchEvent(new MouseEvent('pointerdown', {
+      bubbles: true,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    }))
+    header?.dispatchEvent(new MouseEvent('mousedown', {
+      bubbles: true,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    }))
+    window.dispatchEvent(new MouseEvent('pointermove', {
+      bubbles: true,
+      clientX: 300,
+      clientY: 250,
+    }))
+    await nextTick()
+
+    expect(container?.style.left).toBe('212px')
+    expect(container?.style.top).toBe('174px')
+    expect(container?.classList.contains('fr-is-dragging')).toBe(true)
+
+    window.dispatchEvent(new MouseEvent('pointermove', {
+      bubbles: true,
+      clientX: 0,
+      clientY: 0,
+    }))
+    window.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }))
+    document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+    await nextTick()
+
+    expect(container?.style.left).toBe('12px')
+    expect(container?.style.top).toBe('12px')
+    expect(container?.classList.contains('fr-is-dragging')).toBe(false)
+    expect(document.querySelector('.fr-translation-panel')).not.toBeNull()
+
+    await setSelection('new automatic selection')
+    expect(container?.style.left).toBe('12px')
+    expect(container?.style.top).toBe('24px')
   })
 
   it('keeps the panel open when selecting text inside it', async () => {

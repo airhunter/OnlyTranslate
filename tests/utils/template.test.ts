@@ -86,6 +86,30 @@ describe('translation templates', () => {
     expect(payload.temperature).toBeUndefined()
   })
 
+  it('uses an isolated structured prompt for selection analysis', () => {
+    const prompt = {
+      system: 'Analyze language safely.',
+      user: 'Selected text: "ephemeral"',
+      responseFormat: 'json' as const,
+    }
+    const openai = JSON.parse(commonMsgTemplate('ephemeral', 'zh-Hans', false, prompt))
+    expect(openai.messages).toEqual([
+      { role: 'system', content: prompt.system },
+      { role: 'user', content: prompt.user },
+    ])
+
+    mockConfig.service = 'gemini'
+    const gemini = JSON.parse(geminiMsgTemplate('ephemeral', 'zh-Hans', false, prompt))
+    expect(gemini.systemInstruction.parts[0].text).toBe(prompt.system)
+    expect(gemini.contents[0].parts[0].text).toBe(prompt.user)
+    expect(gemini.generationConfig.responseMimeType).toBe('application/json')
+
+    mockConfig.service = 'claude'
+    const claude = JSON.parse(claudeMsgTemplate('ephemeral', 'zh-Hans', false, prompt))
+    expect(claude.system).toBe(prompt.system)
+    expect(claude.messages[0].content).toBe(prompt.user)
+  })
+
   it('disables DeepSeek thinking for subtitle requests without changing the selected model', () => {
     mockConfig.service = 'deepseek'
 

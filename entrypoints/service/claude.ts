@@ -32,7 +32,9 @@ async function claude(message: TranslationServiceMessage): Promise<TranslationSe
             headers,
             body: isSubtitleBatch
                 ? claudeSubtitleBatchMsgTemplate(message.job, message.fastMode)
-                : claudeMsgTemplate(message.origin, message.targetLang, message.fastMode)
+                : message.prompt
+                    ? claudeMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
+                    : claudeMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {

@@ -21,7 +21,9 @@ async function minimax(message: TranslationServiceMessage): Promise<TranslationS
     const resp = await fetch(url, {
         method: method.POST,
         headers: headers,
-        body: minimaxTemplate(message.origin, message.targetLang)
+        body: message.prompt
+            ? minimaxTemplate(message.origin, message.targetLang, message.prompt)
+            : minimaxTemplate(message.origin, message.targetLang)
     })
     if (resp.ok) {
         let result = await resp.json();

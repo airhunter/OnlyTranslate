@@ -199,6 +199,23 @@ describe('common OpenAI-compatible service adapter', () => {
     expect(mockCommonMsgTemplate).toHaveBeenCalledWith('Fast subtitle', 'zh-Hans', true)
   })
 
+  it('forwards an isolated prompt for selection analysis', async () => {
+    const prompt = {
+      system: 'Analyze language safely.',
+      user: 'Selected text: "ephemeral"',
+      responseFormat: 'json' as const,
+    }
+
+    await common({
+      type: 'SELECTION_ANALYSIS',
+      origin: 'ephemeral',
+      targetLang: 'zh-Hans',
+      prompt,
+    })
+
+    expect(mockCommonMsgTemplate).toHaveBeenCalledWith('ephemeral', 'zh-Hans', undefined, prompt)
+  })
+
   it('logs batch request stats in development', async () => {
     vi.stubEnv('NODE_ENV', 'development')
     const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {})
