@@ -70,6 +70,10 @@
             </el-button>
           </div>
         </div>
+
+        <p v-if="config.ttsEngine === 'edge'" class="edge-voice-privacy-notice">
+          {{ t('options.interaction.edgeVoicePrivacyNotice') }}
+        </p>
       </div>
     </div>
 
@@ -366,6 +370,13 @@ const getCustomHotkeyDisplayName = () => {
 }
 
 .input-candidate-hint {
+  margin: 8px 0 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.edge-voice-privacy-notice {
   margin: 8px 0 4px;
   color: var(--el-text-color-secondary);
   font-size: 12px;

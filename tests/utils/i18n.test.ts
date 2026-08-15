@@ -64,4 +64,13 @@ describe('i18n', () => {
       }
     }
   })
+
+  it('provides the Edge online voice privacy notice in every supported locale', () => {
+    for (const locale of ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'] as const) {
+      setLocale(locale)
+      const notice = t('options.interaction.edgeVoicePrivacyNotice')
+      expect(notice, locale).not.toBe('options.interaction.edgeVoicePrivacyNotice')
+      expect(notice, locale).toContain('Microsoft')
+    }
+  })
 })
