@@ -1,0 +1,8 @@
+{
+  "name": "Mempko keeps the article title and excerpt as separate translation targets",
+  "url": "https://blog.mempko.com/your-agentic-workflows-cache-keepalive-costs-8x-too-much-v2-the-interval-frontier/",
+  "scope": "smart",
+  "html": "mempko-article-header.html",
+  "include": ["article-title", "article-excerpt", "article-paragraph"],
+  "exclude": ["article-header", "article-tag", "article-byline", "share", "article-image"]
+}

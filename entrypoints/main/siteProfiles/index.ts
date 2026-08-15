@@ -9,6 +9,7 @@ import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
 import { mediumProfile } from './medium';
+import { mempkoProfile } from './mempko';
 import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
 import { realPythonProfile } from './realPython';
@@ -67,6 +68,7 @@ export const siteProfiles: SiteProfile[] = [
     githubProfile,
     stackOverflowProfile,
     mediumProfile,
+    mempkoProfile,
     nxgoaiProfile,
     realPythonProfile,
     redditProfile,
