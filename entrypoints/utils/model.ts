@@ -28,6 +28,7 @@ export interface CustomProvider {
 
 export type CustomProviderProtocol = 'openai' | 'anthropic';
 export type TtsEngine = 'system' | 'edge';
+export type TtsVoiceGender = 'auto' | 'female' | 'male';
 
 export class Config {
     on: boolean; // 是否开启
@@ -83,7 +84,8 @@ export class Config {
     activeBuiltinProviders: string[]; // 用户手动启用/留存在面板的内置预设服务 ID
     translationScope: 'smart' | 'full'; // 翻译范围：smart=智能识别主内容，full=翻译整个页面
     ttsEngine: TtsEngine; // 朗读引擎：system=系统语音，edge=Edge 在线语音
-    ttsVoice: IMapping; // 各朗读引擎选中的音色，空字符串表示自动匹配语言
+    ttsVoice: IMapping; // 兼容早期测试配置，当前不再固定某个具体音色
+    ttsVoiceGender: TtsVoiceGender; // Edge 在线语音的性别偏好
 
     constructor() {
         this.on = true;
@@ -140,6 +142,7 @@ export class Config {
         this.translationScope = 'smart'; // 默认智能识别主内容
         this.ttsEngine = 'system'; // 默认优先使用浏览器提供的系统语音
         this.ttsVoice = {}; // 默认按文本语言自动匹配音色
+        this.ttsVoiceGender = 'auto'; // Edge 默认自动选择合适的男声或女声
     }
 }
 

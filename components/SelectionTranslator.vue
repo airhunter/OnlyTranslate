@@ -12,8 +12,8 @@
         :aria-label="t('selection.translate')"
         @click="openTranslationPanel"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 4h7M8.5 2v2m-5 4h10m-8.5 0c.6 2.1 1.8 4 3.5 5.4M12 8c-.6 2.1-1.8 4-3.5 5.4m0 0A13 13 0 0 1 5 16m3.5-2.6A13 13 0 0 0 12 16m3.5-5 4 10m-5.6-4h7.2" />
+        <svg class="fr-product-logo" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 15v2a2 2 0 0 0 1.85 1.995L7 19h3v2H7a4 4 0 0 1-4-4v-2h2zm13-5 4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16 10h2zm-1 2.885L15.753 16h2.492L17 12.885zM8 2v2h4v7H8v3H6v-3H2V4h4V2h2zm9 1a4 4 0 0 1 4 4v2h-2V7a2 2 0 0 0-2-2h-3V3h3zM6 6H4v3h2V6zm4 0H8v3h2V6z" />
         </svg>
       </button>
       <span class="fr-toolbar-divider"></span>
@@ -121,13 +121,6 @@
           </select>
         </label>
 
-        <label v-if="showModelSelector" class="fr-select-wrap fr-select-wrap--model" :title="t('selection.model')">
-          <span class="fr-field-label">{{ t('selection.model') }}</span>
-          <select v-model="activeModel" @change="handleModelChange">
-            <option v-for="model in availableModels" :key="model.value" :value="model.value">{{ model.label }}</option>
-          </select>
-        </label>
-
         <button
           type="button"
           class="fr-regenerate-btn"
@@ -149,15 +142,12 @@ import { autoUpdate, computePosition, flip, hide, offset, shift, type VirtualEle
 import { storage } from '@wxt-dev/storage'
 import { config } from '@/entrypoints/utils/config'
 import { isTranslationCancelledError, translateText } from '@/entrypoints/utils/translateApi'
-import { customModelString, isServiceConfigured, options, servicesType } from '@/entrypoints/utils/option'
-import { getStaticModelOptions } from '@/entrypoints/utils/modelCatalog'
-import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
+import { isServiceConfigured, options } from '@/entrypoints/utils/option'
 import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
 import { t } from '@/entrypoints/utils/i18n'
 
 type CopyTarget = 'original' | 'translation'
 type ServiceOption = { value: string; label: string }
-type ModelOption = { value: string; label: string }
 
 interface SelectionSession {
   id: number
@@ -181,7 +171,6 @@ const isInteractingWithSelectionUi = ref(false)
 const isDarkTheme = ref(false)
 const activeSelectionSession = ref<SelectionSession | null>(null)
 const activeService = ref(config.service)
-const activeModel = ref('')
 const containerRef = useTemplateRef('selection-ref')
 
 let nextSelectionSessionId = 0
@@ -277,40 +266,6 @@ const availableServices = computed<ServiceOption[]>(() => {
   return result
 })
 
-const availableModels = computed<ModelOption[]>(() => {
-  const service = activeService.value
-  if (!servicesType.isUseModel(service)) return []
-
-  if (servicesType.isCustom(service)) {
-    const provider = config.customProviders?.find(item => item.id === service)
-    if (!provider) return []
-    const value = provider.model || provider.customModel || ''
-    return value ? [{ value, label: resolveConfiguredTranslationModel(service, config) || value }] : []
-  }
-
-  const values = getStaticModelOptions(service)
-    .filter(value => value !== customModelString || Boolean(config.customModel?.[service]))
-  const configured = config.model?.[service]
-  if (configured && !values.includes(configured)) values.unshift(configured)
-  return values.map(value => ({
-    value,
-    label: value === customModelString
-      ? (config.customModel?.[service] || customModelString)
-      : value,
-  }))
-})
-
-const showModelSelector = computed(() => availableModels.value.length > 0)
-
-const syncActiveModel = () => {
-  const service = activeService.value
-  if (servicesType.isCustom(service)) {
-    activeModel.value = config.customProviders?.find(item => item.id === service)?.model || ''
-  } else {
-    activeModel.value = config.model?.[service] || availableModels.value[0]?.value || ''
-  }
-}
-
 const saveConfig = () => storage.setItem('local:config', JSON.stringify(config))
 
 const cancelActiveTranslation = () => {
@@ -351,7 +306,6 @@ const commitSelectionSession = (text: string, range: Range, event?: MouseEvent) 
   translationResult.value = ''
   error.value = ''
   activeService.value = config.service
-  syncActiveModel()
   showPanel.value = false
   showToolbar.value = true
 }
@@ -452,7 +406,7 @@ const toggleAudio = async (text: string, event?: Event) => {
   try {
     await speakText(text, {
       engine: config.ttsEngine,
-      voice: config.ttsVoice?.[config.ttsEngine] || '',
+      gender: config.ttsVoiceGender,
     })
   } catch (cause) {
     console.error('Text to speech failed:', cause)
@@ -466,19 +420,6 @@ const toggleAudio = async (text: string, event?: Event) => {
 
 const handleServiceChange = async () => {
   config.service = activeService.value
-  syncActiveModel()
-  await saveConfig()
-  regenerateTranslation()
-}
-
-const handleModelChange = async () => {
-  const service = activeService.value
-  if (servicesType.isCustom(service)) {
-    const provider = config.customProviders?.find(item => item.id === service)
-    if (provider) provider.model = activeModel.value
-  } else {
-    config.model[service] = activeModel.value
-  }
   await saveConfig()
   regenerateTranslation()
 }

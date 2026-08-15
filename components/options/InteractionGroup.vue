@@ -44,9 +44,9 @@
         <p class="setting-card-desc">{{ t('options.interaction.voiceDesc') }}</p>
       </div>
       <div class="setting-card-body">
-        <div class="setting-row">
+        <div class="setting-row voice-setting-row">
           <span class="setting-label">{{ t('options.interaction.voiceEngine') }}</span>
-          <div class="setting-control">
+          <div class="setting-control voice-setting-control voice-engine-control">
             <el-select v-model="config.ttsEngine">
               <el-option :label="t('options.interaction.systemVoiceRecommended')" value="system" />
               <el-option :label="t('options.interaction.edgeOnlineVoice')" value="edge" />
@@ -54,18 +54,17 @@
           </div>
         </div>
 
-        <div class="setting-row setting-row--expanded">
+        <div class="setting-row voice-setting-row">
           <span class="setting-label">{{ t('options.interaction.voiceTone') }}</span>
-          <div class="setting-control setting-control--full voice-control">
-            <el-select v-model="selectedVoice" filterable :loading="isLoadingVoices">
-              <el-option :label="t('options.interaction.autoVoice')" value="" />
-              <el-option
-                v-for="voice in voiceOptions"
-                :key="voice.id"
-                :label="voice.lang ? `${voice.name} · ${voice.lang}` : voice.name"
-                :value="voice.id"
-              />
+          <div class="setting-control voice-setting-control voice-control">
+            <el-select v-if="config.ttsEngine === 'edge'" v-model="config.ttsVoiceGender">
+              <el-option :label="t('options.interaction.autoVoice')" value="auto" />
+              <el-option :label="t('options.interaction.femaleVoice')" value="female" />
+              <el-option :label="t('options.interaction.maleVoice')" value="male" />
             </el-select>
+            <span v-else class="auto-voice-label" :title="t('options.interaction.autoVoice')">
+              {{ t('options.interaction.autoVoice') }}
+            </span>
             <el-button :loading="isPreviewingVoice" @click="previewVoice">
               {{ t('options.interaction.previewVoice') }}
             </el-button>
@@ -213,35 +212,17 @@ import { parseHotkey } from '@/entrypoints/utils/hotkey'
 import browser from 'webextension-polyfill'
 import { InfoFilled, Edit } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
-import type { TtsEngine } from '@/entrypoints/utils/model'
-import { getTtsVoices, speakText, stopTts } from '@/entrypoints/utils/ttsClient'
-import type { TtsVoiceOption } from '@/entrypoints/utils/edgeTts'
+import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
 
 const CustomHotkeyInput = defineAsyncComponent(() => import('@/components/CustomHotkeyInput.vue'))
 const { config } = useConfig()
 const { t } = useI18n()
 
-const voiceOptions = ref<TtsVoiceOption[]>([])
-const isLoadingVoices = ref(false)
 const isPreviewingVoice = ref(false)
-let voiceRequestId = 0
-const selectedVoice = computed({
-  get: () => config.value.ttsVoice?.[config.value.ttsEngine] || '',
-  set: (value: string) => {
-    if (!config.value.ttsVoice) config.value.ttsVoice = {}
-    config.value.ttsVoice[config.value.ttsEngine] = value
-  },
-})
 
-watch(() => config.value.ttsEngine, async engine => {
+watch(() => config.value.ttsEngine, () => {
   stopTts()
-  const requestId = ++voiceRequestId
-  isLoadingVoices.value = true
-  const voices = await getTtsVoices(engine as TtsEngine)
-  if (requestId !== voiceRequestId) return
-  voiceOptions.value = voices
-  isLoadingVoices.value = false
-}, { immediate: true })
+})
 
 const previewVoice = async () => {
   if (isPreviewingVoice.value) return
@@ -249,7 +230,7 @@ const previewVoice = async () => {
   try {
     await speakText(t('options.interaction.voicePreviewText'), {
       engine: config.value.ttsEngine,
-      voice: selectedVoice.value,
+      gender: config.value.ttsVoiceGender,
     })
   } catch {
     ElMessage.error(t('options.interaction.voicePreviewFailed'))
@@ -391,13 +372,60 @@ const getCustomHotkeyDisplayName = () => {
   line-height: 1.55;
 }
 
-.voice-control {
-  display: flex;
+.voice-setting-row {
+  display: grid !important;
+  grid-template-columns: minmax(72px, 1fr) minmax(0, 300px);
+  align-items: center;
+  column-gap: 16px;
+}
+
+.voice-setting-control {
+  width: 100%;
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  align-items: center;
   gap: 8px;
 }
 
-.voice-control .el-select {
-  flex: 1;
+.voice-setting-control.voice-engine-control :deep(.el-select),
+.voice-setting-control.voice-control :deep(.el-select),
+.auto-voice-label {
+  grid-column: 1;
+  width: 100% !important;
+  min-width: 0;
+}
+
+.voice-control :deep(.el-button) {
+  grid-column: 2;
+  width: 100%;
+  margin: 0;
+}
+
+.auto-voice-label {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 420px) {
+  .voice-setting-row {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
+  .voice-setting-control {
+    grid-column: 1;
+  }
 }
 
 /* Card inner rows customization */

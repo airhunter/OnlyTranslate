@@ -1,4 +1,4 @@
-import type { TtsEngine } from './model'
+import type { TtsEngine, TtsVoiceGender } from './model'
 import type { TtsVoiceOption } from './edgeTts'
 
 interface TtsResponse {
@@ -89,15 +89,13 @@ function playAudioResponse(response: TtsResponse, generation: number): Promise<v
   })
 }
 
-function speakWithWebSpeech(text: string, language: string, voiceName: string, generation: number): Promise<void> {
+function speakWithWebSpeech(text: string, language: string, generation: number): Promise<void> {
   if (!('speechSynthesis' in window)) return Promise.reject(new Error('System TTS is unavailable'))
 
   return new Promise((resolve, reject) => {
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = language
-    const voice = window.speechSynthesis.getVoices().find(item => item.name === voiceName)
-    if (voice) utterance.voice = voice
     utterance.onend = () => resolve()
     utterance.onerror = event => {
       if (generation !== playbackGeneration) resolve()
@@ -108,24 +106,23 @@ function speakWithWebSpeech(text: string, language: string, voiceName: string, g
   })
 }
 
-async function speakWithSystem(text: string, language: string, voice: string, generation: number): Promise<void> {
+async function speakWithSystem(text: string, language: string, generation: number): Promise<void> {
   try {
     const response = await browser.runtime.sendMessage({
       type: 'TTS_SPEAK_SYSTEM',
       text,
       language,
-      voice,
     }) as TtsResponse
     if (response?.success === false) throw new Error(response.error || 'System TTS failed')
   } catch {
     if (generation !== playbackGeneration) return
-    await speakWithWebSpeech(text, language, voice, generation)
+    await speakWithWebSpeech(text, language, generation)
   }
 }
 
 export async function speakText(
   text: string,
-  options: { engine: TtsEngine; voice?: string },
+  options: { engine: TtsEngine; gender?: TtsVoiceGender },
 ): Promise<{ engine: TtsEngine; fallback: boolean }> {
   const cleanText = text.trim()
   if (!cleanText) throw new Error('Text to speech input is empty')
@@ -140,7 +137,7 @@ export async function speakText(
         type: 'TTS_SYNTHESIZE_EDGE',
         text: cleanText,
         language,
-        voice: options.voice || '',
+        gender: options.gender || 'auto',
       }) as TtsResponse
       if (response?.success === false) throw new Error(response.error || 'Edge TTS failed')
       if (generation !== playbackGeneration) return { engine: 'edge', fallback: false }
@@ -148,12 +145,12 @@ export async function speakText(
       return { engine: 'edge', fallback: false }
     } catch {
       if (generation !== playbackGeneration) return { engine: 'edge', fallback: false }
-      await speakWithSystem(cleanText, language, '', generation)
+      await speakWithSystem(cleanText, language, generation)
       return { engine: 'system', fallback: true }
     }
   }
 
-  await speakWithSystem(cleanText, language, options.voice || '', generation)
+  await speakWithSystem(cleanText, language, generation)
   return { engine: 'system', fallback: false }
 }
 

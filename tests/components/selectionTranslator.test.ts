@@ -230,6 +230,16 @@ describe('SelectionTranslator', () => {
     expect(writeClipboard).toHaveBeenLastCalledWith('复制译文')
   })
 
+  it('uses the product logo and only exposes the translation service selector', async () => {
+    await setSelection('toolbar controls')
+
+    expect(document.querySelector('.fr-toolbar-btn--primary .fr-product-logo')).not.toBeNull()
+
+    await openTooltip()
+    expect(document.querySelectorAll('.fr-panel-footer select')).toHaveLength(1)
+    expect(document.querySelector('[title="selection.model"]')).toBeNull()
+  })
+
   it('keeps the panel open when selecting text inside it', async () => {
     await setSelection('page selection')
     await openTooltip()

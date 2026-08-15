@@ -49,7 +49,24 @@ describe('ttsClient', () => {
       fallback: true,
     })
     expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'TTS_SYNTHESIZE_EDGE' }))
+    expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ gender: 'auto' }))
     expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'TTS_SPEAK_SYSTEM' }))
+  })
+
+  it('forwards an Edge voice gender preference without choosing a fixed language voice', async () => {
+    sendMessage.mockImplementation(async (message: { type: string }) => (
+      message.type === 'TTS_SYNTHESIZE_EDGE'
+        ? { success: false, error: 'offline' }
+        : { success: true }
+    ))
+
+    await speakText('你好', { engine: 'edge', gender: 'male' })
+
+    expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'TTS_SYNTHESIZE_EDGE',
+      language: 'zh-CN',
+      gender: 'male',
+    }))
   })
 
   it('returns voices supplied by the selected engine', async () => {

@@ -18,4 +18,16 @@ describe('edgeTts', () => {
     expect(chunks.every(chunk => encoder.encode(chunk).byteLength <= 1800)).toBe(true)
     expect(chunks.join('')).toBe('你好，世界。'.repeat(500))
   })
+
+  it('matches voice gender only after matching the text language', () => {
+    const voices = [
+      { id: 'zh-CN-XiaoxiaoNeural', name: '晓晓', lang: 'zh-CN', gender: 'Female' },
+      { id: 'zh-CN-YunxiNeural', name: '云希', lang: 'zh-CN', gender: 'Male' },
+      { id: 'ja-JP-NanamiNeural', name: '七海', lang: 'ja-JP', gender: 'Female' },
+    ]
+
+    expect(edgeTtsInternals.chooseVoice(voices, 'zh-CN', 'female')?.id).toBe('zh-CN-XiaoxiaoNeural')
+    expect(edgeTtsInternals.chooseVoice(voices, 'zh-CN', 'male')?.id).toBe('zh-CN-YunxiNeural')
+    expect(edgeTtsInternals.chooseVoice(voices, 'ja-JP', 'male')?.id).toBe('ja-JP-NanamiNeural')
+  })
 })

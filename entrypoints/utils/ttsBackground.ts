@@ -1,4 +1,5 @@
 import { listEdgeTtsVoices, synthesizeEdgeTts, type TtsVoiceOption } from './edgeTts'
+import type { TtsVoiceGender } from './model'
 
 interface ChromeTtsEvent {
   type: string
@@ -45,10 +46,8 @@ function normalizeText(value: unknown): string {
   return text
 }
 
-function normalizeVoice(value: unknown): string {
-  const voice = typeof value === 'string' ? value.trim() : ''
-  if (voice.length > 180 || !/^[\w .:()\-]*$/u.test(voice)) return ''
-  return voice
+function normalizeVoiceGender(value: unknown): TtsVoiceGender {
+  return value === 'female' || value === 'male' ? value : 'auto'
 }
 
 async function listSystemVoices(): Promise<TtsVoiceOption[]> {
@@ -68,7 +67,7 @@ async function listSystemVoices(): Promise<TtsVoiceOption[]> {
   })
 }
 
-async function speakSystemText(text: string, language: string, voice: string): Promise<{ success: true }> {
+async function speakSystemText(text: string, language: string): Promise<{ success: true }> {
   const api = getChromeTts()
   if (!api) throw new Error('System TTS is unavailable')
 
@@ -89,7 +88,6 @@ async function speakSystemText(text: string, language: string, voice: string): P
 
     api.speak(text, {
       lang: language || undefined,
-      voiceName: voice || undefined,
       enqueue: false,
       onEvent: event => {
         if (event.type === 'end' || event.type === 'interrupted' || event.type === 'cancelled') {
@@ -124,8 +122,7 @@ export function handleTtsBackgroundMessage(message: unknown): Promise<unknown> |
     try {
       const text = normalizeText(request.text)
       const language = typeof request.language === 'string' ? request.language : ''
-      const voice = normalizeVoice(request.voice)
-      return speakSystemText(text, language, voice)
+      return speakSystemText(text, language)
         .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }))
     } catch (error) {
       return Promise.resolve({ success: false, error: error instanceof Error ? error.message : String(error) })
@@ -136,8 +133,8 @@ export function handleTtsBackgroundMessage(message: unknown): Promise<unknown> |
     try {
       const text = normalizeText(request.text)
       const language = typeof request.language === 'string' ? request.language : 'en-US'
-      const voice = normalizeVoice(request.voice)
-      return synthesizeEdgeTts(text, language, voice)
+      const gender = normalizeVoiceGender(request.gender)
+      return synthesizeEdgeTts(text, language, gender)
         .then(result => ({ success: true, ...result }))
         .catch(error => ({ success: false, error: error instanceof Error ? error.message : String(error) }))
     } catch (error) {

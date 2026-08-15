@@ -22,4 +22,8 @@ describe('Config', () => {
     const config = new Config()
     expect(config.videoSubtitleFastMode).toBe(true)
   })
+
+  it('should let Edge TTS choose voice gender automatically by default', () => {
+    expect(new Config().ttsVoiceGender).toBe('auto')
+  })
 })

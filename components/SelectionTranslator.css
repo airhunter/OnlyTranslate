@@ -107,6 +107,11 @@ select {
   stroke: none;
 }
 
+.fr-toolbar-btn .fr-product-logo {
+  fill: currentColor;
+  stroke: none;
+}
+
 .fr-toolbar-divider {
   width: 1px;
   height: 18px;
@@ -295,10 +300,6 @@ select {
   gap: 5px;
 }
 
-.fr-select-wrap--model {
-  flex: 1;
-}
-
 .fr-field-label {
   flex: none;
   color: var(--fr-muted);
@@ -318,10 +319,6 @@ select {
   text-overflow: ellipsis;
   cursor: pointer;
   outline: none;
-}
-
-.fr-select-wrap--model select {
-  max-width: 145px;
 }
 
 .fr-select-wrap select:focus {

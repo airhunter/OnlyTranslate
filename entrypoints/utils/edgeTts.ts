@@ -1,3 +1,5 @@
+import type { TtsVoiceGender } from './model'
+
 const EDGE_TTS_ENDPOINT_URL = 'https://dev.microsofttranslator.com/apps/endpoint?api-version=1.0'
 const EDGE_TTS_VOICES_URL = 'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4'
 // 微软消费级朗读客户端公开使用的签名材料，不是项目或用户密钥。
@@ -203,13 +205,21 @@ export async function listEdgeTtsVoices(): Promise<TtsVoiceOption[]> {
   }
 }
 
-function chooseVoice(voices: TtsVoiceOption[], language: string): TtsVoiceOption | undefined {
+function chooseVoice(
+  voices: TtsVoiceOption[],
+  language: string,
+  gender: TtsVoiceGender = 'auto',
+): TtsVoiceOption | undefined {
   const normalized = language.toLowerCase()
   const base = normalized.split('-')[0]
-  const matches = voices.filter(voice => {
+  const languageMatches = voices.filter(voice => {
     const voiceLang = voice.lang.toLowerCase()
     return voiceLang === normalized || voiceLang.startsWith(`${base}-`)
   })
+  const genderMatches = gender === 'auto'
+    ? languageMatches
+    : languageMatches.filter(voice => voice.gender?.toLowerCase() === gender)
+  const matches = genderMatches.length > 0 ? genderMatches : languageMatches
   return matches.find(voice => /multilingual/i.test(voice.id))
     ?? matches.find(voice => /xiaoxiao|andrew|ava/i.test(voice.id))
     ?? matches[0]
@@ -232,9 +242,13 @@ async function synthesizeChunk(text: string, voice: string): Promise<Uint8Array>
   return new Uint8Array(await response.arrayBuffer())
 }
 
-export async function synthesizeEdgeTts(text: string, language: string, requestedVoice = ''): Promise<EdgeTtsAudio> {
+export async function synthesizeEdgeTts(
+  text: string,
+  language: string,
+  gender: TtsVoiceGender = 'auto',
+): Promise<EdgeTtsAudio> {
   const voices = await listEdgeTtsVoices()
-  const voice = voices.find(item => item.id === requestedVoice) ?? chooseVoice(voices, language)
+  const voice = chooseVoice(voices, language, gender)
   if (!voice) throw new Error('No Edge TTS voice is available')
 
   const audioChunks: Uint8Array[] = []
@@ -258,5 +272,6 @@ export async function synthesizeEdgeTts(text: string, language: string, requeste
 
 export const edgeTtsInternals = {
   buildSsml,
+  chooseVoice,
   splitText,
 }
