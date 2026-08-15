@@ -4,6 +4,9 @@
   "scope": "smart",
   "html": "github-readme-list.html",
   "contentRoot": "main",
+  "stats": {
+    "profileFastPathUsed": true
+  },
   "include": ["news-1", "news-2", "news-3"],
   "exclude": ["news-list"]
 }

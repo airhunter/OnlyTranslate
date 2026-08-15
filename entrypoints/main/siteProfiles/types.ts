@@ -20,6 +20,7 @@ export type SiteProfileTargetAllow = (node: Element, context: TranslationTargetC
 export type SiteProfileTargetSkip = (node: Element, context: TranslationTargetContext) => TranslationTargetSkip | false | undefined;
 export type SiteProfileAppendTarget = (node: HTMLElement, context: TranslationTargetContext) => HTMLElement | false | undefined;
 export type SiteProfileExpandTarget = (node: Element, context: TranslationTargetContext) => Element[] | false | undefined;
+export type SiteProfileFastPathTargetCollector = (root: ParentNode, context: SiteProfileContext) => Element[] | false | undefined;
 export type SiteProfileShouldKeepNestedTarget = (parent: Element, child: Element, context: TranslationTargetContext) => boolean;
 
 export interface SiteProfile {
@@ -39,6 +40,8 @@ export interface SiteProfile {
     skipTarget?: SiteProfileTargetSkip;
     appendTarget?: SiteProfileAppendTarget;
     expandTarget?: SiteProfileExpandTarget;
+    // Complete smart-mode target set. When it has enough readable text, the generic DOM scan is skipped.
+    collectFastPathTargets?: SiteProfileFastPathTargetCollector;
     shouldKeepNestedTarget?: SiteProfileShouldKeepNestedTarget;
 }
 

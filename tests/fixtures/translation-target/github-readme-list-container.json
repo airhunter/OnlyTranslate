@@ -3,6 +3,9 @@
   "url": "https://github.com/HKUDS/nanobot",
   "scope": "smart",
   "html": "github-readme-list-container.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
   "include": ["news-1", "news-2", "news-3"],
   "exclude": ["news-list"]
 }

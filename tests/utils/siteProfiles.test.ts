@@ -78,6 +78,9 @@ describe('site profile registry', () => {
   })
 
   it('registers GitHub target expansion hooks', () => {
+    const github = siteProfiles.find(profile => profile.id === 'github')
+
+    expect(github?.collectFastPathTargets).toBeTypeOf('function')
     expect(siteProfileExpandTargetFns['github.com']).toBeTypeOf('function')
     expect(siteProfileShouldKeepNestedTargetFns['github.com']).toBeTypeOf('function')
   })

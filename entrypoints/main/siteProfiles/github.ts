@@ -6,6 +6,10 @@ import { debugLog, isSpecialContent, matchesOrClosest } from './utils';
 export const githubProfile: SiteProfile = {
     id: 'github',
     domains: ['github.com'],
+    collectFastPathTargets: (root, context) => {
+        if (context.mode !== 'smart') return false;
+        return collectGitHubMarkdownReadingTargets(root);
+    },
     select: (node, context) => {
         if (isGitHubRepositorySearchChrome(node)) {
             return { skip: true };
@@ -130,6 +134,28 @@ const GITHUB_ISSUE_LIST_TITLE_SELECTOR = [
     'a[href*="/issues/"]',
     'a[href*="/pull/"]'
 ].join(', ');
+
+const GITHUB_MARKDOWN_READING_TARGET_SELECTOR = [
+    '.markdown-body h1',
+    '.markdown-body h2',
+    '.markdown-body h3',
+    '.markdown-body h4',
+    '.markdown-body h5',
+    '.markdown-body h6',
+    '.markdown-body p',
+    '.markdown-body li',
+    '.markdown-body blockquote',
+    '.markdown-body figcaption'
+].join(', ');
+
+function collectGitHubMarkdownReadingTargets(root: ParentNode): Element[] {
+    const targets = Array.from(root.querySelectorAll<Element>(GITHUB_MARKDOWN_READING_TARGET_SELECTOR));
+    if (root instanceof Element && root.matches(GITHUB_MARKDOWN_READING_TARGET_SELECTOR)) {
+        targets.unshift(root);
+    }
+
+    return targets.filter(isGitHubMarkdownReadingUnit);
+}
 
 function isGitHubMarkdownReadingUnit(node: Element): boolean {
     if (!node.closest('.markdown-body')) return false;

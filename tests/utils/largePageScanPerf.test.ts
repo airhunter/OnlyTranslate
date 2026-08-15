@@ -53,6 +53,55 @@ function buildLargePage(): void {
   }
 }
 
+function buildLargeGitHubReadme(): number {
+  const sectionCount = 80;
+  const itemsPerSection = 6;
+  const inlineSpansPerItem = 8;
+  const codeBlockCount = 80;
+
+  const main = document.createElement('main');
+  const article = document.createElement('article');
+  article.className = 'markdown-body entry-content';
+  main.appendChild(article);
+  document.body.appendChild(main);
+
+  for (let sectionIndex = 0; sectionIndex < sectionCount; sectionIndex++) {
+    const heading = document.createElement('h2');
+    heading.textContent = `Certificate management section ${sectionIndex}`;
+    article.appendChild(heading);
+
+    const list = document.createElement('ul');
+    article.appendChild(list);
+
+    for (let itemIndex = 0; itemIndex < itemsPerSection; itemIndex++) {
+      const item = document.createElement('li');
+      item.id = `feature-${sectionIndex}-${itemIndex}`;
+      list.appendChild(item);
+
+      for (let spanIndex = 0; spanIndex < inlineSpansPerItem; spanIndex++) {
+        const span = document.createElement('span');
+        span.textContent = `Certificate lifecycle capability ${spanIndex} improves reliable automated operations. `;
+        item.appendChild(span);
+      }
+    }
+  }
+
+  for (let codeIndex = 0; codeIndex < codeBlockCount; codeIndex++) {
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    pre.appendChild(code);
+    article.appendChild(pre);
+
+    for (let spanIndex = 0; spanIndex < 10; spanIndex++) {
+      const span = document.createElement('span');
+      span.textContent = `CERTMATE_OPTION_${codeIndex}_${spanIndex}=value`;
+      code.appendChild(span);
+    }
+  }
+
+  return sectionCount * (itemsPerSection + 1);
+}
+
 describe('large page scan performance', () => {
   it('resolves a deeply nested large document without super-linear blowup', () => {
     document.body.innerHTML = '';
@@ -70,4 +119,27 @@ describe('large page scan performance', () => {
     expect(elapsed).toBeLessThan(15000);
     expect(result.nodes.length).toBeGreaterThan(0);
   }, 40000);
+
+  it('uses the GitHub profile fast path for a very large markdown README', () => {
+    document.body.innerHTML = '';
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/fabriziosalmi/certmate'),
+      configurable: true
+    });
+
+    const expectedTargets = buildLargeGitHubReadme();
+    const totalElements = document.querySelectorAll('*').length;
+    expect(totalElements).toBeGreaterThan(5000);
+
+    const t0 = performance.now();
+    const result = resolveAutoTranslationTarget('smart');
+    const elapsed = performance.now() - t0;
+
+    expect(result.stats?.profileFastPathUsed).toBe(true);
+    // 结构断言是主要回归保护：快速路径不能退回会遍历全部后代的 grabAllNode。
+    expect(result.stats?.scannedElements).toBe(0);
+    expect(result.nodes).toHaveLength(expectedTargets);
+    // happy-dom 的 getComputedStyle 明显慢于真实 Chrome；保留宽松总预算来捕获重新落回全树扫描的回归。
+    expect(elapsed).toBeLessThan(4000);
+  }, 10000);
 });

@@ -163,6 +163,9 @@ function collectTranslationCandidates(
     context: TranslationTargetContext,
     options: { includeSupplemental?: boolean; fallback?: boolean }
 ): TranslationTargetCandidate[] {
+    const profileFastPathCandidates = collectProfileFastPathCandidates(root, context, options);
+    if (profileFastPathCandidates) return profileFastPathCandidates;
+
     const candidates: TranslationTargetCandidate[] = [];
     const siteProfileSelectedTargets = options.fallback
         ? []
@@ -199,6 +202,29 @@ function collectTranslationCandidates(
     }
 
     return dedupeCandidates(candidates);
+}
+
+function collectProfileFastPathCandidates(
+    root: ParentNode,
+    context: TranslationTargetContext,
+    options: { fallback?: boolean }
+): TranslationTargetCandidate[] | null {
+    if (options.fallback || context.mode !== 'smart') return null;
+
+    const profile = getCurrentSiteProfile();
+    if (!profile?.collectFastPathTargets) return null;
+
+    const targets = Array.from(new Set(profile.collectFastPathTargets(root, { mode: context.mode }) || []));
+    if (!hasEnoughProfileTargets(targets, context.grabOptions?.scanContext)) return null;
+
+    const scanContext = context.grabOptions?.scanContext;
+    if (scanContext) scanContext.stats.profileFastPathUsed = true;
+
+    return targets.map(node => ({
+        node,
+        source: 'site-profile',
+        reasons: ['site-profile-fast-path']
+    }));
 }
 
 function collectSiteProfileSelectedTargets(root: ParentNode, context: TranslationTargetContext): Element[] {

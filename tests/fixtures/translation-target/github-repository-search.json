@@ -3,6 +3,9 @@
   "url": "https://github.com/search?q=openclaw&type=repositories",
   "scope": "smart",
   "html": "github-repository-search.html",
+  "stats": {
+    "profileFastPathUsed": false
+  },
   "include": ["repo-description-1", "repo-description-2"],
   "exclude": ["topic", "stars", "repositories-filter", "issues-filter", "result-count", "sort"],
   "grabOptions": {
