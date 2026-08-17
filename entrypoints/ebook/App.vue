@@ -36,10 +36,15 @@
     <section v-else-if="noticeMessage" class="notice notice--success" role="status">{{ noticeMessage }}</section>
     <section v-if="books.length" class="book-grid" :aria-label="t('ebook.recentBooks')">
       <article v-for="item in books" :key="item.record.bookId" class="book-card">
-        <div class="cover">
+        <button
+          type="button"
+          class="cover"
+          :aria-label="`${t('ebook.continueReading')}: ${item.record.title}`"
+          @click="openBook(item.record)"
+        >
           <img v-if="coverUrls[item.record.bookId]" :src="coverUrls[item.record.bookId]" alt="" />
           <span v-else>{{ item.record.title.slice(0, 1).toLocaleUpperCase() }}</span>
-        </div>
+        </button>
         <div class="book-info">
           <h2 :title="item.record.title">{{ item.record.title }}</h2>
           <p>{{ item.record.author || t('ebook.unknownAuthor') }}</p>

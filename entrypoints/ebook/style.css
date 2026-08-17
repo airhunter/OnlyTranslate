@@ -43,7 +43,8 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.035em; }
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
 .book-card { display: flex; gap: 18px; min-height: 214px; padding: 18px; background: #fff; border: 1px solid #e4e1d9; border-radius: 16px; box-shadow: 0 10px 32px rgb(30 34 40 / 6%); }
 .dark .book-card { background: #1a1d22; border-color: #2d3138; }
-.cover { display: grid; place-items: center; width: 128px; min-width: 128px; height: 178px; overflow: hidden; border-radius: 8px; background: linear-gradient(145deg, #3975d7, #83a8e8); color: white; font-size: 40px; font-weight: 800; box-shadow: 0 8px 20px rgb(30 34 40 / 18%); }
+.cover { display: grid; place-items: center; width: 128px; min-width: 128px; height: 178px; overflow: hidden; padding: 0; border: 0; border-radius: 8px; background: linear-gradient(145deg, #3975d7, #83a8e8); color: white; font-size: 40px; font-weight: 800; box-shadow: 0 8px 20px rgb(30 34 40 / 18%); }
+.cover:focus-visible { outline: 3px solid #3975d7; outline-offset: 3px; }
 .cover img { width: 100%; height: 100%; object-fit: cover; }
 .book-info { min-width: 0; flex: 1; display: flex; flex-direction: column; }
 .book-info h2 { overflow: hidden; margin: 4px 0 5px; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }

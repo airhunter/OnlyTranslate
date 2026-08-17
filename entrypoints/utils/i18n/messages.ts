@@ -64,7 +64,7 @@ export const messages = {
       ebookShelfLoadFailed: '无法读取电子书书架。'
     },
     ebook: {
-      libraryTitle: '电子书翻译阅读器',
+      libraryTitle: '只译书架',
       librarySubtitle: '导入本地 EPUB，在滚动阅读中自动翻译当前章节。',
       importEpub: '导入 EPUB',
       backupLibrary: '备份书架',
@@ -635,7 +635,7 @@ export const messages = {
       ebookShelfLoadFailed: 'Could not load the ebook library.'
     },
     ebook: {
-      libraryTitle: 'Ebook translation reader',
+      libraryTitle: 'OnlyTranslate Library',
       librarySubtitle: 'Import a local EPUB and automatically translate the current chapter as you read.',
       importEpub: 'Import EPUB',
       backupLibrary: 'Back up library',
@@ -1206,7 +1206,7 @@ export const messages = {
       ebookShelfLoadFailed: '無法讀取電子書書架。'
     },
     ebook: {
-      libraryTitle: '電子書翻譯閱讀器',
+      libraryTitle: '只譯書架',
       librarySubtitle: '匯入本機 EPUB，在捲動閱讀時自動翻譯目前章節。',
       importEpub: '匯入 EPUB',
       backupLibrary: '備份書架',
@@ -1777,7 +1777,7 @@ export const messages = {
       ebookShelfLoadFailed: '電子書籍の本棚を読み込めませんでした。'
     },
     ebook: {
-      libraryTitle: '電子書籍翻訳リーダー',
+      libraryTitle: 'OnlyTranslate ライブラリ',
       librarySubtitle: 'ローカル EPUB を読み込み、読書中の章を自動翻訳します。',
       importEpub: 'EPUB を読み込む',
       backupLibrary: '本棚をバックアップ',
