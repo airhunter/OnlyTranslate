@@ -62,6 +62,7 @@ import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTar
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
 import {
   BILINGUAL_CONTENT_CLASS,
+  BILINGUAL_TEXT_CLASS,
   BILINGUAL_WRAPPER_CLASS,
   TRANSLATED_ATTR,
   TRANSLATED_ID_ATTR
@@ -579,10 +580,31 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     await handleBilingualTranslation(postBody, false)
 
-    const translation = postBody.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+    const insertion = postBody.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
     const textBodySlot = shadowRoot.querySelector('slot') as HTMLSlotElement
-    expect(translation?.getAttribute('slot')).toBe('text-body')
-    expect(textBodySlot.assignedElements()).toContain(translation)
+    expect(insertion?.getAttribute('slot')).toBe('text-body')
+    expect(insertion?.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('Reddit 帖子正文译文。')
+    expect(textBodySlot.assignedElements()).toContain(insertion)
+  })
+
+  it('translates prose wrapped in code tags instead of restoring it as protected code', async () => {
+    vi.mocked(translateText).mockResolvedValue('请将这个沙箱作为安全环境进行全面测试，并严格限制资源访问。目标是安全执行用户提供的数据转换任务。')
+    document.body.innerHTML = `
+      <blockquote id="research-task">
+        <p><code>Put this sandbox through its paces as a fast secure environment. Explore what it would take to run untrusted Python and JavaScript code with strict limits on RAM, CPU time, network access, and filesystem access.</code></p>
+        <p><code>Goal is to execute user-provided tasks safely for practical workflows such as recurring data transformations and document processing.</code></p>
+      </blockquote>
+    `
+
+    const quote = document.querySelector<HTMLElement>('#research-task')!
+    await handleBilingualTranslation(quote, false)
+
+    const origin = vi.mocked(translateText).mock.calls[0]?.[0]
+    const translation = quote.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)
+    expect(origin).toContain('Put this sandbox through its paces')
+    expect(origin).toContain('Goal is to execute user-provided tasks safely')
+    expect(origin).not.toContain('__ONLY_TRANSLATE_INLINE_')
+    expect(translation?.textContent).toContain('请将这个沙箱作为安全环境进行全面测试')
   })
 
   it('stacks Reddit post body translations when page styles force descendant spans inline', async () => {
@@ -619,9 +641,99 @@ describe('resolveAutoTranslateTarget behavior', () => {
     ])
 
     for (const target of [paragraph, listItem]) {
-      const translation = target.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
-      expect(window.getComputedStyle(translation!).display).toBe('block')
+      const insertion = target.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)!
+      const translation = insertion.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+      expect(insertion.firstElementChild?.tagName).toBe('BR')
+      expect(insertion.lastElementChild).toBe(translation)
+      expect(window.getComputedStyle(insertion).display).toBe('inline')
+      expect(window.getComputedStyle(translation).display).toBe('inline')
+      expect(translation.style.getPropertyPriority('display')).toBe('')
     }
+  })
+
+  it('separates inline Reddit feed paragraphs and expands their clipping containers', async () => {
+    const redditUrl = new URL('https://www.reddit.com/r/odinlang/')
+    Object.defineProperty(window, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    vi.mocked(translateText).mockResolvedValue('Reddit Feed 段落译文。')
+    document.body.innerHTML = `
+      <style>
+        .feed-card-clip { height: 120px; overflow: hidden; }
+        .feed-card-text-preview { height: 116px; overflow: hidden; text-overflow: ellipsis; }
+        [property="schema:articleBody"] > p { display: inline; }
+      </style>
+      <shreddit-post>
+        <div id="feed-card-clip" class="feed-card-clip overflow-hidden">
+          <div id="feed-body" class="md feed-card-text-preview text-ellipsis line-clamp-3" property="schema:articleBody">
+            <p id="feed-first">The first paragraph should remain separate from the next paragraph.</p>
+            <p id="feed-second">The second paragraph should begin after the first translation.</p>
+          </div>
+        </div>
+      </shreddit-post>
+    `
+
+    const first = document.querySelector<HTMLElement>('#feed-first')!
+    await handleBilingualTranslation(first, false)
+
+    const insertion = first.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)!
+    const body = document.querySelector<HTMLElement>('#feed-body')!
+    const clip = document.querySelector<HTMLElement>('#feed-card-clip')!
+    expect([...insertion.children].map(child => child.tagName)).toEqual(['BR', 'SPAN', 'BR'])
+    expect(body.style.height).toBe('auto')
+    expect(body.style.maxHeight).toBe('none')
+    expect(body.style.overflow).toBe('visible')
+    expect(body.style.textOverflow).toBe('clip')
+    expect(clip.style.height).toBe('auto')
+    expect(clip.style.maxHeight).toBe('none')
+    expect(clip.style.overflow).toBe('visible')
+  })
+
+  it('keeps normal-flow translations inline so they can wrap beside floats', async () => {
+    vi.mocked(translateText).mockResolvedValue('浮动元素旁边的译文应该逐行排版。')
+    document.body.innerHTML = `
+      <style>.only-translate-bilingual-text { display: inline-block; }</style>
+      <article>
+        <figure style="float: right; width: 300px;">A floated figure</figure>
+        <p id="float-paragraph">Translated prose should not become one atomic inline box beside floated content.</p>
+      </article>
+    `
+
+    const paragraph = document.querySelector<HTMLElement>('#float-paragraph')!
+    await handleBilingualTranslation(paragraph, false)
+
+    const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)!
+    const translation = insertion.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+    expect(insertion.firstElementChild?.tagName).toBe('BR')
+    expect(window.getComputedStyle(translation).display).toBe('inline')
+    expect(translation.style.display).toBe('inline')
+    expect(translation.style.width).toBe('')
+  })
+
+  it('keeps marker translations inline after a structural line break', async () => {
+    mockConfig.style = 11
+    vi.mocked(translateText).mockResolvedValue('结构性换行后的马克笔译文。')
+    document.body.innerHTML = `
+      <style>
+        .only-translate-bilingual-text { display: inline-block; }
+        .fluent-display-marker { display: inline; }
+      </style>
+      <p id="marker-paragraph">Marker translations should start on their own line.</p>
+    `
+
+    const paragraph = document.querySelector<HTMLElement>('#marker-paragraph')!
+    await handleBilingualTranslation(paragraph, false)
+
+    const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)!
+    const translation = insertion.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+    expect(insertion.firstElementChild?.tagName).toBe('BR')
+    expect(translation.classList.contains('fluent-display-marker')).toBe(true)
+    expect(window.getComputedStyle(translation).display).toBe('inline')
   })
 
   it('uses block insertion layout for flex translation targets in normal flow', async () => {
@@ -636,8 +748,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
     handleBilingualTranslation(headline, false)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    const translation = headline.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    const insertion = headline.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    const translation = insertion?.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)
     expect(headline.style.display).toBe('block')
+    expect(insertion?.querySelector('br')).toBeNull()
+    expect(insertion?.style.display).toBe('block')
+    expect(insertion?.style.width).toBe('100%')
     expect(translation?.style.display).toBe('block')
     expect(translation?.style.width).toBe('100%')
   })
@@ -654,10 +770,49 @@ describe('resolveAutoTranslateTarget behavior', () => {
     handleBilingualTranslation(copy, false)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    const translation = copy.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    const insertion = copy.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+    const translation = insertion?.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)
     expect(copy.style.display).toBe('flex')
+    expect(insertion?.querySelector('br')).toBeNull()
+    expect(insertion?.style.display).toBe('')
+    expect(insertion?.style.width).toBe('')
     expect(translation?.style.display).toBe('')
     expect(translation?.style.width).toBe('')
+  })
+
+  it('removes the complete bilingual insertion when translation is toggled off', async () => {
+    vi.mocked(translateText).mockResolvedValue('切换关闭后不应残留换行节点。')
+    document.body.innerHTML = `<p id="toggle-paragraph">Turning bilingual translation off restores this paragraph.</p>`
+    const paragraph = document.querySelector<HTMLElement>('#toggle-paragraph')!
+    const originalHTML = paragraph.innerHTML
+
+    await handleBilingualTranslation(paragraph, false)
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS} > br`)).not.toBeNull()
+
+    vi.useFakeTimers()
+    const removal = handleBilingualTranslation(paragraph, false)
+    await vi.advanceTimersByTimeAsync(250)
+    await removal
+
+    expect(paragraph.innerHTML).toBe(originalHTML)
+    expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(false)
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}, br`)).toBeNull()
+  })
+
+  it('restores manually inserted bilingual content without leaving translation state behind', async () => {
+    vi.mocked(translateText).mockResolvedValue('全局恢复后可以再次翻译。')
+    document.body.innerHTML = `<p id="restore-paragraph">Restoring the page removes every manual translation marker.</p>`
+    const paragraph = document.querySelector<HTMLElement>('#restore-paragraph')!
+    const originalHTML = paragraph.innerHTML
+
+    await handleBilingualTranslation(paragraph, false)
+    expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(true)
+
+    restoreOriginalContent()
+
+    expect(paragraph.innerHTML).toBe(originalHTML)
+    expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(false)
+    expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}, .${BILINGUAL_TEXT_CLASS}`)).toBeNull()
   })
 
   it('restores bilingual direct text wrappers without disturbing nested child blocks', async () => {

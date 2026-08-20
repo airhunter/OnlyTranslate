@@ -1,0 +1,25 @@
+{
+  "name": "Reddit feed cards keep visible content and skip overlay links",
+  "url": "https://www.reddit.com/r/odinlang/",
+  "scope": "smart",
+  "html": "reddit-feed-card.html",
+  "include": [
+    "feed-title",
+    "feed-paragraph-one",
+    "feed-paragraph-two",
+    "feed-list-one",
+    "feed-list-two",
+    "feed-list-three",
+    "feed-list-four",
+    "crosspost-visible-title"
+  ],
+  "exclude": [
+    "full-post-link",
+    "full-post-screen-reader",
+    "feed-body-clip",
+    "feed-body",
+    "crosspost-card",
+    "crosspost-overlay",
+    "crosspost-screen-reader"
+  ]
+}

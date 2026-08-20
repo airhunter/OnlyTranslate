@@ -32,6 +32,7 @@ const directTextRunHostSet = new Set(['li', 'dd', 'blockquote', 'figcaption']);
 const mediaAdjacentDirectTextRunHostSet = new Set(['article', 'section', 'div']);
 const mediaAdjacentDirectTextBoundarySet = new Set(['figure', 'picture']);
 const legacyInlineFlowHostSet = new Set(['font']);
+const legacyInlineFlowBoundarySet = new Set(['blockquote']);
 
 const legacyInlineFlowBlockedAncestorSelector = [
     'nav',
@@ -97,7 +98,32 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
 }
 
 function isProtectedInlineElement(node: Element): boolean {
+    if (isProseLikeInlineCode(node)) return false;
     return matchesSelectorList(node, getActiveKeepSelector());
+}
+
+function isProseLikeInlineCode(node: Element): boolean {
+    if (node.tagName.toLowerCase() !== 'code' || node.closest('pre')) return false;
+
+    const rawText = node.textContent ?? '';
+    const text = rawText.replace(/\s+/g, ' ').trim();
+    if (text.length < PROSE_TEXT_MIN) return false;
+
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 12) return false;
+    if (!hasSentencePunctuation(text) && wordCount < 16) return false;
+
+    // Long prose is occasionally wrapped in <code> purely for typography.
+    // Keep real commands and source code protected even when they contain many words.
+    if (/^\s*(?:const|let|var|function|class|import|export|def|from|if|for|while|return|select|insert|update|delete)\b/im.test(rawText)) {
+        return false;
+    }
+    if (/(?:=>|===?|!==?|\b(?:npm|pnpm|yarn|pip|docker|git)\s+[-\w]|(?:^|\s)--[\w-]+)/i.test(text)) {
+        return false;
+    }
+
+    const syntaxCharacterCount = (text.match(/[{}[\];=<>`]/g) ?? []).length;
+    return syntaxCharacterCount / text.length < 0.025;
 }
 
 function getActiveKeepSelector(): string {
@@ -625,7 +651,7 @@ function findLegacyInlineFlowRun(host: Element, directChild: ChildNode | null): 
 function shouldUseLegacyInlineFlowHost(host: Element, options: GrabAllNodeOptions): boolean {
     if (hasContentFilterSkip(host, options)) return false;
     if (isInsideLegacyInlineFlowBlockedArea(host)) return false;
-    if (!hasOnlyLegacyInlineFlowChildren(host)) return false;
+    if (!hasSafeLegacyInlineFlowChildren(host)) return false;
     if (!hasDirectReadableTextChild(host)) return false;
     if (!hasLegacyParagraphBoundary(host)) return false;
 
@@ -710,13 +736,14 @@ function isMediaAdjacentTextBoundary(node: ChildNode | null): boolean {
     return mediaAdjacentDirectTextBoundarySet.has(node.tagName.toLowerCase());
 }
 
-function hasOnlyLegacyInlineFlowChildren(host: Element): boolean {
+function hasSafeLegacyInlineFlowChildren(host: Element): boolean {
     return Array.from(host.childNodes).every(child => {
         if (child instanceof Text) return true;
         if (child.nodeType === Node.COMMENT_NODE) return true;
         if (!(child instanceof Element)) return false;
 
         const tag = child.tagName.toLowerCase();
+        if (legacyInlineFlowBoundarySet.has(tag)) return true;
         return inlineSet.has(tag) && isSafeInlineRunElement(child, tag);
     });
 }

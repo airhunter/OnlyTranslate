@@ -37,7 +37,9 @@ export function mountFloatingBall(position?: 'left' | 'right') {
   // 创建容器元素
   const container = document.createElement('div');
   container.id = 'only-translate-floating-ball-container';
-  document.body.appendChild(container);
+  // Keep the viewport-fixed control outside body-level transform/filter
+  // containing blocks used by some sites for theming or page layout.
+  document.documentElement.appendChild(container);
 
   // 创建 Vue 应用实例
   app = createApp(FloatingBall, {

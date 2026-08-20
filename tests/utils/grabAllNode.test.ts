@@ -90,6 +90,37 @@ describe('grabAllNode', () => {
     expect(host.innerHTML).toBe('VS Code 已成熟。运行 <code>code --install-extension Anthropic.claude-code</code>。')
   })
 
+  it('translates long natural-language prose that is only styled with inline code tags', () => {
+    document.body.innerHTML = `
+      <blockquote id="research-task">
+        <p><code>Put this sandbox through its paces as a fast secure environment. Explore what it would take to run untrusted Python and JavaScript code with strict limits on RAM, CPU time, network access, and filesystem access.</code></p>
+        <p><code>Goal is to execute user-provided tasks safely for practical workflows such as recurring data transformations and document processing.</code></p>
+      </blockquote>
+    `
+
+    const quote = document.querySelector('#research-task') as HTMLElement
+    const result = getTranslatableTextWithProtectedInline(quote)
+
+    expect(result.protectedInlines).toHaveLength(0)
+    expect(result.text).toContain('Put this sandbox through its paces')
+    expect(result.text).toContain('Goal is to execute user-provided tasks safely')
+  })
+
+  it('keeps long source code protected outside prose-styled code tags', () => {
+    document.body.innerHTML = `
+      <blockquote id="source-example">
+        <pre><code>const sandbox = createSandbox({ network: false, memory: 128 });
+for (const task of userProvidedTasks) { sandbox.execute(task); }</code></pre>
+      </blockquote>
+    `
+
+    const quote = document.querySelector('#source-example') as HTMLElement
+    const result = getTranslatableTextWithProtectedInline(quote)
+
+    expect(result.protectedInlines).toHaveLength(1)
+    expect(result.text.trim()).toBe(result.protectedInlines[0].placeholder)
+  })
+
   it('preserves default keepSelector inline elements without preserving a link shell', () => {
     document.body.innerHTML = `
       <p id="intro">
@@ -386,6 +417,29 @@ describe('grabAllNode', () => {
     ])
     expect(nodes).not.toContain(document.querySelector('#inline-link'))
     expect(nodes).not.toContain(document.querySelector('#inline-emphasis'))
+  })
+
+  it('splits legacy font prose around a blockquote boundary', () => {
+    document.body.innerHTML = `
+      <article>
+        <font id="essay-body" size="2" face="verdana">
+          The opening paragraph explains how to choose meaningful work and why curiosity matters.<br><br>
+          <blockquote id="essay-quote">The best lack all conviction, while the worst are full of passionate intensity.</blockquote>
+          The closing paragraph continues the essay after the quotation without merging both blocks.
+        </font>
+      </article>
+    `
+
+    const nodes = grabAllNode(document.body)
+    const wrappers = nodes.filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(2)
+    expect(wrappers.map(node => node.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'The opening paragraph explains how to choose meaningful work and why curiosity matters.',
+      'The closing paragraph continues the essay after the quotation without merging both blocks.'
+    ])
+    expect(nodes).toContain(document.querySelector('#essay-quote'))
+    expect(wrappers.every(wrapper => !wrapper.contains(document.querySelector('#essay-quote')))).toBe(true)
   })
 
   it('keeps a single br inside one legacy font direct text target', () => {

@@ -3,7 +3,7 @@
   "url": "https://paulgraham.com/earn.html",
   "scope": "smart",
   "html": "paulgraham-old-essay.html",
-  "include": [],
+  "include": ["essay-quote"],
   "exclude": ["sidebar", "nav-image", "essay-title", "essay-body", "inline-link", "inline-emphasis"],
   "textIncludes": [
     "Since this is apparently the future prime ministers' club",

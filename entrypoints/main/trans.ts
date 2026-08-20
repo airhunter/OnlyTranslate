@@ -41,6 +41,7 @@ import {
 import { getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
 import {
     BILINGUAL_CONTENT_CLASS,
+    BILINGUAL_TEXT_CLASS,
     BILINGUAL_WRAPPER_CLASS,
     TRANSLATED_ATTR,
     TRANSLATED_ID_ATTR
@@ -224,6 +225,10 @@ export function restoreOriginalContent() {
     // 2. 移除所有翻译内容元素
     document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => {
         element.remove();
+    });
+
+    document.querySelectorAll(`.${BILINGUAL_WRAPPER_CLASS}`).forEach(element => {
+        element.classList.remove(BILINGUAL_WRAPPER_CLASS);
     });
     
     // 3. 移除所有翻译过程中添加的加载动画和错误提示
@@ -715,21 +720,28 @@ function bilingualAppendChild(node: HTMLElement, text: string | Node) {
     if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);
-    let newNode = document.createElement("span");
-    newNode.classList.add(BILINGUAL_CONTENT_CLASS);
+    const insertionNode = document.createElement('span');
+    insertionNode.classList.add(BILINGUAL_CONTENT_CLASS);
+    const translationNode = document.createElement('span');
+    translationNode.classList.add(BILINGUAL_TEXT_CLASS);
     // find the style
     const style = options.styles.find(s => s.value === config.style && !s.disabled);
     if (style?.class) {
-        newNode.classList.add(style.class);
+        translationNode.classList.add(style.class);
     }
-    newNode.append(text);
+    translationNode.append(text);
     smashTruncationStyle(node);
     const appendTarget = getBilingualAppendTarget(node);
-    appendTarget.appendChild(newNode);
-    applyBilingualInsertionLayout(appendTarget, newNode);
+    const layout = resolveBilingualInsertionLayout(appendTarget);
+    if (layout === 'normal-flow' || layout === 'float-aware-inline') {
+        insertionNode.appendChild(document.createElement('br'));
+    }
+    insertionNode.appendChild(translationNode);
+    appendTarget.appendChild(insertionNode);
+    applyBilingualInsertionLayout(appendTarget, insertionNode, translationNode, layout);
 
     const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
-    if (fn) fn(node, newNode, appendTarget);
+    if (fn) fn(node, translationNode, appendTarget, insertionNode);
 }
 
 function notifyDiagnosticVisible(options: TranslationRequestOptions): void {
@@ -744,23 +756,50 @@ function notifyDiagnosticVisible(options: TranslationRequestOptions): void {
     })?.catch(() => undefined);
 }
 
-function applyBilingualInsertionLayout(appendTarget: HTMLElement, translationNode: HTMLElement): void {
-    const layoutTarget = resolveBlockInsertionLayoutTarget(appendTarget);
-    if (!layoutTarget) return;
+type BilingualInsertionLayout = 'normal-flow' | 'float-aware-inline' | 'blockified-flex' | 'preserved-flex';
 
-    layoutTarget.style.display = 'block';
+function applyBilingualInsertionLayout(
+    appendTarget: HTMLElement,
+    insertionNode: HTMLElement,
+    translationNode: HTMLElement,
+    layout: BilingualInsertionLayout
+): void {
+    if (layout === 'float-aware-inline') {
+        translationNode.style.display = 'inline';
+        return;
+    }
+
+    if (layout !== 'blockified-flex') return;
+
+    appendTarget.style.display = 'block';
+    insertionNode.style.display = 'block';
+    insertionNode.style.width = '100%';
     translationNode.style.display = 'block';
     translationNode.style.width = '100%';
 }
 
-function resolveBlockInsertionLayoutTarget(appendTarget: HTMLElement): HTMLElement | null {
+function resolveBilingualInsertionLayout(appendTarget: HTMLElement): BilingualInsertionLayout {
     const targetDisplay = getComputedDisplay(appendTarget);
-    if (!isFlexOrGridDisplay(targetDisplay)) return null;
+    if (!isFlexOrGridDisplay(targetDisplay)) {
+        return hasPrecedingFloatSibling(appendTarget) ? 'float-aware-inline' : 'normal-flow';
+    }
 
     const parent = appendTarget.parentElement;
-    if (parent && isFlexOrGridDisplay(getComputedDisplay(parent))) return null;
+    if (parent && isFlexOrGridDisplay(getComputedDisplay(parent))) return 'preserved-flex';
 
-    return appendTarget;
+    return 'blockified-flex';
+}
+
+function hasPrecedingFloatSibling(element: HTMLElement): boolean {
+    let sibling = element.previousElementSibling;
+    while (sibling) {
+        if (sibling instanceof HTMLElement) {
+            const float = window.getComputedStyle(sibling).float;
+            if (float === 'left' || float === 'right') return true;
+        }
+        sibling = sibling.previousElementSibling;
+    }
+    return false;
 }
 
 function getComputedDisplay(element: HTMLElement): string {

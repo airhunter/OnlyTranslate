@@ -2,7 +2,7 @@ import { findMatchingElement } from '@/entrypoints/utils/common';
 import type { SiteProfile, SiteProfileMode } from './types';
 import { debugLog, isSpecialContent } from './utils';
 
-const REDDIT_POST_TITLE_SELECTOR = 'h1, h3[data-click-id="body"], [slot="title"]';
+const REDDIT_POST_TITLE_SELECTOR = 'h1, h3[data-click-id="body"], [slot="title"], .crosspost-title > a';
 const REDDIT_POST_BODY_CONTAINER_SELECTOR = [
     'div[data-post-click-location="text-body"]',
     '[slot="text-body"]',
@@ -18,6 +18,11 @@ const REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR = [
     '[property="schema:articleBody"] > h4',
     '[property="schema:articleBody"] > ul > li',
     '[property="schema:articleBody"] > ol > li'
+].join(', ');
+const REDDIT_NON_VISUAL_OVERLAY_SELECTOR = [
+    'faceplate-screen-reader-content',
+    'a[slot="full-post-link"]',
+    '[slot="post-media-container"] a.absolute.inset-0'
 ].join(', ');
 
 export const redditProfile: SiteProfile = {
@@ -111,6 +116,13 @@ export const redditProfile: SiteProfile = {
         return false;
     },
     skipTarget: (node) => {
+        if (isRedditNonVisualOverlay(node)) {
+            return {
+                policy: 'hard-skip',
+                role: 'ui',
+                reason: 'reddit-non-visual-overlay'
+            };
+        }
         if (!isRedditStructuredPostBodyLayout(node)) return false;
 
         return {
@@ -120,16 +132,54 @@ export const redditProfile: SiteProfile = {
         };
     },
     expandTarget: (node) => expandRedditCommentPagePostTarget(node),
-    afterBilingualAppend: (_node, translationNode, appendTarget) => {
-        // Reddit can force descendant spans back to inline layout, including
-        // translations appended to paragraphs and list items in expanded posts.
-        translationNode.style.setProperty('display', 'block', 'important');
+    afterBilingualAppend: (node, _translationNode, appendTarget, insertionNode) => {
+        if (appendTarget.matches('shreddit-post-text-body')) {
+            insertionNode.setAttribute('slot', 'text-body');
+        }
 
-        if (!appendTarget.matches('shreddit-post-text-body')) return;
+        const feedBody = getRedditFeedBody(appendTarget);
+        if (!feedBody) return;
 
-        translationNode.setAttribute('slot', 'text-body');
+        separateRedditFeedBodySibling(node, feedBody, insertionNode);
+        expandRedditFeedBody(feedBody);
     }
 };
+
+function isRedditNonVisualOverlay(node: Element): boolean {
+    const overlay = node.closest(REDDIT_NON_VISUAL_OVERLAY_SELECTOR);
+    return Boolean(overlay?.closest('shreddit-post'));
+}
+
+function getRedditFeedBody(appendTarget: HTMLElement): HTMLElement | null {
+    const feedBody = appendTarget.closest<HTMLElement>('[property="schema:articleBody"].feed-card-text-preview');
+    if (!feedBody?.closest('shreddit-post')) return null;
+    return feedBody;
+}
+
+function separateRedditFeedBodySibling(
+    node: HTMLElement,
+    feedBody: HTMLElement,
+    insertionNode: HTMLElement
+): void {
+    if (node.parentElement !== feedBody) return;
+    if (!node.matches('p, blockquote, h2, h3, h4')) return;
+
+    insertionNode.appendChild(insertionNode.ownerDocument.createElement('br'));
+}
+
+function expandRedditFeedBody(feedBody: HTMLElement): void {
+    const clippingNodes = [feedBody, feedBody.parentElement]
+        .filter((node): node is HTMLElement => node instanceof HTMLElement)
+        .filter(node => node.closest('shreddit-post') === feedBody.closest('shreddit-post'));
+
+    for (const node of clippingNodes) {
+        node.style.height = 'auto';
+        node.style.maxHeight = 'none';
+        node.style.webkitLineClamp = 'unset';
+        node.style.overflow = 'visible';
+        node.style.textOverflow = 'clip';
+    }
+}
 
 function getRedditPostBodyTarget(node: Element): Element | false {
     const structuredBodyLeaf = findMatchingElement(node, REDDIT_STRUCTURED_POST_BODY_LEAF_SELECTOR);

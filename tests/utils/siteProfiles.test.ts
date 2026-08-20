@@ -199,8 +199,9 @@ describe('site profile registry', () => {
     `
     const footnote = document.querySelector<HTMLElement>('#fn-1')!
     const translationNode = document.createElement('span')
+    const insertionNode = document.createElement('span')
 
-    afterBilingualAppendCompatFn['asteriskmag.com']?.(footnote, translationNode, footnote)
+    afterBilingualAppendCompatFn['asteriskmag.com']?.(footnote, translationNode, footnote, insertionNode)
 
     expect(translationNode.classList.contains('only-translate-asterisk-footnote')).toBe(true)
     vi.advanceTimersByTime(49)
@@ -223,8 +224,9 @@ describe('site profile registry', () => {
     `
     const paragraph = document.querySelector<HTMLElement>('#paragraph')!
     const translationNode = document.createElement('span')
+    const insertionNode = document.createElement('span')
 
-    afterBilingualAppendCompatFn['asteriskmag.com']?.(paragraph, translationNode, paragraph)
+    afterBilingualAppendCompatFn['asteriskmag.com']?.(paragraph, translationNode, paragraph, insertionNode)
     vi.advanceTimersByTime(60)
 
     expect(translationNode.classList.contains('only-translate-asterisk-footnote')).toBe(false)
@@ -252,9 +254,10 @@ describe('site profile registry', () => {
     `
     const heading = document.querySelector<HTMLElement>('#article-title')!
     const translationNode = document.createElement('span')
+    const insertionNode = document.createElement('span')
     translationNode.textContent = 'MosaicLeaks：您的研究代理能否保守秘密？'
 
-    afterBilingualAppendCompatFn['huggingface.co']?.(heading, translationNode, heading)
+    afterBilingualAppendCompatFn['huggingface.co']?.(heading, translationNode, heading, insertionNode)
 
     expect(heading.style.display).toBe('block')
     expect(translationNode.style.display).toBe('block')

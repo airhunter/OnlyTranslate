@@ -366,9 +366,14 @@
     font-weight: bold;
 }
 
-/* 双语模式，block 强制换行、inline-block 自适应换行 */
+/* 双语模式：外层托管结构性换行，内层承载译文样式 */
 .only-translate-bilingual-content {
-    display: block; /* 设置为块级元素，强制换行 */
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.only-translate-bilingual-text {
+    display: inline-block;
     word-break: break-word; /* 允许在单词内断行，避免超出容器边界 */
     margin: 8px 0 !important; /* 上下边距设置为8px，并强制覆盖其他样式 */
     color: inherit; /* 保持文本颜色与周围文本一致 */

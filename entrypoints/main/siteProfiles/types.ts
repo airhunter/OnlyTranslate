@@ -15,7 +15,12 @@ export type SiteProfileResult = Element | { skip: true } | false | undefined;
 export type SiteProfileSelect = (node: Element, context: SiteProfileContext) => SiteProfileResult;
 export type SiteProfileReplace = (node: Element, translatedHTML: string) => void;
 export type SiteProfileSupplemental = (root: ParentNode, context: SiteProfileContext) => Element[];
-export type SiteProfileAfterBilingualAppend = (node: HTMLElement, translationNode: HTMLElement, appendTarget: HTMLElement) => void;
+export type SiteProfileAfterBilingualAppend = (
+    node: HTMLElement,
+    translationNode: HTMLElement,
+    appendTarget: HTMLElement,
+    insertionNode: HTMLElement
+) => void;
 export type SiteProfileTargetAllow = (node: Element, context: TranslationTargetContext) => TranslationTargetOverride | false | undefined;
 export type SiteProfileTargetSkip = (node: Element, context: TranslationTargetContext) => TranslationTargetSkip | false | undefined;
 export type SiteProfileAppendTarget = (node: HTMLElement, context: TranslationTargetContext) => HTMLElement | false | undefined;
