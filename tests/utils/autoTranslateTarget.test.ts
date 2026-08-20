@@ -585,6 +585,45 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(textBodySlot.assignedElements()).toContain(translation)
   })
 
+  it('stacks Reddit post body translations when page styles force descendant spans inline', async () => {
+    const redditUrl = new URL('https://www.reddit.com/r/odinlang/')
+    Object.defineProperty(window, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    Object.defineProperty(document, 'location', {
+      value: redditUrl,
+      configurable: true
+    })
+    vi.mocked(translateText).mockResolvedValue('这是帖子正文的译文。')
+
+    document.body.innerHTML = `
+      <style>shreddit-post [property="schema:articleBody"] span { display: inline !important; }</style>
+      <shreddit-post>
+        <div data-post-click-location="text-body">
+          <div property="schema:articleBody">
+            <p id="post-paragraph">This paragraph is rendered inside Reddit's post component.</p>
+            <ul>
+              <li id="post-list-item">This list item is also rendered inside Reddit's post component.</li>
+            </ul>
+          </div>
+        </div>
+      </shreddit-post>
+    `
+    const paragraph = document.querySelector<HTMLElement>('#post-paragraph')!
+    const listItem = document.querySelector<HTMLElement>('#post-list-item')!
+
+    await Promise.all([
+      handleBilingualTranslation(paragraph, false),
+      handleBilingualTranslation(listItem, false)
+    ])
+
+    for (const target of [paragraph, listItem]) {
+      const translation = target.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+      expect(window.getComputedStyle(translation!).display).toBe('block')
+    }
+  })
+
   it('uses block insertion layout for flex translation targets in normal flow', async () => {
     vi.mocked(translateText).mockResolvedValue('研究代理会混合私有文档和外部工具。')
     document.body.innerHTML = `

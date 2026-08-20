@@ -121,6 +121,10 @@ export const redditProfile: SiteProfile = {
     },
     expandTarget: (node) => expandRedditCommentPagePostTarget(node),
     afterBilingualAppend: (_node, translationNode, appendTarget) => {
+        // Reddit can force descendant spans back to inline layout, including
+        // translations appended to paragraphs and list items in expanded posts.
+        translationNode.style.setProperty('display', 'block', 'important');
+
         if (!appendTarget.matches('shreddit-post-text-body')) return;
 
         translationNode.setAttribute('slot', 'text-body');
