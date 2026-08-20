@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.8.1',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.8.1：网页翻译兼容性修复',
+        items: [
+          '修复 Reddit 信息流、展开帖子和交叉发布标题的双语显示，译文现在会稳定换行并完整展开，不再与原文挤在一起或被截断。',
+          '改进复杂文章页面的双语排版与识文，修复 Wikipedia 浮动图文产生大段空白、Paul Graham 旧式页面漏译，以及正文误用 code 标签时重复英文的问题。',
+          '修复网站给整页应用滤镜时悬浮翻译按钮跑到正文底部的问题，按钮现在会稳定显示在浏览器视口边缘。',
+          '优化 GitHub 超长页面的翻译扫描，并补齐 Mempko 文章主副标题等正文目标，减少页面卡顿和内容遗漏。',
+          '电子书书架支持点击封面直接开始阅读并改进书名显示；设置页同时补充在线语音的数据处理说明。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.8.1: Web Translation Compatibility Fixes',
+        items: [
+          'Fixed bilingual layout for Reddit feeds, expanded posts, and crosspost titles. Translations now wrap reliably, expand fully, and no longer collide with or get clipped by the source text.',
+          'Improved bilingual layout and content handling on complex articles, fixing large gaps around Wikipedia floats, missing text on legacy Paul Graham pages, and repeated English when prose is styled with code tags.',
+          'Fixed the floating translation button being positioned at the bottom of the document on sites that apply a filter to the whole page. It now stays at the viewport edge.',
+          'Optimized translation scanning on very large GitHub pages and restored missing reading targets such as Mempko article titles and subtitles, reducing stalls and omissions.',
+          'Ebook covers can now be clicked to start reading, shelf titles are clearer, and Settings includes additional disclosure for online speech data processing.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.8.1：網頁翻譯相容性修正',
+        items: [
+          '修正 Reddit 動態消息、展開貼文和交叉轉貼標題的雙語顯示；譯文現在會穩定換行並完整展開，不再與原文擠在一起或被截斷。',
+          '改善複雜文章頁面的雙語排版與識文，修正 Wikipedia 浮動圖文產生大段空白、Paul Graham 舊式頁面漏譯，以及正文誤用 code 標籤時重複英文的問題。',
+          '修正網站對整頁套用濾鏡時，懸浮翻譯按鈕跑到正文底部的問題；按鈕現在會穩定顯示在瀏覽器視窗邊緣。',
+          '最佳化 GitHub 超長頁面的翻譯掃描，並補齊 Mempko 文章主副標題等正文目標，減少頁面卡頓與內容遺漏。',
+          '電子書書架支援點擊封面直接開始閱讀並改善書名顯示；設定頁也補充了線上語音的資料處理說明。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.8.1：ウェブ翻訳の互換性を改善',
+        items: [
+          'Reddit のフィード、展開した投稿、クロスポストのタイトルで対訳表示を修正しました。訳文が安定して改行・展開され、原文との重なりや切り詰めを防ぎます。',
+          '複雑な記事ページの対訳レイアウトと本文処理を改善し、Wikipedia のフロート画像周辺の大きな空白、Paul Graham の旧式ページでの翻訳漏れ、code タグで装飾された文章が英語のまま重複する問題を修正しました。',
+          'ページ全体にフィルターを適用するサイトで、フローティング翻訳ボタンが文書末尾へ移動する問題を修正し、常にビューポート端へ表示されるようにしました。',
+          '非常に長い GitHub ページの翻訳スキャンを最適化し、Mempko の記事タイトルとサブタイトルなど不足していた本文対象を補い、停止や翻訳漏れを減らしました。',
+          '電子書籍の表紙をクリックして読書を開始できるようにし、本棚の書名表示を改善しました。設定にはオンライン音声のデータ処理に関する説明も追加しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.8.0',
     notes: {
       'zh-CN': {

@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.8.1](https://github.com/airhunter/OnlyTranslate/compare/v1.8.0...v1.8.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **content:** 修复 Mempko 文章主副标题漏译 ([b4b1cb9](https://github.com/airhunter/OnlyTranslate/commit/b4b1cb96e3f01c5a5428a4ae7e5f06bd7287815c))
+* **content:** 修复复杂页面的双语翻译兼容问题 ([d93833d](https://github.com/airhunter/OnlyTranslate/commit/d93833d412823dc79cd6e5ec5207b10b1123880a))
+* **ebook:** 支持点击封面阅读并优化书架名称 ([3f5f16e](https://github.com/airhunter/OnlyTranslate/commit/3f5f16e8d94bc7f8f04add9264b804032c70d1b3))
+* **privacy:** 补充在线语音数据处理披露 ([ec3b16c](https://github.com/airhunter/OnlyTranslate/commit/ec3b16c4a6514f282d68d4d9eb3c771d708afb4c))
+* **reddit:** 修复展开帖正文译文被强制内联 ([f19dbf0](https://github.com/airhunter/OnlyTranslate/commit/f19dbf07aa58594c743d03ef5808aef640249290))
+
+
+### Performance Improvements
+
+* **content:** 优化 GitHub 长页面翻译扫描 ([87f37fd](https://github.com/airhunter/OnlyTranslate/commit/87f37fd3697da6165635a5a2b06b383c83548474))
+
 # [1.8.0](https://github.com/airhunter/OnlyTranslate/compare/v1.7.0...v1.8.0) (2026-08-15)
 
 
