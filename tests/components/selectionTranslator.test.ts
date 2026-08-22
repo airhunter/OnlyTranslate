@@ -29,7 +29,10 @@ const mockConfig = vi.hoisted(() => ({
   useCache: true,
   ttsEngine: 'system',
   ttsVoice: {},
-  ttsVoiceGender: 'auto'
+  ttsVoiceGender: 'auto',
+  to: 'zh-Hans',
+  bidirectionalTranslation: false,
+  bidirectionalTarget: 'en'
 }))
 
 vi.mock('@wxt-dev/storage', () => ({
@@ -84,11 +87,11 @@ describe('SelectionTranslator', () => {
   let pendingTranslations: PendingTranslation[] = []
   let writeClipboard: ReturnType<typeof vi.fn>
 
-  const setSelection = async (text: string) => {
+  const setSelection = async (text: string, range = {} as Range) => {
     currentSelection = {
       rangeCount: text ? 1 : 0,
       toString: () => text,
-      getRangeAt: () => ({}) as Range
+      getRangeAt: () => range
     } as unknown as Selection
 
     document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
@@ -121,6 +124,9 @@ describe('SelectionTranslator', () => {
     currentSelection = null
     pendingTranslations = []
     mockConfig.service = 'google'
+    mockConfig.to = 'zh-Hans'
+    mockConfig.bidirectionalTranslation = false
+    mockConfig.bidirectionalTarget = 'en'
     mockTranslateText.mockReset()
     mockAnalyzeSelectionText.mockReset()
     mockAnalyzeSelectionText.mockResolvedValue({
@@ -249,6 +255,42 @@ describe('SelectionTranslator', () => {
 
     await setSelection('a'.repeat(4097))
     expect(document.querySelector('.fr-selection-toolbar')).toBeNull()
+  })
+
+  it('suppresses address-like links but keeps natural-language link titles', async () => {
+    const addressLink = document.createElement('a')
+    addressLink.href = '/from?site=example.com'
+    addressLink.textContent = 'example.com'
+    document.body.appendChild(addressLink)
+    const addressRange = document.createRange()
+    addressRange.selectNodeContents(addressLink)
+
+    await setSelection('example.com', addressRange)
+    expect(document.querySelector('.fr-selection-toolbar')).toBeNull()
+
+    const titleLink = document.createElement('a')
+    titleLink.href = 'https://example.com/article'
+    titleLink.textContent = 'A natural-language article title'
+    document.body.appendChild(titleLink)
+    const titleRange = document.createRange()
+    titleRange.selectNodeContents(titleLink)
+
+    await setSelection('A natural-language article title', titleRange)
+    expect(document.querySelector('.fr-selection-toolbar')).not.toBeNull()
+  })
+
+  it('suppresses reliable target-language selections in fixed target mode', async () => {
+    await setSelection('这段内容已经是目标语言')
+
+    expect(document.querySelector('.fr-selection-toolbar')).toBeNull()
+  })
+
+  it('keeps target-language selections available for bidirectional translation', async () => {
+    mockConfig.bidirectionalTranslation = true
+
+    await setSelection('这段内容需要反向翻译')
+
+    expect(document.querySelector('.fr-selection-toolbar')).not.toBeNull()
   })
 
   it('copies the original and translation independently', async () => {

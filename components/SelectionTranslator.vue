@@ -234,6 +234,7 @@ import { isServiceConfigured, options, servicesType } from '@/entrypoints/utils/
 import type { SelectionAnalysisResult } from '@/entrypoints/utils/selectionAnalysis'
 import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
 import { t } from '@/entrypoints/utils/i18n'
+import { shouldShowSelectionToolbar } from '@/entrypoints/utils/selectionEligibility'
 
 type CopyTarget = 'original' | 'translation' | 'analysis'
 type PanelMode = 'translation' | 'analysis'
@@ -567,7 +568,12 @@ const handleTextSelection = (event?: MouseEvent) => {
       closeAll()
       return
     }
-    commitSelectionSession(text, selection.getRangeAt(0), event)
+    const range = selection.getRangeAt(0)
+    if (!shouldShowSelectionToolbar(text, range)) {
+      closeAll()
+      return
+    }
+    commitSelectionSession(text, range, event)
   }, 160)
 }
 
