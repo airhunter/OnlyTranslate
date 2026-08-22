@@ -1,0 +1,44 @@
+<header class="header-outer">
+  <nav><a href="/">Home</a><a href="/archive">Archive</a></nav>
+</header>
+<div class="content-outer">
+  <main class="main-inner">
+    <div class="main section">
+      <div class="widget Blog">
+        <div class="blog-posts hfeed">
+          <div class="date-outer">
+            <h2 class="date-header">Monday, June 25, 2012</h2>
+            <div class="date-posts">
+              <div class="post-outer">
+                <div id="post-shell" class="post hentry uncustomized-post-template">
+                  <h3 id="post-title" class="post-title entry-title">Less is exponentially more</h3>
+                  <div id="post-body" class="post-body entry-content">
+                    Here is the text of the talk I gave at the Go SF meeting in June, 2012.<br><br>
+                    This is a personal talk. The team is what made and continues to make Go happen, and I would also like to thank the organizers for giving me the opportunity to speak.<br><br>
+                    Just a few months before that C++ talk I had given a talk myself, which you can see on
+                    <a href="https://www.youtube.com/watch?v=example">YouTube</a>, about a toy concurrent language I had built in the 1980s.<br><br>
+                    But the C++0x talk got me thinking again. The new memory model felt wrong because it coupled the language too tightly to today's hardware.<br><br>
+                    We returned to our offices after the talk. We wanted concurrency at our fingertips and also wanted to address programming in the large.<br><br>
+                    We wrote on the white board a bunch of things that we wanted, ignoring detailed syntax and semantics and focusing on the big picture.<br><br>
+                    The first design discussion concentrated on regular syntax, explicit dependencies, predictable initialization, and a small collection of concepts that could be understood without consulting a large symbol table. Each proposal had to work together with the rest of the language instead of becoming an isolated feature.<br><br>
+                    Another part of the discussion concerned the distinction between convenient building blocks and elaborate mechanisms. The goal was not to remove every useful capability, but to make the remaining pieces compose cleanly so programmers could understand a large program without keeping countless special cases in mind.<br><br>
+                    The team also considered how packages should present their dependencies and initialization order. Source files would be compiled together as a package, circular dependencies would be rejected, and names would communicate visibility without an additional declaration language or a separate header file.<br><br>
+                    Memory management and concurrency were treated as parts of the overall programming model. Automatic collection, safe local addresses, initialized memory, and direct concurrency primitives were intended to reduce incidental work while keeping the behavior of ordinary programs understandable.<br><br>
+                    Interfaces were designed around behavior rather than an explicit inheritance hierarchy. Types could satisfy an interface through their methods, embedding could provide useful composition, and methods could be declared like ordinary functions instead of being hidden in a special region of a class declaration.<br><br>
+                    Several familiar expression features were deliberately left out. Assignment would not be an expression, increment and decrement would be statements, evaluation order would be defined, and pointer arithmetic would not be available. These choices removed compact tricks in exchange for code whose effects were easier to inspect.<br><br>
+                    This approach still left room for expressive libraries and practical tools. Strings, slices, maps, reflection, documentation, and package management could provide powerful foundations without requiring every application to expose the full complexity of its implementation details to its readers.<br><br>
+                    The broader lesson was that a language can become more useful by choosing a coherent set of constraints. A smaller surface does not automatically make a system simplistic; when its parts fit together, it can make large programs easier to write, read, maintain, and explain to the next person.<br><br>
+                    I still have a fascinating mail thread from that week. Here are a couple of excerpts:<br><br>
+                    Robert: <i id="first-excerpt">Starting point: C, fix some obvious flaws, remove crud, add a few missing features.</i><br><br>
+                    Rob: <i id="second-excerpt">The name is short, easy to type, and has nice properties for tools.</i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <aside class="sidebar"><a href="/related">Related posts</a></aside>
+</div>

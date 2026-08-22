@@ -203,6 +203,30 @@ describe('shouldSkipContentBlock', () => {
     expect(getContentFilterDecision(element)).toBe('keep')
   })
 
+  it('keeps generated direct-text prose that contains a social source link', () => {
+    const element = renderElement(`
+      <span data-fr-direct-text-target="true">
+        Just a few months before that talk I had given a talk myself, which you can see on
+        <a href="https://www.youtube.com/watch?v=example">YouTube</a>,
+        about a concurrent language I had built and the ideas that later influenced the project.
+      </span>
+    `)
+
+    expect(getContentFilterDecision(element)).toBe('keep')
+    expect(shouldSkipContentBlock(element)).toBe(false)
+  })
+
+  it('still skips compact generated direct-text social actions', () => {
+    const element = renderElement(`
+      <span data-fr-direct-text-target="true">
+        <a href="https://www.youtube.com/@author">Follow on YouTube</a>
+      </span>
+    `)
+
+    expect(getContentFilterDecision(element)).toBe('skip-self')
+    expect(shouldSkipContentBlock(element)).toBe(true)
+  })
+
   it('keeps paragraph-like divs that contain only text and inline links', () => {
     const element = renderElement(`
       <div>

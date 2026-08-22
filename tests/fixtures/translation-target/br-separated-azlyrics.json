@@ -1,0 +1,16 @@
+{
+  "name": "splits AZLyrics-style br-separated lyrics into line targets",
+  "url": "https://www.azlyrics.com/lyrics/nemesea/angelinthedark.html",
+  "scope": "smart",
+  "html": "br-separated-azlyrics.html",
+  "contentRootContains": ["#lyrics"],
+  "exclude": ["lyrics", "writer"],
+  "textIncludes": [
+    "A dream so real it takes her back",
+    "She's falling into her own past",
+    "When will the light take over",
+    "These dark days"
+  ],
+  "textExcludes": ["Writer(s): Sonny Onderwater"],
+  "nodesEveryElement": true
+}

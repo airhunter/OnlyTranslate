@@ -419,6 +419,63 @@ for (const task of userProvidedTasks) { sandbox.execute(task); }</code></pre>
     expect(nodes).not.toContain(document.querySelector('#inline-emphasis'))
   })
 
+  it('uses every authored br as a generic direct-text run boundary', () => {
+    document.body.innerHTML = `
+      <main>
+        <div id="lyrics">
+          A dream so real it takes her back<br>
+          She's falling into her own past<br><br>
+          <em id="emphasized-line">When will the light take over</em><br>
+          These dark days
+        </div>
+      </main>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers.map(node => node.textContent?.trim())).toEqual([
+      'A dream so real it takes her back',
+      "She's falling into her own past",
+      'When will the light take over',
+      'These dark days'
+    ])
+    expect(document.querySelector('#lyrics')?.querySelectorAll(':scope > br')).toHaveLength(4)
+    expect(document.querySelector('#emphasized-line')?.closest(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrappers[2])
+  })
+
+  it('splits br-separated runs inside nested inline containers', () => {
+    document.body.innerHTML = `
+      <article>
+        <p id="verse"><span id="nested-flow">First nested line<br>Second <strong id="nested-emphasis">nested line</strong></span></p>
+      </article>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers.map(node => node.textContent?.trim())).toEqual([
+      'First nested line',
+      'Second nested line'
+    ])
+    expect(document.querySelector('#nested-emphasis')?.closest(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrappers[1])
+    expect(document.querySelector('#nested-flow')?.querySelectorAll(':scope > br')).toHaveLength(1)
+  })
+
+  it('does not split br-separated direct text inside navigation controls', () => {
+    document.body.innerHTML = `
+      <nav>
+        <div id="navigation-lines">Browse songs<br>Browse artists</div>
+      </nav>
+    `
+
+    const wrappers = grabAllNode(document.body)
+      .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers).toHaveLength(0)
+    expect(document.querySelector('#navigation-lines')?.textContent).toBe('Browse songsBrowse artists')
+  })
+
   it('splits legacy font prose around a blockquote boundary', () => {
     document.body.innerHTML = `
       <article>
@@ -442,7 +499,7 @@ for (const task of userProvidedTasks) { sandbox.execute(task); }</code></pre>
     expect(wrappers.every(wrapper => !wrapper.contains(document.querySelector('#essay-quote')))).toBe(true)
   })
 
-  it('keeps a single br inside one legacy font direct text target', () => {
+  it('uses a single br as a hard boundary inside legacy font flows', () => {
     document.body.innerHTML = `
       <article>
         <font id="essay-body" size="2" face="verdana">
@@ -456,13 +513,11 @@ for (const task of userProvidedTasks) { sandbox.execute(task); }</code></pre>
     const wrappers = grabAllNode(document.body)
       .filter(node => node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
 
-    expect(wrappers).toHaveLength(2)
-    expect(wrappers[0].textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'First line of the same paragraph continues with enough natural language to stay together.'
-    )
-    expect(wrappers[1].textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(wrappers.map(node => node.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'First line of the same paragraph',
+      'continues with enough natural language to stay together.',
       'Second paragraph has enough detail to become another target.'
-    )
+    ])
   })
 
   it('does not use legacy font wrapping without a br paragraph boundary', () => {

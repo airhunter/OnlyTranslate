@@ -1,0 +1,22 @@
+{
+  "name": "splits Blogspot-style br-separated prose into complete paragraph targets",
+  "url": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+  "scope": "smart",
+  "html": "br-separated-blogspot.html",
+  "contentRootContains": ["#post-title", "#post-body"],
+  "include": ["post-title"],
+  "exclude": ["post-body", "first-excerpt", "second-excerpt"],
+  "textIncludes": [
+    "Here is the text of the talk I gave at the Go SF meeting in June, 2012.",
+    "This is a personal talk.",
+    "Just a few months before that C++ talk I had given a talk myself",
+    "But the C++0x talk got me thinking again.",
+    "We returned to our offices after the talk.",
+    "We wrote on the white board a bunch of things that we wanted",
+    "I still have a fascinating mail thread from that week.",
+    "Robert: Starting point: C, fix some obvious flaws",
+    "Rob: The name is short, easy to type"
+  ],
+  "textExcludes": ["Related posts"],
+  "nodesEveryElement": true
+}

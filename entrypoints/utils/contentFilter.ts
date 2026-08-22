@@ -1,6 +1,9 @@
 import {
     getProseEvidence,
     getStructuralHint,
+    hasSentencePunctuation,
+    MAX_INTERACTIVE_DENSITY,
+    PROSE_TEXT_MIN,
     type ProseEvidence
 } from '@/entrypoints/utils/proseSignals';
 
@@ -83,6 +86,7 @@ export function shouldSkipContentBlock(element: Element): boolean {
 
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
     if (isReadableParagraphLeaf(element, metrics)) return false;
+    if (isReadableGeneratedDirectTextTarget(element, metrics)) return false;
     const hasShareSignal = SHARE_PATTERN.test(hint)
         || SHARE_PATTERN.test(metrics.interactiveSignalText)
         || metrics.hasSocialLinks;
@@ -101,6 +105,13 @@ function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): bo
     if (metrics.buttonCount > 0 && metrics.shortInteractiveCount > 0 && metrics.longParagraphCount <= 1) return true;
     return metrics.longParagraphCount === 0
         && (metrics.hasSocialLinks || metrics.linkCount > 0 || metrics.buttonCount > 0 || metrics.shortInteractiveCount > 0);
+}
+
+function isReadableGeneratedDirectTextTarget(element: Element, metrics: BlockMetrics): boolean {
+    if (element.getAttribute('data-fr-direct-text-target') !== 'true') return false;
+    if (metrics.buttonCount > 0 || metrics.textLength < PROSE_TEXT_MIN) return false;
+    if (metrics.linkDensity >= MAX_INTERACTIVE_DENSITY) return false;
+    return hasSentencePunctuation(metrics.text);
 }
 
 function hasReadableParagraphDescendant(element: Element): boolean {

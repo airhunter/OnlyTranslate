@@ -55,7 +55,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
-import { DIRECT_TEXT_TARGET_ATTR, grabNode } from '@/entrypoints/main/dom'
+import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
 import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
@@ -846,6 +846,81 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(document.querySelector('.only-translate-bilingual-content')).toBeNull()
     expect(document.querySelector('#first-label')?.parentElement?.id).toBe('first-event')
     expect(document.querySelector('#nested-list > #first-verdict')?.textContent).toContain('Filter Verdict:')
+  })
+
+  it('inserts and restores bilingual translations line by line around authored br elements', async () => {
+    vi.mocked(translateText)
+      .mockResolvedValueOnce('第一行译文')
+      .mockResolvedValueOnce('第二行译文')
+      .mockResolvedValueOnce('第三行译文')
+    document.body.innerHTML = `
+      <main>
+        <div id="lyrics">First lyric line<br>Second <em id="lyric-emphasis">lyric</em> line<br><br>Third lyric line</div>
+      </main>
+    `
+    const lyrics = document.querySelector<HTMLElement>('#lyrics')!
+    const originalHTML = lyrics.innerHTML
+    const wrappers = grabAllNode(lyrics)
+      .filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute(DIRECT_TEXT_TARGET_ATTR))
+
+    expect(wrappers.map(node => node.textContent?.trim())).toEqual([
+      'First lyric line',
+      'Second lyric line',
+      'Third lyric line'
+    ])
+
+    for (const wrapper of wrappers) {
+      await handleBilingualTranslation(wrapper, false)
+    }
+
+    expect(wrappers.map(wrapper =>
+      wrapper.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent
+    )).toEqual(['第一行译文', '第二行译文', '第三行译文'])
+    expect(wrappers.every(wrapper =>
+      wrapper.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.firstElementChild?.tagName === 'BR'
+    )).toBe(true)
+    expect(lyrics.querySelectorAll(':scope > br')).toHaveLength(3)
+    expect(document.querySelector('#lyric-emphasis')?.closest(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`)).toBe(wrappers[1])
+
+    restoreOriginalContent()
+
+    expect(lyrics.innerHTML).toBe(originalHTML)
+    expect(lyrics.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"], .${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('reuses hard-break line wrappers during dynamic rescans', () => {
+    document.body.innerHTML = `
+      <article id="story">
+        <p>Existing article paragraph keeps the dynamic content inside smart scope.</p>
+        <div id="dynamic-lyrics">First dynamic lyric line<br>Second dynamic lyric line</div>
+      </article>
+    `
+    const story = document.querySelector<HTMLElement>('#story')!
+    const lyrics = document.querySelector<HTMLElement>('#dynamic-lyrics')!
+
+    const firstScan = collectDynamicTranslationNodes(
+      lyrics,
+      story,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const firstWrappers = Array.from(lyrics.querySelectorAll<HTMLElement>(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`))
+
+    const secondScan = collectDynamicTranslationNodes(
+      lyrics,
+      story,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+    const secondWrappers = Array.from(lyrics.querySelectorAll<HTMLElement>(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`))
+
+    expect(firstWrappers.map(node => node.textContent?.trim())).toEqual([
+      'First dynamic lyric line',
+      'Second dynamic lyric line'
+    ])
+    expect(secondWrappers).toEqual(firstWrappers)
+    expect(firstScan).toEqual(expect.arrayContaining(firstWrappers))
+    expect(secondScan).toEqual(expect.arrayContaining(firstWrappers))
   })
 
   it('collects nested list direct text and child blocks as separate auto translation targets', () => {

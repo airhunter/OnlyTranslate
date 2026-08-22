@@ -453,7 +453,7 @@ function getNodeDepth(node: Element): number {
 // 返回最终应该翻译的父节点或 false
 const directTextTargetSelector = `[${DIRECT_TEXT_TARGET_ATTR}="true"]`;
 
-type DirectTextRunKind = 'mixed-block' | 'legacy-inline-flow';
+type DirectTextRunKind = 'hard-break-flow' | 'mixed-block' | 'legacy-inline-flow';
 
 interface DirectTextRunContext {
     host: Element;
@@ -481,17 +481,20 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
 
     const { host, directChild, kind } = context;
     const hostTag = host.tagName.toLowerCase();
-    const requiresMediaBoundary = mediaAdjacentDirectTextRunHostSet.has(hostTag);
+    const requiresMediaBoundary = kind === 'mixed-block' && mediaAdjacentDirectTextRunHostSet.has(hostTag);
     if (shouldSkipDirectTextHost(host, hostTag)) return false;
     if (host.closest(`.${translationContentClass}, [${translatedAttr}="true"]`)) return false;
     if (hasContentFilterSkipSelfAncestor(host, options)) return false;
     if (requiresMediaBoundary && isInsideLegacyInlineFlowBlockedArea(host)) return false;
+    if (kind === 'hard-break-flow' && !shouldUseHardBreakFlowHost(host)) return false;
     if (kind === 'mixed-block' && !hasDirectBlockBoundary(host)) return false;
     if (kind === 'legacy-inline-flow' && !shouldUseLegacyInlineFlowHost(host, options)) return false;
 
-    const run = kind === 'legacy-inline-flow'
-        ? findLegacyInlineFlowRun(host, directChild)
-        : findDirectTextRun(host, directChild);
+    const run = kind === 'hard-break-flow'
+        ? findHardBreakFlowRun(host, directChild)
+        : kind === 'legacy-inline-flow'
+            ? findLegacyInlineFlowRun(host, directChild)
+            : findDirectTextRun(host, directChild);
     if (!run) return false;
     if (requiresMediaBoundary &&
         !isDirectTextRunAdjacentToMediaBlock(run) &&
@@ -504,6 +507,10 @@ function findDirectTextRunTarget(node: Node, options: GrabAllNodeOptions): Eleme
 }
 
 function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
+    if (node instanceof Element && hasDirectHardBreakBoundary(node)) {
+        return { host: node, directChild: null, kind: 'hard-break-flow' };
+    }
+
     if (node instanceof Element && isMixedBlockTextRunHost(node)) {
         return { host: node, directChild: null, kind: 'mixed-block' };
     }
@@ -515,6 +522,13 @@ function resolveDirectTextRunContext(node: Node): DirectTextRunContext | null {
     let current: Node | null = node;
     while (current?.parentNode) {
         const parent = current.parentNode as Node | null;
+        if (parent instanceof Element && hasDirectHardBreakBoundary(parent)) {
+            return {
+                host: parent,
+                directChild: current as ChildNode,
+                kind: 'hard-break-flow'
+            };
+        }
         if (parent instanceof Element && isMixedBlockTextRunHost(parent)) {
             return {
                 host: parent,
@@ -543,6 +557,112 @@ function isMixedBlockTextRunHost(node: Element): boolean {
 function hasDirectBlockBoundary(host: Element): boolean {
     return Array.from(host.children)
         .some(child => !inlineSet.has(child.tagName.toLowerCase()));
+}
+
+function hasDirectHardBreakBoundary(host: Element): boolean {
+    return Array.from(host.children).some(child => child.tagName.toLowerCase() === 'br');
+}
+
+function shouldUseHardBreakFlowHost(host: Element): boolean {
+    if (!hasDirectHardBreakBoundary(host)) return false;
+    if (isInsideLegacyInlineFlowBlockedArea(host)) return false;
+    return collectHardBreakFlowRuns(host).some(hasReadableHardBreakFlowRun);
+}
+
+function findHardBreakFlowRun(host: Element, directChild: ChildNode | null): ChildNode[] | null {
+    let selectedRun: ChildNode[] | null = null;
+    let firstReadableRun: ChildNode[] | null = null;
+    let currentRun: ChildNode[] = [];
+
+    const flush = () => {
+        if (!currentRun.length) return;
+
+        const candidate = currentRun;
+        currentRun = [];
+        if (!hasReadableHardBreakFlowRun(candidate)) return;
+
+        if (directChild && candidate.includes(directChild)) {
+            selectedRun = candidate;
+            return;
+        }
+
+        if (!directChild && !firstReadableRun) {
+            firstReadableRun = candidate;
+        }
+    };
+
+    host.childNodes.forEach(child => {
+        if (isLegacyParagraphBreakElement(child)) {
+            flush();
+            return;
+        }
+
+        if (child.nodeType === Node.COMMENT_NODE) return;
+
+        if (isHardBreakFlowRunNode(child)) {
+            currentRun.push(child);
+            return;
+        }
+
+        flush();
+    });
+    flush();
+
+    return directChild ? selectedRun : firstReadableRun;
+}
+
+function collectHardBreakFlowRuns(host: Element): ChildNode[][] {
+    const runs: ChildNode[][] = [];
+    let currentRun: ChildNode[] = [];
+
+    const flush = () => {
+        if (currentRun.length) runs.push(currentRun);
+        currentRun = [];
+    };
+
+    host.childNodes.forEach(child => {
+        if (isLegacyParagraphBreakElement(child)) {
+            flush();
+            return;
+        }
+        if (child.nodeType === Node.COMMENT_NODE) return;
+        if (isHardBreakFlowRunNode(child)) {
+            currentRun.push(child);
+            return;
+        }
+        flush();
+    });
+    flush();
+
+    return runs;
+}
+
+function isHardBreakFlowRunNode(node: ChildNode): boolean {
+    if (node instanceof Text) return true;
+    if (!(node instanceof Element)) return false;
+    if (node.querySelector('br')) return false;
+    return isDirectTextRunNode(node);
+}
+
+function hasReadableHardBreakFlowRun(run: ChildNode[]): boolean {
+    if (!hasReadableDirectTextRun(run)) return false;
+
+    const anchors = run.flatMap(child => {
+        if (!(child instanceof Element)) return [];
+        return [
+            ...(child.matches('a') ? [child] : []),
+            ...Array.from(child.querySelectorAll('a'))
+        ];
+    });
+    if (anchors.length < 3) return true;
+
+    const text = getDirectTextRunText(run).replace(/\s+/g, ' ').trim();
+    if (!text) return false;
+    const linkTextLength = anchors.reduce(
+        (sum, anchor) => sum + getTranslatableText(anchor).replace(/\s+/g, ' ').trim().length,
+        0
+    );
+    return linkTextLength / text.length < MAX_INTERACTIVE_DENSITY;
 }
 
 function findDirectTextRun(host: Element, directChild: ChildNode | null): ChildNode[] | null {

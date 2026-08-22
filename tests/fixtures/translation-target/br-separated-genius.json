@@ -1,0 +1,16 @@
+{
+  "name": "splits Genius-style br-separated lyrics around excluded header blocks",
+  "url": "https://genius.com/Nemesea-angel-in-the-dark-lyrics",
+  "scope": "smart",
+  "html": "br-separated-genius.html",
+  "contentRootContains": ["#lyrics-root"],
+  "exclude": ["lyrics-container"],
+  "textIncludes": [
+    "Her eyes are closing slowly",
+    "The pain increases every day",
+    "She wanted to fight but walked away",
+    "And now there is nothing left to say"
+  ],
+  "textExcludes": ["2 Contributors"],
+  "nodesEveryElement": true
+}
