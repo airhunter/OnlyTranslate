@@ -1,6 +1,7 @@
 import { asteriskProfile } from './asterisk';
 import { arsTechnicaProfile } from './arsTechnica';
 import { claudeNagdyProfile } from './claudeNagdy';
+import { claytonRamseyProfile } from './claytonRamsey';
 import { cnnProfile } from './cnn';
 import { decryptProfile } from './decrypt';
 import { devinDocsProfile } from './devinDocs';
@@ -62,6 +63,7 @@ export type {
 
 export const siteProfiles: SiteProfile[] = [
     ...simpleProfiles,
+    claytonRamseyProfile,
     cnnProfile,
     youtubeProfile,
     xProfile,

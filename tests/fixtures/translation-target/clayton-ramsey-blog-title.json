@@ -1,0 +1,19 @@
+{
+  "name": "Clayton Ramsey blog keeps the page-header title outside main content",
+  "url": "https://claytonwramsey.com/blog/mvt/",
+  "scope": "smart",
+  "html": "clayton-ramsey-blog-title.html",
+  "include": [
+    "article-title",
+    "article-lead",
+    "article-paragraph",
+    "article-links",
+    "section-title",
+    "section-paragraph"
+  ],
+  "exclude": [
+    "site-title",
+    "nav-home",
+    "publication-info"
+  ]
+}
