@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.2](https://github.com/airhunter/OnlyTranslate/compare/v1.8.1...v1.8.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* **content:** 优化扩展上下文失效提示 ([389331a](https://github.com/airhunter/OnlyTranslate/commit/389331aa30c1b1fb6a83ae0d14941a31cc8a7376))
+* **content:** 修复博客页头文章标题漏译 ([2a235f5](https://github.com/airhunter/OnlyTranslate/commit/2a235f5a83b2311b342b28704009ec4162310584))
+* **content:** 修复识文模式正文与标题漏译 ([7e105ed](https://github.com/airhunter/OnlyTranslate/commit/7e105ed452fe131d0abaee2a8ba6f504bd949ef2))
+* **content:** 支持 br 分隔内容逐段翻译 ([e9b051c](https://github.com/airhunter/OnlyTranslate/commit/e9b051cb23f5dc2daa2dedeccc386e9f813a1f20))
+* **content:** 收紧 GitHub 页面翻译范围 ([4dd89f4](https://github.com/airhunter/OnlyTranslate/commit/4dd89f4661af734e6eb84c1807e08d9ac8317c09))
+* **selection:** 避免无效选区触发划词工具栏 ([e33d945](https://github.com/airhunter/OnlyTranslate/commit/e33d945571d08c9f9c9165649f445d3baf8114a0))
+
 ## [1.8.1](https://github.com/airhunter/OnlyTranslate/compare/v1.8.0...v1.8.1) (2026-08-20)
 
 

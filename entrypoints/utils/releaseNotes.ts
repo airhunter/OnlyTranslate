@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.8.2',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.8.2：识文翻译与 GitHub 兼容性优化',
+        items: [
+          '优化 GitHub 的识文翻译范围：Issues、Pull Requests、Discussions、Actions、Projects 和 Security 等页面会保留标题、说明与正文，并过滤审核状态、运行元数据、计数、筛选器和操作按钮。',
+          '支持由换行标签分隔的采访、歌词和博客内容逐段翻译，减少 Metal Storm 等旧式页面的漏译与整块误译。',
+          '改进复杂页面的正文识别，补齐博客页头和链接标题、动态报告流及其他分散正文内容。',
+          '修复空白或无效选区误触发划词工具栏的问题，并在扩展更新导致页面上下文失效时提供更明确的重新加载提示。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.8.2: Smarter Page Detection and GitHub Compatibility',
+        items: [
+          'Refined Smart translation across GitHub Issues, Pull Requests, Discussions, Actions, Projects, and Security pages. Titles, descriptions, and prose are kept while review states, run metadata, counters, filters, and action buttons are excluded.',
+          'Added paragraph-by-paragraph translation for interviews, lyrics, and blog content separated by line-break tags, reducing omissions and oversized translation blocks on legacy pages such as Metal Storm.',
+          'Improved content detection on complex pages, restoring blog header and linked titles, dynamic report streams, and other distributed reading content.',
+          'Fixed the selection toolbar appearing for empty or invalid selections and added clearer reload guidance when an extension update invalidates the current page context.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.8.2：識文翻譯與 GitHub 相容性最佳化',
+        items: [
+          '最佳化 GitHub 的識文翻譯範圍：Issues、Pull Requests、Discussions、Actions、Projects 和 Security 等頁面會保留標題、說明與正文，並排除審核狀態、執行中繼資料、計數、篩選器和操作按鈕。',
+          '支援將以換行標籤分隔的訪談、歌詞和部落格內容逐段翻譯，減少 Metal Storm 等舊式頁面的漏譯與整塊誤譯。',
+          '改善複雜頁面的正文識別，補齊部落格頁首和連結標題、動態報告串流及其他分散的閱讀內容。',
+          '修正空白或無效選取範圍誤觸劃詞工具列的問題，並在擴充功能更新導致目前頁面內容失效時提供更明確的重新載入提示。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.8.2：本文検出と GitHub 互換性を改善',
+        items: [
+          'GitHub の Issues、Pull Requests、Discussions、Actions、Projects、Security でスマート翻訳の範囲を改善しました。タイトル、説明、本文を維持し、レビュー状態、実行メタデータ、件数、フィルター、操作ボタンを除外します。',
+          '改行タグで区切られたインタビュー、歌詞、ブログを段落単位で翻訳できるようにし、Metal Storm などの旧式ページでの翻訳漏れや過大な翻訳ブロックを減らしました。',
+          '複雑なページの本文検出を改善し、ブログのページヘッダーやリンク付きタイトル、動的なレポートストリームなど、分散した読み物コンテンツを補完しました。',
+          '空または無効な選択範囲で選択翻訳ツールバーが表示される問題を修正し、拡張機能の更新で現在のページコンテキストが無効になった場合の再読み込み案内を明確にしました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.8.1',
     notes: {
       'zh-CN': {
