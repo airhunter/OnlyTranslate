@@ -4,10 +4,24 @@
   "scope": "smart",
   "html": "github-issue-list.html",
   "stats": {
-    "profileFastPathUsed": false
+    "profileFastPathUsed": true
   },
-  "include": ["issue-title-1", "issue-title-2", "issue-title-3"],
-  "exclude": ["issue-label", "repo-issues-tab", "bare-issues-link"],
+  "include": ["issue-title-1", "issue-title-2", "issue-title-3", "issue-title-4"],
+  "exclude": [
+    "issue-label",
+    "modern-issue-label",
+    "modern-issue-state",
+    "modern-issue-metadata",
+    "modern-created-at",
+    "repo-issues-tab",
+    "bare-issues-link"
+  ],
+  "textExcludes": [
+    "Status: Open.",
+    "In alchaincyf/huashu-design",
+    "octocat opened",
+    "May 8, 2026"
+  ],
   "grabOptions": {
     "siteCompatMode": "smart"
   }

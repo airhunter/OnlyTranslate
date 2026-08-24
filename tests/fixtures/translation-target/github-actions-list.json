@@ -1,0 +1,43 @@
+{
+  "name": "GitHub Actions lists keep run titles and skip operational metadata",
+  "url": "https://github.com/HKUDS/nanobot/actions",
+  "scope": "smart",
+  "html": "github-actions-list.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": ["action-run-title-1", "action-run-title-2"],
+  "exclude": [
+    "actions-sidebar-title",
+    "actions-all-workflows",
+    "actions-workflow-name",
+    "actions-caches",
+    "actions-page-title",
+    "actions-loading-errors",
+    "actions-summary",
+    "actions-run-count",
+    "action-run-link-1",
+    "action-run-metadata-1",
+    "action-run-branch-1",
+    "action-run-time-1",
+    "action-run-link-2",
+    "action-run-metadata-2",
+    "action-run-branch-2",
+    "action-run-time-2"
+  ],
+  "textExcludes": [
+    "All workflows",
+    "Sorry, something went wrong",
+    "Showing runs from all workflows",
+    "Test Suite #8483",
+    "synchronize by chengyongru",
+    "codex/trajectory-usage-backend",
+    "15 minutes ago",
+    "Test Suite #8480",
+    "pushed by chengyongru",
+    "Today at 3:08 PM"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

@@ -1,0 +1,38 @@
+<main>
+  <div data-testid="issue-header">
+    <h1><bdi id="issue-detail-title" data-testid="issue-title">Background tasks keep sending duplicate replies</bdi></h1>
+    <div id="issue-fixed-metadata" data-testid="issue-metadata-fixed">Open #5256</div>
+    <div id="issue-sticky-metadata" data-testid="issue-metadata-sticky">Open #5256 Copy link</div>
+  </div>
+
+  <div data-testid="issue-body">
+    <header>
+      <a id="issue-author" data-testid="issue-body-header-author" href="/octocat">octocat</a>
+      <a id="issue-created" data-testid="issue-body-header-link" href="#issue-body">opened on May 8, 2026</a>
+      <span id="author-association" data-testid="comment-author-association">Contributor</span>
+    </header>
+    <div data-testid="issue-body-viewer">
+      <div class="markdown-body" data-testid="markdown-body">
+        <h2 id="issue-body-heading">Describe the bug</h2>
+        <p id="issue-body-paragraph">The background task continues sending duplicate replies after the agent starts waiting for user input.</p>
+      </div>
+    </div>
+  </div>
+
+  <div data-testid="issue-viewer-comments-container">
+    <div data-testid="timeline-row-border-comment">
+      <header id="comment-header" data-testid="comment-header">maintainer commented on May 9, 2026</header>
+      <div class="markdown-body" data-testid="markdown-body">
+        <p id="comment-paragraph">This reproduction identifies a separate lifecycle bug and includes enough detail for focused investigation.</p>
+      </div>
+    </div>
+    <div data-testid="timeline-row-border-event">
+      <div id="activity-event">octocat linked a pull request that will close this issue on May 10, 2026.</div>
+    </div>
+  </div>
+
+  <aside id="issue-sidebar" data-testid="issue-viewer-metadata-container">
+    <div data-testid="sidebar-assignees-section">Assignees: No one assigned</div>
+    <div data-testid="sidebar-labels-section">Labels: bug</div>
+  </aside>
+</main>

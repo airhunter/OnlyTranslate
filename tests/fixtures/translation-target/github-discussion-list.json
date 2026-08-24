@@ -1,0 +1,22 @@
+{
+  "name": "GitHub discussion lists keep titles and skip author and category metadata",
+  "url": "https://github.com/alchaincyf/huashu-design/discussions",
+  "scope": "smart",
+  "html": "github-discussion-list.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": ["discussion-title-1", "discussion-title-2"],
+  "exclude": [
+    "discussion-metadata-1",
+    "discussion-comments-1",
+    "discussion-metadata-2",
+    "discussion-comments-2"
+  ],
+  "textExcludes": [
+    "octocat asked",
+    "Aug 23, 2026",
+    "started this discussion 3 days ago"
+  ],
+  "nodesEveryElement": true
+}

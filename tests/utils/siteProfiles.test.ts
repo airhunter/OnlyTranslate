@@ -85,6 +85,89 @@ describe('site profile registry', () => {
     expect(siteProfileShouldKeepNestedTargetFns['github.com']).toBeTypeOf('function')
   })
 
+  it('skips GitHub pull request review metadata without skipping the title', () => {
+    document.body.innerHTML = `
+      <div class="js-issue-row">
+        <a id="pull-title" href="/HKUDS/nanobot/pull/5498">feat(config): unify onboarding in the Agent TUI</a>
+        <div id="pull-metadata" class="d-flex mt-1 text-small color-fg-muted">
+          #5498 opened 16 hours ago by chengyongru
+          <span id="review-wrapper">
+            • <a href="/HKUDS/nanobot/pull/5498#partial-pull-merging" aria-label="Review required before merging">Review required</a>
+          </span>
+        </div>
+      </div>
+    `
+    const github = siteProfiles.find(profile => profile.id === 'github')!
+    const title = document.querySelector('#pull-title')!
+    const metadata = document.querySelector('#pull-metadata')!
+    const reviewWrapper = document.querySelector('#review-wrapper')!
+
+    expect(github.select?.(title, { mode: 'smart' })).toBe(title)
+    expect(github.select?.(metadata, { mode: 'smart' })).toEqual({ skip: true })
+    expect(github.select?.(reviewWrapper, { mode: 'smart' })).toEqual({ skip: true })
+  })
+
+  it('keeps only GitHub Actions run titles in smart mode', () => {
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot/actions'),
+      configurable: true
+    })
+
+    try {
+      document.body.innerHTML = `
+        <div class="Box-row">
+          <a href="/HKUDS/nanobot/actions/runs/32707622733">
+            <span id="run-title" class="markdown-title">feat(actions): keep readable run titles</span>
+          </a>
+          <div id="run-metadata">Test Suite #8483: Pull request #5481 synchronize by chengyongru</div>
+        </div>
+        <div id="actions-error">Sorry, something went wrong. Please reload this page.</div>
+      `
+      const github = siteProfiles.find(profile => profile.id === 'github')!
+      const title = document.querySelector('#run-title')!
+      const metadata = document.querySelector('#run-metadata')!
+      const error = document.querySelector('#actions-error')!
+
+      expect(github.select?.(title, { mode: 'smart' })).toBe(title)
+      expect(github.select?.(metadata, { mode: 'smart' })).toEqual({ skip: true })
+      expect(github.select?.(error, { mode: 'smart' })).toEqual({ skip: true })
+      expect(github.select?.(metadata, { mode: 'full' })).toBe(false)
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        configurable: true
+      })
+    }
+  })
+
+  it('skips GitHub link-style buttons while keeping Markdown policy content', () => {
+    document.body.innerHTML = `
+      <a class="Button--primary Button" href="/owner/repo/security/advisories/new">
+        <span class="Button-content"><span id="button-label" class="Button-label">Report a vulnerability</span></span>
+      </a>
+      <div id="button-region" class="Subhead-actions">
+        <a class="Button--primary Button" href="/owner/repo/security/advisories/new">
+          <span class="Button-content"><span class="Button-label">Report a vulnerability</span></span>
+        </a>
+      </div>
+      <article class="markdown-body">
+        <h1 id="policy-title">Security Policy</h1>
+        <p id="policy-copy">Report security vulnerabilities privately to the repository maintainers.</p>
+      </article>
+    `
+    const github = siteProfiles.find(profile => profile.id === 'github')!
+    const buttonLabel = document.querySelector('#button-label')!
+    const buttonRegion = document.querySelector('#button-region')!
+    const policyTitle = document.querySelector('#policy-title')!
+    const policyCopy = document.querySelector('#policy-copy')!
+
+    expect(github.select?.(buttonLabel, { mode: 'smart' })).toEqual({ skip: true })
+    expect(github.select?.(buttonRegion, { mode: 'smart' })).toEqual({ skip: true })
+    expect(github.select?.(policyTitle, { mode: 'smart' })).toBe(policyTitle)
+    expect(github.select?.(policyCopy, { mode: 'smart' })).toBe(policyCopy)
+  })
+
   it('keeps GitHub domain checks out of the generic collect pipeline', () => {
     const source = readFileSync(resolve(process.cwd(), 'entrypoints/main/translationTarget/collect.ts'), 'utf8')
 

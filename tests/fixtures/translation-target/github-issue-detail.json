@@ -1,0 +1,32 @@
+{
+  "name": "GitHub issue details keep titles and Markdown while skipping React metadata",
+  "url": "https://github.com/alchaincyf/huashu-design/issues/5256",
+  "scope": "smart",
+  "html": "github-issue-detail.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": [
+    "issue-detail-title",
+    "issue-body-heading",
+    "issue-body-paragraph",
+    "comment-paragraph"
+  ],
+  "exclude": [
+    "issue-fixed-metadata",
+    "issue-sticky-metadata",
+    "issue-author",
+    "issue-created",
+    "author-association",
+    "comment-header",
+    "activity-event",
+    "issue-sidebar"
+  ],
+  "textExcludes": [
+    "Open #5256",
+    "octocat linked a pull request",
+    "No one assigned",
+    "opened on May 8, 2026"
+  ],
+  "nodesEveryElement": true
+}

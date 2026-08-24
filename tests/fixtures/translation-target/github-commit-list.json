@@ -1,0 +1,23 @@
+{
+  "name": "GitHub commit lists keep messages and skip attribution and SHA metadata",
+  "url": "https://github.com/alchaincyf/huashu-design/commits/main/",
+  "scope": "smart",
+  "html": "github-commit-list.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": ["commit-title-1", "commit-title-2"],
+  "exclude": [
+    "commit-attribution-1",
+    "commit-metadata-1",
+    "commit-attribution-2",
+    "commit-metadata-2"
+  ],
+  "textExcludes": [
+    "octocat authored",
+    "maintainer committed",
+    "View commit details",
+    "Browse repository at this point"
+  ],
+  "nodesEveryElement": true
+}

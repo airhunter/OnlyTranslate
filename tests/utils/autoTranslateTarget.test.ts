@@ -1604,6 +1604,38 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(nodes).toEqual([])
   })
 
+  it('skips dynamically rescanned GitHub link-button wrappers', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://github.com/HKUDS/nanobot/security'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <div class="Subhead">
+          <h1>Security</h1>
+          <div id="report-action" class="Subhead-actions" data-view-component="true">
+            <a class="Button--primary Button--medium Button" data-view-component="true" href="/HKUDS/nanobot/security/advisories/new">
+              <span class="Button-content"><span class="Button-label">Report a vulnerability</span></span>
+            </a>
+          </div>
+        </div>
+        <article id="security-policy" class="markdown-body">
+          <h1>Security Policy</h1>
+          <p>Report security vulnerabilities privately to the repository maintainers.</p>
+        </article>
+      </main>
+    `
+
+    const dynamicNodes = collectDynamicTranslationNodes(
+      document.querySelector('#report-action')!,
+      document.querySelector('#security-policy')!,
+      'smart',
+      { siteCompatMode: 'smart' }
+    )
+
+    expect(dynamicNodes).toEqual([])
+  })
+
   it('collects Ziggit reply paragraphs inserted outside the initial post content root', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822'),

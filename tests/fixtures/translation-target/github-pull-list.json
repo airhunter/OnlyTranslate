@@ -1,0 +1,30 @@
+{
+  "name": "GitHub pull request lists keep titles and skip review state metadata",
+  "url": "https://github.com/HKUDS/nanobot/pulls",
+  "scope": "smart",
+  "html": "github-pull-list.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": ["pull-title-1", "pull-title-2"],
+  "exclude": [
+    "pull-label-1",
+    "pull-metadata-1",
+    "pull-review-wrapper-1",
+    "pull-review-status-1",
+    "pull-label-2",
+    "pull-metadata-2",
+    "pull-review-wrapper-2",
+    "pull-review-status-2",
+    "pull-task-progress"
+  ],
+  "textExcludes": [
+    "Review required",
+    "Changes requested",
+    "opened 16 hours ago",
+    "2 of 5 tasks complete"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "GitHub Projects lists keep project titles and descriptions without metadata",
+  "url": "https://github.com/microsoft/vscode/projects",
+  "scope": "smart",
+  "html": "github-projects-list.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": ["project-title-1", "project-title-2", "project-description-2"],
+  "exclude": [
+    "projects-list-page-title",
+    "projects-list-controls",
+    "project-metadata-1",
+    "project-metadata-2"
+  ],
+  "textExcludes": [
+    "Open 2 (2)",
+    "Closed 0 (0)",
+    "Sort: Recently updated",
+    "#2258 updated",
+    "#1367 updated"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

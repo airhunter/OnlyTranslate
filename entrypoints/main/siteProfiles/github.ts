@@ -8,7 +8,7 @@ export const githubProfile: SiteProfile = {
     domains: ['github.com'],
     collectFastPathTargets: (root, context) => {
         if (context.mode !== 'smart') return false;
-        return collectGitHubMarkdownReadingTargets(root);
+        return collectGitHubReadingTargets(root);
     },
     select: (node, context) => {
         if (isGitHubRepositorySearchChrome(node)) {
@@ -35,14 +35,17 @@ export const githubProfile: SiteProfile = {
 
         if (isInsideGitHubMarkdownBody(node)) return false;
 
+        const projectReadingTarget = findGitHubProjectReadingTarget(node);
+        if (projectReadingTarget) return projectReadingTarget;
+
         const issueBody = findMatchingElement(node, 'div.comment-body');
         if (issueBody) return issueBody;
 
         const comment = findMatchingElement(node, 'div.comment-body td.comment-body');
         if (comment) return comment;
 
-        const issueListTitle = findGitHubIssueListTitle(node);
-        if (issueListTitle) return issueListTitle;
+        const readingTitle = findGitHubReadingTitle(node);
+        if (readingTitle) return readingTitle;
 
         const issueTitle = findMatchingElement(node, 'div.js-issue-title');
         if (issueTitle) return issueTitle;
@@ -103,11 +106,19 @@ export const githubProfile: SiteProfile = {
             };
         }
 
-        if (isGitHubIssueListTitle(node)) {
+        if (isGitHubReadingTitle(node)) {
             return {
                 target: node,
                 role: 'title',
-                reason: 'github-issue-list-title'
+                reason: 'github-reading-title'
+            };
+        }
+
+        if (isGitHubProjectReadingTarget(node)) {
+            return {
+                target: node,
+                role: isGitHubProjectTitle(node) ? 'title' : 'paragraph',
+                reason: 'github-project-reading-target'
             };
         }
 
@@ -131,8 +142,56 @@ export const githubProfile: SiteProfile = {
 };
 
 const GITHUB_ISSUE_LIST_TITLE_SELECTOR = [
+    'a[data-testid="issue-pr-title-link"]',
     'a[href*="/issues/"]',
     'a[href*="/pull/"]'
+].join(', ');
+
+const GITHUB_DISCUSSION_TITLE_SELECTOR = [
+    'a.discussion-title[href*="/discussions/"]',
+    'a.markdown-title[href*="/discussions/"]'
+].join(', ');
+
+const GITHUB_ACTION_RUN_TITLE_SELECTOR = 'a[href*="/actions/runs/"] > span.markdown-title';
+
+const GITHUB_PROJECT_READING_TARGET_SELECTOR = [
+    'a[href*="/projects/"]',
+    'p[class*="RepositoryProjects-module__projectDescription"]',
+    '[data-component="Blankslate.Heading"]',
+    '[data-component="Blankslate.Description"]'
+].join(', ');
+
+const GITHUB_READING_TITLE_SELECTOR = [
+    GITHUB_ISSUE_LIST_TITLE_SELECTOR,
+    '[data-testid="issue-title"]',
+    'h1 .js-issue-title',
+    '.gh-header-title .js-issue-title',
+    GITHUB_DISCUSSION_TITLE_SELECTOR,
+    GITHUB_ACTION_RUN_TITLE_SELECTOR,
+    '[data-testid="commit-row-item"] [data-listview-item-title-container] h4'
+].join(', ');
+
+const GITHUB_SMART_METADATA_SELECTOR = [
+    'relative-time',
+    'time-ago',
+    '[data-testid="created-at"]',
+    '[data-testid^="list-row-"]',
+    '[data-listview-component="trailing-badge"]',
+    '[data-testid="issue-metadata-fixed"]',
+    '[data-testid="issue-metadata-sticky"]',
+    '[data-testid="issue-body-header-author"]',
+    '[data-testid="issue-body-header-link"]',
+    '[data-testid="comment-header"]',
+    '[data-testid="comment-author-association"]',
+    '[data-testid="comment-subject-author"]',
+    '[data-testid="issue-viewer-metadata-container"]',
+    '[data-testid="issue-viewer-metadata-pane"]',
+    '[data-testid="sticky-sidebar"]',
+    '[data-testid^="sidebar-"]',
+    '[data-testid="issue-labels"]',
+    '[data-testid="latest-commit-details"]',
+    '[data-testid^="timeline-divider-"]',
+    '.gh-header-number'
 ].join(', ');
 
 const GITHUB_MARKDOWN_READING_TARGET_SELECTOR = [
@@ -147,6 +206,26 @@ const GITHUB_MARKDOWN_READING_TARGET_SELECTOR = [
     '.markdown-body blockquote',
     '.markdown-body figcaption'
 ].join(', ');
+
+function collectGitHubReadingTargets(root: ParentNode): Element[] {
+    const titles = Array.from(root.querySelectorAll<Element>(GITHUB_READING_TITLE_SELECTOR))
+        .filter(isGitHubReadingTitle);
+    if (root instanceof Element && isGitHubReadingTitle(root)) {
+        titles.unshift(root);
+    }
+
+    const projectTargets = Array.from(root.querySelectorAll<Element>(GITHUB_PROJECT_READING_TARGET_SELECTOR))
+        .filter(isGitHubProjectReadingTarget);
+    if (root instanceof Element && isGitHubProjectReadingTarget(root)) {
+        projectTargets.unshift(root);
+    }
+
+    return Array.from(new Set([
+        ...titles,
+        ...projectTargets,
+        ...collectGitHubMarkdownReadingTargets(root)
+    ]));
+}
 
 function collectGitHubMarkdownReadingTargets(root: ParentNode): Element[] {
     const targets = Array.from(root.querySelectorAll<Element>(GITHUB_MARKDOWN_READING_TARGET_SELECTOR));
@@ -210,7 +289,7 @@ function isGitHubMarkdownListItemOf(item: Element, list: Element): boolean {
 function shouldSkipGitHubElement(node: Element, mode: SiteProfileMode = 'smart'): boolean {
     if (isGitHubRepositorySearchDescription(node)) return false;
     if (isGitHubSearchSponsorCopy(node)) return false;
-    if (isGitHubIssueListTitle(node)) return false;
+    if (isGitHubReadingTitle(node)) return false;
     if (isGitHubRepositorySearchChrome(node)) return true;
     if (shouldSkipGitHubSafetyElement(node)) return true;
     if (mode === 'full') return false;
@@ -372,9 +451,66 @@ function hasClosestClassKeyword(node: Element, keyword: string): boolean {
     return false;
 }
 
-function findGitHubIssueListTitle(node: Element): Element | false {
-    const candidate = findMatchingElement(node, GITHUB_ISSUE_LIST_TITLE_SELECTOR);
-    return candidate && isGitHubIssueListTitle(candidate) ? candidate : false;
+function findGitHubReadingTitle(node: Element): Element | false {
+    const candidate = findMatchingElement(node, GITHUB_READING_TITLE_SELECTOR);
+    return candidate && isGitHubReadingTitle(candidate) ? candidate : false;
+}
+
+function findGitHubProjectReadingTarget(node: Element): Element | false {
+    const candidate = findMatchingElement(node, GITHUB_PROJECT_READING_TARGET_SELECTOR);
+    return candidate && isGitHubProjectReadingTarget(candidate) ? candidate : false;
+}
+
+function isGitHubProjectReadingTarget(node: Element): boolean {
+    if (!isGitHubProjectsPage() || !node.matches?.(GITHUB_PROJECT_READING_TARGET_SELECTOR)) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    if (text.length < 3 || !/[A-Za-z]/.test(text)) return false;
+
+    if (isGitHubProjectTitle(node)) return true;
+    return node.matches(
+        'p[class*="RepositoryProjects-module__projectDescription"], '
+        + '[data-component="Blankslate.Heading"], '
+        + '[data-component="Blankslate.Description"]'
+    );
+}
+
+function isGitHubProjectTitle(node: Element): boolean {
+    if (!node.matches?.('a[href*="/projects/"]')) return false;
+    const href = node.getAttribute('href') ?? '';
+    return /^\/(orgs|users)\/[^/\s]+\/projects\/\d+\/?(?:\?[^#]*)?$/.test(href)
+        || /^\/[^/\s]+\/[^/\s]+\/projects\/\d+\/?(?:\?[^#]*)?$/.test(href)
+        || /^https:\/\/github\.com\/(orgs|users)\/[^/\s]+\/projects\/\d+\/?(?:\?[^#]*)?$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/projects\/\d+\/?(?:\?[^#]*)?$/.test(href);
+}
+
+function isGitHubReadingTitle(node: Element): boolean {
+    if (isGitHubIssueListTitle(node)) return true;
+    if (!node.matches?.(GITHUB_READING_TITLE_SELECTOR)) return false;
+
+    const text = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    if (text.length < 8 || !/[A-Za-z]/.test(text)) return false;
+    if (node.closest('nav, header, footer, aside, form, button, summary')) return false;
+
+    if (node.matches('[data-testid="issue-title"], h1 .js-issue-title, .gh-header-title .js-issue-title')) {
+        return isGitHubIssuePullOrDiscussionDetailPage();
+    }
+
+    if (node.matches(GITHUB_DISCUSSION_TITLE_SELECTOR)) {
+        return isGitHubDiscussionHref(node.getAttribute('href') ?? '');
+    }
+
+    if (node.matches(GITHUB_ACTION_RUN_TITLE_SELECTOR)) {
+        const runLink = node.closest('a[href]');
+        return Boolean(runLink && isGitHubActionRunHref(runLink.getAttribute('href') ?? ''));
+    }
+
+    if (node.matches('[data-testid="commit-row-item"] [data-listview-item-title-container] h4')) {
+        const commitLink = node.querySelector('a[href*="/commit/"]');
+        return Boolean(commitLink && isGitHubCommitHref(commitLink.getAttribute('href') ?? ''));
+    }
+
+    return false;
 }
 
 function isGitHubIssueListTitle(node: Element): boolean {
@@ -385,11 +521,46 @@ function isGitHubIssueListTitle(node: Element): boolean {
     if (node.closest('nav, header, footer, aside, form, button, summary')) return false;
 
     const href = node.getAttribute('href') ?? '';
-    return /^\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+([/?#].*)?$/.test(href)
-        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+([/?#].*)?$/.test(href);
+    return /^\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+\/?(?:\?[^#]*)?$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(issues|pull)\/\d+\/?(?:\?[^#]*)?$/.test(href);
+}
+
+function isGitHubIssuePullOrDiscussionDetailPage(): boolean {
+    try {
+        const url = new URL(location.href);
+        return url.hostname === 'github.com'
+            && /^\/[^/\s]+\/[^/\s]+\/(issues|pull|discussions)\/\d+\/?$/.test(url.pathname);
+    } catch (_) {
+        return false;
+    }
+}
+
+function isGitHubDiscussionHref(href: string): boolean {
+    return /^\/[^/\s]+\/[^/\s]+\/discussions\/\d+([/?#].*)?$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/discussions\/\d+([/?#].*)?$/.test(href);
+}
+
+function isGitHubCommitHref(href: string): boolean {
+    return /^\/[^/\s]+\/[^/\s]+\/commit\/[a-f0-9]+([/?#].*)?$/i.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/commit\/[a-f0-9]+([/?#].*)?$/i.test(href);
+}
+
+function isGitHubActionRunHref(href: string): boolean {
+    return /^\/[^/\s]+\/[^/\s]+\/actions\/runs\/\d+\/?(?:\?[^#]*)?$/.test(href)
+        || /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/actions\/runs\/\d+\/?(?:\?[^#]*)?$/.test(href);
 }
 
 function shouldSkipGitHubSafetyElement(node: Element): boolean {
+    if (isGitHubIssueOrPullListMetadata(node)) {
+        debugLog('GitHub', 'Issue/PR 列表元数据跳过', node.textContent);
+        return true;
+    }
+
+    if (isGitHubInteractiveControlRegion(node)) {
+        debugLog('GitHub', '交互控件区域跳过', node.textContent);
+        return true;
+    }
+
     if (node.textContent && isSpecialContent(node.textContent)) {
         debugLog('GitHub', '特殊内容跳过', node.textContent);
         return true;
@@ -463,6 +634,8 @@ function shouldSkipGitHubSafetyElement(node: Element): boolean {
         'table.highlight',
         'table.diff-table',
         'button',
+        'a.Button',
+        '[role="button"]',
         'input',
         'textarea',
         'summary',
@@ -502,7 +675,64 @@ function shouldSkipGitHubSafetyElement(node: Element): boolean {
     return false;
 }
 
+function isGitHubInteractiveControlRegion(node: Element): boolean {
+    const controlSelector = 'button, a.Button, [role="button"]';
+    if (matchesOrClosest(node, controlSelector)) return true;
+
+    const controls = Array.from(node.querySelectorAll<Element>(controlSelector));
+    if (controls.length === 0) return false;
+
+    const regionText = node.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const controlText = controls
+        .map(control => control.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+        .filter(Boolean)
+        .join(' ');
+
+    return regionText.length > 0 && regionText === controlText;
+}
+
+function isGitHubIssueOrPullListMetadata(node: Element): boolean {
+    const row = node.closest('.js-issue-row, [role="listitem"]');
+    if (!row) return false;
+
+    const title = Array.from(row.querySelectorAll<Element>(GITHUB_ISSUE_LIST_TITLE_SELECTOR))
+        .find(isGitHubIssueListTitle);
+    if (!title) return false;
+
+    // Keep the row/title containers eligible so the title can still be selected.
+    // Everything else in the row is GitHub UI metadata: labels, author/time,
+    // review/merge state, task progress, assignees and counters.
+    return node !== row
+        && !node.contains(title)
+        && !title.contains(node);
+}
+
 function shouldSkipGitHubSmartOnlyElement(node: Element): boolean {
+    if (isGitHubActionsPage() && !containsGitHubActionRunTitle(node)) {
+        debugLog('GitHub', 'Actions 操作元数据跳过', node.textContent);
+        return true;
+    }
+
+    if (isGitHubProjectsPage() && !containsGitHubProjectReadingTarget(node)) {
+        debugLog('GitHub', 'Projects 操作元数据跳过', node.textContent);
+        return true;
+    }
+
+    if (matchesOrClosest(node, GITHUB_SMART_METADATA_SELECTOR)) {
+        debugLog('GitHub', '新版语义元数据跳过', node.textContent);
+        return true;
+    }
+
+    if (isGitHubCommitListMetadata(node)) {
+        debugLog('GitHub', '提交列表元数据跳过', node.textContent);
+        return true;
+    }
+
+    if (isGitHubNonCommentTimelineEvent(node)) {
+        debugLog('GitHub', 'Issue 时间线事件跳过', node.textContent);
+        return true;
+    }
+
     const skipSelectors = [
         'header.Header',
         'nav.js-repo-nav',
@@ -613,7 +843,6 @@ function shouldSkipGitHubSmartOnlyElement(node: Element): boolean {
         'div.comment-form-textarea',
         'div.sidebar-notifications',
         'div.gh-header',
-        'span.js-issue-title',
         'a.js-hard-refresh',
         'div.Link--muted',
         'a.IssueLabel',
@@ -683,6 +912,50 @@ function shouldSkipGitHubSmartOnlyElement(node: Element): boolean {
     }
 
     return false;
+}
+
+function isGitHubActionsPage(): boolean {
+    try {
+        const url = new URL(location.href);
+        return url.hostname === 'github.com'
+            && /^\/[^/\s]+\/[^/\s]+\/actions(?:\/|$)/.test(url.pathname);
+    } catch (_) {
+        return false;
+    }
+}
+
+function containsGitHubActionRunTitle(node: Element): boolean {
+    if (isGitHubReadingTitle(node) && node.matches(GITHUB_ACTION_RUN_TITLE_SELECTOR)) return true;
+    return Array.from(node.querySelectorAll<Element>(GITHUB_ACTION_RUN_TITLE_SELECTOR))
+        .some(isGitHubReadingTitle);
+}
+
+function isGitHubProjectsPage(): boolean {
+    try {
+        const url = new URL(location.href);
+        return url.hostname === 'github.com'
+            && /^\/[^/\s]+\/[^/\s]+\/projects\/?$/.test(url.pathname);
+    } catch (_) {
+        return false;
+    }
+}
+
+function containsGitHubProjectReadingTarget(node: Element): boolean {
+    if (isGitHubProjectReadingTarget(node)) return true;
+    return Array.from(node.querySelectorAll<Element>(GITHUB_PROJECT_READING_TARGET_SELECTOR))
+        .some(isGitHubProjectReadingTarget);
+}
+
+function isGitHubCommitListMetadata(node: Element): boolean {
+    const row = node.closest('[data-testid="commit-row-item"]');
+    if (!row || node === row) return false;
+    return !node.closest('[data-listview-item-title-container]');
+}
+
+function isGitHubNonCommentTimelineEvent(node: Element): boolean {
+    const row = node.closest('[data-testid^="timeline-row-border-"]');
+    if (!row || node === row) return false;
+    return row.querySelector('.markdown-body, .comment-body') === null;
 }
 
 function normalizeGitHubUiText(text: string): string {

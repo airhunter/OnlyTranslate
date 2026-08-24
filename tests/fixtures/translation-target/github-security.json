@@ -1,0 +1,26 @@
+{
+  "name": "GitHub Security keeps policy prose and skips link-style action buttons",
+  "url": "https://github.com/HKUDS/nanobot/security",
+  "scope": "smart",
+  "html": "github-security.html",
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "include": [
+    "security-policy-title",
+    "security-reporting-title",
+    "security-policy-paragraph",
+    "security-policy-list-item"
+  ],
+  "exclude": [
+    "security-page-title",
+    "security-report-button",
+    "security-report-content",
+    "security-report-label",
+    "security-file-name"
+  ],
+  "textExcludes": ["Report a vulnerability", "SECURITY.md"],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

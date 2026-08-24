@@ -1,0 +1,30 @@
+{
+  "name": "GitHub empty Projects pages keep the empty state and skip repository UI",
+  "url": "https://github.com/HKUDS/nanobot/projects",
+  "scope": "smart",
+  "html": "github-projects-empty.html",
+  "include": ["projects-empty-title", "projects-empty-description"],
+  "exclude": [
+    "projects-repository-description",
+    "projects-notifications",
+    "projects-fork",
+    "projects-star",
+    "projects-sidebar",
+    "projects-page-title",
+    "projects-controls",
+    "projects-states",
+    "projects-live-status"
+  ],
+  "textExcludes": [
+    "The university laboratory public nanobot repository",
+    "Notifications",
+    "Fork 8.4k",
+    "Star 47.3k",
+    "Open 0 (0)",
+    "Closed 0 (0)",
+    "Sort: Recently updated"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}
