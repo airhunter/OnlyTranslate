@@ -1,0 +1,20 @@
+{
+  "name": "linked article title is kept with the Michele Bologna post body",
+  "url": "https://www.michelebologna.net/2026/ssh-port-22-fwknop-single-packet-authorization/",
+  "scope": "smart",
+  "html": "michelebologna-linked-title.html",
+  "include": [
+    "article-title",
+    "article-lead",
+    "article-body",
+    "section-title",
+    "section-body"
+  ],
+  "exclude": [
+    "article-title-link",
+    "article-date",
+    "article-categories",
+    "article-tags",
+    "site-posts"
+  ]
+}

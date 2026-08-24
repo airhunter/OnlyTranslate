@@ -24,7 +24,9 @@ export function getMainDomain(url: DomainInput): string {
         const parts = hostname.split('.');
         if (parts.length >= 2) {
             if (parts.length >= 3
-                && ((parts[parts.length - 2] === 'co' || parts[parts.length - 2] === 'com')
+                && ((parts[parts.length - 2] === 'co'
+                    || parts[parts.length - 2] === 'com'
+                    || parts[parts.length - 2] === 'org')
                     && parts[parts.length - 1].length === 2)) {
                 return parts.slice(-3).join('.');
             }

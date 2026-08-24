@@ -1,0 +1,33 @@
+{
+  "name": "TUC report keeps all parallel report stream sections",
+  "url": "https://www.tuc.org.uk/research-analysis/reports/work-intensification",
+  "scope": "smart",
+  "html": "tuc-report-stream.html",
+  "include": [
+    "report-title",
+    "report-summary",
+    "introduction-title",
+    "introduction-one",
+    "introduction-two",
+    "definition-title",
+    "definition-copy",
+    "section-title",
+    "section-paragraph",
+    "section-list-item"
+  ],
+  "exclude": [
+    "site-navigation",
+    "contents-title",
+    "contents-link",
+    "report-author",
+    "report-type",
+    "report-date",
+    "footnote-one",
+    "signup-title",
+    "signup-copy"
+  ],
+  "stats": {
+    "profileFastPathUsed": true
+  },
+  "nodesEveryElement": true
+}

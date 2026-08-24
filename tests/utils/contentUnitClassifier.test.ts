@@ -41,6 +41,42 @@ describe('contentUnitClassifier', () => {
     expect(classifyContentUnit(document.querySelector('#standfirst')!).kind).toBe('subtitle')
   })
 
+  it('allows a fully linked h1 when its article has substantial body prose', () => {
+    document.body.innerHTML = `
+      <article>
+        <header>
+          <div class="post-title">
+            <h1 id="linked-title" class="title"><a href="/story">Why I close SSH port 22 entirely (and what I use instead)</a></h1>
+          </div>
+          <div class="post-meta tags"><a href="/security">Security</a><a href="/linux">Linux</a></div>
+        </header>
+        <div class="post-content">
+          <p>This first substantial paragraph explains why an exposed service remains discoverable and gives scanners useful information about the server.</p>
+          <p>This second substantial paragraph explains how authenticated packets can temporarily open access without leaving the service publicly reachable.</p>
+        </div>
+      </article>
+    `
+
+    const decision = classifyContentUnit(document.querySelector('#linked-title')!)
+
+    expect(decision.action).toBe('allow')
+    expect(decision.kind).toBe('title')
+    expect(decision.confidence).toBeGreaterThanOrEqual(0.7)
+  })
+
+  it('does not boost linked card headings without substantial article prose', () => {
+    document.body.innerHTML = `
+      <main>
+        <article class="post-card">
+          <h1 id="card-title" class="title"><a href="/story">A linked title in a compact article card</a></h1>
+          <p>A short preview for the card.</p>
+        </article>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#card-title')!).confidence).toBeLessThan(0.7)
+  })
+
   it('allows document-style content cards', () => {
     document.body.innerHTML = `
       <main class="document">

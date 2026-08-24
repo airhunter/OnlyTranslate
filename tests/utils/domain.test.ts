@@ -9,6 +9,7 @@ describe('domain utils', () => {
     expect(getMainDomain(new URL('https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet'))).toBe('asteriskmag.com')
     expect(getMainDomain('https://docs.python.org')).toBe('python.org')
     expect(getMainDomain('https://news.bbc.co.uk/story')).toBe('bbc.co.uk')
+    expect(getMainDomain('https://www.tuc.org.uk/research-analysis/reports/example')).toBe('tuc.org.uk')
   })
 
   it('keeps x.com and twitter.com normalized to the x.com profile key', () => {

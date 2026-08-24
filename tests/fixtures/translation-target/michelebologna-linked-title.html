@@ -1,0 +1,40 @@
+<main class="wrapper">
+  <nav>
+    <a id="site-posts" href="/posts/">Posts</a>
+    <a href="/projects/">Projects</a>
+  </nav>
+  <div class="content">
+    <section class="container post">
+      <article>
+        <header>
+          <div class="post-title">
+            <h1 id="article-title" class="title">
+              <a id="article-title-link" class="title-link" href="/2026/ssh-port-22-fwknop-single-packet-authorization/">Why I close SSH port 22 entirely (and what I use instead)</a>
+            </h1>
+          </div>
+          <div class="post-meta">
+            <div id="article-date" class="date">
+              <span class="posted-on"><time datetime="2026-06-11T00:00:00Z">June 11, 2026</time></span>
+              <span class="reading-time">7-minute read</span>
+            </div>
+            <div id="article-categories" class="categories">
+              <a href="/categories/linux/">Linux</a> • <a href="/categories/software/">Software</a>
+            </div>
+            <div id="article-tags" class="tags">
+              <a href="/tags/ssh/">Ssh</a> • <a href="/tags/security/">Security</a> • <a href="/tags/fwknop/">Fwknop</a>
+            </div>
+          </div>
+        </header>
+        <div class="post-ad post-ad-top">
+          <iframe title="Advertisement"></iframe>
+        </div>
+        <div class="post-content">
+          <p id="article-lead">Most SSH hardening guides stop at key-only authentication and fail2ban. That helps, but if your machine has a public IP, port 22 is still open to the internet.</p>
+          <p id="article-body">Every automated scanner can probe the server and get a response: the SSH version string, the banner, and proof that something is listening.</p>
+          <h2 id="section-title">The idea: port knocking, and why it is not enough on its own</h2>
+          <p id="section-body">The server watches for a specific sequence of connection attempts on closed ports before temporarily allowing an authenticated connection.</p>
+        </div>
+      </article>
+    </section>
+  </div>
+</main>
