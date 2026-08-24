@@ -1,0 +1,25 @@
+{
+  "name": "translates Metal Storm interview prose separated by br elements",
+  "url": "https://metalstorm.net/pub/interview.php?interview_id=344",
+  "scope": "smart",
+  "html": "metalstorm-interview.html",
+  "contentRootContains": ["#interview-title", "#interview-body"],
+  "include": ["interview-title"],
+  "exclude": ["interview-body", "interview-byline"],
+  "textIncludes": [
+    "01. Nemesis:",
+    "This is the intro of our record",
+    "Nemesis is the goddess of revenge and justice",
+    "04. Angel In The Dark:",
+    "Everything that can be wrong in a family",
+    "08. IV. From Beneath You It Devours:",
+    "The boy lost the fight",
+    "12. Cry:",
+    "Everybody has lost loved ones or will in the future"
+  ],
+  "textExcludes": [
+    "Latest publications and community shoutbox content",
+    "An interview by Undercraft"
+  ],
+  "nodesEveryElement": true
+}
