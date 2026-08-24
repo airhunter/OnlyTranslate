@@ -8,7 +8,10 @@ import {
     mountSelectionTranslator,
     unmountSelectionTranslator
 } from "@/entrypoints/utils/selectionTranslator";
-import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
+import {
+    cancelAllTranslations,
+    simulateNextRuntimeUnavailableForDebug
+} from "@/entrypoints/utils/translateApi";
 import { t } from "@/entrypoints/utils/i18n";
 import { hasActiveTextSelection } from "@/entrypoints/utils/selection";
 import { setupPageTranslationLifecycle } from "@/entrypoints/content/translationLifecycle";
@@ -26,6 +29,13 @@ export default defineContentScript({
     async main(ctx) {
         await configReady // 等待配置加载完成
         if (config.on === false) return; // 如果配置关闭，则不执行任何操作
+        if (process.env.NODE_ENV === 'development') {
+            const simulateRuntimeUnavailable = () => simulateNextRuntimeUnavailableForDebug();
+            document.addEventListener('onlytranslate-debug-runtime-unavailable', simulateRuntimeUnavailable);
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('onlytranslate-debug-runtime-unavailable', simulateRuntimeUnavailable);
+            }, { once: true });
+        }
         initializeSelectionTranslator(ctx);
         const inputBoxTranslation = setupInputBoxTranslation({
             config,

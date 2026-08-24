@@ -12,6 +12,11 @@ function _sendSuccessMessage(message: string) {
     ElMessage({message: prefix + message, type: 'success'});
 }
 
+function _sendWarningMessage(message: string) {
+    ElMessage({message: prefix + message, type: 'warning'});
+}
+
 // 使用防抖函数包装，1s 内只能发送一次消息
 export const sendErrorMessage = throttle(_sendErrorMessage, 1000);
 export const sendSuccessMessage = throttle(_sendSuccessMessage, 1000);
+export const sendWarningMessage = throttle(_sendWarningMessage, 1000);

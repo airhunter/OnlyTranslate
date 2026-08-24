@@ -49,6 +49,11 @@ const BATCH_TRANSLATION_SERVICES = new Set<string>([
 
 let cancellationGeneration = 0;
 const inFlightTranslations = new Map<string, Promise<string>>();
+let simulateRuntimeUnavailableOnce = false;
+
+export function simulateNextRuntimeUnavailableForDebug(): void {
+  simulateRuntimeUnavailableOnce = true;
+}
 
 export class TranslationCancelledError extends Error {
   constructor() {
@@ -65,6 +70,29 @@ export function isTranslationCancelledError(error: unknown): boolean {
 export function isExtensionContextInvalidatedError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? '');
   return /extension context invalidated|receiving end does not exist/i.test(message);
+}
+
+async function sendRuntimeMessage(message: unknown): Promise<unknown> {
+  const messageType = message && typeof message === 'object'
+    ? (message as { type?: unknown }).type
+    : undefined;
+  if (simulateRuntimeUnavailableOnce && messageType !== 'TRANSLATION_DIAGNOSTIC_CACHE_HIT') {
+    simulateRuntimeUnavailableOnce = false;
+    throw new Error('Extension context invalidated.');
+  }
+
+  let runtime: typeof browser.runtime | undefined;
+  try {
+    runtime = browser.runtime;
+  } catch {
+    throw new Error('Extension context invalidated.');
+  }
+
+  if (!runtime || typeof runtime.sendMessage !== 'function') {
+    throw new Error('Extension context invalidated.');
+  }
+
+  return runtime.sendMessage(message);
 }
 
 function normalizeRuntimeTranslationResult(result: unknown): string {
@@ -306,7 +334,7 @@ export async function analyzeSelectionText(
         assertSignalNotAborted(signal);
         assertNotCancelled(requestGeneration);
         const response = await withRequestTimeout(
-          browser.runtime.sendMessage({
+          sendRuntimeMessage({
             type: 'SELECTION_ANALYSIS',
             origin: text,
             context: input.pageTitle || '',
@@ -407,7 +435,7 @@ export async function translateText(origin: string, context: string = document.t
       if (isDev) {
         console.log('[翻译API] 命中缓存，直接返回缓存结果');
       }
-      void browser.runtime.sendMessage({
+      void sendRuntimeMessage({
         type: 'TRANSLATION_DIAGNOSTIC_CACHE_HIT',
         context: diagnosticContext,
         characters: safeOrigin.length,
@@ -431,7 +459,7 @@ export async function translateText(origin: string, context: string = document.t
         assertSignalNotAborted(signal);
         assertNotCancelled(requestGeneration);
         const response = await withRequestTimeout(
-          browser.runtime.sendMessage({
+          sendRuntimeMessage({
             context,
             origin: text,
             sourceLang: direction.sourceLang,
@@ -475,7 +503,7 @@ export async function translateText(origin: string, context: string = document.t
     assertSignalNotAborted(signal);
     assertNotCancelled(requestGeneration);
     const response = await withRequestTimeout(
-      browser.runtime.sendMessage({
+      sendRuntimeMessage({
         type: 'BATCH_TRANSLATION',
         origins: texts,
         context,

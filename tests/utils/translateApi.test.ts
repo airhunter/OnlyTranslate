@@ -74,6 +74,7 @@ import {
   canUseBatchTranslationForCurrentConfig,
   isExtensionContextInvalidatedError,
   isRetryableTranslationError,
+  simulateNextRuntimeUnavailableForDebug,
   translateText,
 } from '../../entrypoints/utils/translateApi'
 import { resolveTranslationDirection } from '../../entrypoints/utils/translationDirection'
@@ -320,7 +321,42 @@ describe('translateApi', () => {
   it('recognizes extension runtime failures that require a page refresh', () => {
     expect(isExtensionContextInvalidatedError(new Error('Extension context invalidated.'))).toBe(true)
     expect(isExtensionContextInvalidatedError(new Error('Could not establish connection. Receiving end does not exist.'))).toBe(true)
+    expect(isExtensionContextInvalidatedError(new TypeError("Cannot read properties of undefined (reading 'sendMessage')"))).toBe(false)
+    expect(isExtensionContextInvalidatedError(new TypeError("Cannot read properties of undefined (reading 'runtime')"))).toBe(false)
     expect(isExtensionContextInvalidatedError(new Error('Failed to fetch'))).toBe(false)
+  })
+
+  it('reports an invalidated extension context when the runtime messenger is unavailable', async () => {
+    const runtime = (await import('webextension-polyfill')).default.runtime as unknown as {
+      sendMessage?: typeof mockSendMessage
+    }
+    const originalSendMessage = runtime.sendMessage
+    runtime.sendMessage = undefined
+
+    try {
+      await expect(translateText('Unavailable runtime', 'Example', {
+        maxRetries: 0,
+        useCache: false
+      })).rejects.toThrow('Extension context invalidated')
+    } finally {
+      runtime.sendMessage = originalSendMessage
+    }
+  })
+
+  it('supports simulating one unavailable runtime message for manual regression testing', async () => {
+    simulateNextRuntimeUnavailableForDebug()
+
+    await expect(translateText('Simulated unavailable runtime', 'Example', {
+      maxRetries: 0,
+      useCache: false
+    })).rejects.toThrow('Extension context invalidated')
+    expect(mockSendMessage).not.toHaveBeenCalled()
+
+    await expect(translateText('Runtime available again', 'Example', {
+      maxRetries: 0,
+      useCache: false
+    })).resolves.toBe('译文')
+    expect(mockSendMessage).toHaveBeenCalledTimes(1)
   })
 
   it('does not retry a deterministic bad-request failure', async () => {

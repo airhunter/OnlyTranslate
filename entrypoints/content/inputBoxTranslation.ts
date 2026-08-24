@@ -887,6 +887,10 @@ async function translateInputText(
   let result: Awaited<ReturnType<InputBoxTranslationRuntime['sendMessage']>>
 
   try {
+    if (!context.runtime || typeof context.runtime.sendMessage !== 'function') {
+      throw new Error('Extension context invalidated.')
+    }
+
     const queuedAt = Date.now()
     result = await Promise.race([
       context.runtime.sendMessage({

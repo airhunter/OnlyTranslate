@@ -1,5 +1,5 @@
 // 失败时展示的图标
-import { sendErrorMessage } from "./tip";
+import { sendErrorMessage, sendWarningMessage } from "./tip";
 import "element-plus/es/components/message/style/css";
 import {
   handleBilingualTranslation,
@@ -56,7 +56,7 @@ export function insertFailedTip(
 }
 
 export function showExtensionReloadedTip() {
-  sendErrorMessage(t("runtime.inputTranslationReloadPage"));
+  sendWarningMessage(t("runtime.inputTranslationReloadPage"));
 }
 
 // 处理重试按钮点击事件
