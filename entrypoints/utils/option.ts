@@ -169,7 +169,7 @@ export const options = {
     services: [
         {value: "builtin", label: "内置服务", disabled: true},
         {value: services.microsoft, label: "微软翻译", hint: "免配置，仅支持双语对照"},
-        {value: services.google, label: "Google 翻译", hint: "免配置，适合双语对照"},
+        {value: services.google, label: "Google 翻译", hint: "免配置，支持双语与仅译文"},
         {value: services.chromeTranslator, label: "Chrome 内置 AI 翻译", hint: "本地模型，无需 API Key"},
         {value: services.deepL, label: "DeepL", hint: "翻译质量稳定，需 API Key"},
         {value: services.openai, label: "OpenAI", hint: "通用性强，需 API Key"},
@@ -297,7 +297,6 @@ export const defaultOption = {
 };
 
 const TRANSLATION_ONLY_UNSUPPORTED_SERVICES = new Set<string>([
-    services.google,
     services.microsoft,
 ]);
 

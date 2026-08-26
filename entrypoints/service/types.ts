@@ -17,6 +17,8 @@ interface TranslationServiceBaseMessage {
     diagnostics?: TranslationDiagnosticMetadata;
     /** 翻译以外的 AI 文本操作可传入独立提示词，不读取用户的翻译 Prompt。 */
     prompt?: AiTextActionPrompt;
+    /** 网页仅译文可传入 HTML；其他场景默认为纯文本。 */
+    textFormat?: 'plain' | 'html';
 }
 
 export interface SingleTranslationServiceMessage extends TranslationServiceBaseMessage {

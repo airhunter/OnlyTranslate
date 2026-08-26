@@ -1,6 +1,6 @@
 import { checkConfig, searchClassName, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
-import { options, servicesType } from "../utils/option";
+import { options, services, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner, showExtensionReloadedTip } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import {
@@ -31,6 +31,12 @@ import {
 } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
+import { t } from '@/entrypoints/utils/i18n';
+import {
+    applyGoogleTranslationOnlyHtml,
+    prepareGoogleTranslationOnlyHtml,
+    restoreGoogleTranslationOnly,
+} from '@/entrypoints/main/googleTranslationOnly';
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
 import {
@@ -210,7 +216,13 @@ export function restoreOriginalContent() {
     // 1. 遍历所有已翻译的节点
     document.querySelectorAll(`[${TRANSLATED_ATTR}="true"]`).forEach(node => {
         const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
-        if (nodeId && originalContents.has(nodeId)) {
+        const restoredGoogleTranslation = node instanceof HTMLElement
+            && restoreGoogleTranslationOnly(node);
+        if (restoredGoogleTranslation) {
+            node.removeAttribute(TRANSLATED_ATTR);
+            node.removeAttribute(TRANSLATED_ID_ATTR);
+            node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+        } else if (nodeId && originalContents.has(nodeId)) {
             const originalContent = originalContents.get(nodeId);
             if (originalContent === undefined) return;
             node.innerHTML = originalContent;
@@ -568,10 +580,15 @@ export function handleBilingualTranslation(
 // 单语翻译
 export function handleSingleTranslation(node: HTMLElement, slide: boolean, options: TranslationRequestOptions = {}): Promise<void> {
     let nodeOuterHTML = node.outerHTML;
+    if (config.service === services.google && restoreGoogleTranslationOnly(node)) {
+        translationState.htmlSet.delete(nodeOuterHTML);
+        return Promise.resolve();
+    }
+
     let outerHTMLCache = cache.localGet(node.outerHTML);
 
 
-    if (outerHTMLCache) {
+    if (outerHTMLCache && config.service !== services.google) {
         // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -644,7 +661,11 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
         return Promise.resolve();
     }
 
-    let origin = servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node);
+    const googleTranslation = config.service === services.google
+        ? prepareGoogleTranslationOnlyHtml(node)
+        : null;
+    let origin = googleTranslation?.html
+        ?? (servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node));
     if (!origin?.trim()) {
         origin = translatableText.trim();
     }
@@ -652,12 +673,32 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
         clearUnfinishedAutoTranslation(node);
         return Promise.resolve();
     }
+    const originalOuterHtml = node.outerHTML;
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    return translateText(origin, document.title, options)
+    return translateText(origin, document.title, {
+        ...options,
+        ...(googleTranslation ? { textFormat: 'html' as const } : {}),
+    })
         .then((text: string) => {
             spinner.remove();
+
+            if (googleTranslation) {
+                if (!text || origin === text) {
+                    clearUnfinishedAutoTranslation(node);
+                    return;
+                }
+                if (!applyGoogleTranslationOnlyHtml(googleTranslation, text)) {
+                    throw new Error(t('runtime.googleInvalidResponse'));
+                }
+
+                const translatedOuterHtml = node.outerHTML;
+                cache.set(translationState.htmlSet, translatedOuterHtml, 250);
+                translationState.htmlSet.delete(originalOuterHtml);
+                notifyDiagnosticVisible(options);
+                return;
+            }
             
             if (shouldBeautifyTranslatedHTML(origin, text)) {
                 text = beautyHTML(text);

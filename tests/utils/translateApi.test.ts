@@ -193,6 +193,30 @@ describe('translateApi', () => {
     await expect(Promise.all([first, second])).resolves.toEqual(['你好，世界', '你好，世界'])
   })
 
+  it('forwards HTML format requests without merging them with plain-text work', async () => {
+    const resolvers: Array<(value: string) => void> = []
+    mockSendMessage.mockImplementation(() => new Promise(resolve => {
+      resolvers.push(resolve)
+    }))
+
+    const plain = translateText('<span>Hello</span>', 'Example', { useCache: false })
+    const html = translateText('<span>Hello</span>', 'Example', {
+      textFormat: 'html',
+      useCache: false,
+    })
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(2)
+    expect(mockSendMessage.mock.calls[0]?.[0]).not.toHaveProperty('textFormat')
+    expect(mockSendMessage.mock.calls[1]?.[0]).toMatchObject({ textFormat: 'html' })
+
+    resolvers[0]!('纯文本结果')
+    resolvers[1]!('<span>HTML 结果</span>')
+    await expect(Promise.all([plain, html])).resolves.toEqual([
+      '纯文本结果',
+      '<span>HTML 结果</span>',
+    ])
+  })
+
   it('cancels an active translation result after cancelAllTranslations is called', async () => {
     let resolveMessage!: (value: string) => void
     mockSendMessage.mockReturnValue(new Promise(resolve => {
