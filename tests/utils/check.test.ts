@@ -77,21 +77,16 @@ describe('checkConfig', () => {
         expect(sendErrorMessage).toHaveBeenCalled()
     })
 
-    it('rejects translation-only mode for Microsoft', () => {
-        runtimeConfig.service = services.microsoft
-        runtimeConfig.display = 0
+    it.each([services.google, services.microsoft])(
+        'rejects translation-only mode for %s',
+        (service) => {
+            runtimeConfig.service = service
+            runtimeConfig.display = 0
 
-        expect(checkConfig()).toBe(false)
-        expect(sendErrorMessage).toHaveBeenCalledWith(expect.stringContaining('translation-only'))
-    })
-
-    it('allows translation-only mode for Google', () => {
-        runtimeConfig.service = services.google
-        runtimeConfig.display = 0
-
-        expect(checkConfig()).toBe(true)
-        expect(sendErrorMessage).not.toHaveBeenCalled()
-    })
+            expect(checkConfig()).toBe(false)
+            expect(sendErrorMessage).toHaveBeenCalledWith(expect.stringContaining('translation-only'))
+        },
+    )
 
     it('allows translation-only mode for configured AI services', () => {
         runtimeConfig.service = services.openai

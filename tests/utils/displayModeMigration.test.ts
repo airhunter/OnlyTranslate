@@ -28,26 +28,26 @@ describe('translation-only compatibility migration', () => {
     vi.clearAllMocks()
   })
 
-  it('migrates Microsoft from translation-only to bilingual mode', () => {
-    const config = { service: services.microsoft, display: 0 }
+  it.each([services.microsoft, services.google])(
+    'migrates %s from translation-only to bilingual mode',
+    (service) => {
+      const config = { service, display: 0 }
 
-    expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({
-      status: 'migrated',
-      notice: { service: services.microsoft },
-    })
-    expect(config.display).toBe(BILINGUAL_DISPLAY_MODE)
-    expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({ status: 'none' })
-  })
+      expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({
+        status: 'migrated',
+        notice: { service },
+      })
+      expect(config.display).toBe(BILINGUAL_DISPLAY_MODE)
+      expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({ status: 'none' })
+    },
+  )
 
   it('leaves supported services and existing bilingual mode untouched', () => {
     const aiConfig = { service: services.openai, display: 0 }
-    const googleConfig = { service: services.google, display: 0 }
     const microsoftConfig = { service: services.microsoft, display: 1 }
 
     expect(applyTranslationOnlyCompatibilityMigration(aiConfig)).toEqual({ status: 'none' })
     expect(aiConfig.display).toBe(0)
-    expect(applyTranslationOnlyCompatibilityMigration(googleConfig)).toEqual({ status: 'none' })
-    expect(googleConfig.display).toBe(0)
     expect(applyTranslationOnlyCompatibilityMigration(microsoftConfig)).toEqual({ status: 'none' })
     expect(microsoftConfig.display).toBe(1)
   })

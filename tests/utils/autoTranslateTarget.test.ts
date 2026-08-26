@@ -54,7 +54,7 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
+import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
 import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
@@ -113,46 +113,6 @@ describe('resolveAutoTranslateTarget behavior', () => {
       diagnostics: expect.objectContaining({ scene: 'hover' }),
     }))
     expect(button.innerText).toBe('开始操作')
-  })
-
-  it('applies and restores Google translation-only output without replacing inline elements', async () => {
-    mockConfig.service = 'google'
-    mockConfig.display = 0
-    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
-    const target = document.querySelector('#target') as HTMLElement
-    const link = target.querySelector('a')!
-    const nodeId = 'google-translation-only-target'
-    target.setAttribute(TRANSLATED_ATTR, 'true')
-    target.setAttribute(TRANSLATED_ID_ATTR, nodeId)
-    originalContents.set(nodeId, target.innerHTML)
-
-    vi.mocked(translateText).mockImplementation(async (origin: string) => {
-      const template = document.createElement('template')
-      template.innerHTML = origin
-      const root = template.content.firstElementChild as HTMLElement
-      ;(root.firstChild as Text).data = '阅读 '
-      root.querySelector('a')!.textContent = '文档'
-      ;(root.lastChild as Text).data = '。'
-      return template.innerHTML
-    })
-
-    await handleSingleTranslation(target, false)
-
-    expect(translateText).toHaveBeenCalledWith(
-      expect.stringContaining('data-onlytranslate-google-root'),
-      document.title,
-      expect.objectContaining({ textFormat: 'html' }),
-    )
-    expect(target.querySelector('a')).toBe(link)
-    expect(target.textContent).toBe('阅读 文档。')
-
-    restoreOriginalContent()
-
-    expect(translateText).toHaveBeenCalledTimes(1)
-    expect(target.querySelector('a')).toBe(link)
-    expect(target.textContent).toBe('Read the docs.')
-    expect(target.hasAttribute(TRANSLATED_ATTR)).toBe(false)
-    expect(target.hasAttribute(TRANSLATED_ID_ATTR)).toBe(false)
   })
 
   it('allows batching only for automatic webpage translation targets', async () => {

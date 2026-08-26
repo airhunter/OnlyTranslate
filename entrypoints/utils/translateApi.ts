@@ -220,7 +220,6 @@ function buildInFlightTranslationKey(
   sourceLang: string,
   targetLang: string,
   fastMode: boolean,
-  textFormat: 'plain' | 'html',
 ): string {
   const service = config.service;
   const model = config.model?.[service] ?? '';
@@ -233,7 +232,6 @@ function buildInFlightTranslationKey(
     sourceLang,
     targetLang,
     fastMode,
-    textFormat,
     context,
     origin
   ]);
@@ -392,7 +390,6 @@ export async function translateText(origin: string, context: string = document.t
     allowBatch = false,
     priority = 'normal',
     fastMode = false,
-    textFormat = 'plain',
     signal,
   } = options;
 
@@ -424,7 +421,6 @@ export async function translateText(origin: string, context: string = document.t
     direction.sourceLang,
     direction.targetLang,
     fastMode,
-    textFormat,
   );
   // 带独立取消信号的调用不共享进行中的 Promise，避免一个调用者取消时
   // 连带影响整页翻译或其他调用者。
@@ -469,7 +465,6 @@ export async function translateText(origin: string, context: string = document.t
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
             ...(fastMode ? { fastMode: true } : {}),
-            ...(textFormat === 'html' ? { textFormat } : {}),
             diagnostics: createDiagnosticMetadata(diagnosticContext, retryCount, queuedAt),
           }),
           timeout,
@@ -602,8 +597,6 @@ export interface TranslateOptions {
   priority?: TranslationPriority;
   /** 低延迟翻译模式：服务适配器应关闭或压低 Thinking/Reasoning */
   fastMode?: boolean;
-  /** 请求内容格式；仅支持 HTML 的服务适配器会使用 html。 */
-  textFormat?: 'plain' | 'html';
   /** 仅取消当前调用者的等待、重试和结果回写，不影响其他翻译任务。 */
   signal?: AbortSignal;
   /** 本地性能诊断的会话信息；不会记录原文、译文、密钥或接口地址。 */
