@@ -14,9 +14,9 @@ describe('service options', () => {
     expect(new Config().service).toBe(services.google)
   })
 
-  it('keeps unsafe HTML-based services out of translation-only mode', () => {
-    expect(supportsTranslationOnlyMode(services.google)).toBe(false)
-    expect(supportsTranslationOnlyMode(services.microsoft)).toBe(false)
+  it('supports translation-only mode through the safe wrapper renderer', () => {
+    expect(supportsTranslationOnlyMode(services.google)).toBe(true)
+    expect(supportsTranslationOnlyMode(services.microsoft)).toBe(true)
     expect(supportsTranslationOnlyMode(services.openai)).toBe(true)
   })
 

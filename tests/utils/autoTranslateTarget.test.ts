@@ -54,8 +54,9 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
+import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
+import { TRANSLATION_ONLY_BACKUP_CLASS } from '@/entrypoints/main/translationOnly'
 import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
@@ -813,6 +814,135 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(paragraph.innerHTML).toBe(originalHTML)
     expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(false)
     expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}, .${BILINGUAL_TEXT_CLASS}`)).toBeNull()
+  })
+
+  it.each(['google', 'microsoft'])(
+    'renders %s translation-only output separately and restores the original nodes',
+    async service => {
+      mockConfig.service = service
+      mockConfig.display = 0
+      vi.mocked(translateText).mockResolvedValue('阅读文档。')
+      document.body.innerHTML = '<p id="translation-only">Read <a href="/docs" title="Documentation">the docs</a>.</p>'
+
+      const paragraph = document.querySelector('#translation-only') as HTMLElement
+      const link = paragraph.querySelector('a')!
+      const listener = vi.fn((event: Event) => event.preventDefault())
+      link.addEventListener('click', listener)
+
+      await handleSingleTranslation(paragraph, false)
+
+      const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
+      const backup = insertion?.querySelector<HTMLTemplateElement>(`template.${TRANSLATION_ONLY_BACKUP_CLASS}`)
+      expect(translateText).toHaveBeenCalledWith('Read the docs.', document.title, expect.any(Object))
+      expect(insertion?.textContent).toContain('阅读文档。')
+      expect(paragraph.querySelector('a')).toBeNull()
+      expect(backup?.content.querySelector('a')).toBe(link)
+
+      restoreOriginalContent()
+
+      expect(paragraph.innerHTML).toBe('Read <a href="/docs" title="Documentation">the docs</a>.')
+      expect(paragraph.querySelector('a')).toBe(link)
+      expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(false)
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      expect(listener).toHaveBeenCalledTimes(1)
+    }
+  )
+
+  it('toggles a Google translation-only wrapper off without retranslating', async () => {
+    mockConfig.service = 'google'
+    mockConfig.display = 0
+    vi.mocked(translateText).mockResolvedValue('安全恢复原文。')
+    document.body.innerHTML = '<p id="toggle-only">Restoring the original should preserve this node.</p>'
+    const paragraph = document.querySelector('#toggle-only') as HTMLElement
+    const originalTextNode = paragraph.firstChild
+
+    await handleSingleTranslation(paragraph, false)
+    expect(paragraph.textContent).toContain('安全恢复原文。')
+
+    vi.useFakeTimers()
+    const removal = handleSingleTranslation(paragraph, false)
+    await vi.advanceTimersByTimeAsync(250)
+    await removal
+
+    expect(paragraph.textContent).toBe('Restoring the original should preserve this node.')
+    expect(paragraph.firstChild).toBe(originalTextNode)
+    expect(translateText).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  it('restores automatic Google translation-only targets without rebuilding their DOM', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+
+    mockConfig.service = 'google'
+    mockConfig.display = 0
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('自动翻译后的正文。')
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <p id="automatic-only">Automatic translation keeps <a href="/original">the original link</a> available for restoration.</p>
+        </article>
+      </main>
+    `
+
+    const paragraph = document.querySelector('#automatic-only') as HTMLElement
+    const link = paragraph.querySelector('a')!
+    autoTranslateEnglishPage('smart')
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(paragraph.getAttribute(TRANSLATED_ATTR)).toBe('true')
+    expect(paragraph.textContent).toContain('自动翻译后的正文。')
+    expect(paragraph.querySelector('a')).toBeNull()
+
+    restoreOriginalContent()
+
+    expect(paragraph.querySelector('a')).toBe(link)
+    expect(paragraph.getAttribute(TRANSLATED_ATTR)).toBeNull()
+    expect(paragraph.getAttribute(TRANSLATED_ID_ATTR)).toBeNull()
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('does not replace host updates that arrive while Google translation-only is pending', async () => {
+    let resolveTranslation!: (value: string) => void
+    mockConfig.service = 'google'
+    mockConfig.display = 0
+    vi.mocked(translateText).mockReturnValue(new Promise(resolve => {
+      resolveTranslation = resolve
+    }))
+    document.body.innerHTML = '<p id="pending-only">Original content before the request.</p>'
+    const paragraph = document.querySelector('#pending-only') as HTMLElement
+
+    const translation = handleSingleTranslation(paragraph, false)
+    paragraph.firstChild!.textContent = 'Updated by the host while translation was pending.'
+    resolveTranslation('请求开始时对应的旧译文。')
+    await translation
+
+    expect(paragraph.textContent).toContain('Updated by the host while translation was pending.')
+    expect(paragraph.textContent).not.toContain('请求开始时对应的旧译文。')
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    expect(mockInsertFailedTip).toHaveBeenCalledWith(
+      paragraph,
+      expect.stringContaining('translation-only'),
+      expect.anything(),
+    )
   })
 
   it('restores bilingual direct text wrappers without disturbing nested child blocks', async () => {

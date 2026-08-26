@@ -78,13 +78,13 @@ describe('checkConfig', () => {
     })
 
     it.each([services.google, services.microsoft])(
-        'rejects translation-only mode for %s',
+        'allows translation-only mode for %s',
         (service) => {
             runtimeConfig.service = service
             runtimeConfig.display = 0
 
-            expect(checkConfig()).toBe(false)
-            expect(sendErrorMessage).toHaveBeenCalledWith(expect.stringContaining('translation-only'))
+            expect(checkConfig()).toBe(true)
+            expect(sendErrorMessage).not.toHaveBeenCalled()
         },
     )
 

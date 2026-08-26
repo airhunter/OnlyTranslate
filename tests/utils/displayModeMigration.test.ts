@@ -14,7 +14,6 @@ const storageMocks = vi.hoisted(() => ({
 vi.mock('@wxt-dev/storage', () => ({ storage: storageMocks }))
 
 import {
-  BILINGUAL_DISPLAY_MODE,
   applyTranslationOnlyCompatibilityMigration,
   consumeDisplayModeMigrationNotice,
   displayModeMigrationInternals,
@@ -29,16 +28,12 @@ describe('translation-only compatibility migration', () => {
   })
 
   it.each([services.microsoft, services.google])(
-    'migrates %s from translation-only to bilingual mode',
+    'keeps %s in translation-only mode now that safe rendering is supported',
     (service) => {
       const config = { service, display: 0 }
 
-      expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({
-        status: 'migrated',
-        notice: { service },
-      })
-      expect(config.display).toBe(BILINGUAL_DISPLAY_MODE)
       expect(applyTranslationOnlyCompatibilityMigration(config)).toEqual({ status: 'none' })
+      expect(config.display).toBe(0)
     },
   )
 
@@ -52,12 +47,12 @@ describe('translation-only compatibility migration', () => {
     expect(microsoftConfig.display).toBe(1)
   })
 
-  it('stores and consumes the migration notice exactly once', async () => {
+  it('stores and discards a migration notice that is no longer relevant', async () => {
     const notice = { service: services.microsoft }
     await saveDisplayModeMigrationNotice(notice)
 
     expect(storageState.get(displayModeMigrationInternals.noticeKey)).toBe(JSON.stringify(notice))
-    await expect(consumeDisplayModeMigrationNotice()).resolves.toEqual(notice)
+    await expect(consumeDisplayModeMigrationNotice()).resolves.toBeNull()
     await expect(consumeDisplayModeMigrationNotice()).resolves.toBeNull()
   })
 
