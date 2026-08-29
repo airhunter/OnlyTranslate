@@ -68,9 +68,20 @@
       :aria-label="panelTitle"
     >
       <header class="fr-panel-header" @pointerdown="startPanelDrag">
-        <div class="fr-panel-brand">
-          <span class="fr-brand-mark">{{ panelMode === 'analysis' ? '析' : '译' }}</span>
-          <span>{{ panelTitle }}</span>
+        <div class="fr-panel-header-main">
+          <button
+            type="button"
+            class="fr-icon-btn fr-back-btn"
+            :title="t('selection.backToToolbar')"
+            :aria-label="t('selection.backToToolbar')"
+            @click="returnToToolbar"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+          <div class="fr-panel-brand">
+            <span class="fr-brand-mark">{{ panelMode === 'analysis' ? '析' : '译' }}</span>
+            <span>{{ panelTitle }}</span>
+          </div>
         </div>
         <div class="fr-panel-header-actions">
           <button
@@ -89,7 +100,34 @@
         </div>
       </header>
 
-      <div class="fr-panel-content">
+      <div class="fr-panel-tabs" role="tablist" :aria-label="t('selection.title')">
+        <button
+          type="button"
+          class="fr-panel-tab"
+          data-mode="translation"
+          role="tab"
+          :class="{ 'is-active': panelMode === 'translation' }"
+          :aria-selected="panelMode === 'translation'"
+          aria-controls="only-translate-selection-result"
+          @click="switchPanelMode('translation')"
+        >
+          {{ t('selection.translate') }}
+        </button>
+        <button
+          type="button"
+          class="fr-panel-tab"
+          data-mode="analysis"
+          role="tab"
+          :class="{ 'is-active': panelMode === 'analysis' }"
+          :aria-selected="panelMode === 'analysis'"
+          aria-controls="only-translate-selection-result"
+          @click="switchPanelMode('analysis')"
+        >
+          {{ t('selection.analyze') }}
+        </button>
+      </div>
+
+      <div id="only-translate-selection-result" class="fr-panel-content" role="tabpanel">
         <article v-if="shouldShowOriginal" class="fr-text-block fr-text-block--original">
           <div class="fr-text-block-header">
             <span>{{ t('selection.original') }}</span>
@@ -266,7 +304,15 @@ const isDraggingPanel = ref(false)
 const isPanelPositionManual = ref(false)
 const isDarkTheme = ref(false)
 const activeSelectionSession = ref<SelectionSession | null>(null)
-const activeService = ref(config.service)
+const translationService = ref(config.service)
+const analysisService = ref(config.service)
+const activeService = computed({
+  get: () => panelMode.value === 'analysis' ? analysisService.value : translationService.value,
+  set: (service: string) => {
+    if (panelMode.value === 'analysis') analysisService.value = service
+    else translationService.value = service
+  },
+})
 const containerRef = useTemplateRef('selection-ref')
 
 let nextSelectionSessionId = 0
@@ -487,6 +533,12 @@ const analysisCopyText = computed(() => {
 
 const saveConfig = () => storage.setItem('local:config', JSON.stringify(config))
 
+const activateService = (service: string) => {
+  if (!service || config.service === service) return
+  config.service = service
+  void saveConfig()
+}
+
 const cancelActiveTranslation = () => {
   activeTranslationRequestId += 1
   activeTranslationController?.abort()
@@ -548,7 +600,10 @@ const commitSelectionSession = (text: string, range: Range, event?: MouseEvent) 
   analysisResult.value = null
   panelMode.value = 'translation'
   error.value = ''
-  activeService.value = config.service
+  translationService.value = config.service
+  analysisService.value = servicesType.isAI(config.service)
+    ? config.service
+    : availableAnalysisServices.value[0]?.value ?? config.service
   showPanel.value = false
   showToolbar.value = true
 }
@@ -651,35 +706,51 @@ const getAnalysis = async () => {
   }
 }
 
-const openTranslationPanel = () => {
-  panelMode.value = 'translation'
-  analysisResult.value = null
-  showToolbar.value = false
-  showPanel.value = true
-  void getTranslation()
+const returnToToolbar = () => {
+  stopPanelDrag()
+  isPanelPositionManual.value = false
+  cancelActiveTranslation()
+  stopAudio()
+  error.value = ''
+  showToolbar.value = true
+  showPanel.value = false
 }
 
-const openAnalysisPanel = () => {
-  panelMode.value = 'analysis'
-  translationResult.value = ''
-  analysisResult.value = null
+const switchPanelMode = (mode: PanelMode) => {
+  if (showPanel.value && panelMode.value === mode) return
+  cancelActiveTranslation()
+  stopAudio()
+  panelMode.value = mode
   error.value = ''
   showToolbar.value = false
   showPanel.value = true
 
-  const configuredService = availableAnalysisServices.value.find(service => service.value === config.service)
-    ?? availableAnalysisServices.value[0]
-  if (!configuredService) {
-    error.value = t('selection.analysisRequiresAi')
+  if (mode === 'translation') {
+    const configuredService = availableServices.value.find(service => service.value === translationService.value)
+      ?? availableServices.value[0]
+    if (configuredService) {
+      translationService.value = configuredService.value
+      activateService(configuredService.value)
+    }
+    if (!translationResult.value) void getTranslation()
     return
   }
-  activeService.value = configuredService.value
-  if (config.service !== configuredService.value) {
-    config.service = configuredService.value
-    void saveConfig()
+
+  const configuredService = availableAnalysisServices.value.find(service => service.value === analysisService.value)
+    ?? availableAnalysisServices.value.find(service => service.value === config.service)
+    ?? availableAnalysisServices.value[0]
+  if (!configuredService) {
+    if (!analysisResult.value) error.value = t('selection.analysisRequiresAi')
+    return
   }
-  void getAnalysis()
+  analysisService.value = configuredService.value
+  activateService(configuredService.value)
+  if (!analysisResult.value) void getAnalysis()
 }
+
+const openTranslationPanel = () => switchPanelMode('translation')
+
+const openAnalysisPanel = () => switchPanelMode('analysis')
 
 const regenerateTranslation = () => {
   translationResult.value = ''
@@ -740,8 +811,10 @@ const toggleAudio = async (text: string, event?: Event) => {
 }
 
 const handleServiceChange = async () => {
-  config.service = activeService.value
-  await saveConfig()
+  if (config.service !== activeService.value) {
+    config.service = activeService.value
+    await saveConfig()
+  }
   regenerateCurrentResult()
 }
 

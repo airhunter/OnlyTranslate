@@ -333,6 +333,78 @@ describe('SelectionTranslator', () => {
     expect(mockConfig.service).toBe('openai')
   })
 
+  it('returns to the toolbar without discarding the completed translation', async () => {
+    await setSelection('return to toolbar')
+    await openTooltip()
+    pendingTranslations[0].resolve('保留的译文')
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('button[title="selection.backToToolbar"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+
+    expect(document.querySelector('.fr-translation-panel')).toBeNull()
+    expect(document.querySelector('.fr-selection-toolbar')).not.toBeNull()
+
+    await openTooltip()
+
+    expect(pendingTranslations).toHaveLength(1)
+    expect(document.querySelector('.fr-translation-text')?.textContent).toBe('保留的译文')
+  })
+
+  it('switches between translation and analysis without repeating completed requests', async () => {
+    await setSelection('linked translation and analysis')
+    await openTooltip()
+    pendingTranslations[0].resolve('关联的翻译结果')
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('.fr-panel-tab[data-mode="analysis"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    await flushPromises()
+
+    expect(mockAnalyzeSelectionText).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('.fr-analysis-result')?.textContent).toContain('短暂的')
+    expect(mockConfig.service).toBe('openai')
+
+    document.querySelector<HTMLElement>('.fr-panel-tab[data-mode="translation"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    await flushPromises()
+
+    expect(document.querySelector('.fr-translation-text')?.textContent).toBe('关联的翻译结果')
+    expect(pendingTranslations).toHaveLength(1)
+    expect(mockConfig.service).toBe('google')
+
+    document.querySelector<HTMLElement>('.fr-panel-tab[data-mode="analysis"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    await flushPromises()
+
+    expect(mockAnalyzeSelectionText).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('.fr-analysis-result')?.textContent).toContain('短暂的')
+  })
+
+  it('cancels an unfinished request when switching result modes', async () => {
+    await setSelection('switch pending request')
+    await openTooltip()
+
+    const request = pendingTranslations[0]
+    document.querySelector<HTMLElement>('.fr-panel-tab[data-mode="analysis"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+    await flushPromises()
+
+    expect(request.signal.aborted).toBe(true)
+    expect(document.querySelector('.fr-analysis-result')?.textContent).toContain('短暂的')
+
+    request.resolve('不应覆盖解析界面的迟到译文')
+    await flushPromises()
+
+    expect(document.querySelector('.fr-analysis-result')?.textContent).toContain('短暂的')
+    expect(document.querySelector('.fr-translation-text')).toBeNull()
+  })
+
   it('keeps an oversized panel origin inside the viewport', async () => {
     await setSelection('viewport constrained selection')
     mockComputePosition.mockResolvedValue({

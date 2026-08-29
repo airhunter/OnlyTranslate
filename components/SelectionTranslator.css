@@ -122,7 +122,7 @@ select {
 .fr-translation-panel {
   display: flex;
   flex-direction: column;
-  width: min(390px, calc(100vw - 24px));
+  width: min(430px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
   overflow: hidden;
@@ -133,22 +133,25 @@ select {
   animation: fr-pop-in 160ms ease-out;
 }
 
-.fr-translation-panel.fr-analysis-panel {
-  width: min(430px, calc(100vw - 24px));
-}
-
 .fr-panel-header {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 48px;
-  padding: 0 12px 0 14px;
+  padding: 0 10px 0 8px;
   border-bottom: 1px solid var(--fr-border);
   background: linear-gradient(180deg, #fff, #fbfdff);
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+.fr-panel-header-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
 }
 
 .fr-is-dragging .fr-panel-header {
@@ -192,11 +195,53 @@ select {
   border-radius: 7px;
 }
 
+.fr-back-btn {
+  flex: none;
+}
+
+.fr-panel-tabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  margin: 9px 14px 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #f0f3f7;
+}
+
+.fr-panel-tab {
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--fr-muted);
+  background: transparent;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.fr-panel-tab:hover {
+  color: var(--fr-sky-ink);
+}
+
+.fr-panel-tab.is-active {
+  color: var(--fr-sky-ink);
+  background: var(--fr-surface);
+  box-shadow: 0 1px 5px rgba(23, 32, 51, 0.09);
+}
+
+.fr-panel-tab:focus-visible {
+  outline: 2px solid rgba(91, 181, 245, 0.45);
+  outline-offset: 1px;
+}
+
 .fr-panel-content {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: min(420px, calc(100vh - 126px));
-  max-height: min(420px, calc(100dvh - 126px));
+  max-height: min(420px, calc(100vh - 172px));
+  max-height: min(420px, calc(100dvh - 172px));
   overflow: auto;
   padding: 6px 16px;
   scrollbar-width: thin;
@@ -491,6 +536,10 @@ select {
 
 .fr-dark-theme .fr-panel-header {
   background: linear-gradient(180deg, #202a39, #1c2431);
+}
+
+.fr-dark-theme .fr-panel-tabs {
+  background: #151c27;
 }
 
 .fr-static .fr-selection-toolbar,
