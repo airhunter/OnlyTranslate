@@ -110,7 +110,11 @@ describe('resolveAutoTranslateTarget behavior', () => {
     handleBtnTranslation(button)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(translateText).toHaveBeenCalledWith('Start action', document.title, expect.objectContaining({
+    expect(translateText).toHaveBeenCalledWith('Start action', {
+      scene: 'hover',
+      title: document.title,
+      surroundingText: 'Start action',
+    }, expect.objectContaining({
       diagnostics: expect.objectContaining({ scene: 'hover' }),
     }))
     expect(button.innerText).toBe('开始操作')
@@ -833,7 +837,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
       const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
       const backup = insertion?.querySelector<HTMLTemplateElement>(`template.${TRANSLATION_ONLY_BACKUP_CLASS}`)
-      expect(translateText).toHaveBeenCalledWith('Read the docs.', document.title, expect.any(Object))
+      expect(translateText).toHaveBeenCalledWith('Read the docs.', {
+        scene: 'webpage',
+        title: document.title,
+      }, expect.any(Object))
       expect(insertion?.textContent).toContain('阅读文档。')
       expect(paragraph.querySelector('a')).toBeNull()
       expect(backup?.content.querySelector('a')).toBe(link)
@@ -1439,7 +1446,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
       const caption = document.querySelector('#powerbook-caption') as HTMLElement
       expect(caption.getAttribute(TRANSLATED_ATTR)).toBe('true')
       expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('钛金属 PowerBook G4')
-      expect(translateText).not.toHaveBeenCalledWith(expect.stringContaining('PowerBook G4'), document.title)
+      expect(translateText).not.toHaveBeenCalledWith(
+        expect.stringContaining('PowerBook G4'),
+        expect.objectContaining({ scene: 'webpage' }),
+      )
     } finally {
       vi.useRealTimers()
       restoreOriginalContent()

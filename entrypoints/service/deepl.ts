@@ -4,6 +4,7 @@ import {config} from "@/entrypoints/utils/config";
 import {t} from "@/entrypoints/utils/i18n";
 import { assertSingleTranslationMessage } from "./types";
 import type { TranslationServiceMessage, TranslationServiceResult } from "./types";
+import { buildProviderContext } from '@/entrypoints/utils/translationPrompt'
 
 async function deepl(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     assertSingleTranslationMessage(message);
@@ -24,7 +25,7 @@ async function deepl(message: TranslationServiceMessage): Promise<TranslationSer
             text: [message.origin],
             target_lang: targetLang,
             tag_handling: 'html',
-            context: message.context,  // 添加上下文辅助信息
+            context: buildProviderContext(message.promptContext ?? message.context),
             preserve_formatting: true
         })
     });

@@ -44,7 +44,8 @@ describe('input translation service routing', () => {
     expect(result).toBe('Hello')
     expect(google).toHaveBeenCalledWith({
       origin: '你好',
-      context: 'Test page',
+      context: '',
+      promptContext: { scene: 'input' },
       sourceLang: 'auto',
       targetLang: 'en'
     })
@@ -63,6 +64,23 @@ describe('input translation service routing', () => {
 
     expect(result).toBe('Hello from DeepSeek')
     expect(deepseek).toHaveBeenCalledOnce()
+  })
+
+  it('unwraps an echoed AI envelope without exposing input-page context', async () => {
+    const deepseek = vi.fn(async (_message: TranslationServiceMessage) => JSON.stringify({
+      targetLanguage: 'en',
+      scene: 'input',
+      title: '',
+      context: '',
+      text: 'Hello',
+    }))
+
+    await expect(translateInputWithCurrentService(
+      { text: '你好', targetLang: 'en', context: 'Private page' },
+      createDependencies(services.deepseek, {
+        [services.deepseek]: deepseek,
+      }),
+    )).resolves.toBe('Hello')
   })
 
   it('routes custom OpenAI-compatible services through the common handler', async () => {

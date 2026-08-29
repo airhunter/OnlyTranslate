@@ -14,6 +14,7 @@ import {
   type EbookTranslationUnit,
 } from './unitizer';
 import type { EbookDisplayMode } from './types';
+import type { TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
   createTranslationDiagnosticId,
   type TranslationDiagnosticContext,
@@ -26,7 +27,7 @@ export interface EbookTranslationStatus {
   running: boolean;
 }
 
-type Translate = (origin: string, context: string, options: {
+type Translate = (origin: string, context: TranslationPromptContext, options: {
   allowBatch: true;
   priority: TranslationPriority;
   useCache?: boolean;
@@ -35,7 +36,7 @@ type Translate = (origin: string, context: string, options: {
 
 interface CoordinatorOptions {
   translate?: Translate;
-  cacheTranslation?: (origin: string, result: string) => void;
+  cacheTranslation?: (origin: string, result: string, context: TranslationPromptContext) => void;
   onStatus?: (status: EbookTranslationStatus) => void;
   captureLocation?: () => string | undefined;
   restoreLocation?: (cfi: string) => Promise<void> | void;
@@ -55,12 +56,12 @@ export class EbookTranslationCoordinator {
   private generation = 0;
   private units: EbookTranslationUnit[] = [];
   private document?: Document;
-  private context = '';
+  private context: TranslationPromptContext = { scene: 'ebook' };
   private status: EbookTranslationStatus = { total: 0, completed: 0, failed: 0, running: false };
   private pendingInsertions: Array<() => void> = [];
   private insertionTimer?: ReturnType<typeof setTimeout>;
   private readonly translate: Translate;
-  private readonly cacheTranslation: (origin: string, result: string) => void;
+  private readonly cacheTranslation: (origin: string, result: string, context: TranslationPromptContext) => void;
   private diagnosticContext?: TranslationDiagnosticContext;
 
   constructor(private readonly options: CoordinatorOptions = {}) {
@@ -68,7 +69,7 @@ export class EbookTranslationCoordinator {
     this.cacheTranslation = options.cacheTranslation ?? cacheTranslationResult;
   }
 
-  async start(document: Document, context: string, displayMode: EbookDisplayMode): Promise<void> {
+  async start(document: Document, context: TranslationPromptContext, displayMode: EbookDisplayMode): Promise<void> {
     this.cancel();
     const generation = this.generation;
     this.document = document;
@@ -140,7 +141,7 @@ export class EbookTranslationCoordinator {
       .map(result => result.value);
     const cfi = this.options.captureLocation?.();
     translations.forEach(({ unit, translated }) => insertEbookTranslation(unit, translated));
-    translations.forEach(({ cacheOrigin, translated }) => this.cacheTranslation(cacheOrigin, translated));
+    translations.forEach(({ cacheOrigin, translated }) => this.cacheTranslation(cacheOrigin, translated, this.context));
     await this.waitForLayout();
     if (cfi) await this.options.restoreLocation?.(cfi);
     this.status = { total: ordered.length, completed: ordered.length, failed: 0, running: false };

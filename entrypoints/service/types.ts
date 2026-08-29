@@ -1,5 +1,6 @@
 import type { SubtitleTranslationJob, SubtitleTranslationResult } from '@/entrypoints/video/types'
 import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
+import type { TranslationPromptContext } from '@/entrypoints/utils/translationPrompt'
 
 export interface AiTextActionPrompt {
     system: string;
@@ -9,6 +10,7 @@ export interface AiTextActionPrompt {
 
 interface TranslationServiceBaseMessage {
     context?: string;
+    promptContext?: TranslationPromptContext;
     sourceLang?: string;
     targetLang?: string;
     /** 实时字幕等低延迟场景使用：服务适配器应关闭或压低模型推理。 */

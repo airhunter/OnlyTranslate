@@ -73,7 +73,7 @@ exports[`translation model request policies > matches the normalized payload mat
   "anthropic:claude-future": {
     "fast": {
       "single": {
-        "hasTemperature": false,
+        "hasTemperature": true,
         "output_config": null,
         "thinking": null,
       },
@@ -85,7 +85,7 @@ exports[`translation model request policies > matches the normalized payload mat
     },
     "thinking": {
       "single": {
-        "hasTemperature": false,
+        "hasTemperature": true,
         "output_config": null,
         "thinking": null,
       },
@@ -99,7 +99,7 @@ exports[`translation model request policies > matches the normalized payload mat
   "anthropic:claude-haiku-4-5": {
     "fast": {
       "single": {
-        "hasTemperature": false,
+        "hasTemperature": true,
         "output_config": null,
         "thinking": null,
       },
@@ -207,7 +207,7 @@ exports[`translation model request policies > matches the normalized payload mat
   "anthropic:claude-sonnet-4-6": {
     "fast": {
       "single": {
-        "hasTemperature": false,
+        "hasTemperature": true,
         "output_config": null,
         "thinking": null,
       },

@@ -29,7 +29,7 @@ async function custom(message: TranslationServiceMessage): Promise<TranslationSe
     const resp = await fetch(url, {
         method: method.POST,
         headers: headers,
-        body: commonMsgTemplate(message.origin, message.targetLang)
+        body: commonMsgTemplate(message.origin, message.targetLang, false, undefined, message.promptContext)
     });
 
     if (resp.ok) {

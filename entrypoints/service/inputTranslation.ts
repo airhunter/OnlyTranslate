@@ -5,6 +5,7 @@ import { services, servicesType } from '@/entrypoints/utils/option'
 import type { CustomProvider } from '@/entrypoints/utils/model'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
 import type { TranslationDiagnosticMetadata } from '@/entrypoints/utils/translationDiagnostics'
+import { extractTranslationTextFromResponse } from '@/entrypoints/utils/translationPrompt'
 
 export interface InputTranslationRequest {
   text: string
@@ -46,7 +47,8 @@ export async function translateInputWithCurrentService(
 
   const result = await handler({
     origin: request.text,
-    context: request.context ?? '',
+    context: '',
+    promptContext: { scene: 'input' },
     sourceLang: dependencies.sourceLang,
     targetLang: request.targetLang,
     diagnostics: request.diagnostics,
@@ -54,5 +56,10 @@ export async function translateInputWithCurrentService(
   if (typeof result !== 'string') {
     throw new Error('Input translation service returned a non-text response')
   }
-  return result
+  return servicesType.isAI(dependencies.service)
+    ? extractTranslationTextFromResponse(result, {
+        targetLanguage: request.targetLang,
+        scene: 'input',
+      })
+    : result
 }

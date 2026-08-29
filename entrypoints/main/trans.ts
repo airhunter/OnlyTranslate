@@ -32,6 +32,7 @@ import {
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
 import { t } from '@/entrypoints/utils/i18n';
+import type { TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,
     hideOriginalForTranslationOnly,
@@ -75,6 +76,20 @@ const translationState = {
 };
 
 let hasReportedInvalidatedExtensionContext = false;
+
+function getWebpagePromptContext(): TranslationPromptContext {
+    return { scene: 'webpage', title: document.title };
+}
+
+function getHoverPromptContext(node: Node | null): TranslationPromptContext {
+    const element = node instanceof Element ? node : node?.parentElement;
+    const block = element?.closest('p, li, blockquote, dd, dt, figcaption, h1, h2, h3, h4, h5, h6');
+    return {
+        scene: 'hover',
+        title: document.title,
+        surroundingText: (block?.textContent || element?.textContent || '').replace(/\s+/g, ' ').trim(),
+    };
+}
 
 export const originalContents = translationState.originalContents;
 
@@ -160,7 +175,7 @@ function translateFirstLineText(textNode: Text, origin: string): void {
         startedAt: Date.now(),
         pageUrl: document.location.href,
     };
-    translateText(origin, document.title, { diagnostics })
+    translateText(origin, getHoverPromptContext(textNode), { diagnostics })
         .then((text: string) => {
             textNode.textContent = text;
             notifyDiagnosticVisible({ diagnostics });
@@ -569,7 +584,7 @@ export function handleBilingualTranslation(
     }
 
     // 检查是否有缓存
-    let cached = cache.localGet(originText);
+    let cached = cache.localGet(originText, config.to, getWebpagePromptContext());
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -591,7 +606,7 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean, optio
     }
 
     let nodeOuterHTML = node.outerHTML;
-    let outerHTMLCache = cache.localGet(node.outerHTML);
+    let outerHTMLCache = cache.localGet(node.outerHTML, config.to, getWebpagePromptContext());
 
 
     if (outerHTMLCache) {
@@ -655,7 +670,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    return translateText(origin, document.title, options)
+    return translateText(origin, getWebpagePromptContext(), options)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -667,7 +682,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, document.title, options);
+                text = await translateText(plainOrigin, getWebpagePromptContext(), options);
             }
             bilingualAppendChild(node, text);
             notifyDiagnosticVisible(options);
@@ -706,7 +721,7 @@ function safeTranslationOnlyTranslate(
 
     const prepared = prepareTranslationOnly(node, getBilingualAppendTarget(node));
     const spinner = insertLoadingSpinner(node);
-    return translateText(origin, document.title, options)
+    return translateText(origin, getWebpagePromptContext(), options)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -723,7 +738,7 @@ function safeTranslationOnlyTranslate(
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, document.title, options);
+                text = await translateText(plainOrigin, getWebpagePromptContext(), options);
             }
             appendSafeTranslationOnly(node, text, prepared);
             notifyDiagnosticVisible(options);
@@ -759,7 +774,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    return translateText(origin, document.title, options)
+    return translateText(origin, getWebpagePromptContext(), options)
         .then((text: string) => {
             spinner.remove();
             
@@ -777,7 +792,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
             let newOuterHtml = node.outerHTML;
             
             // 缓存翻译结果
-            cache.localSetDual(oldOuterHtml, newOuterHtml);
+            cache.localSetDual(oldOuterHtml, newOuterHtml, config.to, getWebpagePromptContext());
             cache.set(translationState.htmlSet, newOuterHtml, 250);
             translationState.htmlSet.delete(oldOuterHtml);
             notifyDiagnosticVisible(options);
@@ -795,7 +810,8 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
 
 export const handleBtnTranslation = throttle((node: HTMLElement) => {
     let origin = node.innerText;
-    let rs = cache.localGet(origin);
+    const promptContext = getHoverPromptContext(node);
+    let rs = cache.localGet(origin, config.to, promptContext);
     if (rs) {
         node.innerText = rs;
         return;
@@ -807,10 +823,10 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
         startedAt: Date.now(),
         pageUrl: document.location.href,
     };
-    translateText(origin, document.title, { diagnostics })
+    translateText(origin, promptContext, { diagnostics })
         .then((text: string) => {
             if (!text || text === origin) return;
-            cache.localSetDual(origin, text);
+            cache.localSetDual(origin, text, config.to, promptContext);
             node.innerText = text;
             notifyDiagnosticVisible({ diagnostics });
         }).catch((error: unknown) => {

@@ -39,8 +39,35 @@
           <div class="setting-control setting-control--full">
             <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192" :placeholder="t('options.ai.userPlaceholder')" :autosize="{ minRows: 4, maxRows: 12 }" />
             <div v-if="userRoleError" class="error-text">{{ userRoleError }}</div>
+            <div class="prompt-variables" :aria-label="t('options.ai.availableVariables')">
+              <span class="prompt-variables-label">{{ t('options.ai.availableVariables') }}</span>
+              <el-button
+                v-for="item in promptVariables"
+                :key="item.variable"
+                :data-variable="item.variable"
+                size="small"
+                plain
+                :title="item.description"
+                @click="insertVariable(item.variable)"
+              >
+                {{ item.variable }}
+              </el-button>
+            </div>
+            <div v-if="contextWarning" class="warning-text">{{ contextWarning }}</div>
           </div>
         </div>
+
+        <details class="prompt-preview">
+          <summary>{{ t('options.ai.previewTitle') }}</summary>
+          <div class="prompt-preview-section">
+            <strong>System</strong>
+            <pre>{{ promptPreview.system }}</pre>
+          </div>
+          <div class="prompt-preview-section">
+            <strong>User</strong>
+            <pre>{{ promptPreview.user }}</pre>
+          </div>
+        </details>
       </div>
       <!-- 底部控制栏 -->
       <div class="setting-card-footer">
@@ -48,36 +75,87 @@
           <el-icon><Refresh /></el-icon>
           {{ t('options.ai.resetTemplate') }}
         </el-button>
+        <el-button data-testid="save-prompts" type="primary" :loading="isSaving" @click="savePrompts">
+          {{ t('options.ai.savePrompts') }}
+        </el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useConfig } from '@/composables/useConfig'
 import { defaultOption, servicesType } from '@/entrypoints/utils/option'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import {
+  hasValidTranslationTemplate,
+  renderTranslationPrompt,
+  usesTranslationContext,
+} from '@/entrypoints/utils/translationPrompt'
 
-const { config } = useConfig()
+const { config, saveConfig } = useConfig()
 const { t } = useI18n()
+const isSaving = ref(false)
 
 const isAIService = computed(() => servicesType.isAI(config.value.service))
 
-// Validate user_role template contains required variables
 const userRoleError = computed(() => {
   const template = config.value.user_role?.[config.value.service] || ''
   if (!template) return null
-  const missingVars: string[] = []
-  if (!template.includes('{{to}}')) missingVars.push('{{to}}')
-  if (!template.includes('{{origin}}')) missingVars.push('{{origin}}')
-  if (missingVars.length > 0) {
-    return t('options.ai.missingVars', { vars: missingVars.join('、') })
-  }
-  return null
+  return hasValidTranslationTemplate(template)
+    ? null
+    : t('options.ai.missingVars', { vars: '{{translation_input}} / {{to}} + {{origin}}' })
 })
+
+const contextWarning = computed(() => {
+  const template = config.value.user_role?.[config.value.service] || ''
+  if (!template || !hasValidTranslationTemplate(template) || usesTranslationContext(template)) return null
+  return t('options.ai.contextWarning')
+})
+
+const promptVariables = computed(() => [
+  { variable: '{{translation_input}}', description: t('options.ai.variableTranslationInput') },
+  { variable: '{{to}}', description: t('options.ai.variableTo') },
+  { variable: '{{origin}}', description: t('options.ai.variableOrigin') },
+  { variable: '{{title}}', description: t('options.ai.variableTitle') },
+  { variable: '{{context}}', description: t('options.ai.variableContext') },
+  { variable: '{{scene}}', description: t('options.ai.variableScene') },
+])
+
+const promptPreview = computed(() => renderTranslationPrompt(
+  'The bank raised its interest rate.',
+  config.value.to || 'zh-Hans',
+  {
+    scene: 'selection',
+    title: t('options.ai.previewSampleTitle'),
+    surroundingText: t('options.ai.previewSampleContext'),
+  },
+  config.value.system_role?.[config.value.service] || defaultOption.system_role,
+  config.value.user_role?.[config.value.service] || defaultOption.user_role,
+))
+
+const insertVariable = (variable: string) => {
+  const current = config.value.user_role?.[config.value.service] || ''
+  config.value.user_role[config.value.service] = current
+    ? `${current}${current.endsWith('\n') ? '' : '\n'}${variable}`
+    : variable
+}
+
+const savePrompts = async () => {
+  isSaving.value = true
+  try {
+    await saveConfig()
+    ElMessage({ message: t('options.ai.saveSuccess'), type: 'success', duration: 2000 })
+  } catch (error) {
+    console.error('Failed to save prompt configuration:', error)
+    ElMessage({ message: t('options.ai.saveFailed'), type: 'error', duration: 3000 })
+  } finally {
+    isSaving.value = false
+  }
+}
 
 // Reset template
 const resetTemplate = () => {
@@ -190,5 +268,55 @@ const resetTemplate = () => {
   font-size: 12px;
   margin-top: 6px;
   line-height: 1.4;
+}
+
+.warning-text {
+  color: var(--el-color-warning-dark-2);
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.prompt-variables {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.prompt-variables-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.prompt-preview {
+  margin: 8px 4px 0;
+  border: 1px solid var(--fr-border-color-lighter);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--el-text-color-regular);
+}
+
+.prompt-preview summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.prompt-preview-section {
+  margin-top: 12px;
+}
+
+.prompt-preview-section pre {
+  margin: 6px 0 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 </style>

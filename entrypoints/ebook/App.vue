@@ -583,7 +583,11 @@ async function translateChapter(document: Document, chapterLabel: string): Promi
     needsSettings.value = true;
     return;
   }
-  await coordinator.start(document, `${activeBook.value?.title ?? ''} · ${chapterLabel}`, readerSettings.displayMode);
+  await coordinator.start(document, {
+    scene: 'ebook',
+    title: activeBook.value?.title ?? '',
+    surroundingText: chapterLabel,
+  }, readerSettings.displayMode);
 }
 
 function retryFailed(): void {

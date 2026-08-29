@@ -418,7 +418,7 @@ describe('translateApi', () => {
   it('commits a staged translation to the current translation cache', () => {
     cacheTranslationResult('Hello', '新译文')
 
-    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '新译文', 'zh-Hans')
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '新译文', 'zh-Hans', { scene: 'other' })
   })
 
   it('forwards fast mode only when explicitly requested', async () => {
@@ -430,6 +430,7 @@ describe('translateApi', () => {
     expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
       origin: 'Fast subtitle',
       context: 'Video title',
+      promptContext: { scene: 'other', title: 'Video title' },
       fastMode: true
     }))
   })
@@ -452,8 +453,52 @@ describe('translateApi', () => {
       sourceLang: 'en',
       targetLang: 'zh-Hans'
     }))
-    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '你好', 'zh-Hans')
-    expect(mockCacheLocalSet).toHaveBeenCalledWith('World', '世界', 'zh-Hans')
+    const promptContext = { scene: 'other', title: 'Example' }
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('Hello', '你好', 'zh-Hans', promptContext)
+    expect(mockCacheLocalSet).toHaveBeenCalledWith('World', '世界', 'zh-Hans', promptContext)
+  })
+
+  it('normalizes and forwards structured selection context', async () => {
+    await translateText('bank', {
+      scene: 'selection',
+      title: ` ${'T'.repeat(350)} `,
+      surroundingText: ` ${'C'.repeat(1700)} `,
+    }, { useCache: false })
+
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      origin: 'bank',
+      context: 'T'.repeat(120),
+      promptContext: {
+        scene: 'selection',
+        title: 'T'.repeat(120),
+        surroundingText: 'C'.repeat(240),
+      },
+    }))
+  })
+
+  it('unwraps an echoed AI translation envelope before returning it to the page', async () => {
+    mockSendMessage.mockResolvedValue(JSON.stringify({
+      targetLanguage: 'zh-Hans',
+      scene: 'webpage',
+      title: '模型正在故意变笨',
+      context: '',
+      text: '事实会腐坏，但程序不会。',
+    }))
+
+    await expect(translateText('Facts rot, procedures do not.', {
+      scene: 'webpage',
+      title: 'The model is deliberately getting dumber',
+    }, { useCache: false })).resolves.toBe('事实会腐坏，但程序不会。')
+  })
+
+  it('keeps non-envelope JSON returned by an AI service intact', async () => {
+    const translatedJson = '{"name":"示例","status":"正常"}'
+    mockSendMessage.mockResolvedValue(translatedJson)
+
+    await expect(translateText('{"name":"Example","status":"ok"}', {
+      scene: 'webpage',
+      title: 'JSON API guide',
+    }, { useCache: false })).resolves.toBe(translatedJson)
   })
 
   it('keeps ordinary batching disabled for Anthropic-compatible custom providers', () => {
