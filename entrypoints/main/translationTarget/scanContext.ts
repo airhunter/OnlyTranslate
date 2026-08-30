@@ -25,6 +25,7 @@ export interface ScanContext {
     budgets: Record<ScanBudgetKind, number>;
     budgetUsage: Record<ScanBudgetKind, number>;
     normalizedText: WeakMap<Element, string>;
+    visibleNormalizedText: WeakMap<Element, string>;
     contentFilter: WeakMap<Element, ContentFilterDecision>;
     contentUnit: WeakMap<Element, ContentUnitDecision>;
     proseEvidence: WeakMap<Element, ProseEvidence>;
@@ -96,6 +97,7 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
             dynamic: 0
         },
         normalizedText: new WeakMap(),
+        visibleNormalizedText: new WeakMap(),
         contentFilter: new WeakMap(),
         contentUnit: new WeakMap(),
         proseEvidence: new WeakMap(),
@@ -130,6 +132,7 @@ const MAX_INVALIDATION_DESCENDANTS = 2000;
 
 function deleteScanCacheEntry(context: ScanContext, element: Element): void {
     context.normalizedText.delete(element);
+    context.visibleNormalizedText.delete(element);
     context.contentFilter.delete(element);
     context.contentUnit.delete(element);
     context.proseEvidence.delete(element);
@@ -169,6 +172,75 @@ export function getCachedNormalizedText(context: ScanContext | undefined, elemen
     const text = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     context?.normalizedText.set(element, text);
     return text;
+}
+
+export function getCachedVisibleNormalizedText(context: ScanContext | undefined, element: Element): string {
+    const cached = context?.visibleNormalizedText.get(element);
+    if (cached !== undefined) return cached;
+
+    const text = collectVisibleText(context, element).replace(/\s+/g, ' ').trim();
+    context?.visibleNormalizedText.set(element, text);
+    return text;
+}
+
+export function isElementVisible(element: Element): boolean {
+    let current: Element | null = element;
+
+    while (current) {
+        if (isElementSelfHidden(current)) return false;
+        current = current.parentElement;
+    }
+
+    return true;
+}
+
+function collectVisibleText(context: ScanContext | undefined, element: Element): string {
+    if (!getCachedVisibility(context, element, isElementVisible)) return '';
+
+    const parts: string[] = [];
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+        {
+            acceptNode: (node) => {
+                if (node instanceof Element) {
+                    if (isNonRenderedTextElement(node) || isElementSelfHidden(node)) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_SKIP;
+                }
+
+                if (node instanceof Text && node.textContent?.trim()) {
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+                return NodeFilter.FILTER_REJECT;
+            }
+        }
+    );
+
+    let current: Node | null;
+    while (current = walker.nextNode()) {
+        parts.push(current.textContent ?? '');
+    }
+
+    return parts.join(' ');
+}
+
+function isNonRenderedTextElement(element: Element): boolean {
+    return ['script', 'style', 'noscript', 'template', 'iframe'].includes(element.tagName.toLowerCase());
+}
+
+function isElementSelfHidden(element: Element): boolean {
+    if (element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') return true;
+
+    try {
+        const style = window.getComputedStyle(element);
+        return style.display === 'none'
+            || style.visibility === 'hidden'
+            || style.visibility === 'collapse';
+    } catch (_) {
+        return false;
+    }
 }
 
 export function getCachedProseEvidence(context: ScanContext | undefined, element: Element): ProseEvidence {

@@ -2,8 +2,10 @@
 
 // class/id 正向关键词（乘以加分系数）
 import {
-    getCachedNormalizedText,
     getCachedProseEvidence,
+    getCachedVisibility,
+    getCachedVisibleNormalizedText,
+    isElementVisible,
     markScannedElement,
     type ScanContext
 } from '@/entrypoints/main/translationTarget/scanContext';
@@ -35,7 +37,7 @@ export function findMainContent(scanContext?: ScanContext): Element {
         const promoted = promoteToContentShell(scored, scanContext);
 
         // 兜底校验：选中的区域文字量需达到 body 的 15%，否则说明没找对，回落到 body
-        const bodyLen = getCachedNormalizedText(scanContext, document.body).length;
+        const bodyLen = getTextLength(document.body, scanContext);
         const promotedLen = getTextLength(promoted, scanContext);
         if (bodyLen === 0 || promotedLen / bodyLen >= 0.15) return promoted;
     }
@@ -47,7 +49,7 @@ export function findMainContent(scanContext?: ScanContext): Element {
 function findSemanticRoot(scanContext?: ScanContext): Element | null {
     const articles = Array.from(
         document.querySelectorAll<Element>('article, [role="article"]')
-    );
+    ).filter(article => isVisible(article, scanContext));
 
     // 唯一的 article 才有意义；多个说明是列表页，不单独取
     if (articles.length !== 1) return null;
@@ -66,7 +68,7 @@ function findSemanticRoot(scanContext?: ScanContext): Element | null {
 function findMainRoot(scanContext?: ScanContext): Element | null {
     const mains = Array.from(
         document.querySelectorAll<Element>('main, [role="main"]')
-    );
+    ).filter(main => isVisible(main, scanContext));
 
     if (mains.length !== 1) return null;
 
@@ -74,7 +76,7 @@ function findMainRoot(scanContext?: ScanContext): Element | null {
     if (
         getTextLength(main, scanContext) >= MIN_TEXT_LENGTH * 2
         && getLinkDensity(main, scanContext) <= 0.5
-        && hasPrimaryHeading(main)
+        && hasPrimaryHeading(main, scanContext)
         && !hasCompetingDirectReadingChildren(main, scanContext)
         && !isLikelyNoise(main, scanContext)
     ) {
@@ -88,6 +90,7 @@ function hasCompetingDirectReadingChildren(element: Element, scanContext?: ScanC
     // Avoid selecting broad semantic shells such as <main> when they contain a real
     // article and a separate high-text competitor like comments or recommendations.
     return Array.from(element.children)
+        .filter(child => getTextLength(child, scanContext) > 0)
         .filter(child => getCachedProseEvidence(scanContext, child).strength === 'strong')
         .length > 1;
 }
@@ -102,7 +105,7 @@ function findByBottomUpScore(scanContext?: ScanContext): Element | null {
         markScannedElement(scanContext);
         if (leaf.tagName.toLowerCase() === 'div' && getCachedProseEvidence(scanContext, leaf).strength !== 'strong') continue;
 
-        const text = getCachedNormalizedText(scanContext, leaf);
+        const text = getCachedVisibleNormalizedText(scanContext, leaf);
         if (text.length < 10) continue;
 
         // 叶子节点的内容分：文本量 + 逗号数（逗号多 → 自然语言散文）
@@ -130,7 +133,7 @@ function findByBottomUpScore(scanContext?: ScanContext): Element | null {
     let bestScore = 0;
 
     for (const [el, raw] of scores) {
-        if (getTextLength(el, scanContext) < MIN_TEXT_LENGTH || isLikelyNoise(el, scanContext)) continue;
+        if (!isVisible(el, scanContext) || getTextLength(el, scanContext) < MIN_TEXT_LENGTH || isLikelyNoise(el, scanContext)) continue;
         if (isSemanticContentShell(el) && hasCompetingDirectReadingChildren(el, scanContext)) continue;
 
         const linkDensity = getLinkDensity(el, scanContext);
@@ -177,6 +180,7 @@ function promoteToContentShell(base: Element, scanContext?: ScanContext): Elemen
 
 function getPromotionScore(candidate: Element, base: Element, baseLen: number, depth: number, scanContext?: ScanContext): number {
     if (!candidate.contains(base)) return 0;
+    if (!isVisible(candidate, scanContext)) return 0;
     if (isLikelyNoise(candidate, scanContext)) return 0;
 
     const candidateLen = getTextLength(candidate, scanContext);
@@ -185,8 +189,8 @@ function getPromotionScore(candidate: Element, base: Element, baseLen: number, d
     const extraText = candidateLen - baseLen;
     const textRatio = baseLen > 0 ? candidateLen / baseLen : Infinity;
     const linkDensity = getLinkDensity(candidate, scanContext);
-    const hasHeading = hasPrimaryHeading(candidate);
-    const hasHeadingOutsideBase = hasPrimaryHeadingOutsideBase(candidate, base);
+    const hasHeading = hasPrimaryHeading(candidate, scanContext);
+    const hasHeadingOutsideBase = hasPrimaryHeadingOutsideBase(candidate, base, scanContext);
     const hasArticleLeadHeading = hasHeadingOutsideBase && looksLikeArticleShellWithLeadingHeading(candidate, base, scanContext);
 
     // 候选外壳只允许比正文容器略宽。超出的文字太多，通常意味着带进了侧栏/推荐/评论。
@@ -226,13 +230,15 @@ function isSemanticContentShell(el: Element): boolean {
         || el.getAttribute('role') === 'main';
 }
 
-function hasPrimaryHeading(el: Element): boolean {
-    return el.querySelector('h1, h2') !== null;
+function hasPrimaryHeading(el: Element, scanContext?: ScanContext): boolean {
+    return Array.from(el.querySelectorAll<Element>('h1, h2'))
+        .some(heading => isVisible(heading, scanContext));
 }
 
-function hasPrimaryHeadingOutsideBase(candidate: Element, base: Element): boolean {
+function hasPrimaryHeadingOutsideBase(candidate: Element, base: Element, scanContext?: ScanContext): boolean {
     return Array.from(candidate.querySelectorAll('h1, h2')).some((heading) => {
         if (base.contains(heading)) return false;
+        if (!isVisible(heading, scanContext)) return false;
         if (isLikelyNoise(heading)) return false;
 
         const relation = heading.compareDocumentPosition(base);
@@ -241,7 +247,7 @@ function hasPrimaryHeadingOutsideBase(candidate: Element, base: Element): boolea
 }
 
 function looksLikeArticleShellWithLeadingHeading(candidate: Element, base: Element, scanContext?: ScanContext): boolean {
-    const heading = findLeadingPrimaryHeading(candidate, base);
+    const heading = findLeadingPrimaryHeading(candidate, base, scanContext);
     if (!heading) return false;
 
     const candidateLen = getTextLength(candidate, scanContext);
@@ -260,9 +266,10 @@ function looksLikeArticleShellWithLeadingHeading(candidate: Element, base: Eleme
     return true;
 }
 
-function findLeadingPrimaryHeading(candidate: Element, base: Element): Element | null {
+function findLeadingPrimaryHeading(candidate: Element, base: Element, scanContext?: ScanContext): Element | null {
     return Array.from(candidate.querySelectorAll<Element>('h1, h2')).find((heading) => {
         if (base.contains(heading)) return false;
+        if (!isVisible(heading, scanContext)) return false;
         if (isLikelyNoise(heading)) return false;
 
         const relation = heading.compareDocumentPosition(base);
@@ -271,7 +278,11 @@ function findLeadingPrimaryHeading(candidate: Element, base: Element): Element |
 }
 
 function getTextLength(el: Element, scanContext?: ScanContext): number {
-    return getCachedNormalizedText(scanContext, el).length;
+    return getCachedVisibleNormalizedText(scanContext, el).length;
+}
+
+function isVisible(el: Element, scanContext?: ScanContext): boolean {
+    return getCachedVisibility(scanContext, el, isElementVisible);
 }
 
 function getLinkDensity(el: Element, scanContext?: ScanContext): number {

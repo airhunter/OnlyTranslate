@@ -21,6 +21,9 @@ import type { TranslationTargetCandidate, TranslationTargetContext, TranslationT
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
 const LEADING_READING_TARGET_SELECTOR = 'h1, h2, h3, h4, p, li, blockquote, figcaption';
+const LABELED_READING_HEADING_SELECTOR = 'h2, h3, h4, h5, h6';
+const LABELED_READING_HEADING_PATTERN = /^(abstract|summary|plain language summary|overview|background|key points?|highlights?)\s*:?[\s]*$/i;
+const LABELED_READING_BODY_TAGS = new Set(['p', 'span', 'blockquote', 'figcaption']);
 const MAX_RECOVERED_LEADING_SIBLINGS = 4;
 const MAX_RECOVERED_LEADING_TEXT = 5000;
 
@@ -276,6 +279,7 @@ function collectGenericSupplementalReadingTargets(
 ): Element[] {
     return [
         ...collectContentRootSiblingReadingTargets(context),
+        ...collectLabeledReadingTargets(root, context),
         ...collectHighConfidenceReadingUnits(root, {
             scanContext: context.grabOptions?.scanContext,
             scanBudget: 'supplemental',
@@ -285,6 +289,58 @@ function collectGenericSupplementalReadingTargets(
     ]
         .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+function collectLabeledReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
+    const headings = Array.from(root.querySelectorAll<Element>(LABELED_READING_HEADING_SELECTOR));
+    const targets: Element[] = [];
+
+    for (const heading of headings) {
+        const headingText = getCachedNormalizedText(context.grabOptions?.scanContext, heading);
+        if (!LABELED_READING_HEADING_PATTERN.test(headingText)) continue;
+        if (!isVisibleForTranslation(heading, context)) continue;
+
+        const bodyTargets = collectLabeledReadingBodyTargets(heading, context);
+        if (bodyTargets.length === 0) continue;
+
+        targets.push(heading, ...bodyTargets);
+    }
+
+    return Array.from(new Set(targets));
+}
+
+function collectLabeledReadingBodyTargets(heading: Element, context: TranslationTargetContext): Element[] {
+    const targets: Element[] = [];
+    let sibling = heading.nextElementSibling;
+
+    while (sibling && targets.length < 4) {
+        if (/^h[1-6]$/i.test(sibling.tagName)) break;
+        if (!LABELED_READING_BODY_TAGS.has(sibling.tagName.toLowerCase())) break;
+        if (!isReadableLabeledBodyTarget(sibling, context)) break;
+
+        targets.push(sibling);
+        sibling = sibling.nextElementSibling;
+    }
+
+    return targets;
+}
+
+function isReadableLabeledBodyTarget(target: Element, context: TranslationTargetContext): boolean {
+    if (!isVisibleForTranslation(target, context)) return false;
+    if (target.closest('nav, aside, footer, form, dialog, .notranslate, [translate="no"]')) return false;
+
+    const scanContext = context.grabOptions?.scanContext;
+    const filterDecision = getCachedContentFilterDecision(scanContext, target, getContentFilterDecision);
+    if (filterDecision === 'skip-subtree') return false;
+    if (LEADING_READING_SIBLING_NEGATIVE_PATTERN.test(getStructuralHint(target))) return false;
+
+    const text = getCachedNormalizedText(scanContext, target);
+    if (text.length < 80 || text.length > 3072) return false;
+
+    const evidence = getCachedProseEvidence(scanContext, target);
+    return evidence.strength !== 'none'
+        && evidence.linkDensity <= 0.35
+        && evidence.interactiveDensity <= 0.35;
 }
 
 function collectContentRootSiblingReadingTargets(context: TranslationTargetContext): Element[] {
@@ -561,7 +617,32 @@ function mergeTranslationDecisions(
 }
 
 function shouldKeepNestedTarget(parent: Element, child: Element, context: TranslationTargetContext): boolean {
-    return getCurrentSiteProfile()?.shouldKeepNestedTarget?.(parent, child, context) ?? false;
+    const profile = getCurrentSiteProfile();
+    if (profile?.shouldKeepNestedTarget) {
+        return profile.shouldKeepNestedTarget(parent, child, context);
+    }
+
+    return shouldKeepGenericLabeledReadingTarget(parent, child, context);
+}
+
+function shouldKeepGenericLabeledReadingTarget(
+    parent: Element,
+    child: Element,
+    context: TranslationTargetContext
+): boolean {
+    if (child.parentElement !== parent) return false;
+
+    const heading = Array.from(parent.children).find(element =>
+        element.matches(LABELED_READING_HEADING_SELECTOR)
+        && LABELED_READING_HEADING_PATTERN.test(getCachedNormalizedText(context.grabOptions?.scanContext, element))
+    );
+    if (!heading) return false;
+    if (child === heading) return true;
+    if (!LABELED_READING_BODY_TAGS.has(child.tagName.toLowerCase())) return false;
+
+    const position = heading.compareDocumentPosition(child);
+    return Boolean(position & Node.DOCUMENT_POSITION_FOLLOWING)
+        && isReadableLabeledBodyTarget(child, context);
 }
 
 function chooseStrongerSource(
