@@ -17,7 +17,8 @@ import {
     getCachedContentFilterDecision,
     getCachedContentUnitDecision,
     getCachedNormalizedText,
-    getCachedVisibility
+    getCachedVisibility,
+    isElementVisible
 } from './scanContext';
 import type {
     TranslationTargetCandidate,
@@ -162,24 +163,7 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
 }
 
 export function isVisibleForTranslation(element: Element, context?: TranslationTargetContext): boolean {
-    return getCachedVisibility(context?.grabOptions?.scanContext, element, computeVisibleForTranslation);
-}
-
-function computeVisibleForTranslation(element: Element): boolean {
-    let current: Element | null = element;
-
-    while (current) {
-        if (current.hasAttribute('hidden') || current.getAttribute('aria-hidden') === 'true') return false;
-
-        try {
-            const style = window.getComputedStyle(current);
-            if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
-        } catch (_) {}
-
-        current = current.parentElement;
-    }
-
-    return true;
+    return getCachedVisibility(context?.grabOptions?.scanContext, element, isElementVisible);
 }
 
 export function isExpandableReadingContainer(element: Element): boolean {

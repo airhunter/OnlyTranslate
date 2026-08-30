@@ -153,4 +153,29 @@ describe('contentDetector', () => {
 
     expect(findMainContent()).toBe(document.querySelector('#story-root'))
   })
+
+  it('ignores hidden modal prose when choosing the visible content root', () => {
+    document.body.innerHTML = `
+      <style>.modal { display: none; }</style>
+      <section id="paper">
+        <div class="paper-heading">
+          <h2>Readable research paper title with enough context</h2>
+        </div>
+        <div class="paper-details">
+          <div class="card-body abstract">
+            <h5>Abstract</h5>
+            <p>${paragraph.repeat(8)}</p>
+          </div>
+        </div>
+      </section>
+      <div class="modal" id="citation-modal">
+        <div class="modal-body article-content">
+          <p>${paragraph.repeat(40)}</p>
+          <p>${paragraph.repeat(40)}</p>
+        </div>
+      </div>
+    `
+
+    expect(findMainContent()).toBe(document.querySelector('#paper'))
+  })
 })

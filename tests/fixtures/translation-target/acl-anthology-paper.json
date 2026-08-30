@@ -1,0 +1,25 @@
+{
+  "name": "generic smart scope ignores hidden citation modals on paper pages",
+  "url": "https://aclanthology.org/2023.wmt-1.41/",
+  "scope": "smart",
+  "html": "acl-anthology-paper.html",
+  "include": [
+    "paper-title",
+    "abstract-heading",
+    "abstract-body"
+  ],
+  "exclude": [
+    "metadata-instructions",
+    "paper-metadata",
+    "citation-export"
+  ],
+  "textIncludes": [
+    "Large Language Models Effectively Leverage",
+    "Abstract",
+    "Critical errors still persist"
+  ],
+  "textExcludes": [
+    "Use this form to create a structured issue",
+    "This hidden citation export repeats"
+  ]
+}
