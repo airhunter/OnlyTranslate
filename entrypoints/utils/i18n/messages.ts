@@ -503,9 +503,6 @@ export const messages = {
         resetConfirm: '确定要恢复默认的 system 和 user 模板吗？此操作将覆盖当前的自定义模板。',
         resetTitle: '恢复默认模板',
         resetSuccess: '已成功恢复默认翻译模板',
-        savePrompts: '保存 Prompt',
-        saveSuccess: 'Prompt 已保存',
-        saveFailed: 'Prompt 保存失败，请重试'
       },
       about: {
         title: '关于只译',
@@ -1088,9 +1085,6 @@ export const messages = {
         resetConfirm: 'Restore the default system and user templates? This will overwrite your custom templates.',
         resetTitle: 'Restore default template',
         resetSuccess: 'Default translation template restored',
-        savePrompts: 'Save Prompt',
-        saveSuccess: 'Prompt saved',
-        saveFailed: 'Failed to save Prompt. Please try again.'
       },
       about: {
         title: 'About OnlyTranslate',
@@ -1673,9 +1667,6 @@ export const messages = {
         resetConfirm: '確定要恢復預設的 system 和 user 模板嗎？此操作將覆蓋目前的自訂模板。',
         resetTitle: '恢復預設模板',
         resetSuccess: '已成功恢復預設翻譯模板',
-        savePrompts: '儲存 Prompt',
-        saveSuccess: 'Prompt 已儲存',
-        saveFailed: 'Prompt 儲存失敗，請重試'
       },
       about: {
         title: '關於只譯',
@@ -2258,9 +2249,6 @@ export const messages = {
         resetConfirm: '既定の system と user テンプレートに戻しますか？現在のカスタムテンプレートは上書きされます。',
         resetTitle: '既定テンプレートに戻す',
         resetSuccess: '既定の翻訳テンプレートに戻しました',
-        savePrompts: 'Prompt を保存',
-        saveSuccess: 'Prompt を保存しました',
-        saveFailed: 'Prompt を保存できませんでした。もう一度お試しください。'
       },
       about: {
         title: 'OnlyTranslate について',

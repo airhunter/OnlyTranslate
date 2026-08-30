@@ -75,16 +75,13 @@
           <el-icon><Refresh /></el-icon>
           {{ t('options.ai.resetTemplate') }}
         </el-button>
-        <el-button data-testid="save-prompts" type="primary" :loading="isSaving" @click="savePrompts">
-          {{ t('options.ai.savePrompts') }}
-        </el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useConfig } from '@/composables/useConfig'
 import { defaultOption, servicesType } from '@/entrypoints/utils/option'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
@@ -96,9 +93,8 @@ import {
   usesTranslationContext,
 } from '@/entrypoints/utils/translationPrompt'
 
-const { config, saveConfig } = useConfig()
+const { config } = useConfig()
 const { t } = useI18n()
-const isSaving = ref(false)
 
 const isAIService = computed(() => servicesType.isAI(config.value.service))
 
@@ -141,19 +137,6 @@ const insertVariable = (variable: string) => {
   config.value.user_role[config.value.service] = current
     ? `${current}${current.endsWith('\n') ? '' : '\n'}${variable}`
     : variable
-}
-
-const savePrompts = async () => {
-  isSaving.value = true
-  try {
-    await saveConfig()
-    ElMessage({ message: t('options.ai.saveSuccess'), type: 'success', duration: 2000 })
-  } catch (error) {
-    console.error('Failed to save prompt configuration:', error)
-    ElMessage({ message: t('options.ai.saveFailed'), type: 'error', duration: 3000 })
-  } finally {
-    isSaving.value = false
-  }
 }
 
 // Reset template

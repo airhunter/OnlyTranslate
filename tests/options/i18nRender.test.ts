@@ -70,7 +70,7 @@ describe('options i18n render', () => {
     expect(wrapper.find('[data-variable="{{context}}"]').exists()).toBe(true)
     expect(wrapper.find('[data-variable="{{scene}}"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Prompt 预览（示例数据）')
-    expect(wrapper.find('[data-testid="save-prompts"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="save-prompts"]').exists()).toBe(false)
   })
 
   it('renders general settings', () => {
