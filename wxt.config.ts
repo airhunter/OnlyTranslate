@@ -39,6 +39,9 @@ export default defineConfig({
             ...(browser === 'firefox' ? [] : ['tts']),
         ],
         host_permissions: ['<all_urls>'],
+        content_security_policy: {
+            extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+        },
         action: {
             default_title: '__MSG_extName__',
         },

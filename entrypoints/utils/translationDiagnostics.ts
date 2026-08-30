@@ -11,6 +11,7 @@ export type TranslationDiagnosticScene =
   | 'input'
   | 'video'
   | 'ebook'
+  | 'pdf'
   | 'other'
 
 export interface TranslationDiagnosticMetadata {

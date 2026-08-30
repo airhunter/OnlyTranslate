@@ -109,7 +109,7 @@
         <svg class="translate-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
         </svg>
-        <span>{{ translating ? t('common.processing') : (isTranslated ? t('common.restoreOriginal') : t('common.translatePage')) }}</span>
+        <span>{{ translateButtonLabel }}</span>
       </button>
 
       <!-- 翻译模式 -->
@@ -321,6 +321,7 @@ import { getEbookPageUrl } from '@/entrypoints/ebook/url';
 import type { EbookRecord } from '@/entrypoints/ebook/types';
 import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration';
 import { consumeDisplayModeMigrationNotice } from '@/entrypoints/utils/displayModeMigration';
+import { getPdfReaderUrl, isLikelyPdfUrl, isPdfContentType } from '@/entrypoints/pdf/url';
 
 interface PopupEbook {
   record: EbookRecord;
@@ -359,6 +360,13 @@ const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : ite
 const previousService = ref<string>('');
 const translating = ref(false);
 const isTranslated = ref(false);
+const activePdfSource = ref('');
+
+const translateButtonLabel = computed(() => {
+  if (translating.value) return t('common.processing')
+  if (activePdfSource.value) return t('pdf.openCurrent')
+  return isTranslated.value ? t('common.restoreOriginal') : t('common.translatePage')
+})
 
 const releaseNotesHeading = computed(() => {
   return currentReleaseNote.value?.title || t('common.currentVersion')
@@ -378,6 +386,7 @@ async function toggleReleaseNotes() {
 
 // 查询当前页面的翻译状态
 async function checkTranslationStatus() {
+  if (activePdfSource.value) return;
   try {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) return;
@@ -395,6 +404,11 @@ async function checkTranslationStatus() {
 
 // 处理翻译按钮点击（切换逻辑）
 async function handleTranslateClick() {
+  if (activePdfSource.value) {
+    await browser.tabs.create({ url: getPdfReaderUrl(activePdfSource.value) });
+    window.close();
+    return;
+  }
   if (isTranslated.value) {
     // 已翻译，还原原文
     await restoreCurrentPage();
@@ -451,7 +465,26 @@ async function restoreCurrentPage() {
   }
 }
 
-loadConfig().then(() => {
+async function detectActivePdfSource() {
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  const url = tabs[0]?.url;
+  if (!url || !/^https?:/i.test(url)) {
+    activePdfSource.value = isLikelyPdfUrl(url) ? url! : '';
+    return;
+  }
+  if (isLikelyPdfUrl(url)) {
+    activePdfSource.value = url;
+    return;
+  }
+  try {
+    const response = await fetch(url, { method: 'HEAD', credentials: 'include' });
+    activePdfSource.value = response.ok && isPdfContentType(response.headers.get('content-type')) ? url : '';
+  } catch {
+    activePdfSource.value = '';
+  }
+}
+
+loadConfig().then(async () => {
   updateTheme(config.value.theme || 'auto')
   locale.value = resolveLocale(config.value.uiLocale || 'auto')
   // 初始化 previousService
@@ -461,6 +494,7 @@ loadConfig().then(() => {
     config.value.service = defaultOption.service
     previousService.value = defaultOption.service
   }
+  await detectActivePdfSource()
   // 查询当前页面翻译状态
   checkTranslationStatus()
   void consumeClaudeModelMigrationNotice().then((notice) => {

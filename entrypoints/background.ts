@@ -26,6 +26,7 @@ import {
     type TranslationDiagnosticMetadata,
 } from '@/entrypoints/utils/translationDiagnostics'
 import { handleTtsBackgroundMessage } from '@/entrypoints/utils/ttsBackground'
+import { getPdfReaderUrl } from '@/entrypoints/pdf/url'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -171,8 +172,18 @@ export default defineBackground({
                     enabled: false, // 初始状态为禁用
                 });
 
+                browser.contextMenus.create({
+                    id: CONTEXT_MENU_IDS.OPEN_PDF,
+                    title: t('pdf.openLink'),
+                    contexts: ['link'],
+                });
+
                 // 监听右键菜单点击事件
                 browser.contextMenus.onClicked.addListener((info: any, tab: any) => {
+                    if (info.menuItemId === CONTEXT_MENU_IDS.OPEN_PDF && typeof info.linkUrl === 'string') {
+                        void browser.tabs.create({ url: getPdfReaderUrl(info.linkUrl) });
+                        return;
+                    }
                     if (!tab?.id) return;
 
                     if (info.menuItemId === CONTEXT_MENU_IDS.TRANSLATE_FULL_PAGE) {

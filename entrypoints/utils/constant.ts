@@ -34,4 +34,5 @@ export const styles = {
 export const CONTEXT_MENU_IDS = {
     TRANSLATE_FULL_PAGE: 'only-translate-translate-full-page',
     RESTORE_ORIGINAL: 'only-translate-restore-original',
+    OPEN_PDF: 'only-translate-open-pdf',
 }
