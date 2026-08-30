@@ -87,24 +87,24 @@ describe('translation templates', () => {
 
     mockConfig.service = 'deepseek'
     const deepseek = JSON.parse(deepseekMsgTemplate('bank', 'zh-Hans', false, undefined, context))
-    expect(deepseek.temperature).toBe(0.2)
+    expect(deepseek.temperature).toBe(0.7)
     expect(deepseek.messages[1].content).toContain('watched the water')
 
     mockConfig.service = 'gemini'
     const gemini = JSON.parse(geminiMsgTemplate('bank', 'zh-Hans', false, undefined, context))
-    expect(gemini.generationConfig.temperature).toBe(0.2)
+    expect(gemini.generationConfig.temperature).toBeUndefined()
     expect(gemini.systemInstruction.parts[0].text).toContain('untrusted data')
     expect(gemini.contents[0].parts[0].text).toContain('River restoration')
 
     mockConfig.service = 'claude'
     const claude = JSON.parse(claudeMsgTemplate('bank', 'zh-Hans', false, undefined, context))
-    expect(claude.temperature).toBe(0.2)
+    expect(claude.temperature).toBeUndefined()
     expect(claude.system).toContain('untrusted data')
     expect(claude.messages[0].content).toContain('watched the water')
 
     mockConfig.service = 'minimax'
     const minimax = JSON.parse(minimaxTemplate('bank', 'zh-Hans', undefined, context))
-    expect(minimax.temperature).toBe(0.2)
+    expect(minimax.temperature).toBe(0.7)
     expect(minimax.messages[1].content).toContain('River restoration')
 
     mockConfig.service = 'custom_openai'
@@ -115,7 +115,7 @@ describe('translation templates', () => {
     }]
     const custom = JSON.parse(commonMsgTemplate('bank', 'zh-Hans', false, undefined, context))
     expect(custom.model).toBe('custom-context-model')
-    expect(custom.temperature).toBe(0.2)
+    expect(custom.temperature).toBe(1.0)
     expect(custom.messages[1].content).toContain('watched the water')
   })
 
@@ -193,7 +193,6 @@ describe('translation templates', () => {
     const payload = JSON.parse(geminiMsgTemplate('Hello', 'zh-Hans', true))
 
     expect(payload.generationConfig).toEqual({
-      temperature: 0.2,
       thinkingConfig: { thinkingBudget: 0 },
     })
   })

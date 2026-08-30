@@ -12,7 +12,6 @@ import {
 import { resolveConfiguredTranslationModel } from './modelSelection'
 import type { AiTextActionPrompt } from '@/entrypoints/service/types'
 import {
-    DEFAULT_TRANSLATION_TEMPERATURE,
     renderBatchTranslationPrompt,
     renderTranslationPrompt,
     type TranslationPromptContext,
@@ -86,7 +85,7 @@ export function commonMsgTemplate(
 
     const payload: Record<string, unknown> = {
         'model': model,
-        "temperature": DEFAULT_TRANSLATION_TEMPERATURE,
+        "temperature": prompt ? 0.2 : 1.0,
         'messages': [
             {'role': 'system', 'content': resolvedPrompt.system},
             {'role': 'user', 'content': resolvedPrompt.user},
@@ -120,7 +119,7 @@ export function commonBatchMsgTemplate(
     const payload: Record<string, unknown> = {
         'model': model,
         // 批量响应依赖稳定 JSON 数组，低温度用于降低格式漂移与重排概率。
-        "temperature": DEFAULT_TRANSLATION_TEMPERATURE,
+        "temperature": 0.3,
         'messages': [
             { 'role': 'system', 'content': prompt.system },
             { 'role': 'user', 'content': prompt.user },
@@ -175,7 +174,7 @@ export function deepseekMsgTemplate(
 
     const payload: Record<string, unknown> = {
         'model': model,
-        temperature: DEFAULT_TRANSLATION_TEMPERATURE,
+        temperature: prompt ? 0.2 : 0.7,
         'messages': [
             {'role': 'system', 'content': resolvedPrompt.system},
             {'role': 'user', 'content': resolvedPrompt.user},
@@ -202,7 +201,6 @@ export function geminiMsgTemplate(
     const thinkingWanted = !fastMode && config.thinking?.[config.service] === true
     const policy = resolveGeminiTranslationPolicy(model, thinkingWanted)
     const generationConfig: Record<string, unknown> = {
-        temperature: DEFAULT_TRANSLATION_TEMPERATURE,
         ...(policy.thinkingConfig ? { thinkingConfig: policy.thinkingConfig } : {}),
     }
     if (prompt?.responseFormat === 'json') generationConfig.responseMimeType = 'application/json'
@@ -271,7 +269,7 @@ export function claudeMsgTemplate(
         model: model,
         max_tokens: 4096,
         stream: false,
-        temperature: DEFAULT_TRANSLATION_TEMPERATURE,
+        ...(prompt ? { temperature: 0.2 } : {}),
         system: resolvedPrompt.system,
         messages: [
             {role: "user", content: resolvedPrompt.user},
@@ -367,7 +365,7 @@ export function minimaxTemplate(
     return JSON.stringify({
         model: "MiniMax-Text-01",
         stream: false,
-        temperature: DEFAULT_TRANSLATION_TEMPERATURE,
+        temperature: prompt ? 0.2 : 0.7,
         thinking: { type: config.thinking?.[config.service] ? 'adaptive' : 'disabled' },
         messages: [
             {role: 'system', content: resolvedPrompt.system},

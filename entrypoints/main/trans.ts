@@ -32,11 +32,7 @@ import {
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
 import { t } from '@/entrypoints/utils/i18n';
-import {
-    HOVER_SURROUNDING_TEXT_LIMIT,
-    markTargetInContext,
-    type TranslationPromptContext,
-} from '@/entrypoints/utils/translationPrompt';
+import { type TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,
     hideOriginalForTranslationOnly,
@@ -81,47 +77,17 @@ const translationState = {
 
 let hasReportedInvalidatedExtensionContext = false;
 
-function getFollowingHeadingContext(node: HTMLElement | null): string {
-    if (!node || !/^h[1-6]$/i.test(node.tagName)) return '';
-    let sibling = node.nextElementSibling;
-    let inspected = 0;
-    while (sibling && inspected < 3) {
-        if (/^h[1-6]$/i.test(sibling.tagName)) break;
-        inspected++;
-        if (
-            sibling.matches('p, li, blockquote, dd, dt, figcaption')
-            && !sibling.closest('nav, aside, footer, form, dialog, .notranslate, [translate="no"]')
-        ) {
-            const text = (sibling.textContent || '').replace(/\s+/g, ' ').trim();
-            if (text) return text;
-        }
-        sibling = sibling.nextElementSibling;
-    }
-    return '';
-}
-
-function getWebpagePromptContext(node: HTMLElement | null = null): TranslationPromptContext {
-    const surroundingText = getFollowingHeadingContext(node);
+function getWebpagePromptContext(_node: HTMLElement | null = null): TranslationPromptContext {
     return {
         scene: 'webpage',
         title: document.title,
-        ...(surroundingText ? { surroundingText } : {}),
     };
 }
 
-function getHoverPromptContext(node: Node | null): TranslationPromptContext {
-    const element = node instanceof Element ? node : node?.parentElement;
-    const block = element?.closest('p, li, blockquote, dd, dt, figcaption, h1, h2, h3, h4, h5, h6');
-    const targetText = element?.textContent || '';
-    const surroundingText = markTargetInContext(
-        block?.textContent || '',
-        targetText,
-        HOVER_SURROUNDING_TEXT_LIMIT,
-    );
+function getHoverPromptContext(_node: Node | null = null): TranslationPromptContext {
     return {
         scene: 'hover',
         title: document.title,
-        ...(surroundingText ? { surroundingText } : {}),
     };
 }
 

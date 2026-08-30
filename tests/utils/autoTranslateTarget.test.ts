@@ -78,6 +78,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    document.title = ''
     mockConfig.translationScope = 'smart'
     mockConfig.on = true
     mockConfig.service = 'microsoft'
@@ -87,6 +88,9 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
     mockConfig.maxConcurrentTranslations = 6
+    mockConfig.model = {}
+    mockConfig.token = {}
+    mockConfig.customProviders = []
     mockCanUseBatchTranslationForCurrentConfig.mockReturnValue(false)
     mockHasForegroundTranslationWork.mockReturnValue(false)
     vi.clearAllMocks()
@@ -113,7 +117,6 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(translateText).toHaveBeenCalledWith('Start action', {
       scene: 'hover',
       title: document.title,
-      surroundingText: 'Choose <target>Start action</target> when ready.',
     }, expect.objectContaining({
       diagnostics: expect.objectContaining({ scene: 'hover' }),
     }))
@@ -855,7 +858,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
   )
 
-  it('adds the following semantic block only when translating a heading', async () => {
+  it('sends only the page title when translating a heading', async () => {
     vi.mocked(translateText).mockResolvedValue('如何部署')
     document.body.innerHTML = `
       <article>
@@ -869,7 +872,6 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(translateText).toHaveBeenCalledWith('How to deploy', {
       scene: 'webpage',
       title: document.title,
-      surroundingText: 'The deployment requires a signed browser extension package.',
     }, expect.any(Object))
   })
 

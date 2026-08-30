@@ -603,6 +603,21 @@ export function cacheTranslationResult(
   );
 }
 
+export function removeCachedTranslationResult(
+  origin: string,
+  context: TranslationPromptContextInput = { scene: 'other' },
+): void {
+  const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '')
+  if (!safeOrigin.trim()) return
+  const direction = resolveTranslationDirection(safeOrigin)
+  if (!direction.shouldTranslate) return
+  cache.localRemove(
+    safeOrigin,
+    direction.targetLang,
+    normalizeTranslationPromptContext(context),
+  )
+}
+
 /**
  * 当用户离开页面或主动取消翻译时，清空翻译队列
  */

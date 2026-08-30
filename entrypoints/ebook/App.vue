@@ -586,7 +586,6 @@ async function translateChapter(document: Document, chapterLabel: string): Promi
   await coordinator.start(document, {
     scene: 'ebook',
     title: activeBook.value?.title ?? '',
-    surroundingText: chapterLabel,
   }, readerSettings.displayMode);
 }
 

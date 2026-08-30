@@ -3,8 +3,14 @@ import { applyContextAwarePromptMigration } from '@/entrypoints/utils/promptMigr
 import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
+  CONTEXT_AWARE_DEFAULT_SYSTEM_PROMPT,
+  CONTEXT_AWARE_DEFAULT_USER_PROMPT,
   LEGACY_DEFAULT_SYSTEM_PROMPT,
   LEGACY_DEFAULT_USER_PROMPT,
+  LPLUS_V1_DEFAULT_SYSTEM_PROMPT,
+  LPLUS_V1_DEFAULT_USER_PROMPT,
+  LPLUS_V2_DEFAULT_SYSTEM_PROMPT,
+  LPLUS_V2_DEFAULT_USER_PROMPT,
 } from '@/entrypoints/utils/translationPrompt'
 
 describe('context-aware prompt migration', () => {
@@ -37,6 +43,39 @@ describe('context-aware prompt migration', () => {
     expect(applyContextAwarePromptMigration(customUser).status).toBe('unchanged')
     expect(customSystem.user_role.openai).toBe(LEGACY_DEFAULT_USER_PROMPT)
     expect(customUser.system_role.claude).toBe(LEGACY_DEFAULT_SYSTEM_PROMPT)
+  })
+
+  it('rolls the unreleased context-aware official pair forward to L+', () => {
+    const config = {
+      system_role: { openai: CONTEXT_AWARE_DEFAULT_SYSTEM_PROMPT },
+      user_role: { openai: CONTEXT_AWARE_DEFAULT_USER_PROMPT },
+    }
+
+    expect(applyContextAwarePromptMigration(config).status).toBe('migrated')
+    expect(config.system_role.openai).toBe(DEFAULT_SYSTEM_PROMPT)
+    expect(config.user_role.openai).toBe(DEFAULT_USER_PROMPT)
+  })
+
+  it('rolls the first L+ official pair forward to the separated title template', () => {
+    const config = {
+      system_role: { openai: LPLUS_V1_DEFAULT_SYSTEM_PROMPT },
+      user_role: { openai: LPLUS_V1_DEFAULT_USER_PROMPT },
+    }
+
+    expect(applyContextAwarePromptMigration(config).status).toBe('migrated')
+    expect(config.system_role.openai).toBe(DEFAULT_SYSTEM_PROMPT)
+    expect(config.user_role.openai).toBe(DEFAULT_USER_PROMPT)
+  })
+
+  it('rolls the verbose L+ title boundary prompt forward to the minimal template', () => {
+    const config = {
+      system_role: { openai: LPLUS_V2_DEFAULT_SYSTEM_PROMPT },
+      user_role: { openai: LPLUS_V2_DEFAULT_USER_PROMPT },
+    }
+
+    expect(applyContextAwarePromptMigration(config).status).toBe('migrated')
+    expect(config.system_role.openai).toBe(DEFAULT_SYSTEM_PROMPT)
+    expect(config.user_role.openai).toBe(DEFAULT_USER_PROMPT)
   })
 
   it('treats an explicitly cleared prompt as a customization', () => {

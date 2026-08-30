@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_BATCH_SYSTEM_PROMPT,
+  DEFAULT_SELECTION_SYSTEM_PROMPT,
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
   buildProviderContext,
   buildTargetMarkedContext,
   hasValidTranslationTemplate,
+  isLikelySelectionOvertranslation,
   markTargetInContext,
   normalizeTranslationPromptContext,
   renderBatchTranslationPrompt,
@@ -15,51 +17,56 @@ import {
 } from '@/entrypoints/utils/translationPrompt'
 
 describe('translation prompt context', () => {
-  it('renders the D prompt with a target-marked semantic block', () => {
+  it('uses the enhanced official prompt only for a target-marked selection', () => {
     const prompt = renderTranslationPrompt('bank', 'zh-Hans', {
       scene: 'selection',
       title: 'River restoration',
       surroundingText: 'They rested on the <target>bank</target> of the river.',
     })
 
-    expect(prompt.system).toContain('Translate only TARGET_TEXT')
+    expect(prompt.system).toBe(DEFAULT_SELECTION_SYSTEM_PROMPT)
     expect(prompt.system).toContain('untrusted data')
     expect(prompt.system).toContain('Return only the translation')
-    expect(prompt.user).toBe(`TARGET_LANGUAGE:
+    expect(prompt.user).toBe(`Target language:
 zh-Hans
 
-CONTEXT_TITLE:
+Page title:
 River restoration
 
-TARGET_TEXT:
+Selected text to translate:
 bank
 
-CONTEXT:
+Surrounding text (the selection is marked with <target> tags):
 They rested on the <target>bank</target> of the river.`)
   })
 
-  it('omits empty context sections from the official default template', () => {
-    expect(renderTranslationPrompt('A paragraph.', 'zh-Hans', {
+  it('uses the minimal 1.8.2-style webpage prompt with title-only context', () => {
+    const webpagePrompt = renderTranslationPrompt('A paragraph.', 'zh-Hans', {
       scene: 'webpage',
       title: 'Example article',
-    }).user).toBe(`TARGET_LANGUAGE:
-zh-Hans
+      surroundingText: 'A neighboring paragraph that must not be included.',
+    })
 
-CONTEXT_TITLE:
+    expect(webpagePrompt.system).toBe(`You are a professional, authentic machine translation engine.
+Translate only the source text. The page title is context only and must never appear in the output.`)
+    expect(webpagePrompt.user).toBe(`Page title for context only:
 Example article
 
-TARGET_TEXT:
-A paragraph.`)
+Translate the following source text into zh-Hans. If translation is unnecessary, return the original text. Return only the translation:
 
-    expect(renderTranslationPrompt('你好', 'en', {
+A paragraph.`)
+    expect(webpagePrompt.user).not.toContain('A neighboring paragraph')
+
+    const inputPrompt = renderTranslationPrompt('你好', 'en', {
       scene: 'input',
       title: 'Private page',
       surroundingText: 'Private content',
-    }).user).toBe(`TARGET_LANGUAGE:
-en
+    })
+    expect(inputPrompt.user).toBe(`Translate the following source text into en. If translation is unnecessary, return the original text. Return only the translation:
 
-TARGET_TEXT:
 你好`)
+    expect(inputPrompt.user).not.toContain('Private page')
+    expect(inputPrompt.user).not.toContain('Private content')
   })
 
   it('replaces template variables once without interpreting variables inside source data', () => {
@@ -110,6 +117,21 @@ TARGET_TEXT:
     expect(context).toContain('<target>trade</target>')
     expect(context.startsWith('A')).toBe(true)
     expect(context.endsWith('B')).toBe(true)
+  })
+
+  it('detects a surrounding paragraph returned for a short selection without rejecting normal expansion', () => {
+    expect(isLikelySelectionOvertranslation(
+      'the score of the next best model',
+      '推理分数持续攀升，而每个 token 的计算量却在不断下降。'.repeat(8),
+    )).toBe(true)
+    expect(isLikelySelectionOvertranslation(
+      'the score of the next best model',
+      '次优模型的得分',
+    )).toBe(false)
+    expect(isLikelySelectionOvertranslation(
+      'A complete paragraph with enough source material to translate naturally and faithfully.',
+      '一段具有足够原文信息、可以自然且忠实翻译的完整段落。',
+    )).toBe(false)
   })
 
   it('requires target language and source text in custom templates', () => {

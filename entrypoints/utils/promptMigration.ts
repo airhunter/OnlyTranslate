@@ -2,8 +2,14 @@ import type { Config } from './model'
 import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
+  CONTEXT_AWARE_DEFAULT_SYSTEM_PROMPT,
+  CONTEXT_AWARE_DEFAULT_USER_PROMPT,
   LEGACY_DEFAULT_SYSTEM_PROMPT,
   LEGACY_DEFAULT_USER_PROMPT,
+  LPLUS_V1_DEFAULT_SYSTEM_PROMPT,
+  LPLUS_V1_DEFAULT_USER_PROMPT,
+  LPLUS_V2_DEFAULT_SYSTEM_PROMPT,
+  LPLUS_V2_DEFAULT_USER_PROMPT,
 } from './translationPrompt'
 
 type PromptConfig = Partial<Pick<Config, 'system_role' | 'user_role'>>
@@ -29,7 +35,13 @@ export function applyContextAwarePromptMigration(config: PromptConfig): PromptMi
     const user = userRoles?.[service]
     const matchesLegacyDefault = (system === undefined || system === LEGACY_DEFAULT_SYSTEM_PROMPT)
       && (user === undefined || user === LEGACY_DEFAULT_USER_PROMPT)
-    if (!matchesLegacyDefault) continue
+    const matchesContextAwareDefault = (system === undefined || system === CONTEXT_AWARE_DEFAULT_SYSTEM_PROMPT)
+      && (user === undefined || user === CONTEXT_AWARE_DEFAULT_USER_PROMPT)
+    const matchesLPlusV1Default = (system === undefined || system === LPLUS_V1_DEFAULT_SYSTEM_PROMPT)
+      && (user === undefined || user === LPLUS_V1_DEFAULT_USER_PROMPT)
+    const matchesLPlusV2Default = (system === undefined || system === LPLUS_V2_DEFAULT_SYSTEM_PROMPT)
+      && (user === undefined || user === LPLUS_V2_DEFAULT_USER_PROMPT)
+    if (!matchesLegacyDefault && !matchesContextAwareDefault && !matchesLPlusV1Default && !matchesLPlusV2Default) continue
 
     config.system_role ??= {}
     config.user_role ??= {}

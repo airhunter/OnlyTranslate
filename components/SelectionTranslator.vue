@@ -267,13 +267,24 @@ import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch, watch
 import { autoUpdate, computePosition, flip, hide, offset, shift, type VirtualElement } from '@floating-ui/dom'
 import { storage } from '@wxt-dev/storage'
 import { config } from '@/entrypoints/utils/config'
-import { analyzeSelectionText, isTranslationCancelledError, translateText } from '@/entrypoints/utils/translateApi'
+import {
+  analyzeSelectionText,
+  cacheTranslationResult,
+  isTranslationCancelledError,
+  removeCachedTranslationResult,
+  translateText,
+} from '@/entrypoints/utils/translateApi'
 import { isServiceConfigured, options, servicesType } from '@/entrypoints/utils/option'
 import type { SelectionAnalysisResult } from '@/entrypoints/utils/selectionAnalysis'
 import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
 import { t } from '@/entrypoints/utils/i18n'
 import { shouldShowSelectionToolbar } from '@/entrypoints/utils/selectionEligibility'
-import { buildTargetMarkedContext, markTargetInContext } from '@/entrypoints/utils/translationPrompt'
+import {
+  buildTargetMarkedContext,
+  isLikelySelectionOvertranslation,
+  markTargetInContext,
+  type TranslationPromptContext,
+} from '@/entrypoints/utils/translationPrompt'
 
 type CopyTarget = 'original' | 'translation' | 'analysis'
 type PanelMode = 'translation' | 'analysis'
@@ -663,15 +674,31 @@ const getTranslation = async (useCache = config.useCache) => {
   error.value = ''
 
   try {
-    const result = await translateText(session.text, {
+    const promptContext: TranslationPromptContext = {
       scene: 'selection',
       title: session.context,
       surroundingText: session.surroundingContext,
-    }, {
+    }
+    let result = await translateText(session.text, promptContext, {
       signal: controller.signal,
       useCache,
       diagnostics: { scene: 'selection', pageUrl: document.location.href },
     })
+    if (session.surroundingContext && isLikelySelectionOvertranslation(session.text, result)) {
+      removeCachedTranslationResult(session.text, promptContext)
+      result = await translateText(session.text, {
+        scene: 'selection',
+        title: session.context,
+      }, {
+        signal: controller.signal,
+        useCache: false,
+        diagnostics: { scene: 'selection', pageUrl: document.location.href },
+      })
+      if (isLikelySelectionOvertranslation(session.text, result)) {
+        throw new Error('Selection translation exceeded the selected text scope')
+      }
+      if (useCache) cacheTranslationResult(session.text, result, promptContext)
+    }
     if (
       controller.signal.aborted
       || requestId !== activeTranslationRequestId
