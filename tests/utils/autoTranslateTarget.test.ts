@@ -104,13 +104,17 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
   it('translates button text through the shared translateText entrypoint', async () => {
     vi.mocked(translateText).mockResolvedValue('开始操作')
-    document.body.innerHTML = `<button id="action">Start action</button>`
+    document.body.innerHTML = `<p>Choose <button id="action">Start action</button> when ready.</p>`
 
     const button = document.querySelector('#action') as HTMLElement
     handleBtnTranslation(button)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(translateText).toHaveBeenCalledWith('Start action', document.title, expect.objectContaining({
+    expect(translateText).toHaveBeenCalledWith('Start action', {
+      scene: 'hover',
+      title: document.title,
+      surroundingText: 'Choose <target>Start action</target> when ready.',
+    }, expect.objectContaining({
       diagnostics: expect.objectContaining({ scene: 'hover' }),
     }))
     expect(button.innerText).toBe('开始操作')
@@ -833,7 +837,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
       const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
       const backup = insertion?.querySelector<HTMLTemplateElement>(`template.${TRANSLATION_ONLY_BACKUP_CLASS}`)
-      expect(translateText).toHaveBeenCalledWith('Read the docs.', document.title, expect.any(Object))
+      expect(translateText).toHaveBeenCalledWith('Read the docs.', {
+        scene: 'webpage',
+        title: document.title,
+      }, expect.any(Object))
       expect(insertion?.textContent).toContain('阅读文档。')
       expect(paragraph.querySelector('a')).toBeNull()
       expect(backup?.content.querySelector('a')).toBe(link)
@@ -847,6 +854,24 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(listener).toHaveBeenCalledTimes(1)
     }
   )
+
+  it('adds the following semantic block only when translating a heading', async () => {
+    vi.mocked(translateText).mockResolvedValue('如何部署')
+    document.body.innerHTML = `
+      <article>
+        <h2 id="heading">How to deploy</h2>
+        <p>The deployment requires a signed browser extension package.</p>
+      </article>
+    `
+
+    await handleSingleTranslation(document.querySelector('#heading') as HTMLElement, false)
+
+    expect(translateText).toHaveBeenCalledWith('How to deploy', {
+      scene: 'webpage',
+      title: document.title,
+      surroundingText: 'The deployment requires a signed browser extension package.',
+    }, expect.any(Object))
+  })
 
   it('toggles a Google translation-only wrapper off without retranslating', async () => {
     mockConfig.service = 'google'
@@ -1439,7 +1464,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
       const caption = document.querySelector('#powerbook-caption') as HTMLElement
       expect(caption.getAttribute(TRANSLATED_ATTR)).toBe('true')
       expect(caption.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('钛金属 PowerBook G4')
-      expect(translateText).not.toHaveBeenCalledWith(expect.stringContaining('PowerBook G4'), document.title)
+      expect(translateText).not.toHaveBeenCalledWith(
+        expect.stringContaining('PowerBook G4'),
+        expect.objectContaining({ scene: 'webpage' }),
+      )
     } finally {
       vi.useRealTimers()
       restoreOriginalContent()

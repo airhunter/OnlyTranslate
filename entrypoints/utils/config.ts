@@ -8,6 +8,7 @@ import {
     applyTranslationOnlyCompatibilityMigration,
     saveDisplayModeMigrationNotice,
 } from './displayModeMigration'
+import { applyContextAwarePromptMigration } from './promptMigration'
 
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
@@ -76,6 +77,11 @@ async function loadConfig() {
                     } catch (error) {
                         console.warn('Failed to save display mode migration notice:', error)
                     }
+                }
+
+                const promptMigration = applyContextAwarePromptMigration(parsedConfig)
+                if (promptMigration.status === 'migrated') {
+                    shouldPersistMigration = true
                 }
 
                 if (shouldPersistMigration) {

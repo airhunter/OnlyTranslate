@@ -25,7 +25,9 @@ async function gemini(message: TranslationServiceMessage): Promise<TranslationSe
             ? geminiSubtitleBatchMsgTemplate(message.job, message.fastMode)
             : message.prompt
                 ? geminiMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
-                : geminiMsgTemplate(message.origin, message.targetLang, message.fastMode),
+                : message.promptContext
+                    ? geminiMsgTemplate(message.origin, message.targetLang, message.fastMode, undefined, message.promptContext)
+                    : geminiMsgTemplate(message.origin, message.targetLang, message.fastMode),
     });
     if (resp.ok) {
         let result = await resp.json();

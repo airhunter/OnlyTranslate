@@ -33,10 +33,14 @@ async function deepseek(message: TranslationServiceMessage): Promise<Translation
             body: isSubtitleBatch
                 ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
                 : isBatch
-                    ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
+                    ? message.promptContext
+                        ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode, message.promptContext)
+                        : commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
                     : message.prompt
                         ? deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
-                        : deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode)
+                        : message.promptContext
+                            ? deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode, undefined, message.promptContext)
+                            : deepseekMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {

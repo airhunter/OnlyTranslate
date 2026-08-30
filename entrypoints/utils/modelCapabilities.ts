@@ -1,4 +1,4 @@
-export const REQUEST_POLICY_VERSION = 'ai-request-policy-14ad9b535182'
+export const REQUEST_POLICY_VERSION = 'ai-request-policy-45a2a1ebc84d'
 
 export type OpenAIReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 export type GeminiThinkingLevel = 'minimal' | 'low' | 'medium' | 'high'

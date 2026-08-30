@@ -75,6 +75,7 @@ vi.mock('@floating-ui/dom', () => ({
 
 interface PendingTranslation {
   text: string
+  context: unknown
   signal: AbortSignal
   useCache?: boolean
   resolve: (value: string) => void
@@ -156,9 +157,9 @@ describe('SelectionTranslator', () => {
       }
     })
     mockAutoUpdate.mockClear()
-    mockTranslateText.mockImplementation((text: string, _: string, options: { signal: AbortSignal; useCache?: boolean }) => (
+    mockTranslateText.mockImplementation((text: string, context: unknown, options: { signal: AbortSignal; useCache?: boolean }) => (
       new Promise<string>(resolve => {
-        pendingTranslations.push({ text, signal: options.signal, useCache: options.useCache, resolve })
+        pendingTranslations.push({ text, context, signal: options.signal, useCache: options.useCache, resolve })
       })
     ))
     writeClipboard = vi.fn().mockResolvedValue(undefined)
@@ -213,6 +214,23 @@ describe('SelectionTranslator', () => {
     pendingTranslations[0].resolve('迟到的第一个译文')
     await flushPromises()
     expect(document.querySelector('.fr-translation-text')?.textContent).toBe('第二个译文')
+  })
+
+  it('sends the page title and marks the selection inside its semantic block', async () => {
+    const paragraph = document.createElement('p')
+    paragraph.textContent = 'They sat on the bank of the river and watched the water.'
+    document.body.appendChild(paragraph)
+    const range = document.createRange()
+    range.selectNodeContents(paragraph)
+
+    await setSelection('bank', range)
+    await openTooltip()
+
+    expect(pendingTranslations[0].context).toEqual({
+      scene: 'selection',
+      title: 'Selection test page',
+      surroundingText: 'They sat on the <target>bank</target> of the river and watched the water.',
+    })
   })
 
   it('aborts the active request when the tooltip is closed', async () => {

@@ -17,6 +17,8 @@ function parse(html: string): Document {
   return new DOMParser().parseFromString(`<html><head></head><body>${html}</body></html>`, 'text/html');
 }
 
+const ebookContext = { scene: 'ebook' as const, title: 'Book', surroundingText: 'Chapter' };
+
 describe('EbookTranslationCoordinator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,10 +33,10 @@ describe('EbookTranslationCoordinator', () => {
     const statuses: unknown[] = [];
     const coordinator = new EbookTranslationCoordinator({ translate, onStatus: status => statuses.push(status) });
 
-    await coordinator.start(document, 'Book · Chapter', 'bilingual');
+    await coordinator.start(document, ebookContext, 'bilingual');
 
-    expect(translate).toHaveBeenNthCalledWith(1, 'Visible paragraph', 'Book · Chapter', expect.objectContaining({ allowBatch: true, priority: 'high' }));
-    expect(translate).toHaveBeenNthCalledWith(2, 'Background paragraph', 'Book · Chapter', expect.objectContaining({ allowBatch: true, priority: 'background' }));
+    expect(translate).toHaveBeenNthCalledWith(1, 'Visible paragraph', ebookContext, expect.objectContaining({ allowBatch: true, priority: 'high' }));
+    expect(translate).toHaveBeenNthCalledWith(2, 'Background paragraph', ebookContext, expect.objectContaining({ allowBatch: true, priority: 'background' }));
     expect(document.querySelectorAll('[data-onlytranslate-ebook-translation]')).toHaveLength(2);
     expect(statuses.at(-1)).toEqual({ total: 2, completed: 2, failed: 0, running: false });
   });
@@ -45,7 +47,7 @@ describe('EbookTranslationCoordinator', () => {
     const document = parse('<p>Old chapter</p>');
     const coordinator = new EbookTranslationCoordinator({ translate });
 
-    const running = coordinator.start(document, 'Old', 'bilingual');
+    const running = coordinator.start(document, ebookContext, 'bilingual');
     coordinator.cancel();
     resolveTranslation('旧章节译文');
     await running;
@@ -62,7 +64,7 @@ describe('EbookTranslationCoordinator', () => {
     const statuses: Array<{ failed: number; running: boolean }> = [];
     const coordinator = new EbookTranslationCoordinator({ translate, onStatus: status => statuses.push(status) });
 
-    await coordinator.start(document, 'Chapter', 'bilingual');
+    await coordinator.start(document, ebookContext, 'bilingual');
     expect(statuses.at(-1)).toMatchObject({ failed: 1, running: false });
     await coordinator.retryFailed();
 
@@ -80,7 +82,7 @@ describe('EbookTranslationCoordinator', () => {
       translate: vi.fn(async () => '古腾堡版权说明'),
     });
 
-    await coordinator.start(document, 'Project Gutenberg', 'bilingual');
+    await coordinator.start(document, ebookContext, 'bilingual');
 
     const translation = document.querySelector<HTMLElement>('[data-onlytranslate-ebook-translation]');
     expect(translation).not.toBeNull();
@@ -97,15 +99,15 @@ describe('EbookTranslationCoordinator', () => {
     const cacheTranslation = vi.fn();
     const coordinator = new EbookTranslationCoordinator({ translate, cacheTranslation });
 
-    await coordinator.start(document, 'Chapter', 'bilingual');
+    await coordinator.start(document, ebookContext, 'bilingual');
     await expect(coordinator.retranslate()).resolves.toBe('success');
 
-    expect(translate).toHaveBeenNthCalledWith(3, 'First paragraph', 'Chapter', expect.objectContaining({
+    expect(translate).toHaveBeenNthCalledWith(3, 'First paragraph', ebookContext, expect.objectContaining({
       allowBatch: true,
       priority: 'high',
       useCache: false,
     }));
-    expect(translate).toHaveBeenNthCalledWith(4, 'Second paragraph', 'Chapter', expect.objectContaining({
+    expect(translate).toHaveBeenNthCalledWith(4, 'Second paragraph', ebookContext, expect.objectContaining({
       allowBatch: true,
       priority: 'high',
       useCache: false,
@@ -113,8 +115,8 @@ describe('EbookTranslationCoordinator', () => {
     expect(Array.from(document.querySelectorAll('[data-onlytranslate-ebook-translation]')).map(node => node.textContent))
       .toEqual(['新译一', '新译二']);
     expect(cacheTranslation).toHaveBeenCalledTimes(2);
-    expect(cacheTranslation).toHaveBeenNthCalledWith(1, 'First paragraph', '新译一');
-    expect(cacheTranslation).toHaveBeenNthCalledWith(2, 'Second paragraph', '新译二');
+    expect(cacheTranslation).toHaveBeenNthCalledWith(1, 'First paragraph', '新译一', ebookContext);
+    expect(cacheTranslation).toHaveBeenNthCalledWith(2, 'Second paragraph', '新译二', ebookContext);
   });
 
   it('keeps the previous chapter and cache untouched when a fresh translation fails', async () => {
@@ -132,7 +134,7 @@ describe('EbookTranslationCoordinator', () => {
       onStatus: status => statuses.push(status),
     });
 
-    await coordinator.start(document, 'Chapter', 'bilingual');
+    await coordinator.start(document, ebookContext, 'bilingual');
     await expect(coordinator.retranslate()).resolves.toBe('failed');
 
     expect(Array.from(document.querySelectorAll('[data-onlytranslate-ebook-translation]')).map(node => node.textContent))

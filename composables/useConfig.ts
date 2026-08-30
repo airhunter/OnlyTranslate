@@ -9,6 +9,7 @@ import {
   applyTranslationOnlyCompatibilityMigration,
   saveDisplayModeMigrationNotice,
 } from '@/entrypoints/utils/displayModeMigration'
+import { applyContextAwarePromptMigration } from '@/entrypoints/utils/promptMigration'
 
 // Singleton — shared across all useConfig() calls so components never hold
 // stale defaults that overwrite the user's saved settings on save.
@@ -22,11 +23,36 @@ let _updatingFromStorage = false
 // 记录上一次写入 storage 的 JSON 快照，避免内容相同时重复写入
 let _lastWrittenJson = ''
 
+// 文本输入会在短时间内触发多次变更。串行写入可保证最后一次编辑最后落盘，
+// 避免较早的异步 storage.setItem 在较晚写入之后完成并覆盖新内容。
+let _writeQueue: Promise<void> = Promise.resolve()
+const _localWriteSnapshots = new Set<string>()
+
+function rememberLocalWrite(json: string) {
+  _localWriteSnapshots.add(json)
+  if (_localWriteSnapshots.size <= 100) return
+  const oldest = _localWriteSnapshots.values().next().value
+  if (typeof oldest === 'string') _localWriteSnapshots.delete(oldest)
+}
+
+function persistConfigJson(json: string): Promise<void> {
+  _lastWrittenJson = json
+  rememberLocalWrite(json)
+  const write = _writeQueue.then(async () => {
+    await storage.setItem('local:config', json)
+  })
+  _writeQueue = write.catch((error) => {
+    console.error('Failed to save config:', error)
+  })
+  return write
+}
+
 // 监听存储变化（来自其他标签页、Popup/Options 或 background script 的同步）
 storage.watch('local:config', (newValue: unknown) => {
   if (typeof newValue === 'string' && newValue) {
-    // 如果本次存储变化就是自己刚写入的，跳过以避免循环
-    if (newValue === _lastWrittenJson) return
+    // 跳过当前页面发起的所有排队写入，而不仅是最后一个快照。
+    // 否则中间快照落盘时会短暂覆盖用户仍在输入的新内容。
+    if (_localWriteSnapshots.has(newValue) || newValue === _lastWrittenJson) return
 
     _updatingFromStorage = true
     Object.assign(config.value, JSON.parse(newValue) as Partial<Config>)
@@ -70,10 +96,14 @@ export function useConfig() {
         }
       }
 
+      const promptMigration = applyContextAwarePromptMigration(parsedConfig)
+      if (promptMigration.status === 'migrated') {
+        shouldPersistMigration = true
+      }
+
       if (shouldPersistMigration) {
         const migratedJson = JSON.stringify(parsedConfig)
-        _lastWrittenJson = migratedJson
-        await storage.setItem('local:config', migratedJson)
+        await persistConfigJson(migratedJson)
       }
       Object.assign(config.value, parsedConfig)
     }
@@ -88,12 +118,13 @@ export function useConfig() {
       // 内容没有实际变化时，跳过写入
       if (json === _lastWrittenJson) return
 
-      _lastWrittenJson = json
-      storage.setItem('local:config', json)
+      void persistConfigJson(json)
     }, { deep: true })
 
     return config
   }
 
-  return { config, loadConfig }
+  const saveConfig = () => persistConfigJson(JSON.stringify(config.value))
+
+  return { config, loadConfig, saveConfig }
 }

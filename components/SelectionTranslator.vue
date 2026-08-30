@@ -273,6 +273,7 @@ import type { SelectionAnalysisResult } from '@/entrypoints/utils/selectionAnaly
 import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
 import { t } from '@/entrypoints/utils/i18n'
 import { shouldShowSelectionToolbar } from '@/entrypoints/utils/selectionEligibility'
+import { buildTargetMarkedContext, markTargetInContext } from '@/entrypoints/utils/translationPrompt'
 
 type CopyTarget = 'original' | 'translation' | 'analysis'
 type PanelMode = 'translation' | 'analysis'
@@ -566,19 +567,37 @@ const closeAll = () => {
 }
 
 const collectSurroundingContext = (range: Range, selected: string): string => {
-  const container = (range as Partial<Range>).commonAncestorContainer
-  const start = container instanceof Element
-    ? container
-    : container?.parentElement
+  const startContainer = (range as Partial<Range>).startContainer
+  const start = startContainer instanceof Element
+    ? startContainer
+    : startContainer?.parentElement
   const block = start?.closest('p, li, blockquote, dd, dt, figcaption, h1, h2, h3, h4, h5, h6')
-  const text = (block?.textContent || '').replace(/\s+/g, ' ').trim()
-  if (!text || text === selected) return ''
-  if (text.length <= 1600) return text
+  if (!block) return ''
 
-  const selectionIndex = text.indexOf(selected)
-  if (selectionIndex < 0) return text.slice(0, 1600)
-  const startIndex = Math.max(0, selectionIndex - 600)
-  return text.slice(startIndex, startIndex + 1600)
+  const normalizedSelection = selected.replace(/\s+/g, ' ').trim()
+  const rangeText = typeof range.toString === 'function'
+    ? range.toString().replace(/\s+/g, ' ').trim()
+    : ''
+  if (
+    normalizedSelection
+    && rangeText === normalizedSelection
+    && block.contains(range.startContainer)
+    && block.contains(range.endContainer)
+  ) {
+    try {
+      const beforeRange = document.createRange()
+      beforeRange.selectNodeContents(block)
+      beforeRange.setEnd(range.startContainer, range.startOffset)
+      const afterRange = document.createRange()
+      afterRange.selectNodeContents(block)
+      afterRange.setStart(range.endContainer, range.endOffset)
+      return buildTargetMarkedContext(beforeRange.toString(), selected, afterRange.toString())
+    } catch {
+      // 非标准 Range 实现或跨文档选区使用下面的纯文本降级。
+    }
+  }
+
+  return markTargetInContext(block.textContent || '', selected)
 }
 
 const commitSelectionSession = (text: string, range: Range, event?: MouseEvent) => {
@@ -644,7 +663,11 @@ const getTranslation = async (useCache = config.useCache) => {
   error.value = ''
 
   try {
-    const result = await translateText(session.text, session.context, {
+    const result = await translateText(session.text, {
+      scene: 'selection',
+      title: session.context,
+      surroundingText: session.surroundingContext,
+    }, {
       signal: controller.signal,
       useCache,
       diagnostics: { scene: 'selection', pageUrl: document.location.href },
