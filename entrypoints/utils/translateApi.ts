@@ -33,9 +33,7 @@ import {
   type SelectionAnalysisResult,
 } from './selectionAnalysis';
 import {
-  extractTranslationTextFromResponse,
   normalizeTranslationPromptContext,
-  type TranslationEnvelopeExpectation,
   type TranslationPromptContext,
   type TranslationPromptContextInput,
   type TranslationPromptScene,
@@ -103,14 +101,8 @@ async function sendRuntimeMessage(message: unknown): Promise<unknown> {
   return runtime.sendMessage(message);
 }
 
-function normalizeRuntimeTranslationResult(
-  result: unknown,
-  envelopeExpectation?: TranslationEnvelopeExpectation,
-): string {
-  const normalizeText = (value: string) => envelopeExpectation
-    ? extractTranslationTextFromResponse(value, envelopeExpectation)
-    : value;
-  if (typeof result === 'string') return normalizeText(result);
+function normalizeRuntimeTranslationResult(result: unknown): string {
+  if (typeof result === 'string') return result;
 
   if (result && typeof result === 'object') {
     const response = result as Record<string, unknown>;
@@ -119,7 +111,7 @@ function normalizeRuntimeTranslationResult(
     }
 
     for (const key of ['translatedText', 'text', 'content']) {
-      if (typeof response[key] === 'string') return normalizeText(response[key] as string);
+      if (typeof response[key] === 'string') return response[key] as string;
     }
 
     throw new Error(`Unexpected translation response: ${JSON.stringify(result)}`);
@@ -507,12 +499,7 @@ export async function translateText(
         );
         assertSignalNotAborted(signal);
         assertNotCancelled(requestGeneration);
-        const result = normalizeRuntimeTranslationResult(
-          response,
-          servicesType.isAI(config.service)
-            ? { targetLanguage: direction.targetLang, scene: promptContext.scene }
-            : undefined,
-        );
+        const result = normalizeRuntimeTranslationResult(response);
 
         return !result || result === text ? text : result;
       } catch (error) {

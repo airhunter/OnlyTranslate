@@ -69,7 +69,7 @@ describe('translation templates', () => {
     const userContent = payload.messages.find(message => message.role === 'user')?.content ?? ''
 
     expect(userContent).toContain('__ONLY_TRANSLATE_INLINE_')
-    expect(userContent).toContain('preserve')
+    expect(userContent).toContain('Preserve')
     expect(userContent).toContain('exactly once')
     expect(userContent).toContain('Inline formatting guide')
   })

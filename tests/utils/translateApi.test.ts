@@ -471,19 +471,13 @@ describe('translateApi', () => {
       promptContext: {
         scene: 'selection',
         title: 'T'.repeat(120),
-        surroundingText: 'C'.repeat(240),
+        surroundingText: 'C'.repeat(1600),
       },
     }))
   })
 
-  it('unwraps an echoed AI translation envelope before returning it to the page', async () => {
-    mockSendMessage.mockResolvedValue(JSON.stringify({
-      targetLanguage: 'zh-Hans',
-      scene: 'webpage',
-      title: '模型正在故意变笨',
-      context: '',
-      text: '事实会腐坏，但程序不会。',
-    }))
+  it('returns a single AI translation response without an envelope protocol', async () => {
+    mockSendMessage.mockResolvedValue('事实会腐坏，但程序不会。')
 
     await expect(translateText('Facts rot, procedures do not.', {
       scene: 'webpage',

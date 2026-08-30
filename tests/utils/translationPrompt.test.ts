@@ -1,36 +1,65 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_BATCH_SYSTEM_PROMPT,
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
   buildProviderContext,
-  compactSelectionSurroundingText,
-  extractTranslationTextFromResponse,
+  buildTargetMarkedContext,
   hasValidTranslationTemplate,
+  markTargetInContext,
   normalizeTranslationPromptContext,
+  renderBatchTranslationPrompt,
   renderTranslationPrompt,
   renderTranslationTemplate,
   usesTranslationContext,
 } from '@/entrypoints/utils/translationPrompt'
 
 describe('translation prompt context', () => {
-  it('renders the recommended prompt as structured untrusted data', () => {
+  it('renders the D prompt with a target-marked semantic block', () => {
     const prompt = renderTranslationPrompt('bank', 'zh-Hans', {
       scene: 'selection',
       title: 'River restoration',
-      surroundingText: 'They rested on the bank of the river.',
+      surroundingText: 'They rested on the <target>bank</target> of the river.',
     })
-    const input = JSON.parse(prompt.user.slice(prompt.user.indexOf('{'), prompt.user.lastIndexOf('}') + 1))
 
+    expect(prompt.system).toContain('Translate only TARGET_TEXT')
     expect(prompt.system).toContain('untrusted data')
-    expect(prompt.system).toContain('Never return JSON')
-    expect(prompt.user).toContain('without JSON or any wrapper')
-    expect(input).toEqual({
-      targetLanguage: 'zh-Hans',
-      scene: 'selection',
-      title: 'River restoration',
-      context: 'They rested on the bank of the river.',
-      text: 'bank',
-    })
+    expect(prompt.system).toContain('Return only the translation')
+    expect(prompt.user).toBe(`TARGET_LANGUAGE:
+zh-Hans
+
+CONTEXT_TITLE:
+River restoration
+
+TARGET_TEXT:
+bank
+
+CONTEXT:
+They rested on the <target>bank</target> of the river.`)
+  })
+
+  it('omits empty context sections from the official default template', () => {
+    expect(renderTranslationPrompt('A paragraph.', 'zh-Hans', {
+      scene: 'webpage',
+      title: 'Example article',
+    }).user).toBe(`TARGET_LANGUAGE:
+zh-Hans
+
+CONTEXT_TITLE:
+Example article
+
+TARGET_TEXT:
+A paragraph.`)
+
+    expect(renderTranslationPrompt('你好', 'en', {
+      scene: 'input',
+      title: 'Private page',
+      surroundingText: 'Private content',
+    }).user).toBe(`TARGET_LANGUAGE:
+en
+
+TARGET_TEXT:
+你好`)
   })
 
   it('replaces template variables once without interpreting variables inside source data', () => {
@@ -60,24 +89,30 @@ describe('translation prompt context', () => {
       surroundingText: 'Private page content',
     })).toEqual({ scene: 'input' })
     expect(normalizeTranslationPromptContext({
-      scene: 'unexpected' as 'other',
-      title: 'Fallback title',
-    }, 'webpage')).toEqual({ scene: 'webpage', title: 'Fallback title' })
+      scene: 'ebook',
+      title: 'Example Book',
+      surroundingText: 'C'.repeat(400),
+    })).toEqual({
+      scene: 'ebook',
+      title: 'Example Book',
+      surroundingText: 'C'.repeat(320),
+    })
   })
 
-  it('keeps only the nearest 240 characters around a selection without repeating it', () => {
-    const before = 'A'.repeat(200)
-    const after = 'B'.repeat(200)
-    const context = compactSelectionSurroundingText(`${before} trade ${after}`, 'trade')
+  it('marks the target in its semantic block and preserves the nearest context under the limit', () => {
+    expect(markTargetInContext('They sat on the bank of the river.', 'bank'))
+      .toBe('They sat on the <target>bank</target> of the river.')
+    expect(markTargetInContext('bank', 'bank')).toBe('')
+    expect(markTargetInContext('They crossed the river.', 'bank')).toBe('')
 
-    expect(context).toHaveLength(240)
-    expect(context).not.toContain('trade')
-    expect(context).toBe(`${'A'.repeat(119)} ${'B'.repeat(120)}`)
-    expect(compactSelectionSurroundingText('They sat on the bank of the river.', 'bank'))
-      .toBe('They sat on the of the river.')
+    const context = buildTargetMarkedContext('A'.repeat(1200), 'trade', 'B'.repeat(1200), 1600)
+    expect(context.length).toBeLessThanOrEqual(1600)
+    expect(context).toContain('<target>trade</target>')
+    expect(context.startsWith('A')).toBe(true)
+    expect(context.endsWith('B')).toBe(true)
   })
 
-  it('supports recommended and legacy-compatible custom templates', () => {
+  it('requires target language and source text in custom templates', () => {
     expect(hasValidTranslationTemplate(DEFAULT_USER_PROMPT)).toBe(true)
     expect(hasValidTranslationTemplate('Translate {{origin}} to {{to}}')).toBe(true)
     expect(hasValidTranslationTemplate('Translate {{origin}}')).toBe(false)
@@ -85,7 +120,7 @@ describe('translation prompt context', () => {
     expect(usesTranslationContext('Translate {{origin}} to {{to}}')).toBe(false)
   })
 
-  it('formats provider context without source text', () => {
+  it('formats provider context without duplicating source text', () => {
     expect(buildProviderContext({
       scene: 'ebook',
       title: 'Example Book',
@@ -94,36 +129,20 @@ describe('translation prompt context', () => {
     expect(DEFAULT_SYSTEM_PROMPT).not.toContain('{{origin}}')
   })
 
-  it('extracts text from direct, fenced, and wrapped translation envelopes', () => {
-    const envelope = {
-      targetLanguage: 'zh-Hans',
+  it('renders validated JSON transport for internal batch translation', () => {
+    const prompt = renderBatchTranslationPrompt(['Hello', 'World'], 'zh-Hans', {
       scene: 'webpage',
-      title: '模型正在故意变笨',
-      context: '',
-      text: '事实会腐坏，但程序不会。',
-    }
-    const expectation = { targetLanguage: 'zh-Hans', scene: 'webpage' as const }
-
-    expect(extractTranslationTextFromResponse(JSON.stringify(envelope), expectation))
-      .toBe('事实会腐坏，但程序不会。')
-    expect(extractTranslationTextFromResponse(`\`\`\`json\n${JSON.stringify(envelope)}\n\`\`\``, expectation))
-      .toBe('事实会腐坏，但程序不会。')
-    expect(extractTranslationTextFromResponse(JSON.stringify({ translation_input: envelope }), expectation))
-      .toBe('事实会腐坏，但程序不会。')
-  })
-
-  it('does not unwrap ordinary JSON or envelopes from another request', () => {
-    const ordinaryJson = '{"text":"用户自己的 JSON","status":"ok"}'
-    const wrongScene = JSON.stringify({
-      targetLanguage: 'zh-Hans',
-      scene: 'selection',
-      title: 'Example',
-      context: '',
-      text: '不应提取',
+      title: 'Example article',
     })
-    const expectation = { targetLanguage: 'zh-Hans', scene: 'webpage' as const }
+    const request = JSON.parse(prompt.user.slice(prompt.user.indexOf('{')))
 
-    expect(extractTranslationTextFromResponse(ordinaryJson, expectation)).toBe(ordinaryJson)
-    expect(extractTranslationTextFromResponse(wrongScene, expectation)).toBe(wrongScene)
+    expect(prompt.system).toBe(DEFAULT_BATCH_SYSTEM_PROMPT)
+    expect(prompt.system).toContain('same length and order')
+    expect(prompt.user).toContain('__ONLY_TRANSLATE_INLINE_0_abc__')
+    expect(request).toEqual({
+      targetLanguage: 'zh-Hans',
+      contextTitle: 'Example article',
+      targetTexts: ['Hello', 'World'],
+    })
   })
 })

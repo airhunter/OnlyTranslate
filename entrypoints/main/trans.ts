@@ -32,7 +32,11 @@ import {
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
 import { t } from '@/entrypoints/utils/i18n';
-import type { TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
+import {
+    HOVER_SURROUNDING_TEXT_LIMIT,
+    markTargetInContext,
+    type TranslationPromptContext,
+} from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,
     hideOriginalForTranslationOnly,
@@ -77,17 +81,47 @@ const translationState = {
 
 let hasReportedInvalidatedExtensionContext = false;
 
-function getWebpagePromptContext(): TranslationPromptContext {
-    return { scene: 'webpage', title: document.title };
+function getFollowingHeadingContext(node: HTMLElement | null): string {
+    if (!node || !/^h[1-6]$/i.test(node.tagName)) return '';
+    let sibling = node.nextElementSibling;
+    let inspected = 0;
+    while (sibling && inspected < 3) {
+        if (/^h[1-6]$/i.test(sibling.tagName)) break;
+        inspected++;
+        if (
+            sibling.matches('p, li, blockquote, dd, dt, figcaption')
+            && !sibling.closest('nav, aside, footer, form, dialog, .notranslate, [translate="no"]')
+        ) {
+            const text = (sibling.textContent || '').replace(/\s+/g, ' ').trim();
+            if (text) return text;
+        }
+        sibling = sibling.nextElementSibling;
+    }
+    return '';
+}
+
+function getWebpagePromptContext(node: HTMLElement | null = null): TranslationPromptContext {
+    const surroundingText = getFollowingHeadingContext(node);
+    return {
+        scene: 'webpage',
+        title: document.title,
+        ...(surroundingText ? { surroundingText } : {}),
+    };
 }
 
 function getHoverPromptContext(node: Node | null): TranslationPromptContext {
     const element = node instanceof Element ? node : node?.parentElement;
     const block = element?.closest('p, li, blockquote, dd, dt, figcaption, h1, h2, h3, h4, h5, h6');
+    const targetText = element?.textContent || '';
+    const surroundingText = markTargetInContext(
+        block?.textContent || '',
+        targetText,
+        HOVER_SURROUNDING_TEXT_LIMIT,
+    );
     return {
         scene: 'hover',
         title: document.title,
-        surroundingText: (block?.textContent || element?.textContent || '').replace(/\s+/g, ' ').trim(),
+        ...(surroundingText ? { surroundingText } : {}),
     };
 }
 
@@ -584,7 +618,7 @@ export function handleBilingualTranslation(
     }
 
     // 检查是否有缓存
-    let cached = cache.localGet(originText, config.to, getWebpagePromptContext());
+    let cached = cache.localGet(originText, config.to, getWebpagePromptContext(node));
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -606,7 +640,7 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean, optio
     }
 
     let nodeOuterHTML = node.outerHTML;
-    let outerHTMLCache = cache.localGet(node.outerHTML, config.to, getWebpagePromptContext());
+    let outerHTMLCache = cache.localGet(node.outerHTML, config.to, getWebpagePromptContext(node));
 
 
     if (outerHTMLCache) {
@@ -670,7 +704,8 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    return translateText(origin, getWebpagePromptContext(), options)
+    const promptContext = getWebpagePromptContext(node);
+    return translateText(origin, promptContext, options)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -682,7 +717,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, getWebpagePromptContext(), options);
+                text = await translateText(plainOrigin, promptContext, options);
             }
             bilingualAppendChild(node, text);
             notifyDiagnosticVisible(options);
@@ -721,7 +756,8 @@ function safeTranslationOnlyTranslate(
 
     const prepared = prepareTranslationOnly(node, getBilingualAppendTarget(node));
     const spinner = insertLoadingSpinner(node);
-    return translateText(origin, getWebpagePromptContext(), options)
+    const promptContext = getWebpagePromptContext(node);
+    return translateText(origin, promptContext, options)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -738,7 +774,7 @@ function safeTranslationOnlyTranslate(
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, getWebpagePromptContext(), options);
+                text = await translateText(plainOrigin, promptContext, options);
             }
             appendSafeTranslationOnly(node, text, prepared);
             notifyDiagnosticVisible(options);
@@ -774,7 +810,8 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
     let spinner = insertLoadingSpinner(node);
     
     // 使用队列管理的翻译API
-    return translateText(origin, getWebpagePromptContext(), options)
+    const promptContext = getWebpagePromptContext(node);
+    return translateText(origin, promptContext, options)
         .then((text: string) => {
             spinner.remove();
             
@@ -792,7 +829,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
             let newOuterHtml = node.outerHTML;
             
             // 缓存翻译结果
-            cache.localSetDual(oldOuterHtml, newOuterHtml, config.to, getWebpagePromptContext());
+            cache.localSetDual(oldOuterHtml, newOuterHtml, config.to, promptContext);
             cache.set(translationState.htmlSet, newOuterHtml, 250);
             translationState.htmlSet.delete(oldOuterHtml);
             notifyDiagnosticVisible(options);

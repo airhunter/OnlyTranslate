@@ -2,8 +2,6 @@ import type { Config } from './model'
 import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
-  CONTEXT_PROMPT_V1_SYSTEM_PROMPT,
-  CONTEXT_PROMPT_V1_USER_PROMPT,
   LEGACY_DEFAULT_SYSTEM_PROMPT,
   LEGACY_DEFAULT_USER_PROMPT,
 } from './translationPrompt'
@@ -29,14 +27,9 @@ export function applyContextAwarePromptMigration(config: PromptConfig): PromptMi
   for (const service of serviceIds) {
     const system = systemRoles?.[service]
     const user = userRoles?.[service]
-    const matchesKnownDefault = [
-      [LEGACY_DEFAULT_SYSTEM_PROMPT, LEGACY_DEFAULT_USER_PROMPT],
-      [CONTEXT_PROMPT_V1_SYSTEM_PROMPT, CONTEXT_PROMPT_V1_USER_PROMPT],
-    ].some(([knownSystem, knownUser]) => (
-      (system === undefined || system === knownSystem)
-      && (user === undefined || user === knownUser)
-    ))
-    if (!matchesKnownDefault) continue
+    const matchesLegacyDefault = (system === undefined || system === LEGACY_DEFAULT_SYSTEM_PROMPT)
+      && (user === undefined || user === LEGACY_DEFAULT_USER_PROMPT)
+    if (!matchesLegacyDefault) continue
 
     config.system_role ??= {}
     config.user_role ??= {}

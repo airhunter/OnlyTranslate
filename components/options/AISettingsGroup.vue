@@ -107,7 +107,7 @@ const userRoleError = computed(() => {
   if (!template) return null
   return hasValidTranslationTemplate(template)
     ? null
-    : t('options.ai.missingVars', { vars: '{{translation_input}} / {{to}} + {{origin}}' })
+    : t('options.ai.missingVars', { vars: '{{to}} + {{origin}}' })
 })
 
 const contextWarning = computed(() => {
@@ -117,7 +117,6 @@ const contextWarning = computed(() => {
 })
 
 const promptVariables = computed(() => [
-  { variable: '{{translation_input}}', description: t('options.ai.variableTranslationInput') },
   { variable: '{{to}}', description: t('options.ai.variableTo') },
   { variable: '{{origin}}', description: t('options.ai.variableOrigin') },
   { variable: '{{title}}', description: t('options.ai.variableTitle') },
@@ -131,7 +130,7 @@ const promptPreview = computed(() => renderTranslationPrompt(
   {
     scene: 'selection',
     title: t('options.ai.previewSampleTitle'),
-    surroundingText: t('options.ai.previewSampleContext'),
+    surroundingText: `They sat on the <target>bank</target> of the river.`,
   },
   config.value.system_role?.[config.value.service] || defaultOption.system_role,
   config.value.user_role?.[config.value.service] || defaultOption.user_role,

@@ -216,7 +216,7 @@ describe('SelectionTranslator', () => {
     expect(document.querySelector('.fr-translation-text')?.textContent).toBe('第二个译文')
   })
 
-  it('sends the page title and compact context without repeating the selection', async () => {
+  it('sends the page title and marks the selection inside its semantic block', async () => {
     const paragraph = document.createElement('p')
     paragraph.textContent = 'They sat on the bank of the river and watched the water.'
     document.body.appendChild(paragraph)
@@ -229,7 +229,7 @@ describe('SelectionTranslator', () => {
     expect(pendingTranslations[0].context).toEqual({
       scene: 'selection',
       title: 'Selection test page',
-      surroundingText: 'They sat on the of the river and watched the water.',
+      surroundingText: 'They sat on the <target>bank</target> of the river and watched the water.',
     })
   })
 

@@ -3,8 +3,6 @@ import { applyContextAwarePromptMigration } from '@/entrypoints/utils/promptMigr
 import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
-  CONTEXT_PROMPT_V1_SYSTEM_PROMPT,
-  CONTEXT_PROMPT_V1_USER_PROMPT,
   LEGACY_DEFAULT_SYSTEM_PROMPT,
   LEGACY_DEFAULT_USER_PROMPT,
 } from '@/entrypoints/utils/translationPrompt'
@@ -68,14 +66,4 @@ describe('context-aware prompt migration', () => {
     expect(config.user_role.deepseek).toBe(DEFAULT_USER_PROMPT)
   })
 
-  it('upgrades the first context-aware default used by development builds', () => {
-    const config = {
-      system_role: { openai: CONTEXT_PROMPT_V1_SYSTEM_PROMPT },
-      user_role: { openai: CONTEXT_PROMPT_V1_USER_PROMPT },
-    }
-
-    expect(applyContextAwarePromptMigration(config).status).toBe('migrated')
-    expect(config.system_role.openai).toBe(DEFAULT_SYSTEM_PROMPT)
-    expect(config.user_role.openai).toBe(DEFAULT_USER_PROMPT)
-  })
 })

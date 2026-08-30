@@ -104,7 +104,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
   it('translates button text through the shared translateText entrypoint', async () => {
     vi.mocked(translateText).mockResolvedValue('开始操作')
-    document.body.innerHTML = `<button id="action">Start action</button>`
+    document.body.innerHTML = `<p>Choose <button id="action">Start action</button> when ready.</p>`
 
     const button = document.querySelector('#action') as HTMLElement
     handleBtnTranslation(button)
@@ -113,7 +113,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(translateText).toHaveBeenCalledWith('Start action', {
       scene: 'hover',
       title: document.title,
-      surroundingText: 'Start action',
+      surroundingText: 'Choose <target>Start action</target> when ready.',
     }, expect.objectContaining({
       diagnostics: expect.objectContaining({ scene: 'hover' }),
     }))
@@ -854,6 +854,24 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(listener).toHaveBeenCalledTimes(1)
     }
   )
+
+  it('adds the following semantic block only when translating a heading', async () => {
+    vi.mocked(translateText).mockResolvedValue('如何部署')
+    document.body.innerHTML = `
+      <article>
+        <h2 id="heading">How to deploy</h2>
+        <p>The deployment requires a signed browser extension package.</p>
+      </article>
+    `
+
+    await handleSingleTranslation(document.querySelector('#heading') as HTMLElement, false)
+
+    expect(translateText).toHaveBeenCalledWith('How to deploy', {
+      scene: 'webpage',
+      title: document.title,
+      surroundingText: 'The deployment requires a signed browser extension package.',
+    }, expect.any(Object))
+  })
 
   it('toggles a Google translation-only wrapper off without retranslating', async () => {
     mockConfig.service = 'google'
