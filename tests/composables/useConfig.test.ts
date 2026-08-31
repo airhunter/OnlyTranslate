@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { nextTick } from 'vue'
 import { useConfig } from '../../composables/useConfig'
 
 vi.mock('@wxt-dev/storage', () => ({
@@ -94,5 +95,34 @@ describe('useConfig', () => {
     expect(config.value.service).toBe('openai')
     expect(config.value.theme).toBe('dark')
     expect(config.value.to).toBe('fr')
+  })
+
+  it('serializes rapid edits so an explicit save persists the latest prompt', async () => {
+    const { config, saveConfig } = useConfig()
+    const { storage } = await import('@wxt-dev/storage')
+    const snapshots: string[] = []
+    let releaseFirstWrite!: () => void
+    const firstWriteBlocked = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve
+    })
+
+    vi.mocked(storage.setItem).mockImplementation(async (_key, value) => {
+      snapshots.push(String(value))
+      if (snapshots.length === 1) await firstWriteBlocked
+    })
+
+    config.value.system_role.openai = 'first edit'
+    await nextTick()
+    config.value.system_role.openai = 'latest edit'
+    await nextTick()
+
+    const savePromise = saveConfig()
+    await Promise.resolve()
+    expect(snapshots).toHaveLength(1)
+
+    releaseFirstWrite()
+    await savePromise
+
+    expect(JSON.parse(snapshots.at(-1)!).system_role.openai).toBe('latest edit')
   })
 })

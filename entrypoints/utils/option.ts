@@ -1,4 +1,8 @@
 import type { Config } from "./model";
+import {
+    DEFAULT_SYSTEM_PROMPT,
+    DEFAULT_USER_PROMPT,
+} from './translationPrompt'
 
 export const services = {
     microsoft: "microsoft",
@@ -282,10 +286,8 @@ export const defaultOption = {
     service: services.google,
     custom: "http://localhost:11434/v1/chat/completions",
     deeplx: "http://localhost:1188/translate",
-    system_role: "You are a professional, authentic machine translation engine.",
-    user_role: `Translate the following text into {{to}}, If translation is unnecessary (e.g. proper nouns, codes, etc.), return the original text. NO explanations. NO notes:
-
-{{origin}}`,
+    system_role: DEFAULT_SYSTEM_PROMPT,
+    user_role: DEFAULT_USER_PROMPT,
     count: 0,
     useCache: true,
     floatingBallHotkey: "Alt+T",

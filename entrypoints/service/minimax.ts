@@ -23,7 +23,9 @@ async function minimax(message: TranslationServiceMessage): Promise<TranslationS
         headers: headers,
         body: message.prompt
             ? minimaxTemplate(message.origin, message.targetLang, message.prompt)
-            : minimaxTemplate(message.origin, message.targetLang)
+            : message.promptContext
+                ? minimaxTemplate(message.origin, message.targetLang, undefined, message.promptContext)
+                : minimaxTemplate(message.origin, message.targetLang)
     })
     if (resp.ok) {
         let result = await resp.json();

@@ -64,6 +64,13 @@ describe('options i18n render', () => {
   it('renders AI settings without i18n message compiler errors', () => {
     const wrapper = mount(AISettingsGroup, { global })
     expect(wrapper.text()).toContain('核心 Prompt 调试台')
+    expect(wrapper.find('[data-variable="{{to}}"]').exists()).toBe(true)
+    expect(wrapper.find('[data-variable="{{origin}}"]').exists()).toBe(true)
+    expect(wrapper.find('[data-variable="{{title}}"]').exists()).toBe(true)
+    expect(wrapper.find('[data-variable="{{context}}"]').exists()).toBe(true)
+    expect(wrapper.find('[data-variable="{{scene}}"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Prompt 预览（示例数据）')
+    expect(wrapper.find('[data-testid="save-prompts"]').exists()).toBe(false)
   })
 
   it('renders general settings', () => {

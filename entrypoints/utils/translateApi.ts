@@ -32,6 +32,12 @@ import {
   parseSelectionAnalysisResponse,
   type SelectionAnalysisResult,
 } from './selectionAnalysis';
+import {
+  normalizeTranslationPromptContext,
+  type TranslationPromptContext,
+  type TranslationPromptContextInput,
+  type TranslationPromptScene,
+} from './translationPrompt';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -105,7 +111,7 @@ function normalizeRuntimeTranslationResult(result: unknown): string {
     }
 
     for (const key of ['translatedText', 'text', 'content']) {
-      if (typeof response[key] === 'string') return response[key];
+      if (typeof response[key] === 'string') return response[key] as string;
     }
 
     throw new Error(`Unexpected translation response: ${JSON.stringify(result)}`);
@@ -216,7 +222,7 @@ function canRetryTranslationError(error: unknown, retryCount: number, maxRetries
 
 function buildInFlightTranslationKey(
   origin: string,
-  context: string,
+  promptContext: TranslationPromptContext,
   sourceLang: string,
   targetLang: string,
   fastMode: boolean,
@@ -232,7 +238,7 @@ function buildInFlightTranslationKey(
     sourceLang,
     targetLang,
     fastMode,
-    context,
+    promptContext,
     origin
   ]);
 }
@@ -248,7 +254,12 @@ function resolveCurrentModel(): string {
     : config.model?.[service] ?? '';
 }
 
-function buildBatchTranslationKey(context: string, sourceLang: string, targetLang: string, fastMode: boolean): string {
+function buildBatchTranslationKey(
+  promptContext: TranslationPromptContext,
+  sourceLang: string,
+  targetLang: string,
+  fastMode: boolean,
+): string {
   const service = config.service;
   return JSON.stringify([
     service,
@@ -258,8 +269,15 @@ function buildBatchTranslationKey(context: string, sourceLang: string, targetLan
     sourceLang,
     targetLang,
     fastMode,
-    context
+    promptContext
   ]);
+}
+
+function resolvePromptScene(scene: TranslationDiagnosticContext['scene']): TranslationPromptScene {
+  if (scene === 'webpage' || scene === 'selection' || scene === 'hover' || scene === 'ebook' || scene === 'input') {
+    return scene;
+  }
+  return 'other';
 }
 
 function isDefaultPromptForBatch(): boolean {
@@ -381,7 +399,11 @@ function shouldUseBatchTranslation(
  * @param options 翻译选项
  * @returns 翻译结果的Promise
  */
-export async function translateText(origin: string, context: string = document.title, options: TranslateOptions = {}): Promise<string> {
+export async function translateText(
+  origin: string,
+  context: TranslationPromptContextInput = { scene: 'other' },
+  options: TranslateOptions = {},
+): Promise<string> {
   const {
     maxRetries = 3, 
     retryDelay = 1000, 
@@ -396,6 +418,10 @@ export async function translateText(origin: string, context: string = document.t
   assertSignalNotAborted(signal);
 
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
+  const promptContext = normalizeTranslationPromptContext(
+    context,
+    resolvePromptScene(options.diagnostics?.scene),
+  );
 
   // 空原文不进入翻译队列，避免 AI 服务在空提示下生成无关内容。
   if (!safeOrigin.trim()) {
@@ -417,7 +443,7 @@ export async function translateText(origin: string, context: string = document.t
 
   const inFlightKey = buildInFlightTranslationKey(
     safeOrigin,
-    context,
+    promptContext,
     direction.sourceLang,
     direction.targetLang,
     fastMode,
@@ -430,7 +456,7 @@ export async function translateText(origin: string, context: string = document.t
 
   // 检查缓存
   if (useCache) {
-    const cachedResult = cache.localGet(safeOrigin, direction.targetLang);
+    const cachedResult = cache.localGet(safeOrigin, direction.targetLang, promptContext);
     if (cachedResult) {
       if (isDev) {
         console.log('[翻译API] 命中缓存，直接返回缓存结果');
@@ -460,7 +486,8 @@ export async function translateText(origin: string, context: string = document.t
         assertNotCancelled(requestGeneration);
         const response = await withRequestTimeout(
           sendRuntimeMessage({
-            context,
+            context: promptContext.title ?? '',
+            promptContext,
             origin: text,
             sourceLang: direction.sourceLang,
             targetLang: direction.targetLang,
@@ -506,7 +533,8 @@ export async function translateText(origin: string, context: string = document.t
       sendRuntimeMessage({
         type: 'BATCH_TRANSLATION',
         origins: texts,
-        context,
+        context: promptContext.title ?? '',
+        promptContext,
         sourceLang: direction.sourceLang,
         targetLang: direction.targetLang,
         ...(fastMode ? { fastMode: true } : {}),
@@ -529,7 +557,7 @@ export async function translateText(origin: string, context: string = document.t
   // 可独立取消的交互请求不进入延迟批处理，确保取消后不会留下待发送的批次。
   const translationPromise = !signal && shouldUseBatchTranslation(allowBatch, safeOrigin)
     ? enqueueBatchTranslation({
-      key: buildBatchTranslationKey(context, direction.sourceLang, direction.targetLang, fastMode),
+      key: buildBatchTranslationKey(promptContext, direction.sourceLang, direction.targetLang, fastMode),
       origin: safeOrigin,
       executeBatch: executeBatchTranslation,
       executeSingle: executeSingleTranslation,
@@ -539,7 +567,7 @@ export async function translateText(origin: string, context: string = document.t
 
   const cacheAwarePromise = translationPromise.then(result => {
     if (useCache && result && result !== safeOrigin) {
-      cache.localSet(safeOrigin, result, direction.targetLang);
+      cache.localSet(safeOrigin, result, direction.targetLang, promptContext);
     }
     return result;
   });
@@ -558,12 +586,36 @@ export async function translateText(origin: string, context: string = document.t
   return trackedPromise;
 }
 
-export function cacheTranslationResult(origin: string, result: string): void {
+export function cacheTranslationResult(
+  origin: string,
+  result: string,
+  context: TranslationPromptContextInput = { scene: 'other' },
+): void {
   const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '');
   if (!config.useCache || !safeOrigin.trim() || !result || result === safeOrigin) return;
   const direction = resolveTranslationDirection(safeOrigin);
   if (!direction.shouldTranslate) return;
-  cache.localSet(safeOrigin, result, direction.targetLang);
+  cache.localSet(
+    safeOrigin,
+    result,
+    direction.targetLang,
+    normalizeTranslationPromptContext(context),
+  );
+}
+
+export function removeCachedTranslationResult(
+  origin: string,
+  context: TranslationPromptContextInput = { scene: 'other' },
+): void {
+  const safeOrigin = typeof origin === 'string' ? origin : String(origin ?? '')
+  if (!safeOrigin.trim()) return
+  const direction = resolveTranslationDirection(safeOrigin)
+  if (!direction.shouldTranslate) return
+  cache.localRemove(
+    safeOrigin,
+    direction.targetLang,
+    normalizeTranslationPromptContext(context),
+  )
 }
 
 /**

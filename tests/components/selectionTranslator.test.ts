@@ -4,6 +4,8 @@ import { nextTick } from 'vue'
 import SelectionTranslator from '@/components/SelectionTranslator.vue'
 
 const mockTranslateText = vi.hoisted(() => vi.fn())
+const mockCacheTranslationResult = vi.hoisted(() => vi.fn())
+const mockRemoveCachedTranslationResult = vi.hoisted(() => vi.fn())
 const mockAnalyzeSelectionText = vi.hoisted(() => vi.fn())
 const mockComputePosition = vi.hoisted(() => vi.fn().mockResolvedValue({
   x: 12,
@@ -46,11 +48,13 @@ vi.mock('@/entrypoints/utils/ttsClient', () => ({
 
 vi.mock('@/entrypoints/utils/translateApi', () => ({
   analyzeSelectionText: mockAnalyzeSelectionText,
+  cacheTranslationResult: mockCacheTranslationResult,
   isTranslationCancelledError: (error: unknown) => (
     typeof error === 'object'
     && error !== null
     && (error as { name?: unknown }).name === 'TranslationCancelledError'
   ),
+  removeCachedTranslationResult: mockRemoveCachedTranslationResult,
   translateText: mockTranslateText
 }))
 
@@ -75,6 +79,7 @@ vi.mock('@floating-ui/dom', () => ({
 
 interface PendingTranslation {
   text: string
+  context: unknown
   signal: AbortSignal
   useCache?: boolean
   resolve: (value: string) => void
@@ -128,6 +133,8 @@ describe('SelectionTranslator', () => {
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
     mockTranslateText.mockReset()
+    mockCacheTranslationResult.mockReset()
+    mockRemoveCachedTranslationResult.mockReset()
     mockAnalyzeSelectionText.mockReset()
     mockAnalyzeSelectionText.mockResolvedValue({
       kind: 'term',
@@ -156,9 +163,9 @@ describe('SelectionTranslator', () => {
       }
     })
     mockAutoUpdate.mockClear()
-    mockTranslateText.mockImplementation((text: string, _: string, options: { signal: AbortSignal; useCache?: boolean }) => (
+    mockTranslateText.mockImplementation((text: string, context: unknown, options: { signal: AbortSignal; useCache?: boolean }) => (
       new Promise<string>(resolve => {
-        pendingTranslations.push({ text, signal: options.signal, useCache: options.useCache, resolve })
+        pendingTranslations.push({ text, context, signal: options.signal, useCache: options.useCache, resolve })
       })
     ))
     writeClipboard = vi.fn().mockResolvedValue(undefined)
@@ -213,6 +220,59 @@ describe('SelectionTranslator', () => {
     pendingTranslations[0].resolve('迟到的第一个译文')
     await flushPromises()
     expect(document.querySelector('.fr-translation-text')?.textContent).toBe('第二个译文')
+  })
+
+  it('sends the page title and marks the selection inside its semantic block', async () => {
+    const paragraph = document.createElement('p')
+    paragraph.textContent = 'They sat on the bank of the river and watched the water.'
+    document.body.appendChild(paragraph)
+    const range = document.createRange()
+    range.selectNodeContents(paragraph)
+
+    await setSelection('bank', range)
+    await openTooltip()
+
+    expect(pendingTranslations[0].context).toEqual({
+      scene: 'selection',
+      title: 'Selection test page',
+      surroundingText: 'They sat on the <target>bank</target> of the river and watched the water.',
+    })
+  })
+
+  it('retries without surrounding text when a model translates the whole paragraph', async () => {
+    const paragraph = document.createElement('p')
+    paragraph.textContent = 'The selected phrase sits inside a much longer paragraph used only for disambiguation.'
+    document.body.appendChild(paragraph)
+    const range = document.createRange()
+    range.selectNodeContents(paragraph)
+
+    await setSelection('selected phrase', range)
+    await openTooltip()
+    const originalContext = pendingTranslations[0].context
+    pendingTranslations[0].resolve('这是模型错误返回的整段翻译。'.repeat(12))
+    await flushPromises()
+
+    expect(pendingTranslations).toHaveLength(2)
+    expect(pendingTranslations[1]).toMatchObject({
+      text: 'selected phrase',
+      context: {
+        scene: 'selection',
+        title: 'Selection test page',
+      },
+      useCache: false,
+    })
+    expect(mockRemoveCachedTranslationResult).toHaveBeenCalledWith('selected phrase', originalContext)
+    expect(document.querySelector('.fr-translation-text')).toBeNull()
+
+    pendingTranslations[1].resolve('所选短语')
+    await flushPromises()
+
+    expect(document.querySelector('.fr-translation-text')?.textContent).toBe('所选短语')
+    expect(mockCacheTranslationResult).toHaveBeenCalledWith(
+      'selected phrase',
+      '所选短语',
+      originalContext,
+    )
   })
 
   it('aborts the active request when the tooltip is closed', async () => {

@@ -46,7 +46,8 @@ export async function translateInputWithCurrentService(
 
   const result = await handler({
     origin: request.text,
-    context: request.context ?? '',
+    context: '',
+    promptContext: { scene: 'input' },
     sourceLang: dependencies.sourceLang,
     targetLang: request.targetLang,
     diagnostics: request.diagnostics,

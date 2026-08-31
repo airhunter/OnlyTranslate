@@ -34,7 +34,9 @@ async function zhipu(message: TranslationServiceMessage): Promise<TranslationSer
         headers: headers,
         body: message.prompt
             ? commonMsgTemplate(message.origin, message.targetLang, false, message.prompt)
-            : commonMsgTemplate(message.origin, message.targetLang, false)
+            : message.promptContext
+                ? commonMsgTemplate(message.origin, message.targetLang, false, undefined, message.promptContext)
+                : commonMsgTemplate(message.origin, message.targetLang, false)
     });
 
     if (resp.ok) {

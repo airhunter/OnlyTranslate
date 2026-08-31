@@ -117,6 +117,28 @@ describe('common OpenAI-compatible service adapter', () => {
     expect(init.body).toBe('{"messages":[]}')
   })
 
+  it('forwards ordinary translation context to the request template', async () => {
+    const promptContext = {
+      scene: 'selection' as const,
+      title: 'River guide',
+      surroundingText: 'They sat on the bank of the river.',
+    }
+
+    await common({
+      origin: 'bank',
+      targetLang: 'zh-Hans',
+      promptContext,
+    })
+
+    expect(mockCommonMsgTemplate).toHaveBeenCalledWith(
+      'bank',
+      'zh-Hans',
+      undefined,
+      undefined,
+      promptContext,
+    )
+  })
+
   it('completes a custom OpenAI-compatible base URL', async () => {
     mockConfig.service = 'custom_gateway'
     mockConfig.customProviders = [{

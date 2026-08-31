@@ -177,6 +177,7 @@
                 <div class="provider-form-control">
                   <div class="model-picker">
                     <el-select
+                      data-testid="custom-provider-model-picker"
                       v-model="service.provider.customModel"
                       filterable
                       allow-create
@@ -184,6 +185,7 @@
                       :placeholder="t('options.service.modelNamePlaceholder')"
                       :loading="loadingModels[service.id]"
                       @update:model-value="service.provider.model = customModelString"
+                      @visible-change="handleModelPickerVisibility(service.id, $event)"
                     >
                       <el-option
                         v-for="item in getCustomProviderModelOptions(service.id, service.provider)"
@@ -235,7 +237,14 @@
                 <div class="provider-form-label">{{ t('options.service.model') }}</div>
                 <div class="provider-form-control">
                   <div class="model-picker">
-                    <el-select v-model="config.model[service.id]" filterable :placeholder="t('options.service.modelPlaceholder')" :loading="loadingModels[service.id]">
+                    <el-select
+                      data-testid="builtin-model-picker"
+                      v-model="config.model[service.id]"
+                      filterable
+                      :placeholder="t('options.service.modelPlaceholder')"
+                      :loading="loadingModels[service.id]"
+                      @visible-change="handleModelPickerVisibility(service.id, $event)"
+                    >
                       <el-option v-for="item in getModelOptions(service.id)" :key="item" class="select-left" :label="item" :value="item" />
                     </el-select>
                     <el-tooltip :content="canFetchModels(service.id) ? t('options.service.refreshModelsTip') : t('options.service.refreshModelsUnsupported')" placement="top">
@@ -666,7 +675,24 @@ const resetProxy = (service: string) => {
   config.value.proxy[service] = ''
 }
 
-const handleFetchModels = async (service: string) => {
+const canAutoFetchModels = (service: string) => {
+  if (!canFetchModels(service)) return false
+  if (servicesType.isCustom(service)) return true
+  return !!config.value.token[service]?.trim()
+}
+
+const handleModelPickerVisibility = (service: string, visible: boolean) => {
+  if (
+    !visible
+    || !canAutoFetchModels(service)
+    || loadingModels[service]
+    || state.modelOptions[service]
+  ) return
+
+  void handleFetchModels(service, true)
+}
+
+const handleFetchModels = async (service: string, automatic = false) => {
   if (!canFetchModels(service)) return
 
   const provider = findCustomProvider(service)
@@ -687,18 +713,21 @@ const handleFetchModels = async (service: string) => {
       if (!provider.customModel) provider.customModel = firstRemoteModel || ''
     } else {
       const currentModel = config.value.model[service]
-      if (!currentModel || (currentModel !== customModelString && !items.includes(currentModel))) {
+      if (
+        !currentModel
+        || (!automatic && currentModel !== customModelString && !items.includes(currentModel))
+      ) {
         config.value.model[service] = firstRemoteModel || customModelString
       }
     }
 
     const remoteModelCount = items.filter((item) => item !== customModelString).length
     modelFetchHints[service] = t('options.service.fetchedModels', { count: remoteModelCount })
-    ElMessage.success(t('options.service.modelListUpdated'))
+    if (!automatic) ElMessage.success(t('options.service.modelListUpdated'))
   } catch (error: any) {
     const message = error?.message || t('options.service.unknownError')
     modelFetchHints[service] = message
-    ElMessage.error(message)
+    if (!automatic) ElMessage.error(message)
   } finally {
     loadingModels[service] = false
   }

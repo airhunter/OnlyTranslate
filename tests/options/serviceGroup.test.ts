@@ -67,7 +67,11 @@ const mountGroup = () => mount(ServiceGroup, {
       'el-icon': true,
       'el-input': true,
       'el-option': true,
-      'el-select': true,
+      'el-select': {
+        name: 'ElSelect',
+        emits: ['visible-change', 'update:model-value'],
+        template: '<div><slot /></div>',
+      },
       'el-switch': true,
       'el-tooltip': {
         template: '<div><slot /></div>'
@@ -75,6 +79,16 @@ const mountGroup = () => mount(ServiceGroup, {
     }
   }
 })
+
+const getModelPicker = (
+  wrapper: ReturnType<typeof mountGroup>,
+  testId: 'custom-provider-model-picker' | 'builtin-model-picker',
+) => {
+  const picker = wrapper.findAllComponents({ name: 'ElSelect' })
+    .find(component => component.attributes('data-testid') === testId)
+  if (!picker) throw new Error(`Missing model picker: ${testId}`)
+  return picker
+}
 
 describe('ServiceGroup', () => {
   beforeEach(() => {
@@ -146,6 +160,39 @@ describe('ServiceGroup', () => {
     expect(wrapper.text()).toContain('已从厂商接口获取 2 个模型')
   })
 
+  it('loads custom provider models when the model picker first opens', async () => {
+    mocks.config.value.customProviders = [{
+      id: 'custom_openai',
+      name: 'Local gateway',
+      protocol: 'openai',
+      url: 'http://localhost:11434/v1',
+      token: '',
+      model: '自定义模型',
+      customModel: 'manual-model',
+    }]
+    mocks.fetchModels.mockResolvedValue([
+      'remote-model-a',
+      'remote-model-b',
+      '自定义模型',
+    ])
+    const wrapper = mountGroup()
+    const picker = getModelPicker(wrapper, 'custom-provider-model-picker')
+
+    picker.vm.$emit('visible-change', true)
+    await flushPromises()
+    picker.vm.$emit('visible-change', true)
+    await flushPromises()
+
+    expect(mocks.fetchModels).toHaveBeenCalledOnce()
+    expect(mocks.fetchModels).toHaveBeenCalledWith('custom_openai', {
+      token: '',
+      url: 'http://localhost:11434/v1',
+      protocol: 'openai',
+    })
+    expect(mocks.config.value.customProviders[0].customModel).toBe('manual-model')
+    expect(mocks.success).not.toHaveBeenCalled()
+  })
+
   it('recommends a replacement without changing a retired custom Anthropic model', () => {
     mocks.config.value.customProviders = [{
       id: 'custom_anthropic',
@@ -207,5 +254,38 @@ describe('ServiceGroup', () => {
       url: 'https://api.deepseek.com/chat/completions',
     })
     expect(mocks.config.value.model.deepseek).toBe('deepseek-v4-flash')
+  })
+
+  it('loads built-in models on first picker open without replacing the current selection', async () => {
+    mocks.config.value.activeBuiltinProviders = ['deepseek']
+    mocks.config.value.token.deepseek = 'configured-token'
+    mocks.config.value.model.deepseek = 'manual-model'
+    mocks.fetchModels.mockResolvedValue([
+      'deepseek-v4-flash',
+      'deepseek-v4-pro',
+      '自定义模型',
+    ])
+    const wrapper = mountGroup()
+    const picker = getModelPicker(wrapper, 'builtin-model-picker')
+
+    picker.vm.$emit('visible-change', true)
+    await flushPromises()
+    picker.vm.$emit('visible-change', true)
+    await flushPromises()
+
+    expect(mocks.fetchModels).toHaveBeenCalledOnce()
+    expect(mocks.config.value.model.deepseek).toBe('manual-model')
+    expect(mocks.success).not.toHaveBeenCalled()
+  })
+
+  it('does not auto-load built-in models before an API key is configured', async () => {
+    mocks.config.value.activeBuiltinProviders = ['deepseek']
+    mocks.config.value.model.deepseek = 'deepseek-v4-flash'
+    const wrapper = mountGroup()
+
+    getModelPicker(wrapper, 'builtin-model-picker').vm.$emit('visible-change', true)
+    await flushPromises()
+
+    expect(mocks.fetchModels).not.toHaveBeenCalled()
   })
 })

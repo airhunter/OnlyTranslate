@@ -48,10 +48,14 @@ async function newapi(message: TranslationServiceMessage): Promise<TranslationSe
             body: isSubtitleBatch
                 ? commonSubtitleBatchMsgTemplate(message.job, message.fastMode)
                 : isBatch
-                    ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
+                    ? message.promptContext
+                        ? commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode, message.promptContext)
+                        : commonBatchMsgTemplate(message.origins, message.targetLang, message.fastMode)
                     : message.prompt
                         ? commonMsgTemplate(message.origin, message.targetLang, message.fastMode, message.prompt)
-                        : commonMsgTemplate(message.origin, message.targetLang, message.fastMode)
+                        : message.promptContext
+                            ? commonMsgTemplate(message.origin, message.targetLang, message.fastMode, undefined, message.promptContext)
+                            : commonMsgTemplate(message.origin, message.targetLang, message.fastMode)
         });
 
         if (!resp.ok) {

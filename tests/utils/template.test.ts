@@ -32,6 +32,7 @@ import {
     deepseekMsgTemplate,
     geminiMsgTemplate,
     geminiSubtitleBatchMsgTemplate,
+    minimaxTemplate,
 } from '@/entrypoints/utils/template'
 import type { SubtitleTranslationJob } from '@/entrypoints/video/types'
 
@@ -61,15 +62,61 @@ describe('translation templates', () => {
   it('tells batch translation to preserve protected inline placeholders', () => {
     const payload = JSON.parse(commonBatchMsgTemplate([
       'Open __ONLY_TRANSLATE_INLINE_0_abc__ before continuing.'
-    ], 'zh-Hans')) as {
+    ], 'zh-Hans', false, { scene: 'webpage', title: 'Inline formatting guide' })) as {
       messages: Array<{ role: string; content: string }>
     }
 
     const userContent = payload.messages.find(message => message.role === 'user')?.content ?? ''
 
     expect(userContent).toContain('__ONLY_TRANSLATE_INLINE_')
-    expect(userContent).toContain('preserve')
+    expect(userContent).toContain('Preserve')
     expect(userContent).toContain('exactly once')
+    expect(userContent).toContain('Inline formatting guide')
+  })
+
+  it('forwards structured translation context through active AI payload formats', () => {
+    const context = {
+      scene: 'selection' as const,
+      title: 'River restoration',
+      surroundingText: 'They sat on the bank and watched the water.',
+    }
+
+    const openai = JSON.parse(commonMsgTemplate('bank', 'zh-Hans', false, undefined, context))
+    expect(openai.messages[0].content).toContain('untrusted data')
+    expect(openai.messages[1].content).toContain('River restoration')
+
+    mockConfig.service = 'deepseek'
+    const deepseek = JSON.parse(deepseekMsgTemplate('bank', 'zh-Hans', false, undefined, context))
+    expect(deepseek.temperature).toBe(0.7)
+    expect(deepseek.messages[1].content).toContain('watched the water')
+
+    mockConfig.service = 'gemini'
+    const gemini = JSON.parse(geminiMsgTemplate('bank', 'zh-Hans', false, undefined, context))
+    expect(gemini.generationConfig.temperature).toBeUndefined()
+    expect(gemini.systemInstruction.parts[0].text).toContain('untrusted data')
+    expect(gemini.contents[0].parts[0].text).toContain('River restoration')
+
+    mockConfig.service = 'claude'
+    const claude = JSON.parse(claudeMsgTemplate('bank', 'zh-Hans', false, undefined, context))
+    expect(claude.temperature).toBeUndefined()
+    expect(claude.system).toContain('untrusted data')
+    expect(claude.messages[0].content).toContain('watched the water')
+
+    mockConfig.service = 'minimax'
+    const minimax = JSON.parse(minimaxTemplate('bank', 'zh-Hans', undefined, context))
+    expect(minimax.temperature).toBe(0.7)
+    expect(minimax.messages[1].content).toContain('River restoration')
+
+    mockConfig.service = 'custom_openai'
+    mockConfig.customProviders = [{
+      id: 'custom_openai',
+      model: '自定义模型',
+      customModel: 'custom-context-model',
+    }]
+    const custom = JSON.parse(commonMsgTemplate('bank', 'zh-Hans', false, undefined, context))
+    expect(custom.model).toBe('custom-context-model')
+    expect(custom.temperature).toBe(1.0)
+    expect(custom.messages[1].content).toContain('watched the water')
   })
 
   it('uses the lowest supported reasoning effort for fast OpenAI reasoning-model requests', () => {

@@ -60,6 +60,11 @@ describe('DeepL service adapter', () => {
     await expect(deepl({
       origin: '<p>Hello</p>',
       context: 'Example page',
+      promptContext: {
+        scene: 'selection',
+        title: 'Example page',
+        surroundingText: 'A greeting in an example article.',
+      },
       targetLang: 'zh-Hans'
     })).resolves.toBe('你好')
 
@@ -73,7 +78,7 @@ describe('DeepL service adapter', () => {
       text: ['<p>Hello</p>'],
       target_lang: 'zh',
       tag_handling: 'html',
-      context: 'Example page',
+      context: 'Title: Example page\nContext: A greeting in an example article.',
       preserve_formatting: true
     })
   })
