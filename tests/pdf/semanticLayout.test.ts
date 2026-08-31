@@ -11,6 +11,48 @@ function region(label: string, x: number, y: number, width: number, height: numb
 }
 
 describe('PDF semantic layout fusion', () => {
+  it('keeps a single-column novel in top-to-bottom paragraph order', () => {
+    const blocks = buildSemanticPdfBlocks([
+      span('Chapter 1', 250, 70, 90, 20),
+      span('It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want', 70, 120, 470),
+      span('of a wife.', 55, 134, 55),
+      span('However little known the feelings or views of such a man may be on his first entering a neighbourhood,', 70, 158, 470),
+      span('this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property', 55, 172, 485),
+      span('of some one or other of their daughters.', 55, 186, 205),
+      span('"My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?"', 70, 215, 470),
+      span('Mr. Bennet replied that he had not.', 70, 244, 210),
+      span('"But it is," returned she; "for Mrs. Long has just been here, and she told me all about it."', 70, 273, 430),
+      span('Mr. Bennet made no answer.', 70, 302, 180),
+      span('"Bingley."', 70, 331, 58),
+    ], [
+      region('paragraph_title', 235, 58, 125, 38),
+      region('paragraph_title', 55, 110, 490, 16),
+      region('text', 55, 128, 490, 64),
+      region('text', 55, 207, 490, 145),
+    ], 595, 842)
+
+    expect(blocks.map(block => block.text)).toEqual([
+      'Chapter 1',
+      'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
+      'However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.',
+      '"My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?"',
+      'Mr. Bennet replied that he had not.',
+      '"But it is," returned she; "for Mrs. Long has just been here, and she told me all about it."',
+      'Mr. Bennet made no answer.',
+      '"Bingley."',
+    ])
+    expect(blocks.slice(1).map(block => ({ kind: block.kind, translatable: block.translatable }))).toEqual([
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+      { kind: 'body', translatable: true },
+    ])
+    expect(blocks.slice(1).every(block => block.column === 'full')).toBe(true)
+  })
+
   it('keeps simultaneous left and right baselines in column reading order', () => {
     const blocks = buildSemanticPdfBlocks([
       span('A Reliable Document Translation Study', 160, 35, 280, 22),

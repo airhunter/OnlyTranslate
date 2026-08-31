@@ -412,6 +412,8 @@ export async function translateText(
     allowBatch = false,
     priority = 'normal',
     fastMode = false,
+    sourceLangHint,
+    targetLangHint,
     signal,
   } = options;
 
@@ -428,7 +430,12 @@ export async function translateText(
     return safeOrigin;
   }
 
-  const direction = resolveTranslationDirection(safeOrigin);
+  const detectedDirection = resolveTranslationDirection(safeOrigin);
+  const direction = {
+    sourceLang: sourceLangHint ?? detectedDirection.sourceLang,
+    targetLang: targetLangHint ?? detectedDirection.targetLang,
+    shouldTranslate: (sourceLangHint ?? detectedDirection.sourceLang) !== (targetLangHint ?? detectedDirection.targetLang),
+  };
 
   // 如果本次目标语言与当前文本语言相同，直接返回原文
   if (!direction.shouldTranslate) {
@@ -649,6 +656,10 @@ export interface TranslateOptions {
   priority?: TranslationPriority;
   /** 低延迟翻译模式：服务适配器应关闭或压低 Thinking/Reasoning */
   fastMode?: boolean;
+  /** 文档级场景提供的源语言提示，避免短句被逐段误判语言。 */
+  sourceLangHint?: string;
+  /** 与 sourceLangHint 配套的目标语言提示。 */
+  targetLangHint?: string;
   /** 仅取消当前调用者的等待、重试和结果回写，不影响其他翻译任务。 */
   signal?: AbortSignal;
   /** 本地性能诊断的会话信息；不会记录原文、译文、密钥或接口地址。 */

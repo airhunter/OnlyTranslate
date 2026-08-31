@@ -53,6 +53,20 @@ async function fetchPdfData(sourceUrl: string): Promise<Uint8Array> {
   return data
 }
 
+export async function downloadRemotePdf(sourceUrl: string): Promise<File> {
+  const data = await fetchPdfData(sourceUrl)
+  let filename = 'document.pdf'
+  try {
+    const url = new URL(sourceUrl)
+    const candidate = decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1) || '')
+    filename = candidate.toLocaleLowerCase().endsWith('.pdf') ? candidate : `${candidate || 'document'}.pdf`
+  }
+  catch {
+    // Keep the stable fallback filename.
+  }
+  return new File([data], filename, { type: 'application/pdf' })
+}
+
 async function extractTextSpans(page: PDFPageProxy, viewport: PageViewport, scale: number): Promise<PdfTextSpan[]> {
   const textContent = await page.getTextContent({ includeMarkedContent: true, disableNormalization: false })
   return textContent.items.flatMap(item => {

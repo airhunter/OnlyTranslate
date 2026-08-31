@@ -227,7 +227,7 @@
           :key="item.record.bookId"
           type="button"
           class="popup-book"
-          @click="openEbookReader(item.record.bookId)"
+          @click="openLibraryBook(item.record)"
         >
           <span class="popup-book-cover">
             <img v-if="ebookCoverUrls[item.record.bookId]" :src="ebookCoverUrls[item.record.bookId]" alt="" />
@@ -243,7 +243,12 @@
         </button>
       </div>
       <div v-else class="bookshelf-empty">
-        <span class="bookshelf-empty-icon" aria-hidden="true">EPUB</span>
+        <span class="bookshelf-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 4.5h5a3 3 0 0 1 3 3V20a3 3 0 0 0-3-3H4z" />
+            <path d="M20 4.5h-5a3 3 0 0 0-3 3V20a3 3 0 0 1 3-3h5z" />
+          </svg>
+        </span>
         <strong>{{ t('popup.emptyEbookShelf') }}</strong>
         <p>{{ t('popup.emptyEbookShelfDescription') }}</p>
       </div>
@@ -252,11 +257,11 @@
         ref="popupFileInput"
         class="popup-file-input"
         type="file"
-        accept=".epub,application/epub+zip"
+        accept=".epub,.pdf,application/epub+zip,application/pdf"
         @change="handlePopupFileChange"
       />
       <button type="button" class="bookshelf-import" :disabled="popupImporting" @click="choosePopupEbook">
-        {{ popupImporting ? t('common.processing') : t('ebook.importEpub') }}
+        {{ popupImporting ? t('common.processing') : t('ebook.importBook') }}
       </button>
     </section>
   </div>
@@ -319,9 +324,11 @@ import { clearTranslationCache } from '@/entrypoints/utils/clearTranslationCache
 import { EbookImportError, EbookRepository } from '@/entrypoints/ebook/repository';
 import { getEbookPageUrl } from '@/entrypoints/ebook/url';
 import type { EbookRecord } from '@/entrypoints/ebook/types';
+import { getEbookFormat } from '@/entrypoints/ebook/types';
+import { extractLibraryBookMetadata } from '@/entrypoints/ebook/importMetadata';
 import { consumeClaudeModelMigrationNotice } from '@/entrypoints/utils/modelMigration';
 import { consumeDisplayModeMigrationNotice } from '@/entrypoints/utils/displayModeMigration';
-import { getPdfReaderUrl, isLikelyPdfUrl, isPdfContentType } from '@/entrypoints/pdf/url';
+import { getLibraryPdfReaderUrl, getPdfReaderUrl, isLikelyPdfUrl, isPdfContentType } from '@/entrypoints/pdf/url';
 
 interface PopupEbook {
   record: EbookRecord;
@@ -712,6 +719,13 @@ function openEbookReader(bookId?: string) {
   void browser.tabs.create({ url: getEbookPageUrl(bookId) })
 }
 
+function openLibraryBook(book: EbookRecord): void {
+  const url = getEbookFormat(book) === 'pdf'
+    ? getLibraryPdfReaderUrl(book.bookId)
+    : getEbookPageUrl(book.bookId);
+  void browser.tabs.create({ url });
+}
+
 function choosePopupEbook() {
   if (!popupImporting.value) popupFileInput.value?.click();
 }
@@ -726,10 +740,9 @@ async function handlePopupFileChange(event: Event) {
 async function importPopupEbook(file: File) {
   popupImporting.value = true;
   try {
-    const { extractEpubMetadata } = await import('@/entrypoints/ebook/readerController');
-    const result = await ebookRepository.importBook(file, extractEpubMetadata);
+    const result = await ebookRepository.importBook(file, extractLibraryBookMetadata);
     await refreshEbookShelf();
-    openEbookReader(result.book.bookId);
+    openLibraryBook(result.book);
   } catch (error) {
     console.error('Failed to import an ebook from the popup:', error);
     ElMessage.error(popupImportErrorText(error));
@@ -1241,6 +1254,16 @@ onBeforeUnmount(() => {
   color: var(--fr-accent-color);
   font-size: 11px;
   font-weight: 600;
+}
+
+.bookshelf-empty-icon svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .bookshelf-import {

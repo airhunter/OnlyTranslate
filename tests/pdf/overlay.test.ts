@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { PdfBlockKind, PdfTextBlock } from '@/entrypoints/pdf/layout'
-import { selectPdfTranslationBlocks, selectPdfTranslationBlocksWithOptions } from '@/entrypoints/pdf/overlay'
+import {
+  selectPdfReadingBlocks,
+  selectPdfReadingTranslationBlocks,
+  selectPdfTranslationBlocks,
+  selectPdfTranslationBlocksWithOptions,
+} from '@/entrypoints/pdf/overlay'
 
 function block(id: string, text: string, kind: PdfBlockKind = 'body', translatable = true): PdfTextBlock {
   return {
@@ -18,6 +23,19 @@ function block(id: string, text: string, kind: PdfBlockKind = 'body', translatab
 }
 
 describe('PDF layout overlay selection', () => {
+  it('keeps short novel dialogue in the bilingual reading flow without translating visual noise', () => {
+    const dialogue = block('dialogue', '"Bingley."')
+    const question = block('question', '"Is he married or single?"')
+    const visual = block('visual', 'chart', 'visual', false)
+    const metadata = block('metadata', 'Pride and Prejudice · 5', 'metadata', false)
+    const hidden = { ...block('hidden', 'Text embedded in a detected chart.'), hiddenInReadingFlow: true }
+
+    expect(selectPdfReadingBlocks([dialogue, visual, metadata, hidden]).map(item => item.id))
+      .toEqual(['dialogue', 'visual', 'metadata'])
+    expect(selectPdfReadingTranslationBlocks([dialogue, question, visual, metadata, hidden]).map(item => item.id))
+      .toEqual(['dialogue', 'question'])
+  })
+
   it('selects complete prose, headings, and captions', () => {
     const selected = selectPdfTranslationBlocks([
       block('heading', '3 Results', 'heading'),

@@ -119,6 +119,26 @@ describe('translateApi', () => {
     expect(mockStorageSetItem).not.toHaveBeenCalled()
   })
 
+  it('uses a document-level language hint when a short fragment is detected incorrectly', async () => {
+    mockResolveTranslationDirection.mockReturnValue({
+      shouldTranslate: false,
+      sourceLang: 'zh-Hans',
+      targetLang: 'zh-Hans',
+    })
+
+    await expect(translateText('Mr. Bennet replied.', 'Novel', {
+      sourceLangHint: 'en',
+      targetLangHint: 'zh-Hans',
+      useCache: false,
+    })).resolves.toBe('译文')
+
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+      origin: 'Mr. Bennet replied.',
+      sourceLang: 'en',
+      targetLang: 'zh-Hans',
+    }))
+  })
+
   it('sends a selection analysis request with an isolated prompt and parses the result', async () => {
     mockSendMessage.mockResolvedValue(JSON.stringify({
       kind: 'term',

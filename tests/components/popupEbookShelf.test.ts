@@ -173,7 +173,7 @@ describe('Popup ebook shelf', () => {
     const navigationButtons = wrapper.findAll('.popup-nav-button');
     expect(navigationButtons).toHaveLength(3);
     expect(navigationButtons[0].text()).toBe('网页');
-    expect(navigationButtons[1].text()).toContain('电子书');
+    expect(navigationButtons[1].text()).toContain('阅读');
     expect(navigationButtons[1].find('.popup-nav-beta').text()).toBe('BETA');
     expect(navigationButtons[2].text()).toBe('设置');
     expect(wrapper.find('.footer-actions').exists()).toBe(false);
@@ -196,6 +196,7 @@ describe('Popup ebook shelf', () => {
     expect(mocks.createTab).not.toHaveBeenCalled();
     expect(mocks.listRecentBooks).toHaveBeenCalledOnce();
     expect(wrapper.find('.popup-bookshelf').exists()).toBe(true);
+    expect(wrapper.find('.bookshelf-heading h2').text()).toBe('书架');
     expect(wrapper.text()).toContain('Popup Book');
     expect(wrapper.text()).toContain('36%');
 
@@ -238,11 +239,47 @@ describe('Popup ebook shelf', () => {
     await input.trigger('change');
     await flushPromises();
 
-    expect(mocks.importBook).toHaveBeenCalledWith(file, mocks.extractEpubMetadata);
+    expect(mocks.importBook).toHaveBeenCalledWith(file, expect.any(Function));
     expect(mocks.createTab).toHaveBeenCalledWith({
       url: 'chrome-extension://onlytranslate/ebook.html?bookId=imported-book',
     });
     inputClick.mockRestore();
+  });
+
+  it('opens saved PDF records in the PDF reader', async () => {
+    mocks.listRecentBooks.mockResolvedValue([{
+      bookId: 'pdf-one',
+      fileBlob: new Blob(['%PDF-1.7'], { type: 'application/pdf' }),
+      filename: 'paper.pdf',
+      fileSize: 8,
+      format: 'pdf',
+      sourceType: 'remote',
+      sourceUrl: 'https://example.com/paper.pdf',
+      title: 'Paper',
+      author: '',
+      addedAt: 1,
+      lastOpenedAt: 2,
+    }]);
+    wrapper = mount(Main, {
+      global: {
+        plugins: [createAppI18n()],
+        stubs: {
+          ElTooltip: { template: '<div><slot /></div>' },
+          ElIcon: { template: '<span><slot /></span>' },
+          ElSwitch: true,
+          ElEmpty: true,
+          ElSelect: true,
+          ElOption: true,
+        },
+      },
+    });
+    await wrapper.findAll('.popup-nav-button')[1].trigger('click');
+    await flushPromises();
+    await wrapper.find('.popup-book').trigger('click');
+
+    expect(mocks.createTab).toHaveBeenCalledWith({
+      url: 'chrome-extension://onlytranslate/pdf.html?bookId=pdf-one',
+    });
   });
 
 });

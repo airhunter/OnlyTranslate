@@ -8,7 +8,12 @@
     @drop.prevent="handleDrop"
   >
     <div v-if="draggingFile" class="library-drop-overlay" role="status">
-      <div class="empty-icon">EPUB</div>
+      <div class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 4.5h5a3 3 0 0 1 3 3V20a3 3 0 0 0-3-3H4z" />
+          <path d="M20 4.5h-5a3 3 0 0 0-3 3V20a3 3 0 0 1 3-3h5z" />
+        </svg>
+      </div>
       <strong>{{ t('ebook.dropActive') }}</strong>
     </div>
     <header class="library-header">
@@ -25,10 +30,10 @@
           {{ backingUp ? t('common.processing') : t('ebook.backupLibrary') }}
         </button>
         <button class="primary-button" :disabled="libraryBusy" @click="chooseFile">
-          {{ importing ? t('common.processing') : t('ebook.importEpub') }}
+          {{ importing ? t('common.processing') : t('ebook.importBook') }}
         </button>
       </div>
-      <input ref="fileInput" class="visually-hidden" type="file" accept=".epub,application/epub+zip" @change="importFile" />
+      <input ref="fileInput" class="visually-hidden" type="file" accept=".epub,.pdf,application/epub+zip,application/pdf" @change="importFile" />
       <input ref="backupFileInput" class="visually-hidden" type="file" :accept="EBOOK_BACKUP_EXTENSION" @change="restoreLibrary" />
     </header>
 
@@ -37,17 +42,28 @@
     <section v-if="books.length" class="book-grid" :aria-label="t('ebook.recentBooks')">
       <article v-for="item in books" :key="item.record.bookId" class="book-card">
         <button
+          class="book-remove-button"
+          :aria-label="`${t('ebook.removeBook')}: ${item.record.title}`"
+          @click="removeBook(item.record)"
+        >
+          {{ t('ebook.removeBook') }}
+        </button>
+        <button
           type="button"
           class="cover"
           :aria-label="`${t('ebook.continueReading')}: ${item.record.title}`"
           @click="openBook(item.record)"
         >
           <img v-if="coverUrls[item.record.bookId]" :src="coverUrls[item.record.bookId]" alt="" />
+          <span v-else-if="getEbookFormat(item.record) === 'pdf'" class="cover-fallback cover-fallback--pdf">
+            <small>PDF</small>
+            <strong>{{ getPdfCoverTitle(item.record) }}</strong>
+          </span>
           <span v-else>{{ item.record.title.slice(0, 1).toLocaleUpperCase() }}</span>
         </button>
         <div class="book-info">
           <h2 :title="item.record.title">{{ item.record.title }}</h2>
-          <p>{{ item.record.author || t('ebook.unknownAuthor') }}</p>
+          <p><span class="book-format">{{ getEbookFormat(item.record).toLocaleUpperCase() }}</span>{{ item.record.author || t('ebook.unknownAuthor') }}</p>
           <div class="progress-track"><span :style="{ width: `${Math.round(item.progress * 100)}%` }" /></div>
           <div class="book-meta">
             <span>{{ t('ebook.readingProgress', { percent: Math.round(item.progress * 100) }) }}</span>
@@ -55,17 +71,22 @@
           </div>
           <div class="card-actions">
             <button class="primary-button primary-button--small" @click="openBook(item.record)">{{ t('ebook.continueReading') }}</button>
-            <button class="danger-link" @click="removeBook(item.record)">{{ t('ebook.removeBook') }}</button>
+            <button class="book-action-link" @click="exportBook(item.record)">{{ t('ebook.exportAction') }}</button>
           </div>
         </div>
       </article>
     </section>
 
     <section v-else-if="!loadingLibrary" class="empty-library">
-      <div class="empty-icon">EPUB</div>
+      <div class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 4.5h5a3 3 0 0 1 3 3V20a3 3 0 0 0-3-3H4z" />
+          <path d="M20 4.5h-5a3 3 0 0 0-3 3V20a3 3 0 0 1 3-3h5z" />
+        </svg>
+      </div>
       <h2>{{ t('ebook.emptyTitle') }}</h2>
       <p>{{ t('ebook.emptyDescription') }}</p>
-      <button class="primary-button" :disabled="libraryBusy" @click="chooseFile">{{ t('ebook.importEpub') }}</button>
+      <button class="primary-button" :disabled="libraryBusy" @click="chooseFile">{{ t('ebook.importBook') }}</button>
       <span class="drop-hint">{{ t('ebook.dropHint') }}</span>
     </section>
 
@@ -119,6 +140,9 @@
         <button v-if="needsSettings" class="text-button" @click="openSettings">{{ t('common.settings') }}</button>
       </div>
       <div class="toolbar-controls">
+        <button class="control-button" :title="t('ebook.exportOriginal')" @click="exportBook(activeBook)">
+          {{ t('ebook.exportOriginal') }}
+        </button>
         <button
           class="control-button"
           :title="t('ebook.displayMode')"
@@ -251,9 +275,12 @@ import { useTheme } from '@/composables/useTheme';
 import { isServiceConfigured } from '@/entrypoints/utils/option';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
 import { EBOOK_BACKUP_EXTENSION, EbookBackupError } from './backup';
+import { downloadOriginalBook } from './export';
+import { extractLibraryBookMetadata } from './importMetadata';
 import { EbookImportError, EbookRepository } from './repository';
 import { selectDroppedFile } from './dropImport';
 import { getRequestedEbookId } from './url';
+import { getLibraryPdfReaderUrl } from '@/entrypoints/pdf/url';
 import {
   EbookReaderController,
   extractEpubMetadata,
@@ -271,6 +298,7 @@ import type {
   EbookRecord,
   StorageEstimate,
 } from './types';
+import { getEbookFormat } from './types';
 
 interface RecentBook {
   record: EbookRecord;
@@ -427,12 +455,13 @@ async function importSelectedFile(file: File): Promise<void> {
   errorMessage.value = '';
   noticeMessage.value = '';
   try {
-    const result = await repository.importBook(file, extractEpubMetadata);
+    const result = await repository.importBook(file, extractLibraryBookMetadata);
     await refreshLibrary();
     await openBook(result.book);
   } catch (error) {
     if (error instanceof EbookImportError && ['INSUFFICIENT_STORAGE', 'QUOTA_EXCEEDED'].includes(error.code)) {
-      if (window.confirm(t('ebook.temporaryReadPrompt'))) await openTemporaryBook(file);
+      if (getEbookFormat({ filename: file.name, fileBlob: file }) === 'epub'
+        && window.confirm(t('ebook.temporaryReadPrompt'))) await openTemporaryBook(file);
       return;
     }
     errorMessage.value = importErrorText(error);
@@ -501,6 +530,10 @@ async function openTemporaryBook(file: File): Promise<void> {
 }
 
 async function openBook(book: EbookRecord, temporary = false): Promise<void> {
+  if (getEbookFormat(book) === 'pdf') {
+    window.location.href = getLibraryPdfReaderUrl(book.bookId);
+    return;
+  }
   errorMessage.value = '';
   activeBook.value = book;
   activeBookIsTemporary.value = temporary;
@@ -544,6 +577,14 @@ async function removeBook(book: EbookRecord): Promise<void> {
   if (!window.confirm(t('ebook.removeConfirm', { title: book.title }))) return;
   await repository.removeBook(book.bookId);
   await refreshLibrary();
+}
+
+function exportBook(book: EbookRecord): void {
+  try {
+    downloadOriginalBook(book);
+  } catch {
+    window.alert(t('ebook.exportFailed'));
+  }
 }
 
 async function toggleBookmark(): Promise<void> {
@@ -821,6 +862,15 @@ function backupErrorText(error: unknown): string {
 
 function formatTime(timestamp: number): string {
   return new Intl.DateTimeFormat(String(locale.value), { dateStyle: 'medium' }).format(timestamp);
+}
+
+function getPdfCoverTitle(book: EbookRecord): string {
+  const title = book.title.trim() || book.filename
+  return title
+    .replace(/\.pdf$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function formatBytes(bytes: number): string {

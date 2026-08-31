@@ -5,6 +5,7 @@ import { config } from '@/entrypoints/utils/config';
 import browser from 'webextension-polyfill';
 import { storage } from '@wxt-dev/storage';
 import { autoTranslateEnglishPage, restoreOriginalContent } from '@/entrypoints/main/trans';
+import { resolvePdfDocumentSource } from '@/entrypoints/pdf/url';
 
 type FloatingBallInstance = ComponentPublicInstance & {
   isTranslating?: boolean;
@@ -31,6 +32,7 @@ export function mountFloatingBall(position?: 'left' | 'right') {
 
   // 使用传入的位置参数或配置中的位置
   const ballPosition = position || config.floatingBallPosition || 'right';
+  const pdfSource = resolvePdfDocumentSource(window.location.href, document.contentType);
   // 更新配置
   config.floatingBallPosition = ballPosition;
 
@@ -49,6 +51,13 @@ export function mountFloatingBall(position?: 'left' | 'right') {
     },
     onSettingsClick: () => {
       browser.runtime.sendMessage({ type: 'openOptionsPage' });
+    },
+    pdfSource: pdfSource ?? '',
+    onOpenPdf: (source: string) => {
+      void browser.runtime.sendMessage({ type: 'openPdfReader', sourceUrl: source });
+    },
+    onOpenReading: () => {
+      void browser.runtime.sendMessage({ type: 'openEbookLibrary' });
     },
     // 添加位置变化事件监听
     onPositionChanged: (newPosition: 'left' | 'right', offsetY: number | null) => {

@@ -40,6 +40,7 @@ describe('FloatingBall', () => {
     const onSettingsClick = vi.fn()
     const onPositionChanged = vi.fn()
     const onServiceChanged = vi.fn()
+    const onOpenReading = vi.fn()
 
     const wrapper = mount(FloatingBall, {
       props: {
@@ -47,7 +48,8 @@ describe('FloatingBall', () => {
         onScopeChanged,
         onSettingsClick,
         onPositionChanged,
-        onServiceChanged
+        onServiceChanged,
+        onOpenReading
       },
       attachTo: document.body
     })
@@ -71,6 +73,7 @@ describe('FloatingBall', () => {
     expect(wrapper.get('.fr-floating-ball [data-testid="floating-toolbar"]').classes()).toContain('floating-toolbar--open')
     expect(wrapper.text()).toContain('识文')
     expect(wrapper.text()).toContain('DeepSeek')
+    expect(wrapper.text()).toContain('阅读')
     expect(wrapper.text()).toContain('更多')
 
     await wrapper.get('[data-testid="floating-toolbar-scope"]').trigger('mousedown', { button: 0, clientX: 120, clientY: 120 })
@@ -95,6 +98,34 @@ describe('FloatingBall', () => {
 
     await wrapper.get('[data-testid="floating-toolbar-more"]').trigger('click')
     expect(onSettingsClick).toHaveBeenCalledTimes(1)
+
+    await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="floating-toolbar-reading"]').trigger('click')
+    expect(onOpenReading).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+
+  it('turns the primary action into PDF reading on a PDF document', async () => {
+    const onTranslationToggle = vi.fn()
+    const onOpenPdf = vi.fn()
+    const source = 'https://example.com/paper.pdf'
+    const wrapper = mount(FloatingBall, {
+      props: { pdfSource: source, onOpenPdf, onTranslationToggle },
+      attachTo: document.body
+    })
+
+    const trigger = wrapper.get('[data-testid="floating-ball-trigger"]')
+    expect(trigger.attributes('aria-label')).toBe('用只译阅读此 PDF')
+    expect(wrapper.find('.floating-ball-pdf-mark').exists()).toBe(true)
+
+    await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
+    expect(wrapper.find('[data-testid="floating-toolbar-scope"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="floating-toolbar-open-pdf"]').text()).toBe('用只译阅读此 PDF')
+
+    await trigger.trigger('click')
+    expect(onOpenPdf).toHaveBeenCalledWith(source)
+    expect(onTranslationToggle).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })

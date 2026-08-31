@@ -26,7 +26,8 @@ import {
     type TranslationDiagnosticMetadata,
 } from '@/entrypoints/utils/translationDiagnostics'
 import { handleTtsBackgroundMessage } from '@/entrypoints/utils/ttsBackground'
-import { getPdfReaderUrl } from '@/entrypoints/pdf/url'
+import { getPdfReaderUrl, getRequestedPdfSource } from '@/entrypoints/pdf/url'
+import { getEbookPageUrl } from '@/entrypoints/ebook/url'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -357,6 +358,20 @@ export default defineBackground({
 
             if (message?.type === 'openOptionsPage') {
                 return browser.runtime.openOptionsPage()
+                    .then(() => ({ success: true }))
+                    .catch((error: unknown) => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+            }
+
+            if (message?.type === 'openPdfReader' && typeof message.sourceUrl === 'string') {
+                const source = getRequestedPdfSource(`?source=${encodeURIComponent(message.sourceUrl)}`)
+                if (!source) return { success: false, error: 'Invalid PDF source URL' }
+                return browser.tabs.create({ url: getPdfReaderUrl(source) })
+                    .then(() => ({ success: true }))
+                    .catch((error: unknown) => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
+            }
+
+            if (message?.type === 'openEbookLibrary') {
+                return browser.tabs.create({ url: getEbookPageUrl() })
                     .then(() => ({ success: true }))
                     .catch((error: unknown) => ({ success: false, error: error instanceof Error ? error.message : String(error) }));
             }

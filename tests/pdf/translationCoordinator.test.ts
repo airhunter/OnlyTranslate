@@ -10,6 +10,14 @@ vi.mock('@/entrypoints/utils/translationDiagnostics', () => ({
   createTranslationDiagnosticId: vi.fn(() => 'pdf-session'),
 }))
 
+vi.mock('@/entrypoints/utils/translationDirection', () => ({
+  resolveTranslationDirection: vi.fn(() => ({
+    sourceLang: 'en',
+    targetLang: 'zh-Hans',
+    shouldTranslate: true,
+  })),
+}))
+
 import type { PdfTextBlock } from '@/entrypoints/pdf/layout'
 import { PdfTranslationCoordinator } from '@/entrypoints/pdf/translationCoordinator'
 
@@ -106,5 +114,45 @@ describe('PdfTranslationCoordinator', () => {
       expect.any(Object),
     )
     expect(onTranslation).toHaveBeenCalledWith('body', '尽管最近大语言模型研究进展迅速。')
+  })
+
+  it('uses one page-level language direction and retries unchanged prose outside the batch', async () => {
+    const source = 'Mr. Bennet replied that he had not heard the latest news.'
+    const translate = vi.fn()
+      .mockResolvedValueOnce(source)
+      .mockResolvedValueOnce('班纳特先生回答说，他还没有听到最新消息。')
+    const onTranslation = vi.fn()
+    const onStatus = vi.fn()
+    const coordinator = new PdfTranslationCoordinator({ translate, onTranslation, onStatus })
+
+    await coordinator.start([block('dialogue', source)], 'Pride and Prejudice · page 5')
+
+    expect(translate).toHaveBeenNthCalledWith(1, source, expect.any(String), expect.objectContaining({
+      allowBatch: true,
+      sourceLangHint: 'en',
+      targetLangHint: 'zh-Hans',
+    }))
+    expect(translate).toHaveBeenNthCalledWith(2, source, expect.any(String), expect.objectContaining({
+      allowBatch: false,
+      useCache: false,
+      sourceLangHint: 'en',
+      targetLangHint: 'zh-Hans',
+    }))
+    expect(onTranslation).toHaveBeenCalledWith('dialogue', '班纳特先生回答说，他还没有听到最新消息。')
+    expect(onStatus).toHaveBeenLastCalledWith({ total: 1, completed: 1, failed: 0, running: false })
+  })
+
+  it('counts repeatedly unchanged prose as failed instead of completed', async () => {
+    const source = 'This complete sentence should not be reported as translated when it remains unchanged.'
+    const translate = vi.fn(async () => source)
+    const onTranslation = vi.fn()
+    const onStatus = vi.fn()
+    const coordinator = new PdfTranslationCoordinator({ translate, onTranslation, onStatus })
+
+    await coordinator.start([block('body', source)], 'Novel · page 1')
+
+    expect(translate).toHaveBeenCalledTimes(2)
+    expect(onTranslation).not.toHaveBeenCalled()
+    expect(onStatus).toHaveBeenLastCalledWith({ total: 1, completed: 0, failed: 1, running: false })
   })
 })

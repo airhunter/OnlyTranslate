@@ -4,7 +4,9 @@ import type {
   EbookRecord,
   ReadingState,
   StorageEstimate,
+  EbookSourceType,
 } from './types';
+import { getEbookFormat } from './types';
 import {
   createEbookBackup,
   EbookBackupError,
@@ -52,6 +54,23 @@ async function calculateBookId(data: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function detectBookFormat(filename: string): 'epub' | 'pdf' | undefined {
+  const normalized = filename.toLocaleLowerCase();
+  if (normalized.endsWith('.epub')) return 'epub';
+  if (normalized.endsWith('.pdf')) return 'pdf';
+  return undefined;
+}
+
+function looksLikePdf(data: ArrayBuffer): boolean {
+  const header = new TextDecoder('latin1').decode(data.slice(0, Math.min(1024, data.byteLength)));
+  return header.includes('%PDF-');
+}
+
+export interface EbookImportOptions {
+  sourceType?: EbookSourceType;
+  sourceUrl?: string;
+}
+
 export class EbookRepository {
   private databasePromise?: Promise<IDBDatabase>;
 
@@ -60,19 +79,31 @@ export class EbookRepository {
     private readonly storageManager: Pick<StorageManager, 'estimate' | 'persist' | 'persisted'> | undefined = navigator.storage,
   ) {}
 
-  async importBook(file: File, extractMetadata: EbookMetadataExtractor): Promise<{ book: EbookRecord; duplicate: boolean }> {
-    if (!file.name.toLocaleLowerCase().endsWith('.epub')) {
-      throw new EbookImportError('INVALID_FILE', 'Only EPUB files are supported');
-    }
+  async importBook(
+    file: File,
+    extractMetadata: EbookMetadataExtractor,
+    options: EbookImportOptions = {},
+  ): Promise<{ book: EbookRecord; duplicate: boolean }> {
+    const format = detectBookFormat(file.name);
+    if (!format) throw new EbookImportError('INVALID_FILE', 'Only EPUB and PDF files are supported');
     if (file.size <= 0) {
-      throw new EbookImportError('EMPTY_FILE', 'The EPUB file is empty');
+      throw new EbookImportError('EMPTY_FILE', 'The book file is empty');
     }
 
     const data = await file.arrayBuffer();
+    if (format === 'pdf' && !looksLikePdf(data)) {
+      throw new EbookImportError('PARSE_FAILED', 'The PDF could not be parsed');
+    }
     const bookId = await calculateBookId(data);
     const existing = await this.getBook(bookId);
     if (existing) {
-      const reopened = { ...existing, lastOpenedAt: Date.now() };
+      const reopened = {
+        ...existing,
+        format: getEbookFormat(existing),
+        sourceType: options.sourceType ?? existing.sourceType ?? 'local',
+        sourceUrl: options.sourceUrl ?? existing.sourceUrl,
+        lastOpenedAt: Date.now(),
+      };
       await this.putBook(reopened);
       return { book: reopened, duplicate: true };
     }
@@ -80,25 +111,28 @@ export class EbookRepository {
     const estimate = await this.estimateStorage();
     const remaining = Math.max(0, estimate.quota - estimate.usage);
     if (estimate.quota > 0 && remaining < file.size) {
-      throw new EbookImportError('INSUFFICIENT_STORAGE', 'There is not enough browser storage for this EPUB');
+      throw new EbookImportError('INSUFFICIENT_STORAGE', 'There is not enough browser storage for this book');
     }
 
     let metadata;
     try {
       metadata = await extractMetadata(data.slice(0), file);
     } catch (error) {
-      throw new EbookImportError('PARSE_FAILED', 'The EPUB could not be parsed', { cause: error });
+      throw new EbookImportError('PARSE_FAILED', 'The book could not be parsed', { cause: error });
     }
 
     const now = Date.now();
     const book: EbookRecord = {
       bookId,
-      fileBlob: new Blob([data], { type: file.type || 'application/epub+zip' }),
+      fileBlob: new Blob([data], { type: file.type || (format === 'pdf' ? 'application/pdf' : 'application/epub+zip') }),
       filename: file.name,
       fileSize: file.size,
-      title: metadata.title.trim() || file.name.replace(/\.epub$/i, ''),
+      title: metadata.title.trim() || file.name.replace(/\.(?:epub|pdf)$/i, ''),
       author: metadata.author.trim(),
       coverBlob: metadata.coverBlob,
+      format,
+      sourceType: options.sourceType ?? 'local',
+      sourceUrl: options.sourceUrl,
       addedAt: now,
       lastOpenedAt: now,
     };
@@ -120,7 +154,9 @@ export class EbookRepository {
     const transaction = database.transaction(BOOKS_STORE, 'readonly');
     const books = await requestResult(transaction.objectStore(BOOKS_STORE).getAll()) as EbookRecord[];
     await transactionDone(transaction);
-    return books.sort((left, right) => right.lastOpenedAt - left.lastOpenedAt);
+    return books
+      .map(book => ({ ...book, format: getEbookFormat(book), sourceType: book.sourceType ?? 'local' }))
+      .sort((left, right) => right.lastOpenedAt - left.lastOpenedAt);
   }
 
   async getBook(bookId: string): Promise<EbookRecord | undefined> {
@@ -128,7 +164,12 @@ export class EbookRepository {
     const transaction = database.transaction(BOOKS_STORE, 'readonly');
     const book = await requestResult(transaction.objectStore(BOOKS_STORE).get(bookId)) as EbookRecord | undefined;
     await transactionDone(transaction);
-    return book;
+    return book ? { ...book, format: getEbookFormat(book), sourceType: book.sourceType ?? 'local' } : undefined;
+  }
+
+  async findBookBySourceUrl(sourceUrl: string): Promise<EbookRecord | undefined> {
+    const books = await this.listRecentBooks();
+    return books.find(book => book.sourceUrl === sourceUrl);
   }
 
   async markOpened(bookId: string): Promise<void> {

@@ -5,6 +5,7 @@
     :class="{
       'dragging': isDragging,
       'is-translating': isTranslating,
+      'is-pdf': Boolean(pdfSource),
       'animating': isAnimating && config.animations,
       'static-mode': !config.animations
     }"
@@ -18,45 +19,66 @@
       @click.stop
       @mousedown.stop
     >
-      <button
-        type="button"
-        class="scope-toggle"
-        :data-scope="activeScope"
-        data-testid="floating-toolbar-scope"
-        @click="toggleScope"
-      >
-        <span class="scope-toggle-option scope-toggle-option--smart">{{ t('popup.smartScope') }}</span>
-        <span class="scope-toggle-option scope-toggle-option--full">{{ t('popup.fullScope') }}</span>
-      </button>
-
-      <span class="service-menu-wrap" :class="{ 'service-menu-wrap--open': isServiceMenuOpen }">
+      <template v-if="!pdfSource">
         <button
           type="button"
-          class="service-pill service-pill--button"
-          data-testid="floating-toolbar-service"
-          :title="t('popup.service')"
-          @click.stop="toggleServiceMenu"
+          class="scope-toggle"
+          :data-scope="activeScope"
+          data-testid="floating-toolbar-scope"
+          @click="toggleScope"
         >
-          {{ activeServiceLabel }}
+          <span class="scope-toggle-option scope-toggle-option--smart">{{ t('popup.smartScope') }}</span>
+          <span class="scope-toggle-option scope-toggle-option--full">{{ t('popup.fullScope') }}</span>
         </button>
-        <span
-          class="service-menu"
-          :class="{ 'service-menu--open': isServiceMenuOpen }"
-          data-testid="floating-toolbar-service-menu"
-        >
+
+        <span class="service-menu-wrap" :class="{ 'service-menu-wrap--open': isServiceMenuOpen }">
           <button
-            v-for="service in availableServiceOptions"
-            :key="service.value"
             type="button"
-            class="service-menu-item"
-            :class="{ 'service-menu-item--active': service.value === activeService }"
-            :data-testid="`floating-toolbar-service-${service.value}`"
-            @click.stop="selectService(service.value)"
+            class="service-pill service-pill--button"
+            data-testid="floating-toolbar-service"
+            :title="t('popup.service')"
+            @click.stop="toggleServiceMenu"
           >
-            {{ service.label }}
+            {{ activeServiceLabel }}
           </button>
+          <span
+            class="service-menu"
+            :class="{ 'service-menu--open': isServiceMenuOpen }"
+            data-testid="floating-toolbar-service-menu"
+          >
+            <button
+              v-for="service in availableServiceOptions"
+              :key="service.value"
+              type="button"
+              class="service-menu-item"
+              :class="{ 'service-menu-item--active': service.value === activeService }"
+              :data-testid="`floating-toolbar-service-${service.value}`"
+              @click.stop="selectService(service.value)"
+            >
+              {{ service.label }}
+            </button>
+          </span>
         </span>
-      </span>
+      </template>
+      <button
+        v-else
+        type="button"
+        class="toolbar-button toolbar-button--primary"
+        data-testid="floating-toolbar-open-pdf"
+        @click="openPdfReader"
+      >
+        {{ t('pdf.openCurrent') }}
+      </button>
+
+      <button
+        v-if="!pdfSource"
+        type="button"
+        class="toolbar-button toolbar-button--secondary"
+        data-testid="floating-toolbar-reading"
+        @click="openReading"
+      >
+        {{ t('popup.ebooksTab') }}
+      </button>
 
       <button
         type="button"
@@ -94,11 +116,12 @@
       type="button"
       class="floating-ball-trigger"
       data-testid="floating-ball-trigger"
-      :aria-label="isTranslating ? t('runtime.floatingToolbar.restore') : t('runtime.floatingToolbar.translate')"
+      :aria-label="primaryActionLabel"
       @mousedown="startDrag"
       @click.stop="togglePrimaryTranslation"
     >
-      <svg class="floating-ball-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <span v-if="pdfSource" class="floating-ball-pdf-mark" aria-hidden="true">PDF</span>
+      <svg v-else class="floating-ball-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
         <path fill="none" d="M0 0h24v24H0z"></path>
         <path
           d="M5 15v2a2 2 0 0 0 1.85 1.995L7 19h3v2H7a4 4 0 0 1-4-4v-2h2zm13-5l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16 10h2zm-1 2.885L15.753 16h2.492L17 12.885zM8 2v2h4v7H8v3H6v-3H2V4h4V2h2zm9 1a4 4 0 0 1 4 4v2h-2V7a2 2 0 0 0-2-2h-3V3h3zM6 6H4v3h2V6zm4 0H8v3h2V6z"
@@ -162,6 +185,18 @@ const props = defineProps({
   onServiceChanged: {
     type: Function as PropType<(service: string) => void>,
     default: () => { }
+  },
+  pdfSource: {
+    type: String,
+    default: ''
+  },
+  onOpenPdf: {
+    type: Function as PropType<(source: string) => void>,
+    default: () => { }
+  },
+  onOpenReading: {
+    type: Function as PropType<() => void>,
+    default: () => { }
   }
 });
 
@@ -187,6 +222,11 @@ const activeService = ref(config.service);
 const availableServiceOptions = ref<ServiceOption[]>([]);
 
 const currentDisplayPosition = computed(() => internalPosition.value);
+const primaryActionLabel = computed(() => props.pdfSource
+  ? t('pdf.openCurrent')
+  : isTranslating.value
+    ? t('runtime.floatingToolbar.restore')
+    : t('runtime.floatingToolbar.translate'));
 const getServiceLabel = (serviceValue: string) => {
   const customProvider = config.customProviders?.find(provider => provider.id === serviceValue);
   if (customProvider?.name) return customProvider.name;
@@ -402,11 +442,32 @@ const togglePrimaryTranslation = () => {
     suppressNextClick.value = false;
     return;
   }
+  if (props.pdfSource) {
+    openPdfReader();
+    return;
+  }
   toggleTranslation();
 };
 
 const toggleTranslationFromExternal = () => {
+  if (props.pdfSource) {
+    openPdfReader();
+    return;
+  }
   toggleTranslation();
+};
+
+const openPdfReader = () => {
+  if (!props.pdfSource) return;
+  isToolbarOpen.value = false;
+  isServiceMenuOpen.value = false;
+  props.onOpenPdf(props.pdfSource);
+};
+
+const openReading = () => {
+  isToolbarOpen.value = false;
+  isServiceMenuOpen.value = false;
+  props.onOpenReading();
 };
 
 const toggleScope = () => {
@@ -579,6 +640,13 @@ defineExpose({
   padding: 2px;
   color: #ffffff;
   background: transparent;
+}
+
+.floating-ball-pdf-mark {
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .03em;
 }
 
 .is-translating .floating-ball-trigger {

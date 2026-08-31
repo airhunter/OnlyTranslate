@@ -111,8 +111,53 @@ describe('EbookRepository', () => {
   });
 
   it('validates the file extension and empty files', async () => {
-    await expect(repository.importBook(new File(['x'], 'book.pdf'), metadata)).rejects.toMatchObject({ code: 'INVALID_FILE' });
+    await expect(repository.importBook(new File(['x'], 'book.txt'), metadata)).rejects.toMatchObject({ code: 'INVALID_FILE' });
+    await expect(repository.importBook(new File(['x'], 'book.pdf'), metadata)).rejects.toMatchObject({ code: 'PARSE_FAILED' });
     await expect(repository.importBook(new File([], 'empty.epub'), metadata)).rejects.toMatchObject({ code: 'EMPTY_FILE' });
+  });
+
+  it('stores local and remote PDF records and persists page progress', async () => {
+    const local = await repository.importBook(
+      new File(['%PDF-1.7 local'], 'local.pdf', { type: 'application/pdf' }),
+      metadata,
+    );
+    const remoteUrl = 'https://example.com/paper.pdf';
+    const remote = await repository.importBook(
+      new File(['%PDF-1.7 remote'], 'paper.pdf', { type: 'application/pdf' }),
+      metadata,
+      { sourceType: 'remote', sourceUrl: remoteUrl },
+    );
+    await repository.saveProgress({
+      bookId: remote.book.bookId,
+      pageNumber: 7,
+      percentage: .3,
+      updatedAt: 0,
+    });
+
+    expect(local.book).toMatchObject({ format: 'pdf', sourceType: 'local' });
+    expect(remote.book).toMatchObject({ format: 'pdf', sourceType: 'remote', sourceUrl: remoteUrl });
+    expect((await repository.findBookBySourceUrl(remoteUrl))?.bookId).toBe(remote.book.bookId);
+    expect(await repository.getProgress(remote.book.bookId)).toMatchObject({ pageNumber: 7, percentage: .3 });
+  });
+
+  it('backs up and restores PDF files with their source and page progress', async () => {
+    vi.stubGlobal('Blob', NodeBlob);
+    const sourceUrl = 'https://example.com/document.pdf';
+    const book = (await repository.importBook(
+      new File(['%PDF-1.7 backup'], 'document.pdf', { type: 'application/pdf' }),
+      metadata,
+      { sourceType: 'remote', sourceUrl },
+    )).book;
+    await repository.saveProgress({ bookId: book.bookId, pageNumber: 12, percentage: .5, updatedAt: 10 });
+    const backup = await repository.createBackup();
+
+    repository.close();
+    indexedDb = new IDBFactory();
+    repository = new EbookRepository(indexedDb, storageManager);
+    await repository.restoreBackup(backup);
+
+    expect(await repository.getBook(book.bookId)).toMatchObject({ format: 'pdf', sourceType: 'remote', sourceUrl });
+    expect(await repository.getProgress(book.bookId)).toMatchObject({ pageNumber: 12, percentage: .5 });
   });
 
   it('backs up and restores EPUB files, progress, and bookmarks while preserving other books', async () => {

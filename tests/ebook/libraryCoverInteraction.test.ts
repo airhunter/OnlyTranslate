@@ -12,4 +12,24 @@ describe('ebook library cover interaction', () => {
     );
     expect(libraryStyles).toContain('.cover:focus-visible');
   });
+
+  it('keeps compact card actions aligned in a single row', () => {
+    expect(libraryStyles).toContain('.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));');
+    expect(libraryStyles).toContain('.card-actions { display: grid; grid-template-columns: minmax(96px, 1fr) auto;');
+    expect(libraryStyles).toContain('.card-actions > button { min-width: 0; white-space: nowrap; }');
+    expect(libraryTemplate).toContain("t('ebook.exportAction')");
+  });
+
+  it('places the remove action in the card top-right corner', () => {
+    expect(libraryTemplate).toContain('class="book-remove-button"');
+    expect(libraryStyles).toContain('.book-remove-button { position: absolute;');
+    expect(libraryStyles).toContain('top: 14px; right: 14px;');
+  });
+
+  it('renders a readable title cover for PDFs without embedded artwork', () => {
+    expect(libraryTemplate).toContain("getEbookFormat(item.record) === 'pdf'");
+    expect(libraryTemplate).toContain('getPdfCoverTitle(item.record)');
+    expect(libraryStyles).toContain('.cover-fallback strong');
+    expect(libraryStyles).toContain('-webkit-line-clamp: 5');
+  });
 });

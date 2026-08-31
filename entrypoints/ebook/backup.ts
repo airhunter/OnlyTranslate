@@ -70,16 +70,24 @@ function isOptionalString(value: unknown): value is string | undefined {
 }
 
 function parseRecord(value: unknown, epubLength: number): Omit<EbookRecord, 'fileBlob' | 'coverBlob'> {
+  const format = value && isObject(value) && value.format === 'pdf'
+    ? 'pdf'
+    : value && isObject(value) && typeof value.filename === 'string' && value.filename.toLocaleLowerCase().endsWith('.pdf')
+      ? 'pdf'
+      : 'epub';
   if (!isObject(value)
     || typeof value.bookId !== 'string'
     || !/^[a-f\d]{64}$/.test(value.bookId)
     || typeof value.filename !== 'string'
-    || !value.filename.toLocaleLowerCase().endsWith('.epub')
+    || !value.filename.toLocaleLowerCase().endsWith(`.${format}`)
     || value.fileSize !== epubLength
     || typeof value.title !== 'string'
     || typeof value.author !== 'string'
     || !isSafeNumber(value.addedAt)
-    || !isSafeNumber(value.lastOpenedAt)) {
+    || !isSafeNumber(value.lastOpenedAt)
+    || (value.format !== undefined && value.format !== 'epub' && value.format !== 'pdf')
+    || (value.sourceType !== undefined && value.sourceType !== 'local' && value.sourceType !== 'remote')
+    || !isOptionalString(value.sourceUrl)) {
     throw invalidBackup('The backup contains invalid ebook metadata');
   }
 
@@ -89,6 +97,9 @@ function parseRecord(value: unknown, epubLength: number): Omit<EbookRecord, 'fil
     fileSize: value.fileSize,
     title: value.title,
     author: value.author,
+    format,
+    sourceType: value.sourceType === 'remote' ? 'remote' : 'local',
+    sourceUrl: value.sourceUrl,
     addedAt: value.addedAt,
     lastOpenedAt: value.lastOpenedAt,
   };
@@ -100,6 +111,7 @@ function parseProgress(value: unknown, bookId: string): ReadingState | undefined
     || value.bookId !== bookId
     || !isOptionalString(value.cfi)
     || !isOptionalString(value.chapterHref)
+    || (value.pageNumber !== undefined && !isSafeNumber(value.pageNumber, 1))
     || typeof value.percentage !== 'number'
     || !Number.isFinite(value.percentage)
     || value.percentage < 0

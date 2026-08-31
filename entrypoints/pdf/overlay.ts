@@ -52,6 +52,40 @@ export interface PdfTranslationBlockOptions {
   semanticLayout?: boolean
 }
 
+const READING_FLOW_EXCLUDED_KINDS = new Set<PdfTextBlock['kind']>([
+  'figure-text',
+  'table-text',
+])
+
+const READING_TRANSLATION_EXCLUDED_KINDS = new Set<PdfTextBlock['kind']>([
+  'metadata',
+  'visual',
+  'figure-text',
+  'table-text',
+  'formula',
+  'footnote',
+])
+
+/** Keeps the semantic reading stream independent from the conservative canvas-overlay rules. */
+export function selectPdfReadingBlocks(blocks: PdfTextBlock[]): PdfTextBlock[] {
+  return blocks.filter(block => (
+    !block.hiddenInReadingFlow
+    && !READING_FLOW_EXCLUDED_KINDS.has(block.kind)
+  ))
+}
+
+/**
+ * Translates every meaningful reading unit, including short dialogue lines in
+ * novels, while leaving non-prose regions in their original visual form.
+ */
+export function selectPdfReadingTranslationBlocks(blocks: PdfTextBlock[]): PdfTextBlock[] {
+  return selectPdfReadingBlocks(blocks).filter(block => (
+    block.translatable
+    && !READING_TRANSLATION_EXCLUDED_KINDS.has(block.kind)
+    && !['reference', 'reference_content'].includes(block.regionLabel ?? '')
+  ))
+}
+
 export function selectPdfTranslationBlocksWithOptions(
   blocks: PdfTextBlock[],
   options: PdfTranslationBlockOptions = {},

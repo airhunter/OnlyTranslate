@@ -41,24 +41,36 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.035em; }
 .notice--success { background: #edf8f1; color: #287044; border: 1px solid #cbe8d5; }
 .dark .notice--success { background: #17271e; color: #8ed6a8; border-color: #31543e; }
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
-.book-card { display: flex; gap: 18px; min-height: 214px; padding: 18px; background: #fff; border: 1px solid #e4e1d9; border-radius: 16px; box-shadow: 0 10px 32px rgb(30 34 40 / 6%); }
+.book-card { position: relative; display: flex; gap: 18px; min-height: 214px; padding: 18px; background: #fff; border: 1px solid #e4e1d9; border-radius: 16px; box-shadow: 0 10px 32px rgb(30 34 40 / 6%); }
 .dark .book-card { background: #1a1d22; border-color: #2d3138; }
 .cover { display: grid; place-items: center; width: 128px; min-width: 128px; height: 178px; overflow: hidden; padding: 0; border: 0; border-radius: 8px; background: linear-gradient(145deg, #3975d7, #83a8e8); color: white; font-size: 40px; font-weight: 800; box-shadow: 0 8px 20px rgb(30 34 40 / 18%); }
 .cover:focus-visible { outline: 3px solid #3975d7; outline-offset: 3px; }
 .cover img { width: 100%; height: 100%; object-fit: cover; }
+.cover-fallback { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 16px 14px; text-align: left; }
+.cover-fallback small { font-size: 10px; font-weight: 800; letter-spacing: .14em; opacity: .82; }
+.cover-fallback strong { display: -webkit-box; overflow: hidden; font-size: 17px; line-height: 1.22; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 5; }
 .book-info { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.book-info h2 { overflow: hidden; margin: 4px 0 5px; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.book-info h2 { overflow: hidden; margin: 4px 0 5px; padding-right: 40px; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
 .book-info p { margin: 0; color: #70757e; font-size: 14px; }
+.book-format { margin-right: 7px; padding: 2px 5px; border-radius: 4px; background: rgb(57 117 215 / 10%); color: #3975d7; font-size: 10px; font-weight: 750; }
 .progress-track { height: 5px; margin-top: auto; overflow: hidden; border-radius: 10px; background: #e9e8e4; }
 .progress-track > span { display: block; height: 100%; background: #3975d7; }
 .book-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; color: #777c85; font-size: 12px; }
-.card-actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.card-actions { display: grid; grid-template-columns: minmax(96px, 1fr) auto; align-items: center; gap: 8px; margin-top: 14px; }
+.card-actions > button { min-width: 0; white-space: nowrap; }
+.card-actions > .primary-button { width: 100%; padding-inline: 10px; }
+.card-actions > .book-action-link { min-height: 34px; padding: 6px; border-radius: 7px; font-size: 13px; }
+.card-actions > .book-action-link:hover { background: rgb(57 117 215 / 9%); }
+.book-action-link { padding: 0; border: 0; background: transparent; color: #3975d7; }
+.book-remove-button { position: absolute; z-index: 1; top: 14px; right: 14px; padding: 5px 7px; border: 0; border-radius: 7px; background: transparent; color: #b33a3a; font-size: 12px; }
+.book-remove-button:hover { background: rgb(179 58 58 / 8%); }
 .danger-link, .text-button { padding: 0; border: 0; background: transparent; color: #b33a3a; }
 .empty-library { display: flex; min-height: 420px; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px dashed #cbc7bd; border-radius: 18px; }
 .empty-library h2 { margin: 12px 0 0; }
 .empty-library p { margin: 8px 0 20px; color: #777c85; }
 .drop-hint { margin-top: 12px; color: #8a8f97; font-size: 12px; }
 .empty-icon { display: grid; place-items: center; width: 88px; height: 112px; border-radius: 6px 14px 14px 6px; background: #e1e9f7; color: #3975d7; font-weight: 800; }
+.empty-icon svg { width: 46px; height: 46px; fill: none; stroke: currentcolor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .storage-summary { padding-top: 26px; color: #777c85; font-size: 12px; text-align: right; }
 .storage-summary strong { color: #4f555e; font-weight: 650; }
 .storage-summary p { margin: 8px 0 0; color: #9a5f24; }

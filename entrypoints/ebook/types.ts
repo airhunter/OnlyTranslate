@@ -1,3 +1,6 @@
+export type EbookFormat = 'epub' | 'pdf';
+export type EbookSourceType = 'local' | 'remote';
+
 export interface EbookRecord {
   bookId: string;
   fileBlob: Blob;
@@ -6,6 +9,9 @@ export interface EbookRecord {
   title: string;
   author: string;
   coverBlob?: Blob;
+  format?: EbookFormat;
+  sourceType?: EbookSourceType;
+  sourceUrl?: string;
   addedAt: number;
   lastOpenedAt: number;
 }
@@ -20,6 +26,7 @@ export interface ReadingState {
   bookId: string;
   cfi?: string;
   chapterHref?: string;
+  pageNumber?: number;
   percentage: number;
   updatedAt: number;
 }
@@ -55,3 +62,10 @@ export const DEFAULT_READER_SETTINGS: EbookReaderSettings = {
 };
 
 export type EbookMetadataExtractor = (data: ArrayBuffer, file: File) => Promise<EbookImportMetadata>;
+
+export function getEbookFormat(record: Pick<EbookRecord, 'filename' | 'fileBlob' | 'format'>): EbookFormat {
+  if (record.format) return record.format;
+  return record.filename.toLocaleLowerCase().endsWith('.pdf') || record.fileBlob.type === 'application/pdf'
+    ? 'pdf'
+    : 'epub';
+}

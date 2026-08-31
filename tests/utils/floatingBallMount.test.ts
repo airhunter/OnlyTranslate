@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mockSendMessage = vi.hoisted(() => vi.fn())
+
 const mockConfig = vi.hoisted(() => ({
   animations: false,
   customProviders: [],
@@ -25,7 +27,7 @@ vi.mock('@wxt-dev/storage', () => ({
 vi.mock('webextension-polyfill', () => ({
   default: {
     runtime: {
-      sendMessage: vi.fn()
+      sendMessage: mockSendMessage
     }
   }
 }))
@@ -43,6 +45,8 @@ describe('floating ball mounting', () => {
     mockConfig.disableFloatingBall = false
     mockConfig.floatingBallOffsetY = null
     mockConfig.floatingBallPosition = 'right'
+    mockSendMessage.mockReset()
+    window.history.replaceState({}, '', '/')
   })
 
   afterEach(() => {
@@ -58,5 +62,28 @@ describe('floating ball mounting', () => {
     expect(container?.parentElement).toBe(document.documentElement)
     expect(document.body.contains(container)).toBe(false)
     expect(container?.querySelector('.fr-floating-ball')).not.toBeNull()
+  })
+
+  it('opens the PDF reader instead of translating a direct PDF document', async () => {
+    window.history.replaceState({}, '', '/paper.pdf')
+    mountFloatingBall()
+
+    const trigger = document.querySelector<HTMLButtonElement>('[data-testid="floating-ball-trigger"]')
+    trigger?.click()
+
+    await vi.waitFor(() => expect(mockSendMessage).toHaveBeenCalledWith({
+      type: 'openPdfReader',
+      sourceUrl: new URL('/paper.pdf', window.location.href).toString()
+    }))
+  })
+
+  it('opens the unified reading library from the expanded toolbar', async () => {
+    mountFloatingBall()
+
+    document.querySelector<HTMLButtonElement>('[data-testid="floating-ball-more-trigger"]')?.click()
+    await vi.waitFor(() => expect(document.querySelector('[data-testid="floating-toolbar-reading"]')).not.toBeNull())
+    document.querySelector<HTMLButtonElement>('[data-testid="floating-toolbar-reading"]')?.click()
+
+    await vi.waitFor(() => expect(mockSendMessage).toHaveBeenCalledWith({ type: 'openEbookLibrary' }))
   })
 })

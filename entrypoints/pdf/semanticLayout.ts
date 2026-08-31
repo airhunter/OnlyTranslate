@@ -7,7 +7,7 @@ export interface PdfLayoutRegion {
   coordinate: [number, number, number, number]
 }
 
-type ReadingZone = 'top' | 'left' | 'right' | 'bottom'
+type ReadingZone = 'top' | 'single' | 'left' | 'right' | 'bottom'
 
 interface Rect {
   x: number
@@ -26,7 +26,6 @@ interface SemanticLine extends Rect {
 }
 
 const VISUAL_LABELS = new Set(['image', 'chart', 'table', 'formula', 'algorithm', 'header_image', 'footer_image'])
-const HEADING_LABELS = new Set(['doc_title', 'paragraph_title'])
 const TEXT_LABELS = new Set([
   'text',
   'content',
@@ -42,6 +41,8 @@ const TEXT_LABELS = new Set([
   'aside_text',
 ])
 const OMITTED_LABELS = new Set(['header', 'footer', 'number', 'seal', 'header_image', 'footer_image'])
+const CAPTION_LABELS = new Set(['figure_title', 'table_title', 'chart_title'])
+const TERMINAL_LINE_END = /[.!?][“”"'’）)\]]?$/u
 
 function median(values: number[]): number {
   if (!values.length) return 0
@@ -144,38 +145,75 @@ function splitBaselinesIntoLines(spans: PdfTextSpan[], pageWidth: number): PdfTe
   })
 }
 
+function hasTwoColumnTextLayout(lines: SemanticLine[], pageWidth: number): boolean {
+  const candidates = lines.filter(line => (
+    !line.visual
+    && !OMITTED_LABELS.has(line.region?.label ?? '')
+    && line.region?.label !== 'doc_title'
+  ))
+  const left = candidates.filter(line => (
+    line.x + line.width <= pageWidth * 0.54
+    && line.x + line.width / 2 < pageWidth * 0.43
+  ))
+  const right = candidates.filter(line => (
+    line.x >= pageWidth * 0.46
+    && line.x + line.width / 2 > pageWidth * 0.57
+  ))
+  if (left.length < 2 || right.length < 2) return false
+
+  const leftTop = Math.min(...left.map(line => line.y))
+  const leftBottom = Math.max(...left.map(line => line.y + line.height))
+  const rightTop = Math.min(...right.map(line => line.y))
+  const rightBottom = Math.max(...right.map(line => line.y + line.height))
+  return Math.max(leftTop, rightTop) <= Math.min(leftBottom, rightBottom)
+}
+
 function buildLines(
   spans: PdfTextSpan[],
   regions: PdfLayoutRegion[],
   pageWidth: number,
   pageHeight: number,
 ): SemanticLine[] {
-  const lines = splitBaselinesIntoLines(spans, pageWidth).map((lineSpans, index) => {
+  const lines = splitBaselinesIntoLines(spans, pageWidth).map((lineSpans, index): SemanticLine => {
     const rect = unionRect(lineSpans)
     const region = dominantRegion(rect, regions)
     const overlap = region ? intersectionArea(rect, regionRect(region)) : 0
     const visual = Boolean(region && VISUAL_LABELS.has(region.label) && overlap > rect.width * rect.height * 0.45)
-    const centered = Math.abs(rect.x + rect.width / 2 - pageWidth / 2) < pageWidth * 0.16
-    const topMetadata = rect.y < pageHeight * 0.285 && (
-      region?.label === 'doc_title'
-      || region?.label === 'footnote'
-      || region?.label === 'header'
-      || (centered && rect.y < pageHeight * 0.14)
-    )
-    const fullWidth = rect.width > pageWidth * 0.67 || topMetadata
-    const zone: ReadingZone = fullWidth
-      ? (rect.y < pageHeight * 0.36 ? 'top' : 'bottom')
-      : (rect.x + rect.width / 2 < pageWidth / 2 ? 'left' : 'right')
     return {
       id: `semantic-line-${index}`,
       text: joinSpans(lineSpans),
       fontHeight: Math.max(...lineSpans.map(span => span.height)),
       region,
       visual,
-      zone,
+      zone: 'single' as const,
       ...rect,
     }
   }).filter(line => line.text)
+
+  const twoColumnLayout = hasTwoColumnTextLayout(lines, pageWidth)
+  lines.forEach(line => {
+    const topMetadata = line.y < pageHeight * 0.285 && (
+      line.region?.label === 'doc_title'
+      || line.region?.label === 'footnote'
+      || line.region?.label === 'header'
+    )
+    if (topMetadata) {
+      line.zone = 'top'
+      return
+    }
+    if (line.region?.label === 'footnote' && line.y > pageHeight * 0.42) {
+      line.zone = 'bottom'
+      return
+    }
+    if (!twoColumnLayout) {
+      line.zone = 'single'
+      return
+    }
+    const fullWidth = line.width > pageWidth * 0.67
+    line.zone = fullWidth
+      ? (line.y < pageHeight * 0.36 ? 'top' : 'bottom')
+      : (line.x + line.width / 2 < pageWidth / 2 ? 'left' : 'right')
+  })
 
   const abstractY = lines.find(line => /^abstract$/i.test(line.text.trim()))?.y
   if (Number.isFinite(abstractY)) {
@@ -190,13 +228,16 @@ function buildLines(
 }
 
 function isHeadingLine(line: SemanticLine): boolean {
-  return HEADING_LABELS.has(line.region?.label ?? '')
+  const label = line.region?.label ?? ''
+  const trustedLayoutHeading = label === 'doc_title'
+    || (label === 'paragraph_title' && line.text.trim().length <= 90)
+  return trustedLayoutHeading
     || /^\d+(?:\.\d+)*\s+[A-Z][^.!?]{0,80}$/.test(line.text)
     || /^(?:Abstract|Summary|Introduction|Conclusion|References|Acknowledg(?:e)?ments)$/i.test(line.text)
 }
 
 function isListLine(line: SemanticLine): boolean {
-  return /^(?:[•●▪◦]|[-–—]\s|\(?[a-z0-9]{1,2}[.)]\s)/i.test(line.text)
+  return /^(?:[•●▪◦]|[-–—]\s|\(?\d{1,2}[.)]\s|\(?[a-z][.)]\s)/i.test(line.text)
 }
 
 function normalizeParagraphText(lines: SemanticLine[]): string {
@@ -213,7 +254,7 @@ function normalizeParagraphText(lines: SemanticLine[]): string {
 }
 
 function lineOrder(left: SemanticLine, right: SemanticLine): number {
-  const rank: Record<ReadingZone, number> = { top: 0, left: 1, right: 2, bottom: 3 }
+  const rank: Record<ReadingZone, number> = { top: 0, single: 1, left: 1, right: 2, bottom: 3 }
   return rank[left.zone] - rank[right.zone] || left.y - right.y || left.x - right.x
 }
 
@@ -222,13 +263,18 @@ function shouldStartParagraph(previous: SemanticLine | undefined, line: Semantic
   if (previous.region?.label === 'doc_title' && line.region?.label === 'doc_title' && previous.region?.index === line.region?.index) return false
   if (isHeadingLine(previous) || isHeadingLine(line)) return true
   if (isListLine(line)) return true
-  if (isListLine(group[0]) && /[?!.]$/.test(previous.text) && /^[A-Z]/.test(line.text)) return true
+  if (isListLine(group[0]) && TERMINAL_LINE_END.test(previous.text) && /^[A-Z]/.test(line.text)) return true
   const gap = line.y - (previous.y + previous.height)
   const typicalHeight = Math.max(7, (previous.height + line.height) / 2)
   if (gap > typicalHeight * 0.82) return true
-  if (previous.region?.index === line.region?.index && TEXT_LABELS.has(line.region?.label ?? '')) return false
   const baseX = group.length ? Math.min(...group.map(item => item.x)) : previous.x
-  return line.x - baseX > typicalHeight * 0.8 && /[.!?)]$/.test(previous.text)
+  const regionBaseX = line.region ? regionRect(line.region).x : baseX
+  const paragraphBaseX = Math.min(baseX, regionBaseX)
+  const startsIndentedParagraph = line.x - paragraphBaseX > typicalHeight * 0.9
+    && TERMINAL_LINE_END.test(previous.text)
+  if (startsIndentedParagraph) return true
+  if (previous.region?.index === line.region?.index && TEXT_LABELS.has(line.region?.label ?? '')) return false
+  return false
 }
 
 function blockKind(lines: SemanticLine[]): PdfBlockKind {
@@ -238,7 +284,7 @@ function blockKind(lines: SemanticLine[]): PdfBlockKind {
   if (label === 'abstract') return 'abstract'
   if (isListLine(lead)) return 'list-item'
   if (label === 'footnote') return lead.zone === 'top' ? 'metadata' : 'footnote'
-  if (label.includes('title')) return 'caption'
+  if (CAPTION_LABELS.has(label)) return 'caption'
   if (lead.zone === 'top') return 'metadata'
   return 'body'
 }

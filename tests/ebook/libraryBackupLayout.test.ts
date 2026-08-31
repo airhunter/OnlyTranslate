@@ -11,4 +11,16 @@ describe('ebook library backup layout', () => {
     expect(libraryTemplate).toContain(':accept="EBOOK_BACKUP_EXTENSION"');
     expect(libraryTemplate).toContain("t('ebook.uninstallWarning')");
   });
+
+  it('keeps single-book original export separate from the library backup actions', () => {
+    expect(libraryTemplate).toContain('@click="exportBook(item.record)"');
+    expect(libraryTemplate).toContain('@click="exportBook(activeBook)"');
+    expect(libraryTemplate).toContain("t('ebook.exportOriginal')");
+  });
+
+  it('accepts EPUB and PDF imports and routes saved PDFs through the PDF reader', () => {
+    expect(libraryTemplate).toContain('accept=".epub,.pdf,application/epub+zip,application/pdf"');
+    expect(libraryTemplate).toContain("getEbookFormat(book) === 'pdf'");
+    expect(libraryTemplate).toContain('getLibraryPdfReaderUrl(book.bookId)');
+  });
 });

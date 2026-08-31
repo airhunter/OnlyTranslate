@@ -18,4 +18,11 @@ describe('ebook i18n', () => {
     expect(messages['zh-TW'].ebook.libraryTitle).toBe('只譯書架');
     expect(messages['ja-JP'].ebook.libraryTitle).toBe('OnlyTranslate ライブラリ');
   });
+
+  it('uses the unified reading entry copy for EPUB and PDF', () => {
+    expect(messages['zh-CN'].popup.ebooksTab).toBe('阅读');
+    expect(messages['zh-CN'].popup.ebookShelfTitle).toBe('书架');
+    expect(messages['zh-CN'].ebook.importBook).toBe('导入图书');
+    expect(messages['zh-CN'].ebook.emptyDescription).toContain('EPUB 或 PDF');
+  });
 });
