@@ -142,7 +142,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import type { PropType, CSSProperties } from 'vue';
 import { config } from '@/entrypoints/utils/config';
 import { isServiceConfigured, options, supportsTranslationOnlyMode } from '@/entrypoints/utils/option';
-import { t } from '@/entrypoints/utils/i18n';
+import { t } from '@/entrypoints/utils/i18n/content';
 
 type FloatingBallPosition = 'left' | 'right';
 type TranslationScope = 'smart' | 'full';

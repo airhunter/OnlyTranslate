@@ -10,6 +10,7 @@ import {
   saveDisplayModeMigrationNotice,
 } from '@/entrypoints/utils/displayModeMigration'
 import { applyContextAwarePromptMigration } from '@/entrypoints/utils/promptMigration'
+import { PendingConfigWrites } from './pendingConfigWrites'
 
 // Singleton — shared across all useConfig() calls so components never hold
 // stale defaults that overwrite the user's saved settings on save.
@@ -26,18 +27,11 @@ let _lastWrittenJson = ''
 // 文本输入会在短时间内触发多次变更。串行写入可保证最后一次编辑最后落盘，
 // 避免较早的异步 storage.setItem 在较晚写入之后完成并覆盖新内容。
 let _writeQueue: Promise<void> = Promise.resolve()
-const _localWriteSnapshots = new Set<string>()
-
-function rememberLocalWrite(json: string) {
-  _localWriteSnapshots.add(json)
-  if (_localWriteSnapshots.size <= 100) return
-  const oldest = _localWriteSnapshots.values().next().value
-  if (typeof oldest === 'string') _localWriteSnapshots.delete(oldest)
-}
+const _localWriteSnapshots = new PendingConfigWrites()
 
 function persistConfigJson(json: string): Promise<void> {
   _lastWrittenJson = json
-  rememberLocalWrite(json)
+  _localWriteSnapshots.remember(json)
   const write = _writeQueue.then(async () => {
     await storage.setItem('local:config', json)
   })
@@ -52,9 +46,10 @@ storage.watch('local:config', (newValue: unknown) => {
   if (typeof newValue === 'string' && newValue) {
     // 跳过当前页面发起的所有排队写入，而不仅是最后一个快照。
     // 否则中间快照落盘时会短暂覆盖用户仍在输入的新内容。
-    if (_localWriteSnapshots.has(newValue) || newValue === _lastWrittenJson) return
+    if (_localWriteSnapshots.consume(newValue)) return
 
     _updatingFromStorage = true
+    _lastWrittenJson = newValue
     Object.assign(config.value, JSON.parse(newValue) as Partial<Config>)
     // nextTick 确保 Vue 的 deep watcher 在本轮已执行完毕后再释放标志
     nextTick(() => {

@@ -31,7 +31,7 @@ import {
 } from '@/entrypoints/utils/translateApi';
 import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
-import { t } from '@/entrypoints/utils/i18n';
+import { t } from '@/entrypoints/utils/i18n/page';
 import { type TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,

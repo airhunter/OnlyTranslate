@@ -1,7 +1,7 @@
 import { customModelString, isServiceConfigured, servicesType, supportsTranslationOnlyMode } from "./option";
 import { sendErrorMessage } from "./tip";
 import { config } from "@/entrypoints/utils/config";
-import { t } from "@/entrypoints/utils/i18n";
+import { t } from "@/entrypoints/utils/i18n/page";
 
 export function checkConfig(): boolean {
     if (!config.on) return false;

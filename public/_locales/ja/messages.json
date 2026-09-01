@@ -3,7 +3,7 @@
     "message": "OnlyTranslate"
   },
   "extDescription": {
-    "message": "Webページ、動画字幕、ローカルEPUBを対訳で読める翻訳拡張機能。"
+    "message": "Webページ、動画字幕、EPUB、PDFを対訳で読める翻訳拡張機能。"
   },
   "settingsTitle": {
     "message": "OnlyTranslate — 設定"

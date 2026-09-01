@@ -1,5 +1,5 @@
 import { Config } from "@/entrypoints/utils/model";
-import { setLocale } from "@/entrypoints/utils/i18n";
+import { setLocale } from "@/entrypoints/utils/i18n/locale";
 import {
     applyRetiredClaudeModelMigration,
     saveClaudeModelMigrationNotice,
@@ -13,6 +13,18 @@ import { applyContextAwarePromptMigration } from './promptMigration'
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
 export const configReady = loadConfig();
+
+type ConfigChangeListener = (nextConfig: Config) => void;
+const configChangeListeners = new Set<ConfigChangeListener>();
+
+export function onConfigChange(listener: ConfigChangeListener): () => void {
+    configChangeListeners.add(listener);
+    return () => configChangeListeners.delete(listener);
+}
+
+function notifyConfigChange() {
+    configChangeListeners.forEach(listener => listener(config));
+}
 
 type StoredConfig = Partial<Config> & Pick<Config, 'on' | 'service' | 'from' | 'to'>;
 
@@ -91,6 +103,7 @@ async function loadConfig() {
                 // 如果配置有效，合并到当前 config 中
                 Object.assign(config, parsedConfig);
                 setLocale(config.uiLocale || 'auto');
+                notifyConfigChange();
                 return; // 加载成功，直接返回
             }
         }
@@ -117,6 +130,7 @@ storage.watch('local:config', (newValue: unknown) => {
                 // 如果新的配置有效，更新 config
                 Object.assign(config, parsedConfig);
                 setLocale(config.uiLocale || 'auto');
+                notifyConfigChange();
             } else {
                 console.warn('An invalid configuration was detected in storage.watch. Ignoring.');
             }

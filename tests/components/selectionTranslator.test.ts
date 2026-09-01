@@ -62,7 +62,7 @@ vi.mock('@/entrypoints/utils/config', () => ({
   config: mockConfig
 }))
 
-vi.mock('@/entrypoints/utils/i18n', () => ({
+vi.mock('@/entrypoints/utils/i18n/content', () => ({
   t: (key: string) => key
 }))
 

@@ -1,5 +1,25 @@
-import { constants } from '@/entrypoints/utils/constant'
-import { getCenterPoint } from '@/entrypoints/utils/common'
+const gestureHotkeys = {
+  DoubleClick: 'DoubleClick',
+  LongPress: 'LongPress',
+  MiddleClick: 'MiddleClick',
+  TwoFinger: 'TwoFinger',
+  ThreeFinger: 'ThreeFinger',
+  FourFinger: 'FourFinger',
+  DoubleClickScreen: 'DoubleClickScree',
+  TripleClickScreen: 'TripleClickScreen'
+} as const
+
+function getCenterPoint(touches: TouchList, point: number): { x: number, y: number } | undefined {
+  if (touches.length !== point) return
+
+  let centerX = 0
+  let centerY = 0
+  for (let index = 0; index < touches.length; index += 1) {
+    centerX += touches[index].clientX
+    centerY += touches[index].clientY
+  }
+  return { x: centerX / touches.length, y: centerY / touches.length }
+}
 
 export interface ManualTranslationConfig {
   hotkey?: string
@@ -219,13 +239,13 @@ export function setupManualTranslationTriggers(options: ManualTranslationTrigger
   const touchCenterHandler = (event: TouchEvent) => {
     let coordinate: { x: number, y: number } | undefined
     switch (config.hotkey) {
-      case constants.TwoFinger:
+      case gestureHotkeys.TwoFinger:
         coordinate = getTouchCenterPoint(event.touches, 2)
         break
-      case constants.ThreeFinger:
+      case gestureHotkeys.ThreeFinger:
         coordinate = getTouchCenterPoint(event.touches, 3)
         break
-      case constants.FourFinger:
+      case gestureHotkeys.FourFinger:
         coordinate = getTouchCenterPoint(event.touches, 4)
         break
       default:
@@ -238,7 +258,7 @@ export function setupManualTranslationTriggers(options: ManualTranslationTrigger
   }
 
   const dblclickHandler = (event: MouseEvent) => {
-    if (config.hotkey === constants.DoubleClick && config.on && !shouldDeferToSelectionTranslator()) {
+    if (config.hotkey === gestureHotkeys.DoubleClick && config.on && !shouldDeferToSelectionTranslator()) {
       handleTranslation(event.clientX, event.clientY)
     }
   }
@@ -246,7 +266,7 @@ export function setupManualTranslationTriggers(options: ManualTranslationTrigger
   const mouseupHandler = () => cancelLongPressTimer()
 
   const mousedownHandler = (event: MouseEvent) => {
-    if (config.hotkey === constants.LongPress) {
+    if (config.hotkey === gestureHotkeys.LongPress) {
       cancelLongPressTimer()
       startPos.x = event.clientX
       startPos.y = event.clientY
@@ -257,7 +277,7 @@ export function setupManualTranslationTriggers(options: ManualTranslationTrigger
       }, 500)
     }
 
-    if (config.hotkey === constants.MiddleClick && config.on && !shouldDeferToSelectionTranslator() && event.button === 1) {
+    if (config.hotkey === gestureHotkeys.MiddleClick && config.on && !shouldDeferToSelectionTranslator() && event.button === 1) {
       handleTranslation(event.clientX, event.clientY)
     }
   }
@@ -269,11 +289,11 @@ export function setupManualTranslationTriggers(options: ManualTranslationTrigger
   }
 
   const touchMultiTapHandler = (event: TouchEvent) => {
-    if (![constants.DoubleClickScreen, constants.TripleClickScreen].includes(config.hotkey ?? '') || event.touches.length !== 1) {
+    if (![gestureHotkeys.DoubleClickScreen, gestureHotkeys.TripleClickScreen].includes(config.hotkey as never) || event.touches.length !== 1) {
       return
     }
 
-    const requiredTouches = config.hotkey === constants.DoubleClickScreen ? 2 : 3
+    const requiredTouches = config.hotkey === gestureHotkeys.DoubleClickScreen ? 2 : 3
     touchCount++
 
     if (touchCount === 1) {

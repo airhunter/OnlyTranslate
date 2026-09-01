@@ -4,7 +4,7 @@
 
 [中文](./README.md) | English | [Official website](https://onlytranslate.top/)
 
-OnlyTranslate is an open-source browser extension for bilingual reading. It translates web content, video subtitles, and local EPUB ebooks in place while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
+OnlyTranslate is an open-source browser extension for bilingual reading. It translates web content, video subtitles, local EPUB ebooks, and PDFs while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
@@ -12,7 +12,7 @@ OnlyTranslate is an open-source browser extension for bilingual reading. It tran
 <p align="center">
   <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="OnlyTranslate Smart translation on a real webpage" width="32%" />
   <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="OnlyTranslate bilingual video subtitles" width="32%" />
-  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="OnlyTranslate EPUB translation reader" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="OnlyTranslate EPUB and PDF translation reader" width="32%" />
 </p>
 
 > If OnlyTranslate helps you, consider giving it a ⭐ **Star** to support the project and help more people discover an open-source bilingual reading tool.
@@ -23,7 +23,7 @@ OnlyTranslate is an open-source browser extension for bilingual reading. It tran
 2. Select the OnlyTranslate icon in the browser toolbar and choose an available translation service. No-setup services such as Microsoft Translator and Google Translate can be used immediately; AI services require their corresponding API keys.
 3. For your first translation, try **Bilingual + Smart**, then select **Translate current page**. Select **Restore original** whenever you want to undo the translation.
 
-To read an ebook, choose **Ebooks (Beta)** at the bottom of the popup, select **Import EPUB**, and choose a local DRM-free EPUB. After importing, continue reading from the popup library or open the full library to manage your books.
+To read an ebook or PDF, choose **Reading and library (Beta)** at the bottom of the popup and import a local DRM-free EPUB or PDF. You can also open an accessible online PDF with OnlyTranslate and save it to the library. Continue from the popup or use the full library to manage, back up, and restore books.
 
 The **More** menu in the top-right of the popup contains Clear cache and Help. Help provides searchable instructions for translation modes, selection and hover translation, input fields, video subtitles, service setup, and common issues. The guide is bundled with the extension and is available offline.
 
@@ -34,7 +34,7 @@ The **More** menu in the top-right of the popup contains Clear cache and Help. H
 - **Multiple ways to translate**: Start from the extension popup, the floating page toolbar, a keyboard shortcut, or the context menu.
 - **Selection, hover, and input-field translation**: Translate selected content or text under the pointer, preview suggestions beside the caret, switch target language in place, and press `Tab` to replace the original text.
 - **Video subtitle translation**: Captures source subtitles on supported sites, translates them in context-aware segments, and shows bilingual subtitles. Playback-aware scheduling and local caching reduce waiting and repeated requests.
-- **Ebook translation (Beta)**: Import local EPUB files, automatically translate the current chapter while scrolling, and retain your library, reading progress, and location bookmarks.
+- **Ebook and PDF translation (Beta)**: Import local EPUB/PDF files or save accessible online PDFs. Keep the library, reading progress, bookmarks, and original files. PDFs can use an optional local layout model to improve reading order on multi-column and visually complex pages.
 - **Flexible translation services**: Includes presets for Microsoft Translator, Google Translate, Chrome's built-in translator, DeepL, OpenAI, DeepSeek, Gemini, Claude, and more, plus OpenAI Chat Completions-compatible gateways.
 - **Advanced AI settings**: Control thinking mode separately for each service and configure a default target language with an optional reverse-translation language.
 - **Built-in user guide**: Searchable offline instructions and interface screenshots are available in Simplified Chinese, English, Traditional Chinese, and Japanese.
@@ -46,13 +46,14 @@ The **More** menu in the top-right of the popup contains Clear cache and Help. H
 
 If Smart mode misses content, switch to Full page and translate again. For dynamically loaded content, scroll it into view and trigger translation again.
 
-## Ebook Translation (Beta)
+## Reading and Library (Beta)
 
-Choose **Ebooks** at the bottom of the popup to import an EPUB directly, view recently read books, or continue reading. The full reader uses vertical scrolling, automatically translates the current chapter, and supports bilingual or translation-only display, table-of-contents navigation, themes, font size, line spacing, and location bookmarks.
+Choose **Reading and library** at the bottom of the popup to import EPUB/PDF files, view recently read books, or continue reading. The EPUB reader supports chapter translation, navigation, bookmarks, themes, and typography controls. The PDF reader supports page-based bilingual reading, translation-only and layout-preserving translation, library storage, and original-file export.
 
-- The first release supports local DRM-free EPUB files only. PDF, MOBI, and DRM-protected books are not supported.
+- Local DRM-free EPUB and PDF files are supported, and accessible online PDFs can be saved to the library. MOBI and DRM/password-protected books are not supported yet.
+- PDF uses basic layout analysis without an additional download. For complex PDFs, explicitly download the optional PP-DocLayout-M model of about 23 MB from the reader's **More** menu. The verified model stays in private extension storage and can be removed at any time. Missing, failed, or incompatible models automatically fall back to basic analysis without blocking normal PDF reading.
 - Books, reading progress, and bookmarks are stored in the current browser profile. You can back up and restore them from the full library; cloud sync, notes, and AI analysis are not included.
-- The EPUB file itself is never uploaded. Chapter text is sent to the selected translation provider only when translation begins.
+- Original EPUB/PDF files are not sent to the translation provider or model host. Extracted text is sent to the selected translation provider only when translation begins. Original-only PDF mode does not pre-send text for translation.
 - Removing a book also deletes its reading progress and bookmarks. Uninstalling the extension or clearing extension data removes the local library, so use **Back up library** first.
 - Imported books remain readable while the extension is disabled, but automatic translation pauses.
 
@@ -74,7 +75,7 @@ Subtitle translation requires a readable source subtitle track provided by the v
 
 - OnlyTranslate itself is free and open source. It does not collect usage data for the project, and settings are stored locally in your browser.
 - When you use an online translation service, the text being translated is sent to the provider you selected and is subject to that provider's privacy policy.
-- Imported EPUB files, reading progress, and bookmarks remain in local browser storage. Only chapter text that needs translation is sent to the selected provider.
+- Imported EPUB/PDF files, reading progress, bookmarks, and the optional PDF layout model remain in local browser storage. Only text that needs translation is sent to the selected provider.
 - Chrome's built-in translation runs locally in the browser, but availability depends on the Chrome version, language pair, and local model state.
 - Some online services require an API key and may charge according to their own terms. OnlyTranslate does not manage provider accounts, quotas, or billing.
 - Translations and video subtitles may be cached locally to reduce repeated requests. You can remove them with **Clear cache** in the popup's top-right **More** menu.
@@ -124,6 +125,8 @@ If translation does not start, a page is only partially translated, or subtitles
 OnlyTranslate is based on [FluentRead](https://github.com/Bistutu/FluentRead). It keeps the core webpage translation experience while adding video subtitle translation, ebook translation, Smart / Full page scope switching, and a more focused settings experience. Thanks to the original author and all contributors for their open-source work.
 
 The design and implementation of OnlyTranslate's EPUB reader drew inspiration from [taylorren/ai-reader](https://github.com/taylorren/ai-reader). Thanks to the project and its contributors for sharing their open-source ideas and work.
+
+PDF semantic layout analysis uses PaddleOCR's PP-DocLayout-M model and ONNX Runtime Web. The model is an optional, user-initiated download. See [THIRD_PARTY_NOTICES.md](./public/THIRD_PARTY_NOTICES.md) for its source, checksum, and licensing information.
 
 ## License
 

@@ -1,6 +1,5 @@
 import { keepSelectorCompatFn, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
-import beautify from 'js-beautify';
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
     getCachedContentFilterDecision,
@@ -1463,10 +1462,64 @@ function isInsideNonTranslatableContent(node: Node): boolean {
 }
 
 export function beautyHTML(text: string): string {
-    // 1. 先替换 SVG 中的大小写敏感词
-    // 2. 再使用 js-beautify 格式化 HTML
-    text = replaceSensitiveWords(text);
-    return beautify.html(text)
+    const normalized = replaceSensitiveWords(text);
+    try {
+        const template = document.createElement('template');
+        template.innerHTML = normalized;
+        return Array.from(template.content.childNodes)
+            .flatMap(node => formatHTMLNode(node, 0))
+            .join('\n');
+    } catch (_) {
+        return normalized;
+    }
+}
+
+function formatHTMLNode(node: Node, depth: number): string[] {
+    const indent = '    '.repeat(depth);
+    if (!(node instanceof Element)) {
+        const serialized = serializeHTMLNode(node);
+        return serialized.trim() ? [`${indent}${serialized.trim()}`] : [];
+    }
+
+    const hasBlockChild = Array.from(node.children)
+        .some(child => !formatInlineTags.has(child.tagName.toLowerCase()));
+    if (!hasBlockChild) return [`${indent}${node.outerHTML}`];
+
+    const openingTag = node.outerHTML.slice(0, node.outerHTML.indexOf('>') + 1);
+    const tagName = node.namespaceURI === 'http://www.w3.org/2000/svg'
+        ? node.tagName
+        : node.tagName.toLowerCase();
+    const lines = [`${indent}${openingTag}`];
+    let inlineBuffer = '';
+
+    const flushInlineBuffer = () => {
+        const value = inlineBuffer.trim();
+        if (value) lines.push(`${'    '.repeat(depth + 1)}${value}`);
+        inlineBuffer = '';
+    };
+
+    node.childNodes.forEach(child => {
+        if (child instanceof Element && !formatInlineTags.has(child.tagName.toLowerCase())) {
+            flushInlineBuffer();
+            lines.push(...formatHTMLNode(child, depth + 1));
+        } else {
+            inlineBuffer += serializeHTMLNode(child);
+        }
+    });
+    flushInlineBuffer();
+    lines.push(`${indent}</${tagName}>`);
+    return lines;
+}
+
+const formatInlineTags = new Set([
+    ...inlineSet,
+    'code', 'kbd', 'samp', 'var', 'label', 'button', 'input', 'textarea', 'select'
+]);
+
+function serializeHTMLNode(node: Node): string {
+    if (node instanceof Element) return node.outerHTML;
+    if (node.nodeType === Node.TEXT_NODE) return node.nodeValue ?? '';
+    return new XMLSerializer().serializeToString(node);
 }
 
 // 替换 svg 标签中的一些大小写敏感的词（html 不区分大小写，但 svg 标签区分大小写）

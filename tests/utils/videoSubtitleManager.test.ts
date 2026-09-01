@@ -92,7 +92,7 @@ vi.mock('@/entrypoints/video/cache', () => ({
   sha256SubtitleCacheValue: vi.fn(async () => 'prompt-sha256'),
 }))
 vi.mock('@/entrypoints/utils/config', () => ({ config: mocks.config }))
-vi.mock('@/entrypoints/utils/i18n', () => ({
+vi.mock('@/entrypoints/utils/i18n/content', () => ({
   t: (key: string, params: Record<string, string | number> = {}) => (
     params.seconds === undefined ? key : `${key}:${params.seconds}`
   ),

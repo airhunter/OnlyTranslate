@@ -277,7 +277,7 @@ import {
 import { isServiceConfigured, options, servicesType } from '@/entrypoints/utils/option'
 import type { SelectionAnalysisResult } from '@/entrypoints/utils/selectionAnalysis'
 import { speakText, stopTts } from '@/entrypoints/utils/ttsClient'
-import { t } from '@/entrypoints/utils/i18n'
+import { t } from '@/entrypoints/utils/i18n/content'
 import { shouldShowSelectionToolbar } from '@/entrypoints/utils/selectionEligibility'
 import {
   buildTargetMarkedContext,

@@ -28,6 +28,10 @@ import {
 import { handleTtsBackgroundMessage } from '@/entrypoints/utils/ttsBackground'
 import { getPdfReaderUrl, getRequestedPdfSource } from '@/entrypoints/pdf/url'
 import { getEbookPageUrl } from '@/entrypoints/ebook/url'
+import {
+    forgetLoadedContentFeatures,
+    loadContentFeatureForSender,
+} from '@/entrypoints/utils/contentFeatureLoader'
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -106,6 +110,7 @@ export default defineBackground({
     },
     main() {
         const isContextMenuSupported = !!browser.contextMenus
+        const loadedContentFeatures = new Map<string, Promise<void>>()
         const configureUninstallFeedback = () => {
             if (typeof browser.runtime.setUninstallURL !== 'function') return
 
@@ -252,6 +257,9 @@ export default defineBackground({
 
         // 监听标签页更新事件（页面刷新等）
         browser.tabs.onUpdated.addListener((tabId: any, changeInfo: any) => {
+            if (changeInfo.status === 'loading') {
+                forgetLoadedContentFeatures(loadedContentFeatures, tabId)
+            }
             if (changeInfo.status === 'complete') {
                 // 页面加载完成，重置翻译状态
                 translationStateMap.set(tabId, false);
@@ -262,10 +270,20 @@ export default defineBackground({
         // 监听标签页关闭事件，清理状态
         browser.tabs.onRemoved.addListener((tabId: any) => {
             translationStateMap.delete(tabId);
+            forgetLoadedContentFeatures(loadedContentFeatures, tabId)
         });
 
         // 处理翻译请求
-        browser.runtime.onMessage.addListener((message: any) => {
+        browser.runtime.onMessage.addListener((message: any, sender: any) => {
+            const contentFeatureResponse = loadContentFeatureForSender(
+                message,
+                sender,
+                browser.scripting,
+                browser.tabs,
+                loadedContentFeatures,
+            )
+            if (message?.type === 'LOAD_CONTENT_FEATURE') return contentFeatureResponse
+
             const ttsResponse = handleTtsBackgroundMessage(message)
             if (ttsResponse) return ttsResponse
 

@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.9.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.9：本地 PDF 阅读与翻译性能升级',
+        items: [
+          '新增本地 PDF 双语阅读并整合进阅读书架：支持导入本地文件、保存可访问的在线 PDF、阅读进度、原文导出，以及双语、仅译文和版面保留等显示方式。',
+          '复杂 PDF 可按需下载约 23 MB 的 PP-DocLayout-M 版面模型；模型只保存在浏览器本地，可随时移除，未下载或分析失败时会自动回退到基础版面分析。',
+          '升级上下文感知翻译策略，让网页、电子书和 PDF 的提示信息更贴合当前内容，同时减少不必要的上下文开销并改善长内容翻译的稳定性。',
+          '完善 Google 与微软翻译的仅译文模式，优化划词翻译与语言解析切换，并改进模型列表加载和设置保存的可靠性。',
+          '网页功能改为按需加载，大幅缩小始终注入页面的脚本；划词、视频字幕、输入框翻译和页面翻译只在需要时启动，减少普通浏览时的资源占用。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.9: Local PDF Reading and Faster Page Startup',
+        items: [
+          'Added local PDF bilingual reading to the Reading library, including local imports, saving accessible online PDFs, reading progress, original-file export, and bilingual, translation-only, and layout-preserving views.',
+          'Complex PDFs can optionally download the roughly 23 MB PP-DocLayout-M layout model. It stays in local browser storage, can be removed at any time, and automatically falls back to basic layout analysis when unavailable or unsuccessful.',
+          'Upgraded context-aware translation for webpages, ebooks, and PDFs so prompts better match the current content while reducing unnecessary context overhead and improving stability on long material.',
+          'Improved translation-only mode for Google and Microsoft, refined switching between selection translation and language analysis, and made model-list loading and settings persistence more reliable.',
+          'Moved webpage features to on-demand loading and greatly reduced the script injected into every page. Selection, video subtitles, input translation, and page translation now start only when needed.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.9：本機 PDF 閱讀與翻譯效能升級',
+        items: [
+          '新增本機 PDF 雙語閱讀並整合至閱讀書架：支援匯入本機檔案、儲存可存取的線上 PDF、閱讀進度、原始檔匯出，以及雙語、僅譯文和保留版面等顯示方式。',
+          '複雜 PDF 可依需要下載約 23 MB 的 PP-DocLayout-M 版面模型；模型只保存在瀏覽器本機，可隨時移除，未下載或分析失敗時會自動退回基礎版面分析。',
+          '升級情境感知翻譯策略，讓網頁、電子書和 PDF 的提示資訊更貼合目前內容，同時減少不必要的情境開銷並改善長內容翻譯的穩定性。',
+          '完善 Google 與微軟翻譯的僅譯文模式，改善劃詞翻譯與語言解析切換，並提升模型清單載入和設定儲存的可靠性。',
+          '網頁功能改為依需要載入，大幅縮小每個頁面都會注入的指令碼；劃詞、影片字幕、輸入框翻譯和頁面翻譯只會在需要時啟動。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.9：ローカル PDF 閲覧と翻訳性能を強化',
+        items: [
+          'ローカル PDF の対訳閲覧を読書ライブラリに統合しました。ローカルファイルの読み込み、アクセス可能なオンライン PDF の保存、進捗管理、原本の書き出し、対訳・翻訳のみ・レイアウト保持表示に対応します。',
+          '複雑な PDF では約 23 MB の PP-DocLayout-M レイアウトモデルを任意でダウンロードできます。モデルはブラウザー内だけに保存され、いつでも削除でき、未導入時や解析失敗時は基本解析へ自動的に戻ります。',
+          'ウェブページ、電子書籍、PDF の文脈対応翻訳を強化し、内容に合ったプロンプトを使いながら不要な文脈コストを抑え、長いコンテンツでの安定性を改善しました。',
+          'Google と Microsoft の翻訳のみ表示を改善し、選択翻訳と言語解析の切り替え、モデル一覧の読み込み、設定保存の信頼性も向上しました。',
+          'ウェブページ機能を必要時のみ読み込む構成へ変更し、常時注入されるスクリプトを大幅に縮小しました。選択翻訳、動画字幕、入力欄翻訳、ページ翻訳は使用時だけ起動します。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.8.2',
     notes: {
       'zh-CN': {

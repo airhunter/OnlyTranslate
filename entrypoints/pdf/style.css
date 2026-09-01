@@ -77,6 +77,11 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .pdf-empty button { min-height: 38px; padding: 7px 13px; border: 1px solid #d9d7d1; border-radius: 8px; background: var(--fr-bg-color); color: inherit; }
 .pdf-empty button:hover { border-color: #3975d7; color: #3975d7; }
 .pdf-library-notice { position: fixed; z-index: 12; top: 72px; right: 18px; max-width: 420px; padding: 9px 13px; border: 1px solid rgb(57 117 215 / 28%); border-radius: 9px; background: rgb(247 250 255 / 96%); color: #315f9f; box-shadow: 0 8px 24px rgb(30 42 65 / 12%); font-size: 12px; }
+.pdf-model-notice { position: fixed; z-index: 12; top: 72px; left: 50%; display: flex; max-width: min(620px, calc(100vw - 40px)); align-items: center; gap: 12px; padding: 9px 12px; transform: translateX(-50%); border: 1px solid rgb(57 117 215 / 28%); border-radius: 10px; background: rgb(247 250 255 / 97%); color: #315f9f; box-shadow: 0 8px 24px rgb(30 42 65 / 12%); font-size: 12px; }
+.pdf-model-notice span { min-width: 0; flex: 1; }
+.pdf-model-notice button { flex: none; padding: 6px 9px; border: 1px solid rgb(57 117 215 / 35%); border-radius: 7px; background: #fff; color: #315f9f; }
+.dark .pdf-model-notice { border-color: rgb(119 167 255 / 30%); background: rgb(29 33 40 / 97%); color: #9dbfff; }
+.dark .pdf-model-notice button { border-color: rgb(119 167 255 / 38%); background: #252a32; color: #9dbfff; }
 
 .pdf-workspace { min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-columns: minmax(360px, 40%) minmax(0, 1fr); }
 .pdf-original-panel, .pdf-translation-panel { min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }

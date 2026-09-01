@@ -1,0 +1,183 @@
+export const contentMessages = {
+  'zh-CN': {
+    popup: { smartScope: '识文', fullScope: '全页', service: '翻译服务', ebooksTab: '阅读' },
+    pdf: { openCurrent: '用只译阅读此 PDF' },
+    selection: {
+      title: '翻译结果', via: 'via 只译', translate: '翻译', analyze: '解析', analysisTitle: '语言解析',
+      analysis: '解析结果', speak: '朗读', close: '关闭', backToToolbar: '返回划词工具条',
+      copyOriginal: '复制原文', copyTranslation: '复制译文', copyAnalysis: '复制解析', regenerate: '重新翻译',
+      service: '翻译服务', playOriginal: '播放/停止原文', playTranslation: '播放/停止译文',
+      playing: '正在播放: {type}', original: '原文', translation: '译文', definition: '释义',
+      contextualMeaning: '语境含义', example: '示例', overview: '整体理解', structure: '句子结构',
+      grammarPoints: '语法点', expressions: '重点表达', notes: '学习提示', copied: '复制译文成功!',
+      failed: '翻译失败，请重试', analysisRequiresAi: '解析需要先配置一个 AI 服务', analysisFailed: '解析失败，请重试'
+    },
+    video: {
+      subtitleTranslation: '字幕翻译', subtitleButton: '只译：字幕翻译', subtitleButtonOn: '只译：字幕翻译（开）',
+      subtitleButtonOff: '只译：字幕翻译（关）', subtitleLoading: '只译：正在加载字幕',
+      subtitleWaitingCc: '只译：正在等待 YouTube 字幕', subtitleReady: '只译：字幕已就绪',
+      subtitleNoTrack: '只译：该视频没有可用字幕', subtitleLoadFailed: '只译：字幕未加载，请点击 YouTube 字幕按钮重试',
+      subtitleTranslationStarting: '正在准备翻译', subtitleTranslationCatchingUp: '正在追赶翻译，已准备未来 {seconds} 秒',
+      subtitleTranslationBuffered: '翻译已跟上', subtitleTranslationFailed: '翻译失败，当前显示原文',
+      subtitleFastModeActive: 'FastMode 已生效', subtitleFastModeInactive: 'FastMode 未生效（可忽略）',
+      subtitleForcedFastMode: '已自动切换速度优先'
+    },
+    runtime: {
+      retry: '重试', errorReason: '错误原因', tokenInvalid: 'Token 似乎有点问题，请前往设置页面重新配置后再试。',
+      rateLimited: '你的请求频率过高，被【{service}】拒绝了，请稍后再试吧~', networkUnstable: '网络连接好像不稳定，请检查网络后再试。',
+      modelInvalid: '模型配置可能有误，请前往设置页面进行检查和调整。', timeout: '请求超时啦，请稍后再试一次。',
+      unknownFailure: '出现了未知错误，请前往开源社区联系开发者吧~', serviceNotConfigured: '当前服务尚未配置，请前往设置页配置访问令牌后再试。',
+      modelNotConfigured: '当前服务尚未配置模型，请前往设置页选择模型后再试。',
+      translationOnlyUnsupported: '当前翻译服务不支持安全的仅译文模式，请切换到双语对照模式后再试。',
+      translationOnlyApplyFailed: '页面内容已发生变化，无法安全显示仅译文', shortcutTip: '快捷键: {shortcut}',
+      floatingToolbar: { open: '打开页面翻译工具', translate: '翻译', restore: '还原', more: '更多' },
+      inputTranslationTranslating: '正在生成译文候选…', inputTranslationCandidate: '译文候选',
+      inputTranslationAccept: '接受', inputTranslationCancel: '取消', inputTranslationUnchanged: '当前内容无需翻译',
+      inputTranslationFailed: '输入框翻译失败', inputTranslationRateLimited: '翻译服务请求过多，请稍后重试或切换服务',
+      inputTranslationReloadPage: '扩展已更新或重新加载，请刷新当前网页以继续使用',
+      inputTranslationUnsupportedEditor: '暂不支持此编辑器，请使用普通输入框或 CodeMirror 5',
+      translationRequestTimeout: '翻译请求超时'
+    },
+    options: { interaction: { targetLanguage: '翻译目标语言' } }
+  },
+  'en-US': {
+    popup: { smartScope: 'Smart', fullScope: 'Full page', service: 'Translation service', ebooksTab: 'Reading' },
+    pdf: { openCurrent: 'Read this PDF with OnlyTranslate' },
+    selection: {
+      title: 'Translation result', via: 'via OnlyTranslate', translate: 'Translate', analyze: 'Analyze',
+      analysisTitle: 'Language analysis', analysis: 'Analysis', speak: 'Read aloud', close: 'Close',
+      backToToolbar: 'Back to selection toolbar', copyOriginal: 'Copy original', copyTranslation: 'Copy translation',
+      copyAnalysis: 'Copy analysis', regenerate: 'Translate again', service: 'Translation service',
+      playOriginal: 'Play/stop original', playTranslation: 'Play/stop translation', playing: 'Playing: {type}',
+      original: 'Original', translation: 'Translation', definition: 'Definition', contextualMeaning: 'Meaning in context',
+      example: 'Example', overview: 'Overview', structure: 'Sentence structure', grammarPoints: 'Grammar points',
+      expressions: 'Key expressions', notes: 'Learning notes', copied: 'Translation copied!',
+      failed: 'Translation failed. Please try again.', analysisRequiresAi: 'Configure an AI service before using analysis.',
+      analysisFailed: 'Analysis failed. Please try again.'
+    },
+    video: {
+      subtitleTranslation: 'Subtitle translation', subtitleButton: 'OnlyTranslate: subtitle translation',
+      subtitleButtonOn: 'OnlyTranslate: subtitle translation (on)', subtitleButtonOff: 'OnlyTranslate: subtitle translation (off)',
+      subtitleLoading: 'OnlyTranslate: loading subtitles', subtitleWaitingCc: 'OnlyTranslate: waiting for YouTube captions',
+      subtitleReady: 'OnlyTranslate: subtitles ready', subtitleNoTrack: 'OnlyTranslate: no subtitles available for this video',
+      subtitleLoadFailed: 'OnlyTranslate: subtitles did not load; click YouTube CC to retry',
+      subtitleTranslationStarting: 'Preparing subtitle translation',
+      subtitleTranslationCatchingUp: 'Catching up; {seconds} seconds ready ahead',
+      subtitleTranslationBuffered: 'Translation has caught up',
+      subtitleTranslationFailed: 'Translation failed; showing the original text', subtitleFastModeActive: 'FastMode is active',
+      subtitleFastModeInactive: 'FastMode is inactive (safe to ignore)',
+      subtitleForcedFastMode: 'Automatically switched to speed priority'
+    },
+    runtime: {
+      retry: 'Retry', errorReason: 'Error reason', tokenInvalid: 'The token seems invalid. Reconfigure it in Settings and try again.',
+      rateLimited: 'Your request rate is too high and was rejected by {service}. Please try again later.',
+      networkUnstable: 'The network connection seems unstable. Check your network and try again.',
+      modelInvalid: 'The model configuration may be incorrect. Check it in Settings.',
+      timeout: 'The request timed out. Please try again later.',
+      unknownFailure: 'An unknown error occurred. Please contact the maintainers in the open-source community.',
+      serviceNotConfigured: 'The current service is not configured. Configure its access token in Settings and try again.',
+      modelNotConfigured: 'The current service has no model configured. Choose a model in Settings and try again.',
+      translationOnlyUnsupported: 'The current translation service does not safely support translation-only mode. Switch to bilingual mode and try again.',
+      translationOnlyApplyFailed: 'The page changed before translation-only mode could be applied safely',
+      shortcutTip: 'Shortcut: {shortcut}',
+      floatingToolbar: { open: 'Open page translation tools', translate: 'Translate', restore: 'Restore', more: 'More' },
+      inputTranslationTranslating: 'Generating a translation suggestion…', inputTranslationCandidate: 'Translation suggestion',
+      inputTranslationAccept: 'Accept', inputTranslationCancel: 'Cancel', inputTranslationUnchanged: 'This text does not need translation',
+      inputTranslationFailed: 'Input translation failed',
+      inputTranslationRateLimited: 'Too many translation requests. Try again later or switch services.',
+      inputTranslationReloadPage: 'The extension was updated or reloaded. Refresh this page to continue.',
+      inputTranslationUnsupportedEditor: 'This editor is not supported yet. Use a standard input or CodeMirror 5.',
+      translationRequestTimeout: 'Translation request timed out'
+    },
+    options: { interaction: { targetLanguage: 'Target language' } }
+  },
+  'zh-TW': {
+    popup: { smartScope: '識文', fullScope: '全頁', service: '翻譯服務', ebooksTab: '閱讀' },
+    pdf: { openCurrent: '使用只譯閱讀此 PDF' },
+    selection: {
+      title: '翻譯結果', via: 'via 只譯', translate: '翻譯', analyze: '解析', analysisTitle: '語言解析',
+      analysis: '解析結果', speak: '朗讀', close: '關閉', backToToolbar: '返回劃詞工具列',
+      copyOriginal: '複製原文', copyTranslation: '複製譯文', copyAnalysis: '複製解析', regenerate: '重新翻譯',
+      service: '翻譯服務', playOriginal: '播放/停止原文', playTranslation: '播放/停止譯文',
+      playing: '正在播放: {type}', original: '原文', translation: '譯文', definition: '釋義',
+      contextualMeaning: '語境含義', example: '範例', overview: '整體理解', structure: '句子結構',
+      grammarPoints: '語法點', expressions: '重點表達', notes: '學習提示', copied: '複製譯文成功!',
+      failed: '翻譯失敗，請重試', analysisRequiresAi: '解析前需先設定一個 AI 服務', analysisFailed: '解析失敗，請重試'
+    },
+    video: {
+      subtitleTranslation: '字幕翻譯', subtitleButton: '只譯：字幕翻譯', subtitleButtonOn: '只譯：字幕翻譯（開）',
+      subtitleButtonOff: '只譯：字幕翻譯（關）', subtitleLoading: '只譯：正在載入字幕',
+      subtitleWaitingCc: '只譯：正在等待 YouTube 字幕', subtitleReady: '只譯：字幕已就緒',
+      subtitleNoTrack: '只譯：此影片沒有可用字幕', subtitleLoadFailed: '只譯：字幕未載入，請點擊 YouTube 字幕按鈕重試',
+      subtitleTranslationStarting: '正在準備翻譯', subtitleTranslationCatchingUp: '正在追趕翻譯，已準備未來 {seconds} 秒',
+      subtitleTranslationBuffered: '翻譯已跟上', subtitleTranslationFailed: '翻譯失敗，目前顯示原文',
+      subtitleFastModeActive: 'FastMode 已生效', subtitleFastModeInactive: 'FastMode 未生效（可忽略）',
+      subtitleForcedFastMode: '已自動切換為速度優先'
+    },
+    runtime: {
+      retry: '重試', errorReason: '錯誤原因', tokenInvalid: 'Token 似乎有點問題，請前往設定頁面重新設定後再試。',
+      rateLimited: '你的請求頻率過高，被【{service}】拒絕了，請稍後再試吧~',
+      networkUnstable: '網路連線似乎不穩定，請檢查網路後再試。', modelInvalid: '模型設定可能有誤，請前往設定頁面檢查和調整。',
+      timeout: '請求逾時了，請稍後再試一次。', unknownFailure: '出現了未知錯誤，請前往開源社群聯絡開發者吧~',
+      serviceNotConfigured: '目前服務尚未設定，請前往設定頁設定存取權杖後再試。',
+      modelNotConfigured: '目前服務尚未設定模型，請前往設定頁選擇模型後再試。',
+      translationOnlyUnsupported: '目前翻譯服務不支援安全的僅譯文模式，請切換到雙語對照模式後再試。',
+      translationOnlyApplyFailed: '頁面內容已變更，無法安全顯示僅譯文', shortcutTip: '快捷鍵: {shortcut}',
+      floatingToolbar: { open: '開啟頁面翻譯工具', translate: '翻譯', restore: '還原', more: '更多' },
+      inputTranslationTranslating: '正在產生譯文候選…', inputTranslationCandidate: '譯文候選',
+      inputTranslationAccept: '接受', inputTranslationCancel: '取消', inputTranslationUnchanged: '目前內容不需要翻譯',
+      inputTranslationFailed: '輸入框翻譯失敗', inputTranslationRateLimited: '翻譯服務請求過多，請稍後重試或切換服務',
+      inputTranslationReloadPage: '擴充功能已更新或重新載入，請重新整理目前網頁以繼續使用',
+      inputTranslationUnsupportedEditor: '暫不支援此編輯器，請使用一般輸入框或 CodeMirror 5',
+      translationRequestTimeout: '翻譯請求逾時'
+    },
+    options: { interaction: { targetLanguage: '翻譯目標語言' } }
+  },
+  'ja-JP': {
+    popup: { smartScope: '本文', fullScope: '全ページ', service: '翻訳サービス', ebooksTab: '読書' },
+    pdf: { openCurrent: 'OnlyTranslate でこの PDF を読む' },
+    selection: {
+      title: '翻訳結果', via: 'via OnlyTranslate', translate: '翻訳', analyze: '解析', analysisTitle: '言語解析',
+      analysis: '解析結果', speak: '読み上げ', close: '閉じる', backToToolbar: '選択ツールバーに戻る',
+      copyOriginal: '原文をコピー', copyTranslation: '翻訳をコピー', copyAnalysis: '解析結果をコピー', regenerate: '再翻訳',
+      service: '翻訳サービス', playOriginal: '原文を再生/停止', playTranslation: '翻訳を再生/停止', playing: '再生中: {type}',
+      original: '原文', translation: '翻訳', definition: '意味', contextualMeaning: '文脈上の意味', example: '例',
+      overview: '全体の理解', structure: '文の構造', grammarPoints: '文法ポイント', expressions: '重要表現',
+      notes: '学習メモ', copied: '翻訳をコピーしました!', failed: '翻訳に失敗しました。もう一度お試しください。',
+      analysisRequiresAi: '解析を使う前に AI サービスを設定してください。', analysisFailed: '解析に失敗しました。もう一度お試しください。'
+    },
+    video: {
+      subtitleTranslation: '字幕翻訳', subtitleButton: 'OnlyTranslate: 字幕翻訳',
+      subtitleButtonOn: 'OnlyTranslate: 字幕翻訳（オン）', subtitleButtonOff: 'OnlyTranslate: 字幕翻訳（オフ）',
+      subtitleLoading: 'OnlyTranslate: 字幕を読み込み中', subtitleWaitingCc: 'OnlyTranslate: YouTube 字幕を待機中',
+      subtitleReady: 'OnlyTranslate: 字幕の準備が完了しました', subtitleNoTrack: 'OnlyTranslate: この動画には利用可能な字幕がありません',
+      subtitleLoadFailed: 'OnlyTranslate: 字幕を読み込めません。YouTube の字幕ボタンを押して再試行してください',
+      subtitleTranslationStarting: '字幕翻訳を準備しています',
+      subtitleTranslationCatchingUp: '翻訳を追いつかせています。今後 {seconds} 秒を準備済みです',
+      subtitleTranslationBuffered: '翻訳が再生に追いつきました',
+      subtitleTranslationFailed: '翻訳に失敗したため、原文を表示しています', subtitleFastModeActive: 'FastMode は有効です',
+      subtitleFastModeInactive: 'FastMode は無効です（無視して構いません）', subtitleForcedFastMode: '速度優先へ自動的に切り替えました'
+    },
+    runtime: {
+      retry: '再試行', errorReason: 'エラー理由', tokenInvalid: 'Token に問題があるようです。設定ページで再設定してからお試しください。',
+      rateLimited: 'リクエスト頻度が高すぎるため、{service} に拒否されました。しばらくしてから再試行してください。',
+      networkUnstable: 'ネットワーク接続が不安定なようです。確認してから再試行してください。',
+      modelInvalid: 'モデル設定に問題がある可能性があります。設定ページで確認してください。',
+      timeout: 'リクエストがタイムアウトしました。しばらくしてから再試行してください。',
+      unknownFailure: '不明なエラーが発生しました。オープンソースコミュニティで開発者に連絡してください。',
+      serviceNotConfigured: '現在のサービスは未設定です。設定ページでアクセストークンを設定してからお試しください。',
+      modelNotConfigured: '現在のサービスはモデルが未設定です。設定ページでモデルを選択してからお試しください。',
+      translationOnlyUnsupported: '現在の翻訳サービスは安全な翻訳のみモードに対応していません。対訳表示に切り替えてください。',
+      translationOnlyApplyFailed: 'ページ内容が変更されたため、翻訳のみを安全に表示できませんでした', shortcutTip: 'ショートカット: {shortcut}',
+      floatingToolbar: { open: 'ページ翻訳ツールを開く', translate: '翻訳', restore: '復元', more: 'その他' },
+      inputTranslationTranslating: '翻訳候補を作成しています…', inputTranslationCandidate: '翻訳候補',
+      inputTranslationAccept: '適用', inputTranslationCancel: 'キャンセル', inputTranslationUnchanged: 'この内容は翻訳不要です',
+      inputTranslationFailed: '入力欄の翻訳に失敗しました',
+      inputTranslationRateLimited: '翻訳リクエストが多すぎます。しばらく待つか、サービスを切り替えてください。',
+      inputTranslationReloadPage: '拡張機能が更新または再読み込みされました。続行するにはページを更新してください。',
+      inputTranslationUnsupportedEditor: 'このエディターはまだ対応していません。通常の入力欄または CodeMirror 5 を使用してください。',
+      translationRequestTimeout: '翻訳リクエストがタイムアウトしました'
+    },
+    options: { interaction: { targetLanguage: '翻訳先言語' } }
+  }
+} as const

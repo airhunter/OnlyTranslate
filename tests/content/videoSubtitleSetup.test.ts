@@ -1,32 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  initVideoSubtitle: vi.fn()
-}))
-
-vi.mock('@/entrypoints/video/manager', () => ({
-  initVideoSubtitle: mocks.initVideoSubtitle
-}))
-
-import { setupVideoSubtitle } from '@/entrypoints/content/videoSubtitleSetup'
+import {
+  isSupportedVideoSubtitleHost,
+  setupVideoSubtitle
+} from '@/entrypoints/content/videoSubtitleSetup'
 
 describe('video subtitle setup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('initializes video subtitles through the default initializer', () => {
-    setupVideoSubtitle()
+  it('loads and initializes subtitles only on supported video hosts', async () => {
+    const initVideoSubtitle = vi.fn()
+    const loadModule = vi.fn(async () => ({ initVideoSubtitle }))
 
-    expect(mocks.initVideoSubtitle).toHaveBeenCalledTimes(1)
+    await expect(setupVideoSubtitle('www.youtube.com', loadModule)).resolves.toBe(true)
+
+    expect(loadModule).toHaveBeenCalledTimes(1)
+    expect(initVideoSubtitle).toHaveBeenCalledTimes(1)
   })
 
-  it('can initialize video subtitles through a provided initializer', () => {
+  it('does not load the video runtime on unrelated hosts', async () => {
     const initVideoSubtitle = vi.fn()
+    const loadModule = vi.fn(async () => ({ initVideoSubtitle }))
 
-    setupVideoSubtitle(initVideoSubtitle)
+    await expect(setupVideoSubtitle('example.com', loadModule)).resolves.toBe(false)
 
-    expect(initVideoSubtitle).toHaveBeenCalledTimes(1)
-    expect(mocks.initVideoSubtitle).not.toHaveBeenCalled()
+    expect(loadModule).not.toHaveBeenCalled()
+    expect(initVideoSubtitle).not.toHaveBeenCalled()
+  })
+
+  it('matches exact hosts and subdomains without matching lookalike domains', () => {
+    expect(isSupportedVideoSubtitleHost('coursera.org')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('www.khanacademy.org')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('youtube.com.example.org')).toBe(false)
   })
 })

@@ -7,14 +7,22 @@ import {
 } from 'paddleocr'
 import type { PdfLayoutRegion } from './semanticLayout'
 
+interface InitializeRequest {
+  id: number
+  type: 'initialize'
+  modelBuffer: ArrayBuffer
+  assetBaseUrl: string
+}
+
 interface AnalyzeRequest {
   id: number
   type: 'analyze'
   width: number
   height: number
   buffer: ArrayBuffer
-  assetBaseUrl: string
 }
+
+type WorkerRequest = InitializeRequest | AnalyzeRequest
 
 interface AnalyzeResponse {
   id: number
@@ -25,15 +33,12 @@ interface AnalyzeResponse {
 
 export function startPdfLayoutModelWorker(): void {
   let detectorPromise: Promise<ObjectDetectionService> | undefined
-  let detectorAssetBase = ''
 
-  async function createDetector(assetBaseUrl: string): Promise<ObjectDetectionService> {
+  async function createDetector(modelBuffer: ArrayBuffer, assetBaseUrl: string): Promise<ObjectDetectionService> {
     ort.env.wasm.numThreads = 1
     ort.env.wasm.proxy = false
     ort.env.wasm.wasmPaths = assetBaseUrl
-    const response = await fetch(`${assetBaseUrl}PP-DocLayout-M_infer.onnx`)
-    if (!response.ok) throw new Error(`无法加载本地 PDF 版面模型：HTTP ${response.status}`)
-    const model = new Uint8Array(await response.arrayBuffer())
+    const model = new Uint8Array(modelBuffer)
     const session = await ort.InferenceSession.create(model, {
       executionProviders: ['wasm'],
       graphOptimizationLevel: 'all',
@@ -46,20 +51,29 @@ export function startPdfLayoutModelWorker(): void {
     })
   }
 
-  function getDetector(assetBaseUrl: string): Promise<ObjectDetectionService> {
-    if (!detectorPromise || detectorAssetBase !== assetBaseUrl) {
-      detectorAssetBase = assetBaseUrl
-      detectorPromise = createDetector(assetBaseUrl)
+  self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
+    const request = event.data
+    if (request.type === 'initialize') {
+      try {
+        detectorPromise = createDetector(request.modelBuffer, request.assetBaseUrl)
+        await detectorPromise
+        self.postMessage({ id: request.id })
+      }
+      catch (error) {
+        detectorPromise = undefined
+        self.postMessage({
+          id: request.id,
+          error: error instanceof Error ? error.message : String(error),
+        } satisfies AnalyzeResponse)
+      }
+      return
     }
-    return detectorPromise
-  }
 
-  self.onmessage = async (event: MessageEvent<AnalyzeRequest>) => {
-    const { id, type, width, height, buffer, assetBaseUrl } = event.data
-    if (type !== 'analyze') return
+    const { id, width, height, buffer } = request
     const startedAt = performance.now()
     try {
-      const detector = await getDetector(assetBaseUrl)
+      if (!detectorPromise) throw new Error('PDF 语义排版模型尚未初始化')
+      const detector = await detectorPromise
       const regions = await detector.run({ width, height, data: new Uint8Array(buffer) }) as PdfLayoutRegion[]
       const response: AnalyzeResponse = {
         id,

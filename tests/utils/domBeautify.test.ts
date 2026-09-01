@@ -33,4 +33,21 @@ describe('beautyHTML', () => {
       '<p>Use <code>const x = 1;</code> then <span data-onlytranslate="keep">continue</span>.</p>'
     )).toBe('<p>Use <code>const x = 1;</code> then <span data-onlytranslate="keep">continue</span>.</p>');
   });
+
+  it('keeps mixed inline text while indenting nested block elements', () => {
+    expect(beautyHTML(
+      '<section><p>First <em>line</em>.</p><div><p>Nested</p></div></section>'
+    )).toBe([
+      '<section>',
+      '    <p>First <em>line</em>.</p>',
+      '    <div>',
+      '        <p>Nested</p>',
+      '    </div>',
+      '</section>',
+    ].join('\n'));
+  });
+
+  it('formats multiple top-level fragments without adding wrapper markup', () => {
+    expect(beautyHTML('<p>One</p><p>Two</p>')).toBe('<p>One</p>\n<p>Two</p>');
+  });
 });

@@ -1,5 +1,4 @@
 declare module 'entrypoints/utils/declare';
-declare module 'js-beautify';
 declare module '*?raw' {
   const content: string;
   export default content;

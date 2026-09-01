@@ -100,6 +100,9 @@
             <button @click="openLibrary">{{ t('ebook.libraryTitle') }}</button>
             <button @click="chooseLocalFile">{{ t('pdf.openLocal') }}</button>
             <button v-if="pageCount" @click="setOverlayMode">{{ t('pdf.displayOverlay') }}</button>
+            <button :disabled="layoutModelState.busy" @click="toggleLayoutModel">
+              {{ layoutModelActionLabel }}
+            </button>
           </div>
         </details>
         <input ref="fileInput" class="visually-hidden" type="file" accept=".pdf,application/pdf" @change="openLocalFile" />
@@ -107,6 +110,12 @@
     </header>
 
     <div v-if="libraryNotice" class="pdf-library-notice" role="status">{{ libraryNotice }}</div>
+    <div v-if="showLayoutModelNotice" class="pdf-model-notice" role="status">
+      <span>{{ layoutModelNotice }}</span>
+      <button :disabled="layoutModelState.busy" @click="installLayoutModel">
+        {{ layoutModelActionLabel }}
+      </button>
+    </div>
 
     <section v-if="!pageCount && !loadingDocument" class="pdf-empty">
       <div class="pdf-empty__icon">PDF</div>
@@ -197,7 +206,7 @@
               </template>
               <template v-else-if="displayMode === 'translation'">
                 <p v-if="block.translation" class="pdf-block__translation pdf-block__translation--semantic pdf-block__translation--only">{{ block.translation }}</p>
-                <p v-else-if="!block.translatable" class="pdf-block__original pdf-block__original--semantic">{{ block.text }}</p>
+                <p v-else-if="shouldShowTranslationOnlySource(block, translationStatus.running)" class="pdf-block__original pdf-block__original--semantic">{{ block.text }}</p>
                 <div v-else-if="translationStatus.running" class="pdf-block__pending" />
               </template>
               <template v-else>
@@ -252,6 +261,13 @@ import { downloadRemotePdf, PdfReaderController, PdfSourceError } from './reader
 import { addPdfToLibrary } from './library'
 import { PdfTranslationCoordinator, type PdfTranslationStatus } from './translationCoordinator'
 import { getRequestedPdfBookId, getRequestedPdfSource } from './url'
+import {
+  shouldShowTranslationOnlySource,
+  shouldTranslatePdfMode,
+  type PdfDisplayMode,
+  usesPdfSemanticLayout,
+} from './display'
+import { PDF_LAYOUT_MODEL, pdfLayoutModelStore } from './layoutModelStore'
 
 interface PdfBlockView extends PdfTextBlock {
   translation?: string
@@ -287,8 +303,6 @@ const documentTitle = computed(() => {
     return sourceLabel.value
   }
 })
-type PdfDisplayMode = 'semantic' | 'overlay' | 'original' | 'translation'
-
 const displayMode = ref<PdfDisplayMode>('semantic')
 const previewOpen = ref(true)
 const readerSettings = reactive<Pick<EbookReaderSettings, 'fontScale' | 'lineHeight'>>({
@@ -310,7 +324,26 @@ const layoutStatus = reactive<{ mode: 'heuristic' | 'semantic'; elapsedMs: numbe
   elapsedMs: 0,
   error: '',
 })
-const usesSemanticLayout = computed(() => displayMode.value === 'semantic' || displayMode.value === 'translation')
+const layoutModelState = reactive({ installed: false, busy: false, progress: 0, error: '' })
+let layoutModelDownloadAbort: AbortController | undefined
+const usesSemanticLayout = computed(() => usesPdfSemanticLayout(displayMode.value))
+const usesInstalledSemanticLayout = computed(() => usesSemanticLayout.value && layoutModelState.installed)
+const showLayoutModelNotice = computed(() => Boolean(
+  layoutModelState.error
+  || (pageCount.value && usesSemanticLayout.value && !layoutModelState.installed),
+))
+const layoutModelNotice = computed(() => {
+  if (layoutModelState.error) return t('pdf.semanticModelDownloadFailed', { error: layoutModelState.error })
+  if (layoutModelState.busy) return t('pdf.semanticModelDownloading', { percent: layoutModelState.progress })
+  return t('pdf.semanticModelOptional', { size: Math.ceil(PDF_LAYOUT_MODEL.size / 1024 / 1024) })
+})
+const layoutModelActionLabel = computed(() => layoutModelState.busy
+  ? layoutModelState.installed
+    ? t('pdf.semanticModelRemove')
+    : t('pdf.semanticModelDownloading', { percent: layoutModelState.progress })
+  : layoutModelState.installed
+    ? t('pdf.semanticModelRemove')
+    : t('pdf.semanticModelDownload', { size: Math.ceil(PDF_LAYOUT_MODEL.size / 1024 / 1024) }))
 const displayModeLabel = computed(() => displayMode.value === 'semantic'
   ? t('ebook.displayBilingual')
   : displayMode.value === 'translation'
@@ -510,7 +543,7 @@ async function renderCurrentPage(): Promise<void> {
   try {
     const availableWidth = Math.max(240, originalPanel.value.clientWidth - 42)
     const rendered = await controller.renderPage(pageNumber.value, canvas.value, availableWidth, {
-      semanticLayout: usesSemanticLayout.value,
+      semanticLayout: usesInstalledSemanticLayout.value,
     })
     if (generation !== renderGeneration) return
     pageNumber.value = rendered.pageNumber
@@ -521,11 +554,11 @@ async function renderCurrentPage(): Promise<void> {
     layoutStatus.mode = rendered.layoutMode
     layoutStatus.elapsedMs = rendered.layoutElapsedMs ?? 0
     layoutStatus.error = rendered.layoutError ?? ''
-    if (displayMode.value === 'semantic' && rendered.layoutMode !== 'semantic') {
+    if (displayMode.value === 'semantic' && layoutModelState.installed && rendered.layoutMode !== 'semantic') {
       translationNotice.value = t('pdf.semanticFallback', { error: rendered.layoutError || t('pdf.semanticUnknownError') })
     }
     void savePdfProgress()
-    void startTranslation()
+    if (shouldTranslatePdfMode(displayMode.value)) void startTranslation()
   }
   catch (error) {
     if (generation !== renderGeneration) return
@@ -652,6 +685,54 @@ function setOverlayMode(): void {
   displayMode.value = 'overlay'
 }
 
+async function installLayoutModel(): Promise<void> {
+  if (layoutModelState.busy || layoutModelState.installed) return
+  layoutModelState.busy = true
+  layoutModelState.progress = 0
+  layoutModelState.error = ''
+  layoutModelDownloadAbort = new AbortController()
+  try {
+    await pdfLayoutModelStore.download((progress) => {
+      layoutModelState.progress = progress.percent
+    }, layoutModelDownloadAbort.signal)
+    layoutModelState.installed = true
+    layoutModelState.progress = 100
+    controller.resetLayoutModel()
+    if (pageCount.value && usesSemanticLayout.value) await renderCurrentPage()
+  }
+  catch (error) {
+    if (layoutModelDownloadAbort.signal.aborted) return
+    layoutModelState.error = error instanceof Error ? error.message : String(error)
+  }
+  finally {
+    layoutModelState.busy = false
+    layoutModelDownloadAbort = undefined
+  }
+}
+
+async function removeLayoutModel(): Promise<void> {
+  if (layoutModelState.busy || !layoutModelState.installed) return
+  layoutModelState.busy = true
+  layoutModelState.error = ''
+  try {
+    await pdfLayoutModelStore.remove()
+    layoutModelState.installed = false
+    layoutModelState.progress = 0
+    controller.resetLayoutModel()
+    if (pageCount.value && usesSemanticLayout.value) await renderCurrentPage()
+  }
+  catch (error) {
+    layoutModelState.error = error instanceof Error ? error.message : String(error)
+  }
+  finally {
+    layoutModelState.busy = false
+  }
+}
+
+function toggleLayoutModel(): void {
+  void (layoutModelState.installed ? removeLayoutModel() : installLayoutModel())
+}
+
 function cycleTheme(): void {
   const themes = ['auto', 'light', 'dark'] as const
   const current = themes.indexOf(config.value.theme as typeof themes[number])
@@ -724,6 +805,12 @@ function formatSourceError(error: unknown): string {
 onMounted(async () => {
   await loadConfig()
   locale.value = resolveLocale(config.value.uiLocale || 'auto')
+  try {
+    layoutModelState.installed = (await pdfLayoutModelStore.getStatus()).installed
+  }
+  catch (error) {
+    layoutModelState.error = error instanceof Error ? error.message : String(error)
+  }
   const sharedReaderSettings = await loadReaderSettings()
   readerSettings.fontScale = sharedReaderSettings.fontScale
   readerSettings.lineHeight = sharedReaderSettings.lineHeight
@@ -753,7 +840,7 @@ watch(previewOpen, open => {
 })
 
 function isSemanticMode(mode: PdfDisplayMode): boolean {
-  return mode === 'semantic' || mode === 'translation'
+  return usesPdfSemanticLayout(mode)
 }
 
 function savePdfProgressImmediately(): void {
@@ -762,8 +849,10 @@ function savePdfProgressImmediately(): void {
 
 onBeforeUnmount(() => {
   renderGeneration += 1
+  layoutModelDownloadAbort?.abort()
   coordinator.cancel()
   controller.close()
+  pdfLayoutModelStore.close()
   repository.close()
   window.removeEventListener('keydown', handleReaderKeyDown)
   window.removeEventListener('pagehide', savePdfProgressImmediately)

@@ -257,6 +257,10 @@ export class PdfReaderController {
     this.textLayoutCache.clear()
   }
 
+  resetLayoutModel(): void {
+    this.layoutModel.destroy()
+  }
+
   private openData(data: Uint8Array): Promise<number> {
     return this.openTask(getDocument({ data }))
   }

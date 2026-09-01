@@ -30,7 +30,6 @@
     "element-plus": "2.11.3",
     "epubjs": "0.3.93",
     "franc-min": "^6.2.0",
-    "js-beautify": "^2.0.3",
     "onnxruntime-web": "1.29.0",
     "paddleocr": "1.2.0",
     "pdfjs-dist": "^5.4.624",

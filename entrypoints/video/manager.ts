@@ -22,7 +22,7 @@ import {
     type VideoSubtitleCacheSession,
 } from './cache'
 import { config } from '@/entrypoints/utils/config'
-import { t } from '@/entrypoints/utils/i18n'
+import { t } from '@/entrypoints/utils/i18n/content'
 import { urls } from '@/entrypoints/utils/constant'
 import { services, servicesType } from '@/entrypoints/utils/option'
 import { REQUEST_POLICY_VERSION } from '@/entrypoints/utils/modelCapabilities'

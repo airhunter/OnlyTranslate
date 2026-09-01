@@ -34,6 +34,7 @@ export default defineConfig({
             'storage',
             'contextMenus',
             'offscreen',
+            'scripting',
             'alarms',
             'unlimitedStorage',
             ...(browser === 'firefox' ? [] : ['tts']),

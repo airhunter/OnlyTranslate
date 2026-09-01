@@ -126,14 +126,19 @@ function checkArtifactSize(zipPath, previousVersion) {
     warn(`发布 ZIP 为 ${zipSize} MB，超过 1.50 MB，请检查构建内容`);
   }
 
-  const contentEntry = readZipEntries(zipPath).find((entry) => entry.name === 'content-scripts/content.js');
+  const contentEntries = readZipEntries(zipPath)
+    .filter((entry) => entry.name.startsWith('content-scripts/') && entry.name.endsWith('.js'));
+  const contentEntry = contentEntries.find((entry) => entry.name === 'content-scripts/content.js');
   if (!contentEntry) {
     warn('发布 ZIP 中未找到 content-scripts/content.js，无法检查内容脚本大小');
-  } else {
-    const contentSize = formatKib(contentEntry.uncompressedSize);
-    console.log(`artifact size: content.js ${contentSize} KiB / 800.0 KiB`);
-    if (contentEntry.uncompressedSize > contentScriptReviewBytes) {
-      warn(`content.js 为 ${contentSize} KiB，超过 800.0 KiB，请审查始终注入页面的代码`);
+  }
+
+  for (const entry of contentEntries) {
+    const contentSize = formatKib(entry.uncompressedSize);
+    const scriptName = entry.name.slice('content-scripts/'.length);
+    console.log(`artifact size: ${scriptName} ${contentSize} KiB / 800.0 KiB`);
+    if (entry.uncompressedSize > contentScriptReviewBytes) {
+      warn(`${scriptName} 为 ${contentSize} KiB，超过 800.0 KiB，请审查内容脚本拆分`);
     }
   }
 

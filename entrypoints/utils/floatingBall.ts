@@ -4,7 +4,6 @@ import FloatingBall from '@/components/FloatingBall.vue';
 import { config } from '@/entrypoints/utils/config';
 import browser from 'webextension-polyfill';
 import { storage } from '@wxt-dev/storage';
-import { autoTranslateEnglishPage, restoreOriginalContent } from '@/entrypoints/main/trans';
 import { resolvePdfDocumentSource } from '@/entrypoints/pdf/url';
 
 type FloatingBallInstance = ComponentPublicInstance & {
@@ -18,6 +17,24 @@ type FloatingBallInstance = ComponentPublicInstance & {
 let floatingBallInstance: FloatingBallInstance | null = null;
 let app: App<Element> | null = null;
 let isTranslated = false; // 添加状态变量跟踪翻译状态
+
+export interface FloatingBallTranslationActions {
+  autoTranslateEnglishPage: (scope?: string) => void;
+  restoreOriginalContent: () => void;
+}
+
+let translationActions: FloatingBallTranslationActions = {
+  autoTranslateEnglishPage: () => {
+    console.error('Floating ball translation actions are not configured');
+  },
+  restoreOriginalContent: () => {
+    console.error('Floating ball translation actions are not configured');
+  }
+};
+
+export function configureFloatingBallTranslationActions(actions: FloatingBallTranslationActions) {
+  translationActions = actions;
+}
 
 /**
  * 创建并挂载悬浮球
@@ -84,14 +101,14 @@ export function mountFloatingBall(position?: 'left' | 'right') {
         document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
 
         // 触发即时翻译
-        autoTranslateEnglishPage();
+        translationActions.autoTranslateEnglishPage();
         isTranslated = true;
       } else if (!isTranslating && isTranslated) {
         // 触发翻译结束事件
         document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
         
         // 恢复原文
-        restoreOriginalContent();
+        translationActions.restoreOriginalContent();
         isTranslated = false;
         
         // 恢复后确保状态同步
@@ -148,11 +165,11 @@ export function toggleFloatingBallTranslation() {
     if (newState) {
       floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
       // 开始翻译
-      autoTranslateEnglishPage();
+      translationActions.autoTranslateEnglishPage();
     } else {
       floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
       // 恢复原文
-      restoreOriginalContent();
+      translationActions.restoreOriginalContent();
     }
   }
 }
@@ -179,11 +196,11 @@ function handleFloatingBallClick() {
     if (newState) {
       floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
       // 开始翻译
-      autoTranslateEnglishPage();
+      translationActions.autoTranslateEnglishPage();
     } else {
       floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
       // 恢复原文
-      restoreOriginalContent();
+      translationActions.restoreOriginalContent();
     }
   }
 }
