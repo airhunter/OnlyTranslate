@@ -7,8 +7,8 @@
   <style>
     :root {
       font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-      color: #fff;
-      background: #1762d9;
+      color: #061b4f;
+      background: #f7efe7;
       font-synthesis: none;
       text-rendering: geometricPrecision;
       -webkit-font-smoothing: antialiased;
@@ -24,150 +24,126 @@
       overflow: hidden;
       isolation: isolate;
       background:
-        radial-gradient(circle at 68% 22%, rgba(110, 231, 255, .42), transparent 32%),
-        linear-gradient(135deg, #123bc4 0%, #1f7bea 56%, #18b8c8 100%);
+        radial-gradient(circle at 23% 16%, rgba(255,255,255,.78), transparent 35%),
+        linear-gradient(135deg, #fbf5ef 0%, #f4e9df 100%);
     }
 
     .tile::before {
       content: "";
       position: absolute;
       inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px);
-      background-size: 28px 28px;
-      opacity: .25;
-      z-index: -2;
-    }
-
-    .visual {
-      position: absolute;
-      top: -8px;
-      right: -118px;
-      width: 390px;
-      height: 304px;
-      object-fit: cover;
-      object-position: 52% 50%;
-      opacity: .98;
-      filter: saturate(1.12) contrast(1.03);
-      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
-      mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
       z-index: -1;
-    }
-
-    .shade {
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(8, 29, 111, .94) 0%, rgba(16, 75, 195, .72) 47%, rgba(20, 143, 213, .10) 100%),
-        radial-gradient(circle at 22% 42%, rgba(255,255,255,.18), transparent 36%);
+      background-image: radial-gradient(rgba(15,36,78,.08) .55px, transparent .65px);
+      background-size: 5px 5px;
+      opacity: .27;
     }
 
     .brand {
       position: absolute;
-      top: 28px;
-      left: 30px;
+      top: 17px;
+      right: 19px;
       display: flex;
-      align-items: center;
-      gap: 11px;
-    }
-
-    .brand img {
-      width: 44px;
-      height: 44px;
-      border-radius: 13px;
-      box-shadow: 0 12px 28px rgba(3, 17, 68, .30);
-    }
-
-    .brand strong {
-      display: block;
-      font-size: 30px;
-      line-height: .95;
-      font-weight: 860;
-      letter-spacing: 0;
-    }
-
-    .brand span {
-      display: block;
-      margin-top: 5px;
-      color: rgba(255,255,255,.82);
-      font-size: 12px;
+      align-items: baseline;
+      gap: 4px;
+      color: #0b1f4b;
+      font-size: 8px;
       font-weight: 760;
+      letter-spacing: .01em;
     }
 
-    .copy {
+    .brand strong { font-size: 12px; font-weight: 850; letter-spacing: -.025em; }
+
+    .bars { position: absolute; display: flex; flex-direction: column; gap: 8px; }
+    .bars i { display: block; height: 10px; }
+    .bars-navy { left: 22px; top: 33px; }
+    .bars-navy i { background: #061b4f; }
+    .bars-navy i:nth-child(1) { width: 102px; }
+    .bars-navy i:nth-child(2) { width: 86px; }
+    .bars-navy i:nth-child(3) { width: 72px; }
+    .bars-cyan { right: 24px; top: 153px; align-items: flex-end; }
+    .bars-cyan i { background: #05aec2; }
+    .bars-cyan i:nth-child(1) { width: 86px; }
+    .bars-cyan i:nth-child(2) { width: 101px; }
+    .bars-cyan i:nth-child(3) { width: 76px; }
+
+    .loop {
       position: absolute;
-      left: 31px;
-      top: 104px;
-      width: 244px;
+      left: 151px;
+      top: 34px;
+      width: 222px;
+      height: 155px;
+      overflow: visible;
     }
+
+    .loop path {
+      fill: none;
+      stroke: #0759d8;
+      stroke-width: 9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .loop polygon { fill: #0759d8; }
+
+    .app-icon {
+      position: absolute;
+      left: 206px;
+      top: 71px;
+      width: 62px;
+      height: 62px;
+      border: 3px solid rgba(255,255,255,.92);
+      border-radius: 17px;
+      box-shadow: 0 10px 24px rgba(16,78,184,.21);
+    }
+
+    .copy { position: absolute; left: 25px; top: 151px; }
 
     h1 {
       margin: 0;
-      font-size: 34px;
-      line-height: 1.12;
-      font-weight: 880;
-      letter-spacing: 0;
-      text-shadow: 0 7px 24px rgba(6, 20, 78, .24);
+      color: #061b4f;
+      font-size: 36px;
+      line-height: .96;
+      font-weight: 900;
+      letter-spacing: -.045em;
     }
 
-    p {
-      width: 238px;
-      margin: 12px 0 0;
-      color: rgba(255,255,255,.84);
-      font-size: 14px;
-      line-height: 1.42;
-      font-weight: 540;
+    .tagline {
+      margin: 10px 0 0 1px;
+      color: #0b1f4b;
+      font-size: 9.5px;
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: .11em;
     }
 
-    .chips {
+    .features {
       position: absolute;
-      left: 30px;
-      bottom: 18px;
-      display: flex;
-      gap: 8px;
-    }
-
-    .chips span {
-      display: inline-flex;
-      min-width: 58px;
-      height: 26px;
-      align-items: center;
-      justify-content: center;
-      padding: 0 10px;
-      border: 1px solid rgba(255,255,255,.20);
-      border-radius: 999px;
-      background: rgba(255,255,255,.13);
-      color: rgba(255,255,255,.92);
-      font-size: 11px;
-      font-weight: 780;
-      backdrop-filter: blur(12px);
+      right: 18px;
+      bottom: 17px;
+      margin: 0;
+      color: #0b1f4b;
+      font-size: 8.5px;
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: .11em;
     }
   </style>
 </head>
 <body>
   <main class="tile">
-    <img class="visual" src="../generated/small-promo-imagegen-source.png" alt="" />
-    <div class="shade" aria-hidden="true"></div>
-
-    <div class="brand">
-      <img src="../../../public/icon/512.png" alt="" />
-      <div>
-        <strong>只译</strong>
-        <span>OnlyTranslate</span>
-      </div>
-    </div>
-
+    <div class="brand"><span>只译</span><strong>OnlyTranslate</strong></div>
+    <div class="bars bars-navy" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="bars bars-cyan" aria-hidden="true"><i></i><i></i><i></i></div>
+    <svg class="loop" viewBox="0 0 222 155" aria-hidden="true">
+      <path d="M24 84 C25 34 69 10 115 22 C162 34 184 74 169 112" />
+      <polygon points="153,103 181,105 168,130" />
+    </svg>
+    <img class="app-icon" src="../../../public/icon/512.png" alt="" />
     <section class="copy">
-      <h1>认真读<br />外语内容</h1>
-      <p>网页、字幕、EPUB 都能双语读。</p>
+      <h1>外语内容<br />直接双语读</h1>
+      <p class="tagline">READ IN TWO LANGUAGES</p>
     </section>
-
-    <div class="chips" aria-hidden="true">
-      <span>Web</span>
-      <span>Video</span>
-      <span>EPUB</span>
-    </div>
+    <p class="features">WEB · VIDEO · EPUB · PDF</p>
   </main>
 </body>
 </html>

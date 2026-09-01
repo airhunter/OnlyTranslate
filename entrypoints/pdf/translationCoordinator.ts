@@ -37,7 +37,34 @@ interface PdfTranslationCoordinatorOptions {
   onStatus?: (status: PdfTranslationStatus) => void
 }
 
-const ACADEMIC_ACRONYM = /\b[A-Z]{2,}[A-Z0-9]*s?\b/g
+const ACADEMIC_ACRONYM = /\b(?!PDFMATH\d+\b)[A-Z]{2,}[A-Z0-9]*s?\b/g
+
+function translationSource(block: PdfTranslationUnit): string {
+  return block.translationSource ?? block.mathSource ?? block.text
+}
+
+function protectInlineMath(block: PdfTranslationUnit): {
+  source: string
+  restore: (translation: string) => string
+} {
+  const expressions = block.inlineMath ?? []
+  let protectedSource = translationSource(block)
+  expressions.forEach((expression, index) => {
+    protectedSource = protectedSource.replaceAll(expression.token, `{{PDFMATH${index}}}`)
+  })
+  return {
+    source: protectedSource,
+    restore: (translation) => {
+      let restored = translation
+      expressions.forEach((expression, index) => {
+        const marker = `{{PDFMATH${index}}}`
+        if (!restored.includes(marker)) throw new Error(`Translation removed inline math marker ${index}`)
+        restored = restored.replaceAll(marker, expression.token)
+      })
+      return restored
+    },
+  }
+}
 
 function protectAcademicAcronyms(source: string): { source: string, restore: (translation: string) => string } {
   const terms: string[] = []
@@ -91,7 +118,7 @@ export class PdfTranslationCoordinator {
     const generation = this.generation
     const units = blocks.filter(block => block.translatable)
     const direction = resolveTranslationDirection(units
-      .map(block => block.translationSource ?? block.text)
+      .map(block => translationSource(block))
       .join('\n'))
     const diagnostics: TranslationDiagnosticContext = {
       sessionId: createTranslationDiagnosticId('pdf'),
@@ -104,7 +131,8 @@ export class PdfTranslationCoordinator {
 
     await Promise.allSettled(units.map(async block => {
       try {
-        const protectedText = protectAcademicAcronyms(block.translationSource ?? block.text)
+        const protectedMath = protectInlineMath(block)
+        const protectedText = protectAcademicAcronyms(protectedMath.source)
         const requestOptions = {
           allowBatch: true,
           priority: 'high',
@@ -113,16 +141,16 @@ export class PdfTranslationCoordinator {
           diagnostics,
         } as const
         let translated = await this.translate(protectedText.source, context, requestOptions)
-        let restored = protectedText.restore(translated)
-        if (isLikelyUntranslated(block.translationSource ?? block.text, restored, direction.targetLang)) {
+        let restored = protectedMath.restore(protectedText.restore(translated))
+        if (isLikelyUntranslated(translationSource(block), restored, direction.targetLang)) {
           translated = await this.translate(protectedText.source, context, {
             ...requestOptions,
             allowBatch: false,
             useCache: false,
           })
-          restored = protectedText.restore(translated)
+          restored = protectedMath.restore(protectedText.restore(translated))
         }
-        if (isLikelyUntranslated(block.translationSource ?? block.text, restored, direction.targetLang)) {
+        if (isLikelyUntranslated(translationSource(block), restored, direction.targetLang)) {
           throw new Error('Translation service returned the source text')
         }
         if (generation !== this.generation) return

@@ -212,79 +212,71 @@
       <div class="shot-index">03 / 05</div>
     </section>
 
-    <section id="shot-04" class="shot shot-popup" aria-label="Popup 电子书书架宣传图">
-      <div class="popup-rays"></div>
-      <header class="brand brand-light">
+    <section id="shot-04" class="shot shot-pdf" aria-label="PDF 双语阅读器宣传图">
+      <div class="pdf-grid"></div>
+      <header class="brand">
         <img src="../../../public/icon/256.png" alt="" />
         <span>ONLYTRANSLATE</span>
       </header>
-      <div class="hero-copy hero-copy-light popup-copy">
-        <p class="kicker kicker-cyan">新版 Popup</p>
-        <h1>书架就在<br />手边。</h1>
-        <p class="hero-desc">网页翻译、电子书和设置集中在底部导航；最近阅读进度一眼可见。</p>
-        <div class="popup-callout">
-          <svg><use href="#icon-book" /></svg>
-          <div><strong>最近阅读</strong><span>点一下，继续上次的位置</span></div>
+      <div class="hero-copy pdf-copy">
+        <div class="kicker-with-badge"><p class="kicker">PDF 双语阅读器</p><span>BETA</span></div>
+        <h1>本地 PDF，<br />逐页双语读。</h1>
+        <p class="hero-desc">双语、仅译文和保留版面自由切换；复杂文档可按需启用本地版面模型。</p>
+        <div class="pdf-points">
+          <span><svg><use href="#icon-check" /></svg>双语 / 仅译文</span>
+          <span><svg><use href="#icon-check" /></svg>书架与阅读进度</span>
+          <span><svg><use href="#icon-check" /></svg>可选本地版面模型</span>
         </div>
       </div>
 
-      <div class="popup-stack">
-        <div class="popup-card popup-card-back">
-          <div class="popup-header-mock">
-            <div class="popup-brand"><span><svg><use href="#icon-translate" /></svg></span><strong>只译</strong></div>
-            <div class="popup-status">已启用 <i></i></div>
+      <div class="pdf-reader-window">
+        <div class="pdf-toolbar">
+          <div class="pdf-document-title">
+            <button>‹</button>
+            <span class="pdf-mark">PDF</span>
+            <div><strong>Reading Across Layouts.pdf</strong><span>第 6 / 24 页</span></div>
           </div>
-          <div class="popup-content translate-view">
-            <button class="translate-current"><svg><use href="#icon-translate" /></svg>翻译当前页面</button>
-            <div class="popup-row"><span>翻译模式</span><b>双语对照⌄</b></div>
-            <div class="popup-row"><span>翻译服务</span><b>微软翻译⌄</b></div>
-            <div class="popup-row"><span>视频字幕</span><i class="mini-switch on"></i></div>
-            <div class="popup-row"><span>划词翻译</span><i class="mini-switch on"></i></div>
-          </div>
-          <div class="popup-bottom-nav">
-            <span class="active"><svg><use href="#icon-translate" /></svg>网页</span>
-            <span><svg><use href="#icon-book" /></svg>电子书<sup>BETA</sup></span>
-            <span><svg><use href="#icon-settings" /></svg>设置</span>
+          <div class="pdf-toolbar-actions">
+            <span class="pdf-model-state"><i></i>本地版面模型</span>
+            <button class="active">双语</button>
+            <button>仅译文</button>
           </div>
         </div>
-
-        <div class="popup-card popup-card-front">
-          <div class="popup-header-mock">
-            <div class="popup-brand"><span><svg><use href="#icon-translate" /></svg></span><strong>只译</strong></div>
-            <svg class="popup-more"><use href="#icon-more" /></svg>
-          </div>
-          <div class="popup-content shelf-view">
-            <div class="shelf-head"><div><h2>电子书书架</h2><p>最近阅读</p></div><a>查看全部 ↗</a></div>
-            <div class="popup-book-mock">
-              <div class="book-cover-one"><small>THE</small><strong>IDEAS</strong><small>WE KEEP</small></div>
-              <div class="popup-book-details">
-                <strong>The Ideas We Keep</strong>
-                <span>Alex Morgan</span>
-                <div><i></i></div>
-                <small>已读 38%</small>
+        <div class="pdf-layout-mock">
+          <aside class="pdf-thumbnails">
+            <strong>页面</strong>
+            <div><span>5</span><i class="thumb-lines"></i></div>
+            <div class="current"><span>6</span><i class="thumb-chart"></i></div>
+            <div><span>7</span><i class="thumb-lines"></i></div>
+          </aside>
+          <div class="pdf-canvas">
+            <article class="pdf-page">
+              <div class="pdf-paper-head"><span>RESEARCH NOTE · 2026</span><b>06</b></div>
+              <h2>Reading Across Layouts</h2>
+              <p class="pdf-deck">How structure shapes understanding in long-form documents.</p>
+              <p class="pdf-translation pdf-deck-translation">版面结构如何影响长文档中的理解过程。</p>
+              <div class="pdf-columns">
+                <div>
+                  <h3>1. Context and structure</h3>
+                  <p>Readers use headings, columns, and visual hierarchy to connect evidence with the ideas around it.</p>
+                  <p class="pdf-translation">读者借助标题、分栏和视觉层级，把证据与上下文中的观点联系起来。</p>
+                  <p>Preserving those relationships makes technical material easier to follow.</p>
+                  <p class="pdf-translation">保留这些关系，能让技术资料更易于理解。</p>
+                </div>
+                <div>
+                  <h3>2. A page-level view</h3>
+                  <div class="pdf-chart"><i></i><i></i><i></i><i></i><i></i></div>
+                  <p class="chart-caption">Figure 2 · Reading continuity by layout density</p>
+                  <p class="pdf-translation">图 2 · 不同版面密度下的阅读连续性</p>
+                </div>
               </div>
-              <svg><use href="#icon-chevron" /></svg>
-            </div>
-            <div class="popup-book-mock">
-              <div class="book-cover-two"><strong>W</strong></div>
-              <div class="popup-book-details">
-                <strong>Ways of Seeing Clearly</strong>
-                <span>Mia Chen</span>
-                <div><i style="width: 12%"></i></div>
-                <small>已读 12%</small>
-              </div>
-              <svg><use href="#icon-chevron" /></svg>
-            </div>
-            <button class="popup-import">导入 EPUB ↗</button>
-          </div>
-          <div class="popup-bottom-nav">
-            <span><svg><use href="#icon-translate" /></svg>网页</span>
-            <span class="active"><svg><use href="#icon-book" /></svg>电子书<sup>BETA</sup></span>
-            <span><svg><use href="#icon-settings" /></svg>设置</span>
+              <div class="pdf-note"><strong>KEY FINDING</strong><span>Translation works best when text order and visual groups are considered together.</span><em>翻译同时考虑文本顺序与视觉分组时，阅读体验更自然。</em></div>
+            </article>
           </div>
         </div>
+        <div class="pdf-progress"><span>第 6 页</span><div><i></i></div><span>24</span></div>
       </div>
-      <div class="shot-index shot-index-light">04 / 05</div>
+      <div class="shot-index">04 / 05</div>
     </section>
 
     <section id="shot-05" class="shot shot-service" aria-label="翻译服务与本地隐私宣传图">
@@ -299,7 +291,7 @@
         <p class="hero-desc">使用免配置服务快速开始，或接入你自己的 AI 模型与兼容接口。</p>
         <div class="privacy-card">
           <svg><use href="#icon-shield" /></svg>
-          <div><strong>本地数据，留在本地</strong><span>EPUB 原文件、书架、进度和书签保存在当前浏览器中。</span></div>
+          <div><strong>本地数据，留在本地</strong><span>EPUB / PDF 原文件、书架、进度和可选版面模型保存在当前浏览器中。</span></div>
         </div>
       </div>
 

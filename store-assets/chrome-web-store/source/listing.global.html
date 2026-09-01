@@ -212,79 +212,71 @@
       <div class="shot-index">03 / 05</div>
     </section>
 
-    <section id="shot-04" class="shot shot-popup" aria-label="Popup ebook library screenshot">
-      <div class="popup-rays"></div>
-      <header class="brand brand-light">
+    <section id="shot-04" class="shot shot-pdf" aria-label="PDF bilingual reader screenshot">
+      <div class="pdf-grid"></div>
+      <header class="brand">
         <img src="../../../public/icon/256.png" alt="" />
         <span>ONLYTRANSLATE</span>
       </header>
-      <div class="hero-copy hero-copy-light popup-copy">
-        <p class="kicker kicker-cyan">NEW POPUP</p>
-        <h1>Your library,<br />one click away.</h1>
-        <p class="hero-desc">Web translation, ebooks, and settings are grouped in a focused bottom navigation.</p>
-        <div class="popup-callout">
-          <svg><use href="#icon-book" /></svg>
-          <div><strong>Recent books</strong><span>Continue from the last place</span></div>
+      <div class="hero-copy pdf-copy">
+        <div class="kicker-with-badge"><p class="kicker">PDF BILINGUAL READER</p><span>BETA</span></div>
+        <h1>Local PDFs,<br />page by page.</h1>
+        <p class="hero-desc">Switch between bilingual, translated, and preserved-layout views. Enable the local layout model when a complex document needs it.</p>
+        <div class="pdf-points">
+          <span><svg><use href="#icon-check" /></svg>Bilingual / translated</span>
+          <span><svg><use href="#icon-check" /></svg>Library & reading progress</span>
+          <span><svg><use href="#icon-check" /></svg>Optional local layout model</span>
         </div>
       </div>
 
-      <div class="popup-stack">
-        <div class="popup-card popup-card-back">
-          <div class="popup-header-mock">
-            <div class="popup-brand"><span><svg><use href="#icon-translate" /></svg></span><strong>OnlyTranslate</strong></div>
-            <div class="popup-status">Enabled <i></i></div>
+      <div class="pdf-reader-window">
+        <div class="pdf-toolbar">
+          <div class="pdf-document-title">
+            <button>‹</button>
+            <span class="pdf-mark">PDF</span>
+            <div><strong>Reading Across Layouts.pdf</strong><span>Page 6 / 24</span></div>
           </div>
-          <div class="popup-content translate-view">
-            <button class="translate-current"><svg><use href="#icon-translate" /></svg>Translate current page</button>
-            <div class="popup-row"><span>Translation mode</span><b>Bilingual⌄</b></div>
-            <div class="popup-row"><span>Translation service</span><b>Microsoft⌄</b></div>
-            <div class="popup-row"><span>Video subtitles</span><i class="mini-switch on"></i></div>
-            <div class="popup-row"><span>Selection translate</span><i class="mini-switch on"></i></div>
-          </div>
-          <div class="popup-bottom-nav">
-            <span class="active"><svg><use href="#icon-translate" /></svg>Web</span>
-            <span><svg><use href="#icon-book" /></svg>Ebooks<sup>BETA</sup></span>
-            <span><svg><use href="#icon-settings" /></svg>Settings</span>
+          <div class="pdf-toolbar-actions">
+            <span class="pdf-model-state"><i></i>Local layout model</span>
+            <button class="active">Bilingual</button>
+            <button>Translated</button>
           </div>
         </div>
-
-        <div class="popup-card popup-card-front">
-          <div class="popup-header-mock">
-            <div class="popup-brand"><span><svg><use href="#icon-translate" /></svg></span><strong>OnlyTranslate</strong></div>
-            <svg class="popup-more"><use href="#icon-more" /></svg>
-          </div>
-          <div class="popup-content shelf-view">
-            <div class="shelf-head"><div><h2>Ebook Library</h2><p>Recently read</p></div><a>View all ↗</a></div>
-            <div class="popup-book-mock">
-              <div class="book-cover-one"><small>THE</small><strong>IDEAS</strong><small>WE KEEP</small></div>
-              <div class="popup-book-details">
-                <strong>The Ideas We Keep</strong>
-                <span>Alex Morgan</span>
-                <div><i></i></div>
-                <small>38% read</small>
+        <div class="pdf-layout-mock">
+          <aside class="pdf-thumbnails">
+            <strong>Pages</strong>
+            <div><span>5</span><i class="thumb-lines"></i></div>
+            <div class="current"><span>6</span><i class="thumb-chart"></i></div>
+            <div><span>7</span><i class="thumb-lines"></i></div>
+          </aside>
+          <div class="pdf-canvas">
+            <article class="pdf-page">
+              <div class="pdf-paper-head"><span>RESEARCH NOTE · 2026</span><b>06</b></div>
+              <h2>Reading Across Layouts</h2>
+              <p class="pdf-deck">How structure shapes understanding in long-form documents.</p>
+              <p class="pdf-translation pdf-deck-translation">Translated text stays connected to the source and its visual structure.</p>
+              <div class="pdf-columns">
+                <div>
+                  <h3>1. Context and structure</h3>
+                  <p>Readers use headings, columns, and visual hierarchy to connect evidence with the ideas around it.</p>
+                  <p class="pdf-translation">Bilingual paragraphs preserve that context while keeping the source available.</p>
+                  <p>Preserving those relationships makes technical material easier to follow.</p>
+                  <p class="pdf-translation">The reading flow stays clear across each page.</p>
+                </div>
+                <div>
+                  <h3>2. A page-level view</h3>
+                  <div class="pdf-chart"><i></i><i></i><i></i><i></i><i></i></div>
+                  <p class="chart-caption">Figure 2 · Reading continuity by layout density</p>
+                  <p class="pdf-translation">Translated figure captions stay beside the original.</p>
+                </div>
               </div>
-              <svg><use href="#icon-chevron" /></svg>
-            </div>
-            <div class="popup-book-mock">
-              <div class="book-cover-two"><strong>W</strong></div>
-              <div class="popup-book-details">
-                <strong>Ways of Seeing Clearly</strong>
-                <span>Mia Chen</span>
-                <div><i style="width: 12%"></i></div>
-                <small>12% read</small>
-              </div>
-              <svg><use href="#icon-chevron" /></svg>
-            </div>
-            <button class="popup-import">Import EPUB ↗</button>
-          </div>
-          <div class="popup-bottom-nav">
-            <span><svg><use href="#icon-translate" /></svg>Web</span>
-            <span class="active"><svg><use href="#icon-book" /></svg>Ebooks<sup>BETA</sup></span>
-            <span><svg><use href="#icon-settings" /></svg>Settings</span>
+              <div class="pdf-note"><strong>KEY FINDING</strong><span>Translation works best when text order and visual groups are considered together.</span><em>Page structure stays visible throughout the bilingual reading flow.</em></div>
+            </article>
           </div>
         </div>
+        <div class="pdf-progress"><span>Page 6</span><div><i></i></div><span>24</span></div>
       </div>
-      <div class="shot-index shot-index-light">04 / 05</div>
+      <div class="shot-index">04 / 05</div>
     </section>
 
     <section id="shot-05" class="shot shot-service" aria-label="Translation service and privacy screenshot">
@@ -299,7 +291,7 @@
         <p class="hero-desc">Start quickly with built-in services, or connect your own AI models and compatible endpoints.</p>
         <div class="privacy-card">
           <svg><use href="#icon-shield" /></svg>
-          <div><strong>Local data stays local</strong><span>EPUB files, library, progress, and bookmarks stay in the current browser.</span></div>
+          <div><strong>Local data stays local</strong><span>EPUB / PDF files, library, progress, and the optional layout model stay in the current browser.</span></div>
         </div>
       </div>
 

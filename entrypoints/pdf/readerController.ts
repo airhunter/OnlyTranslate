@@ -79,6 +79,7 @@ async function extractTextSpans(page: PDFPageProxy, viewport: PageViewport, scal
       y: baselineY - fontHeight,
       width: item.width * scale,
       height: Math.max(fontHeight, item.height * scale),
+      baseline: baselineY,
       fontName: item.fontName,
     }]
   })
@@ -94,21 +95,49 @@ function createLayoutCanvas(source: HTMLCanvasElement, width: number, height: nu
   return canvas
 }
 
-function attachVisualCrops(blocks: PdfTextBlock[], canvas: HTMLCanvasElement): PdfTextBlock[] {
-  return blocks.map(block => {
-    if (block.kind !== 'visual') return block
-    const padding = 5
-    const x = Math.max(0, Math.floor(block.x - padding))
-    const y = Math.max(0, Math.floor(block.y - padding))
-    const width = Math.min(canvas.width - x, Math.ceil(block.width + padding * 2))
-    const height = Math.min(canvas.height - y, Math.ceil(block.height + padding * 2))
-    if (width <= 0 || height <= 0) return block
+async function attachVisualCrops(
+  page: PDFPageProxy,
+  blocks: PdfTextBlock[],
+  viewport: PageViewport,
+): Promise<PdfTextBlock[]> {
+  const imageUrls = new Map<string, string>()
+  for (const block of blocks) {
+    if (block.kind !== 'visual') continue
+    const padding = 7
+    const x = Math.max(0, block.x - padding)
+    const y = Math.max(0, block.y - padding)
+    const width = Math.min(viewport.width - x, block.width + padding * 2)
+    const height = Math.min(viewport.height - y, block.height + padding * 2)
+    if (width <= 0 || height <= 0) continue
+
+    // Layout analysis intentionally uses a page-sized CSS-pixel canvas. Rendering
+    // the detected region again keeps vector formulas and embedded figures sharp
+    // when the reading view or lightbox displays them larger than the source pane.
+    const targetWidth = block.visualKind === 'formula' ? 1200 : 1500
+    const desiredScale = Math.max(3, targetWidth / width)
+    const cropScale = Math.max(1, Math.min(20, desiredScale, 1800 / width, 1600 / height))
     const crop = document.createElement('canvas')
-    crop.width = width
-    crop.height = height
-    crop.getContext('2d')?.drawImage(canvas, x, y, width, height, 0, 0, width, height)
-    return { ...block, imageUrl: crop.toDataURL('image/png') }
-  })
+    crop.width = Math.max(1, Math.ceil(width * cropScale))
+    crop.height = Math.max(1, Math.ceil(height * cropScale))
+    const cropContext = crop.getContext('2d', { alpha: false })
+    if (!cropContext) continue
+    const cropViewport = viewport.clone({
+      scale: viewport.scale * cropScale,
+      offsetX: -x * cropScale,
+      offsetY: -y * cropScale,
+    })
+    await page.render({
+      canvas: crop,
+      canvasContext: cropContext,
+      viewport: cropViewport,
+      background: '#ffffff',
+    }).promise
+    imageUrls.set(block.id, crop.toDataURL('image/png'))
+  }
+
+  return blocks.map(block => imageUrls.has(block.id)
+    ? { ...block, imageUrl: imageUrls.get(block.id) }
+    : block)
 }
 
 export class PdfReaderController {
@@ -196,12 +225,18 @@ export class PdfReaderController {
           layoutContext.getImageData(0, 0, layoutCanvas.width, layoutCanvas.height),
           new URL('/pdf-layout/', location.origin).toString(),
         )
-        const semanticBlocks = buildSemanticPdfBlocks(spans, analysis.regions, viewport.width, viewport.height)
+        const semanticBlocks = buildSemanticPdfBlocks(
+          spans,
+          analysis.regions,
+          viewport.width,
+          viewport.height,
+          `page-${safePageNumber}`,
+        )
         const readableCharacters = semanticBlocks
           .filter(block => ['heading', 'body', 'abstract', 'list-item', 'caption'].includes(block.kind))
           .reduce((total, block) => total + block.text.replace(/\s/g, '').length, 0)
         if (readableCharacters < 24) throw new Error('模型未识别到足够的可读正文')
-        blocks = attachVisualCrops(semanticBlocks, layoutCanvas)
+        blocks = await attachVisualCrops(page, semanticBlocks, viewport)
         layoutMode = 'semantic'
         layoutElapsedMs = analysis.elapsedMs
       }
@@ -220,6 +255,30 @@ export class PdfReaderController {
       layoutElapsedMs,
       layoutError,
     }
+  }
+
+  async renderThumbnail(pageNumber: number, width = 82): Promise<string> {
+    const pdfDocument = this.document
+    if (!pdfDocument) throw new PdfSourceError('LOAD_FAILED', 'No PDF is open')
+    const safePageNumber = Math.min(pdfDocument.numPages, Math.max(1, Math.trunc(pageNumber)))
+    const page = await pdfDocument.getPage(safePageNumber)
+    const baseViewport = page.getViewport({ scale: 1 })
+    const scale = Math.max(0.1, width / baseViewport.width)
+    const viewport = page.getViewport({ scale })
+    const outputScale = Math.min(2, window.devicePixelRatio || 1)
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d', { alpha: false })
+    if (!context) throw new PdfSourceError('LOAD_FAILED', 'Canvas rendering is unavailable')
+
+    canvas.width = Math.max(1, Math.floor(viewport.width * outputScale))
+    canvas.height = Math.max(1, Math.floor(viewport.height * outputScale))
+    await page.render({
+      canvas,
+      canvasContext: context,
+      viewport,
+      transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0],
+    }).promise
+    return canvas.toDataURL('image/jpeg', 0.76)
   }
 
   extractPage(pageNumber: number): Promise<PdfRenderedPage> {

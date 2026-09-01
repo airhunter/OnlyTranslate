@@ -2,45 +2,12 @@
   <main class="pdf-shell" :data-display="displayMode" :data-preview="previewOpen" :style="readerStyle">
     <header class="reader-toolbar pdf-reader-toolbar">
       <button class="icon-button" :aria-label="t('ebook.backToLibrary')" @click="openLibrary">←</button>
+      <div class="pdf-file-mark" aria-hidden="true">PDF</div>
       <div class="reader-title pdf-reader-title">
         <strong>{{ documentTitle }}</strong>
-        <span>{{ sourceLabel }}</span>
+        <span v-if="pageCount">{{ t('pdf.pageProgress', { page: pageNumber, total: pageCount }) }}</span>
+        <span v-else>{{ sourceLabel }}</span>
       </div>
-
-      <nav v-if="pageCount" class="chapter-toolbar-navigation pdf-page-navigation" :aria-label="t('pdf.pageNavigation')">
-        <button
-          class="chapter-toolbar-button"
-          :title="`${t('pdf.previousPage')} (←)`"
-          :aria-label="`${t('pdf.previousPage')} (←)`"
-          aria-keyshortcuts="ArrowLeft"
-          :disabled="pageNumber <= 1 || loadingPage"
-          @click="goToPage(pageNumber - 1)"
-        >
-          <span aria-hidden="true">‹</span>
-          <span class="chapter-toolbar-button__label">{{ t('pdf.previousPage') }}</span>
-        </button>
-        <label class="pdf-page-field">
-          <input
-            :value="pageNumber"
-            type="number"
-            min="1"
-            :max="pageCount"
-            @change="goToPage(Number(($event.target as HTMLInputElement).value))"
-          />
-          <span>/ {{ pageCount }}</span>
-        </label>
-        <button
-          class="chapter-toolbar-button"
-          :title="`${t('pdf.nextPage')} (→)`"
-          :aria-label="`${t('pdf.nextPage')} (→)`"
-          aria-keyshortcuts="ArrowRight"
-          :disabled="pageNumber >= pageCount || loadingPage"
-          @click="goToPage(pageNumber + 1)"
-        >
-          <span class="chapter-toolbar-button__label">{{ t('pdf.nextPage') }}</span>
-          <span aria-hidden="true">›</span>
-        </button>
-      </nav>
 
       <div v-if="pageCount" class="translation-status" :class="{ 'translation-status--warning': translationNotice }">
         <span v-if="translationNotice">{{ translationNotice }}</span>
@@ -51,14 +18,52 @@
       <div class="toolbar-controls pdf-toolbar-controls">
         <button
           v-if="pageCount && !libraryBook"
-          class="primary-button primary-button--toolbar"
+          class="library-button library-button--add"
           :disabled="addingToLibrary"
           @click="addToLibrary"
-        >{{ addingToLibrary ? t('common.processing') : t('pdf.addToLibrary') }}</button>
-        <button v-else-if="pageCount" class="control-button" @click="openLibrary">{{ t('pdf.inLibrary') }}</button>
-        <button v-if="pageCount" class="control-button" :title="t('ebook.displayMode')" @click="cycleDisplayMode">
-          {{ t('ebook.displayMode') }} · {{ displayModeLabel }}
+        >
+          <span aria-hidden="true">＋</span>
+          {{ addingToLibrary ? t('common.processing') : t('pdf.addToLibrary') }}
         </button>
+        <button
+          v-else-if="pageCount"
+          class="library-button library-button--remove"
+          :disabled="removingFromLibrary"
+          @click="removeFromLibrary"
+        >
+          <span aria-hidden="true">✓</span>
+          {{ removingFromLibrary ? t('common.processing') : t('pdf.removeFromLibrary') }}
+        </button>
+        <details ref="layoutModelControl" v-if="pageCount" class="pdf-layout-model-control" :class="`pdf-layout-model-control--${layoutModelStatusKind}`">
+          <summary :title="layoutModelStatusLabel">
+            <span class="pdf-layout-model-control__icon" aria-hidden="true">{{ layoutModelState.installed ? '✓' : layoutModelState.busy ? '…' : '↓' }}</span>
+            <span class="pdf-layout-model-control__copy">
+              <strong>{{ layoutModelStatusLabel }}</strong>
+              <small>{{ layoutModelStatusDetail }}</small>
+            </span>
+          </summary>
+          <div class="pdf-layout-model-control__panel">
+            <strong>{{ layoutModelStatusLabel }}</strong>
+            <p>{{ layoutModelNotice }}</p>
+            <button :disabled="layoutModelState.busy" @click="toggleLayoutModel">
+              {{ layoutModelActionLabel }}
+            </button>
+          </div>
+        </details>
+        <div v-if="pageCount" class="pdf-display-switch" :aria-label="t('ebook.displayMode')">
+          <button
+            :class="{ 'pdf-display-switch__button--active': displayMode === 'semantic' }"
+            @click="setDisplayMode('semantic')"
+          >{{ t('ebook.displayBilingual') }}</button>
+          <button
+            :class="{ 'pdf-display-switch__button--active': displayMode === 'translation' }"
+            @click="setDisplayMode('translation')"
+          >{{ t('ebook.displayTranslation') }}</button>
+          <button
+            :class="{ 'pdf-display-switch__button--active': displayMode === 'original' }"
+            @click="setDisplayMode('original')"
+          >{{ t('ebook.displayOriginal') }}</button>
+        </div>
         <button class="control-button" @click="cycleTheme">{{ t('ebook.theme') }} · {{ themeLabel }}</button>
         <label>{{ t('ebook.fontSize') }}
           <input v-model.number="readerSettings.fontScale" type="range" min="70" max="180" step="5" @change="savePdfReaderSettings" />
@@ -66,13 +71,6 @@
         <label>{{ t('ebook.lineHeight') }}
           <input v-model.number="readerSettings.lineHeight" type="range" min="1.2" max="2.6" step="0.1" @change="savePdfReaderSettings" />
         </label>
-        <button
-          v-if="pageCount && displayMode !== 'original' && displayMode !== 'overlay'"
-          class="control-button preview-toggle"
-          :class="{ 'control-button--active': previewOpen }"
-          @click="previewOpen = !previewOpen"
-        >{{ previewOpen ? t('pdf.hidePreview') : t('pdf.showPreview') }}</button>
-
         <details class="reader-shortcuts">
           <summary class="icon-button reader-shortcuts__trigger" :title="t('ebook.keyboardShortcuts')" :aria-label="t('ebook.keyboardShortcuts')">
             <svg class="reader-shortcuts__icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -97,24 +95,16 @@
             <button v-if="pageCount" :disabled="exportingOriginal" @click="exportOriginalPdf">
               {{ exportingOriginal ? t('common.processing') : t('ebook.exportOriginal') }}
             </button>
-            <button @click="openLibrary">{{ t('ebook.libraryTitle') }}</button>
             <button @click="chooseLocalFile">{{ t('pdf.openLocal') }}</button>
-            <button v-if="pageCount" @click="setOverlayMode">{{ t('pdf.displayOverlay') }}</button>
-            <button :disabled="layoutModelState.busy" @click="toggleLayoutModel">
-              {{ layoutModelActionLabel }}
-            </button>
           </div>
         </details>
         <input ref="fileInput" class="visually-hidden" type="file" accept=".pdf,application/pdf" @change="openLocalFile" />
       </div>
     </header>
 
-    <div v-if="libraryNotice" class="pdf-library-notice" role="status">{{ libraryNotice }}</div>
-    <div v-if="showLayoutModelNotice" class="pdf-model-notice" role="status">
-      <span>{{ layoutModelNotice }}</span>
-      <button :disabled="layoutModelState.busy" @click="installLayoutModel">
-        {{ layoutModelActionLabel }}
-      </button>
+    <div v-if="libraryNotice" class="pdf-library-notice" role="status">
+      <span>{{ libraryNotice }}</span>
+      <button :aria-label="t('pdf.dismissNotice')" @click="clearLibraryNotice">×</button>
     </div>
 
     <section v-if="!pageCount && !loadingDocument" class="pdf-empty">
@@ -130,7 +120,43 @@
       <p>{{ sourceLabel }}</p>
     </section>
 
-    <section v-else class="pdf-workspace">
+    <section v-else class="pdf-workspace" aria-keyshortcuts="ArrowLeft ArrowRight">
+      <aside ref="thumbnailPanel" class="pdf-page-thumbnails" :aria-label="t('pdf.thumbnailPages')">
+        <div class="pdf-page-thumbnails__header">
+          <strong>{{ t('pdf.thumbnailPages') }}</strong>
+          <button
+            v-if="usesSemanticLayout"
+            type="button"
+            class="pdf-original-toggle"
+            :class="{ 'pdf-original-toggle--active': previewOpen }"
+            :title="previewOpen ? t('pdf.hidePreview') : t('pdf.showPreview')"
+            :aria-label="previewOpen ? t('pdf.hidePreview') : t('pdf.showPreview')"
+            :aria-pressed="previewOpen"
+            @click="toggleOriginalPreview()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="2.6" />
+              <path v-if="!previewOpen" d="m4 4 16 16" />
+            </svg>
+          </button>
+        </div>
+        <button
+          v-for="thumbnailPage in thumbnailPages"
+          :key="thumbnailPage"
+          :ref="element => registerThumbnailElement(thumbnailPage, element)"
+          :data-thumbnail-page="thumbnailPage"
+          :class="{ 'pdf-page-thumbnail--active': thumbnailPage === pageNumber }"
+          :aria-current="thumbnailPage === pageNumber ? 'page' : undefined"
+          :aria-label="t('pdf.pageContext', { page: thumbnailPage })"
+          @click="goToPage(thumbnailPage)"
+          @dblclick.prevent="toggleOriginalPreview(thumbnailPage)"
+        >
+          <span class="pdf-page-thumbnail__number">{{ thumbnailPage }}</span>
+          <img v-if="thumbnailUrls.get(thumbnailPage)" :src="thumbnailUrls.get(thumbnailPage)" alt="" />
+          <span v-else class="pdf-page-thumbnail__placeholder" aria-hidden="true" />
+        </button>
+      </aside>
       <div ref="originalPanel" class="pdf-original-panel">
         <div v-if="displayMode === 'overlay'" class="pdf-overlay-status">
           <span>{{ t('pdf.layoutOverlay') }}</span>
@@ -179,6 +205,18 @@
         </div>
       </div>
 
+      <div
+        v-if="usesSemanticLayout && previewOpen"
+        class="pdf-pane-resizer"
+        role="separator"
+        tabindex="0"
+        aria-orientation="vertical"
+        :aria-label="t('pdf.resizePanes')"
+        @pointerdown="startPaneResize"
+        @keydown.left.prevent="resizeOriginalPaneBy(-24)"
+        @keydown.right.prevent="resizeOriginalPaneBy(24)"
+      ><span aria-hidden="true" /></div>
+
       <article ref="translationPanel" class="pdf-translation-panel">
         <div class="pdf-block-list">
           <template v-for="block in readingBlocks" :key="block.id">
@@ -188,8 +226,15 @@
               :class="{ 'pdf-block--active': highlightedBlockId === block.id }"
               @click="focusBlock(block)"
             >
-              <img v-if="block.imageUrl" :src="block.imageUrl" :alt="visualBlockLabel(block)" />
-              <figcaption>{{ visualBlockLabel(block) }}</figcaption>
+              <img
+                v-if="block.imageUrl"
+                :src="block.imageUrl"
+                :alt="visualBlockLabel(block)"
+                :style="visualBlockStyle(block)"
+                tabindex="0"
+                @dblclick.stop.prevent="openVisualLightbox(block)"
+                @keydown.enter.prevent="openVisualLightbox(block)"
+              />
             </figure>
             <section
               v-else
@@ -199,20 +244,22 @@
               @mouseleave="highlightedBlockId = ''"
               @click="focusBlock(block)"
             >
+              <span v-if="block.continuesFromPreviousPage" class="pdf-block__continuity">
+                {{ t('pdf.continuesFromPreviousPage') }}
+              </span>
               <template v-if="displayMode === 'semantic'">
-                <p class="pdf-block__original pdf-block__original--semantic">{{ block.text }}</p>
-                <p v-if="block.translation" class="pdf-block__translation pdf-block__translation--semantic">{{ block.translation }}</p>
+                <p class="pdf-block__original pdf-block__original--semantic" v-html="readingBlockHtml(block, readingBlockSource(block))" />
+                <p v-if="block.translation" class="pdf-block__translation pdf-block__translation--semantic" v-html="readingBlockHtml(block, block.translation)" />
                 <div v-else-if="block.translatable && translationStatus.running" class="pdf-block__pending" />
               </template>
               <template v-else-if="displayMode === 'translation'">
-                <p v-if="block.translation" class="pdf-block__translation pdf-block__translation--semantic pdf-block__translation--only">{{ block.translation }}</p>
-                <p v-else-if="shouldShowTranslationOnlySource(block, translationStatus.running)" class="pdf-block__original pdf-block__original--semantic">{{ block.text }}</p>
+                <p v-if="block.translation" class="pdf-block__translation pdf-block__translation--semantic pdf-block__translation--only" v-html="readingBlockHtml(block, block.translation)" />
+                <p v-else-if="shouldShowTranslationOnlySource(block, translationStatus.running)" class="pdf-block__original pdf-block__original--semantic" v-html="readingBlockHtml(block, readingBlockSource(block))" />
                 <div v-else-if="translationStatus.running" class="pdf-block__pending" />
               </template>
               <template v-else>
-                <p class="pdf-block__original">{{ block.text }}</p>
-                <p v-if="block.translation" class="pdf-block__translation">{{ block.translation }}</p>
-                <p v-else-if="block.kind === 'formula'" class="pdf-block__protected">{{ t('pdf.formulaProtected') }}</p>
+                <p class="pdf-block__original" v-html="readingBlockHtml(block, readingBlockSource(block))" />
+                <p v-if="block.translation" class="pdf-block__translation" v-html="readingBlockHtml(block, block.translation)" />
                 <div v-else-if="translationStatus.running" class="pdf-block__pending" />
               </template>
             </section>
@@ -229,6 +276,24 @@
       </article>
     </section>
 
+    <Teleport to="body">
+      <div
+        v-if="enlargedVisualBlock?.imageUrl"
+        class="pdf-visual-lightbox"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="visualBlockLabel(enlargedVisualBlock)"
+        @click.self="closeVisualLightbox"
+      >
+        <button class="pdf-visual-lightbox__close" :aria-label="t('pdf.close')" @click="closeVisualLightbox">×</button>
+        <img
+          :src="enlargedVisualBlock.imageUrl"
+          :alt="visualBlockLabel(enlargedVisualBlock)"
+          @dblclick.stop.prevent="closeVisualLightbox"
+        />
+      </div>
+    </Teleport>
+
     <footer v-if="pageCount" class="reader-progress pdf-reader-progress">
       <span>{{ t('pdf.pageProgress', { page: pageNumber, total: pageCount }) }}</span>
       <div class="reader-progress__track"><span :style="{ width: `${readingProgressPercent}%` }" /></div>
@@ -240,6 +305,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
 import { isServiceConfigured } from '@/entrypoints/utils/option'
@@ -251,7 +318,7 @@ import { loadReaderSettings, saveReaderSettings } from '@/entrypoints/ebook/sett
 import type { EbookDisplayMode, EbookReaderSettings, EbookRecord } from '@/entrypoints/ebook/types'
 import { getEbookFormat } from '@/entrypoints/ebook/types'
 import { resolveReaderKeyboardAction } from '@/entrypoints/utils/readerKeyboard'
-import type { PdfTextBlock } from './layout'
+import { addCrossPageContext, type PdfContinuousBlock } from './pageContinuity'
 import {
   selectPdfReadingBlocks,
   selectPdfReadingTranslationBlocks,
@@ -269,7 +336,7 @@ import {
 } from './display'
 import { PDF_LAYOUT_MODEL, pdfLayoutModelStore } from './layoutModelStore'
 
-interface PdfBlockView extends PdfTextBlock {
+interface PdfBlockView extends PdfContinuousBlock {
   translation?: string
 }
 
@@ -282,7 +349,9 @@ const canvas = ref<HTMLCanvasElement>()
 const originalPanel = ref<HTMLElement>()
 const translationPanel = ref<HTMLElement>()
 const overlayLayer = ref<HTMLElement>()
+const thumbnailPanel = ref<HTMLElement>()
 const fileInput = ref<HTMLInputElement>()
+const layoutModelControl = ref<HTMLDetailsElement>()
 const sourceUrl = ref(getRequestedPdfSource(location.search))
 const requestedBookId = getRequestedPdfBookId(location.search)
 const sourceLabel = ref(sourceUrl.value ?? '')
@@ -290,8 +359,10 @@ const storedTitle = ref('')
 const currentFile = ref<File>()
 const libraryBook = ref<EbookRecord>()
 const addingToLibrary = ref(false)
+const removingFromLibrary = ref(false)
 const exportingOriginal = ref(false)
 const libraryNotice = ref('')
+let libraryNoticeTimer: number | undefined
 const documentTitle = computed(() => {
   if (storedTitle.value) return storedTitle.value
   if (!sourceLabel.value) return t('pdf.title')
@@ -304,7 +375,7 @@ const documentTitle = computed(() => {
   }
 })
 const displayMode = ref<PdfDisplayMode>('semantic')
-const previewOpen = ref(true)
+const previewOpen = ref(false)
 const readerSettings = reactive<Pick<EbookReaderSettings, 'fontScale' | 'lineHeight'>>({
   fontScale: 100,
   lineHeight: 1.7,
@@ -314,10 +385,13 @@ const loadingPage = ref(false)
 const errorMessage = ref('')
 const pageNumber = ref(1)
 const pageCount = ref(0)
+const thumbnailUrls = reactive(new Map<number, string>())
+const originalPaneWidth = ref<number>()
 const renderedWidth = ref(0)
 const renderedHeight = ref(0)
 const blocks = ref<PdfBlockView[]>([])
 const highlightedBlockId = ref('')
+const enlargedVisualBlock = ref<PdfBlockView>()
 const translationNotice = ref('')
 const layoutStatus = reactive<{ mode: 'heuristic' | 'semantic'; elapsedMs: number; error: string }>({
   mode: 'heuristic',
@@ -326,15 +400,13 @@ const layoutStatus = reactive<{ mode: 'heuristic' | 'semantic'; elapsedMs: numbe
 })
 const layoutModelState = reactive({ installed: false, busy: false, progress: 0, error: '' })
 let layoutModelDownloadAbort: AbortController | undefined
+let layoutModelPanelCloseTimer: number | undefined
 const usesSemanticLayout = computed(() => usesPdfSemanticLayout(displayMode.value))
 const usesInstalledSemanticLayout = computed(() => usesSemanticLayout.value && layoutModelState.installed)
-const showLayoutModelNotice = computed(() => Boolean(
-  layoutModelState.error
-  || (pageCount.value && usesSemanticLayout.value && !layoutModelState.installed),
-))
 const layoutModelNotice = computed(() => {
   if (layoutModelState.error) return t('pdf.semanticModelDownloadFailed', { error: layoutModelState.error })
   if (layoutModelState.busy) return t('pdf.semanticModelDownloading', { percent: layoutModelState.progress })
+  if (layoutModelState.installed) return t('pdf.semanticModelInstalledHint')
   return t('pdf.semanticModelOptional', { size: Math.ceil(PDF_LAYOUT_MODEL.size / 1024 / 1024) })
 })
 const layoutModelActionLabel = computed(() => layoutModelState.busy
@@ -344,36 +416,60 @@ const layoutModelActionLabel = computed(() => layoutModelState.busy
   : layoutModelState.installed
     ? t('pdf.semanticModelRemove')
     : t('pdf.semanticModelDownload', { size: Math.ceil(PDF_LAYOUT_MODEL.size / 1024 / 1024) }))
-const displayModeLabel = computed(() => displayMode.value === 'semantic'
-  ? t('ebook.displayBilingual')
-  : displayMode.value === 'translation'
-    ? t('ebook.displayTranslation')
-    : displayMode.value === 'original'
-      ? t('ebook.displayOriginal')
-      : t('pdf.displayOverlay'))
+const layoutModelStatusKind = computed(() => layoutModelState.busy
+  ? 'busy'
+  : layoutModelState.error
+    ? 'error'
+    : layoutModelState.installed
+      ? 'installed'
+      : 'missing')
+const layoutModelStatusLabel = computed(() => layoutModelState.busy
+  ? t('pdf.semanticModelDownloading', { percent: layoutModelState.progress })
+  : layoutModelState.error
+    ? t('pdf.semanticModelStatusError')
+    : layoutModelState.installed
+      ? t('pdf.semanticModelStatusInstalled')
+      : t('pdf.semanticModelStatusMissing'))
+const layoutModelStatusDetail = computed(() => layoutModelState.busy
+  ? t('pdf.semanticModelStatusBusyDetail')
+  : layoutModelState.error
+    ? t('pdf.semanticModelStatusErrorDetail')
+    : layoutModelState.installed
+      ? t('pdf.semanticModelStatusInstalledDetail')
+      : t('pdf.semanticModelStatusMissingDetail', { size: Math.ceil(PDF_LAYOUT_MODEL.size / 1024 / 1024) }))
 const themeLabel = computed(() => t(`ebook.theme${config.value.theme === 'dark' ? 'Dark' : config.value.theme === 'light' ? 'Light' : 'Auto'}`))
 const readerStyle = computed(() => ({
   '--reader-font-scale': String(readerSettings.fontScale / 100),
   '--reader-line-height': String(readerSettings.lineHeight),
+  '--pdf-original-panel-width': originalPaneWidth.value ? `${originalPaneWidth.value}px` : '40%',
 }))
 const readingProgressPercent = computed(() => pageCount.value
   ? Math.round(pageNumber.value / pageCount.value * 100)
   : 0)
+const thumbnailPages = computed(() => {
+  return Array.from({ length: pageCount.value }, (_, index) => index + 1)
+})
 const overlayTranslationBlocks = computed(() => selectPdfTranslationBlocksWithOptions(blocks.value, {
   semanticLayout: layoutStatus.mode === 'semantic',
 }) as PdfBlockView[])
 const readingBlocks = computed(() => {
   if (!usesSemanticLayout.value) return overlayTranslationBlocks.value
+  if (layoutStatus.mode !== 'semantic') return overlayTranslationBlocks.value
   return selectPdfReadingBlocks(blocks.value) as PdfBlockView[]
 })
 const translationBlocks = computed(() => (
-  usesSemanticLayout.value
+  usesSemanticLayout.value && layoutStatus.mode === 'semantic'
     ? selectPdfReadingTranslationBlocks(blocks.value)
     : overlayTranslationBlocks.value
 ) as PdfBlockView[])
 const translatedOverlayBlocks = computed(() => overlayTranslationBlocks.value.filter(block => block.translation))
 const translationStatus = reactive<PdfTranslationStatus>({ total: 0, completed: 0, failed: 0, running: false })
 let renderGeneration = 0
+let thumbnailGeneration = 0
+let thumbnailObserver: IntersectionObserver | undefined
+const thumbnailElements = new Map<number, HTMLElement>()
+const loadingThumbnails = new Set<number>()
+let stopPaneResize: (() => void) | undefined
 const coordinator = new PdfTranslationCoordinator({
   onTranslation: (blockId, translation) => {
     const block = blocks.value.find(item => item.id === blockId)
@@ -383,7 +479,78 @@ const coordinator = new PdfTranslationCoordinator({
   onStatus: status => Object.assign(translationStatus, status),
 })
 
+function clearLibraryNotice(): void {
+  if (libraryNoticeTimer !== undefined) window.clearTimeout(libraryNoticeTimer)
+  libraryNoticeTimer = undefined
+  libraryNotice.value = ''
+}
+
+function showLibraryNotice(message: string, duration = 3200): void {
+  clearLibraryNotice()
+  libraryNotice.value = message
+  libraryNoticeTimer = window.setTimeout(clearLibraryNotice, duration)
+}
+
+function resetThumbnails(): void {
+  thumbnailGeneration += 1
+  thumbnailObserver?.disconnect()
+  thumbnailObserver = undefined
+  thumbnailElements.clear()
+  loadingThumbnails.clear()
+  thumbnailUrls.clear()
+}
+
+async function loadThumbnail(thumbnailPage: number): Promise<void> {
+  if (thumbnailUrls.has(thumbnailPage) || loadingThumbnails.has(thumbnailPage)) return
+  const generation = thumbnailGeneration
+  loadingThumbnails.add(thumbnailPage)
+  try {
+    const imageUrl = await controller.renderThumbnail(thumbnailPage)
+    if (generation === thumbnailGeneration) thumbnailUrls.set(thumbnailPage, imageUrl)
+  }
+  catch {
+    // Keep the placeholder available when a thumbnail cannot be rendered.
+  }
+  finally {
+    loadingThumbnails.delete(thumbnailPage)
+  }
+}
+
+function registerThumbnailElement(thumbnailPage: number, target: unknown): void {
+  const previous = thumbnailElements.get(thumbnailPage)
+  if (previous && previous !== target) thumbnailObserver?.unobserve(previous)
+  if (!(target instanceof HTMLElement)) {
+    thumbnailElements.delete(thumbnailPage)
+    return
+  }
+  thumbnailElements.set(thumbnailPage, target)
+  thumbnailObserver?.observe(target)
+}
+
+function setupThumbnailObserver(): void {
+  if (!thumbnailPanel.value || thumbnailObserver) return
+  thumbnailObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      const thumbnailPage = Number((entry.target as HTMLElement).dataset.thumbnailPage)
+      if (thumbnailPage) void loadThumbnail(thumbnailPage)
+    }
+  }, { root: thumbnailPanel.value, rootMargin: '180px 0px' })
+  for (const element of thumbnailElements.values()) thumbnailObserver.observe(element)
+}
+
+function refreshThumbnailNavigation(): void {
+  void nextTick().then(() => {
+    setupThumbnailObserver()
+    for (let thumbnailPage = Math.max(1, pageNumber.value - 2); thumbnailPage <= Math.min(pageCount.value, pageNumber.value + 2); thumbnailPage += 1) {
+      void loadThumbnail(thumbnailPage)
+    }
+    thumbnailElements.get(pageNumber.value)?.scrollIntoView({ block: 'nearest' })
+  })
+}
+
 async function openRemote(source: string): Promise<void> {
+  resetThumbnails()
   loadingDocument.value = true
   errorMessage.value = ''
   sourceLabel.value = source
@@ -415,6 +582,7 @@ async function openLocalFile(event: Event): Promise<void> {
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+  resetThumbnails()
   loadingDocument.value = true
   errorMessage.value = ''
   sourceUrl.value = undefined
@@ -422,7 +590,7 @@ async function openLocalFile(event: Event): Promise<void> {
   storedTitle.value = ''
   currentFile.value = file
   libraryBook.value = undefined
-  libraryNotice.value = ''
+  clearLibraryNotice()
   try {
     pageCount.value = await controller.openFile(file)
     pageNumber.value = 1
@@ -444,9 +612,10 @@ async function openStoredBook(book: EbookRecord): Promise<void> {
     errorMessage.value = t('pdf.notPdf')
     return
   }
+  resetThumbnails()
   loadingDocument.value = true
   errorMessage.value = ''
-  libraryNotice.value = ''
+  clearLibraryNotice()
   libraryBook.value = book
   storedTitle.value = book.title
   sourceLabel.value = book.sourceUrl || book.filename
@@ -473,7 +642,7 @@ async function openStoredBook(book: EbookRecord): Promise<void> {
 async function addToLibrary(): Promise<void> {
   if (!pageCount.value || addingToLibrary.value) return
   addingToLibrary.value = true
-  libraryNotice.value = ''
+  clearLibraryNotice()
   try {
     const result = await addPdfToLibrary({
       repository,
@@ -484,22 +653,42 @@ async function addToLibrary(): Promise<void> {
     currentFile.value = result.file
     storedTitle.value = result.book.title
     await savePdfProgress()
-    libraryNotice.value = t(result.duplicate ? 'pdf.alreadyInLibrary' : 'pdf.addedToLibrary')
+    showLibraryNotice(t(result.duplicate ? 'pdf.alreadyInLibrary' : 'pdf.addedToLibrary'))
   }
   catch (error) {
-    libraryNotice.value = error instanceof Error && error.message !== t('pdf.addToLibraryFailed')
+    const message = error instanceof Error && error.message !== t('pdf.addToLibraryFailed')
       ? `${t('pdf.addToLibraryFailed')} ${error.message}`
       : t('pdf.addToLibraryFailed')
+    showLibraryNotice(message, 6000)
   }
   finally {
     addingToLibrary.value = false
   }
 }
 
+async function removeFromLibrary(): Promise<void> {
+  const book = libraryBook.value
+  if (!book || removingFromLibrary.value) return
+  if (!window.confirm(t('pdf.removeFromLibraryConfirm', { title: book.title }))) return
+  removingFromLibrary.value = true
+  clearLibraryNotice()
+  try {
+    await repository.removeBook(book.bookId)
+    libraryBook.value = undefined
+    showLibraryNotice(t('pdf.removedFromLibrary'))
+  }
+  catch {
+    showLibraryNotice(t('pdf.removeFromLibraryFailed'), 6000)
+  }
+  finally {
+    removingFromLibrary.value = false
+  }
+}
+
 async function exportOriginalPdf(): Promise<void> {
   if (exportingOriginal.value) return
   exportingOriginal.value = true
-  libraryNotice.value = ''
+  clearLibraryNotice()
   try {
     const file = currentFile.value ?? (sourceUrl.value ? await downloadRemotePdf(sourceUrl.value) : undefined)
     if (!file) throw new Error(t('ebook.exportFailed'))
@@ -511,7 +700,7 @@ async function exportOriginalPdf(): Promise<void> {
     })
   }
   catch {
-    libraryNotice.value = t('ebook.exportFailed')
+    showLibraryNotice(t('ebook.exportFailed'), 6000)
   }
   finally {
     exportingOriginal.value = false
@@ -541,22 +730,34 @@ async function renderCurrentPage(): Promise<void> {
   coordinator.cancel()
   blocks.value = []
   try {
-    const availableWidth = Math.max(240, originalPanel.value.clientWidth - 42)
+    const fallbackPanelWidth = Math.min(720, Math.max(420, window.innerWidth * 0.42))
+    const availableWidth = Math.max(240, (originalPanel.value.clientWidth || fallbackPanelWidth) - 42)
     const rendered = await controller.renderPage(pageNumber.value, canvas.value, availableWidth, {
       semanticLayout: usesInstalledSemanticLayout.value,
     })
     if (generation !== renderGeneration) return
+    const [previousPage, nextPage] = await Promise.all([
+      rendered.pageNumber > 1
+        ? controller.extractPage(rendered.pageNumber - 1).catch(() => undefined)
+        : undefined,
+      rendered.pageNumber < rendered.pageCount
+        ? controller.extractPage(rendered.pageNumber + 1).catch(() => undefined)
+        : undefined,
+    ])
+    if (generation !== renderGeneration) return
+    const continuousBlocks = addCrossPageContext(rendered.blocks, previousPage?.blocks, nextPage?.blocks)
     pageNumber.value = rendered.pageNumber
     pageCount.value = rendered.pageCount
     renderedWidth.value = rendered.width
     renderedHeight.value = rendered.height
-    blocks.value = rendered.blocks.map(block => ({ ...block }))
+    blocks.value = continuousBlocks.map(block => ({ ...block }))
     layoutStatus.mode = rendered.layoutMode
     layoutStatus.elapsedMs = rendered.layoutElapsedMs ?? 0
     layoutStatus.error = rendered.layoutError ?? ''
     if (displayMode.value === 'semantic' && layoutModelState.installed && rendered.layoutMode !== 'semantic') {
       translationNotice.value = t('pdf.semanticFallback', { error: rendered.layoutError || t('pdf.semanticUnknownError') })
     }
+    refreshThumbnailNavigation()
     void savePdfProgress()
     if (shouldTranslatePdfMode(displayMode.value)) void startTranslation()
   }
@@ -631,6 +832,51 @@ function goToPage(value: number): void {
   void renderCurrentPage().then(resetReaderScroll)
 }
 
+function toggleOriginalPreview(targetPage?: number): void {
+  if (targetPage && targetPage !== pageNumber.value) goToPage(targetPage)
+  previewOpen.value = !previewOpen.value
+}
+
+function paneWidthBounds(): { min: number; max: number } {
+  const workspace = originalPanel.value?.closest<HTMLElement>('.pdf-workspace')
+  const availableWidth = workspace?.clientWidth ?? window.innerWidth
+  const sidebarWidth = thumbnailPanel.value?.offsetWidth ?? 116
+  const min = 280
+  return { min, max: Math.max(min, availableWidth - sidebarWidth - 368) }
+}
+
+function setOriginalPaneWidth(width: number): void {
+  const { min, max } = paneWidthBounds()
+  originalPaneWidth.value = Math.min(max, Math.max(min, Math.round(width)))
+}
+
+function resizeOriginalPaneBy(delta: number): void {
+  setOriginalPaneWidth((originalPaneWidth.value ?? originalPanel.value?.clientWidth ?? 480) + delta)
+  void renderCurrentPage()
+}
+
+function startPaneResize(event: PointerEvent): void {
+  if (!originalPanel.value) return
+  event.preventDefault()
+  stopPaneResize?.()
+  const startX = event.clientX
+  const startWidth = originalPanel.value.clientWidth
+  const handlePointerMove = (moveEvent: PointerEvent) => setOriginalPaneWidth(startWidth + moveEvent.clientX - startX)
+  const handlePointerUp = () => {
+    stopPaneResize?.()
+    void renderCurrentPage()
+  }
+  stopPaneResize = () => {
+    window.removeEventListener('pointermove', handlePointerMove)
+    window.removeEventListener('pointerup', handlePointerUp)
+    document.body.classList.remove('pdf-pane-resizing')
+    stopPaneResize = undefined
+  }
+  document.body.classList.add('pdf-pane-resizing')
+  window.addEventListener('pointermove', handlePointerMove)
+  window.addEventListener('pointerup', handlePointerUp, { once: true })
+}
+
 function continuePdfReading(): void {
   if (pageNumber.value < pageCount.value) {
     goToPage(pageNumber.value + 1)
@@ -656,6 +902,12 @@ function scrollReaderByViewport(direction: -1 | 1): boolean {
 }
 
 function handleReaderKeyDown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && enlargedVisualBlock.value) {
+    event.preventDefault()
+    closeVisualLightbox()
+    return
+  }
+  if (enlargedVisualBlock.value) return
   if (!pageCount.value) return
   const action = resolveReaderKeyboardAction(event)
   if (!action) return
@@ -674,15 +926,10 @@ function handleReaderKeyDown(event: KeyboardEvent): void {
   if (scrollReaderByViewport(action === 'page-up' ? -1 : 1)) event.preventDefault()
 }
 
-function cycleDisplayMode(): void {
-  const modes: PdfDisplayMode[] = ['semantic', 'translation', 'original']
-  const current = modes.indexOf(displayMode.value)
-  displayMode.value = current < 0 ? modes[0] : modes[(current + 1) % modes.length]
+function setDisplayMode(mode: PdfDisplayMode): void {
+  if (displayMode.value === mode) return
+  displayMode.value = mode
   void savePdfReaderSettings()
-}
-
-function setOverlayMode(): void {
-  displayMode.value = 'overlay'
 }
 
 async function installLayoutModel(): Promise<void> {
@@ -699,6 +946,11 @@ async function installLayoutModel(): Promise<void> {
     layoutModelState.progress = 100
     controller.resetLayoutModel()
     if (pageCount.value && usesSemanticLayout.value) await renderCurrentPage()
+    if (layoutModelPanelCloseTimer !== undefined) window.clearTimeout(layoutModelPanelCloseTimer)
+    layoutModelPanelCloseTimer = window.setTimeout(() => {
+      layoutModelControl.value?.removeAttribute('open')
+      layoutModelPanelCloseTimer = undefined
+    }, 2200)
   }
   catch (error) {
     if (layoutModelDownloadAbort.signal.aborted) return
@@ -766,6 +1018,55 @@ function isSourceRegionActive(block: PdfBlockView): boolean {
   return highlightedBlockId.value === block.id
 }
 
+function readingBlockSource(block: PdfBlockView): string {
+  return block.translationSource?.trim() || block.mathSource?.trim() || block.text
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
+function renderInlineMath(latex: string, fallback: string): string {
+  try {
+    return katex.renderToString(latex, {
+      displayMode: false,
+      output: 'htmlAndMathml',
+      strict: 'warn',
+      throwOnError: true,
+      trust: false,
+    })
+  }
+  catch {
+    return `<span class="pdf-inline-math-fallback">${escapeHtml(fallback)}</span>`
+  }
+}
+
+function readingBlockHtml(block: PdfBlockView, text: string): string {
+  const expressions = block.inlineMath ?? []
+  if (!expressions.length) return escapeHtml(text)
+  let cursor = 0
+  let html = ''
+  while (cursor < text.length) {
+    const next = expressions
+      .map(expression => ({ expression, index: text.indexOf(expression.token, cursor) }))
+      .filter(match => match.index >= 0)
+      .sort((left, right) => left.index - right.index)[0]
+    if (!next) {
+      html += escapeHtml(text.slice(cursor))
+      break
+    }
+    html += escapeHtml(text.slice(cursor, next.index))
+    html += renderInlineMath(next.expression.latex, next.expression.source)
+    cursor = next.index + next.expression.token.length
+  }
+  return html
+}
+
 function focusBlock(block: PdfBlockView): void {
   highlightedBlockId.value = block.id
   originalPanel.value
@@ -784,6 +1085,23 @@ function visualBlockLabel(block: PdfBlockView): string {
           ? 'pdf.visualAlgorithm'
           : 'pdf.visualImage'
   return t(key)
+}
+
+function visualBlockStyle(block: PdfBlockView): Record<string, string> {
+  const formulaLike = block.visualKind === 'formula' || block.visualKind === 'algorithm'
+  const preferredWidth = formulaLike
+    ? Math.min(760, Math.max(260, block.width * 2.2))
+    : Math.min(860, Math.max(420, block.width * 1.35))
+  return { '--pdf-visual-display-width': `${Math.round(preferredWidth)}px` }
+}
+
+function openVisualLightbox(block: PdfBlockView): void {
+  if (!block.imageUrl) return
+  enlargedVisualBlock.value = block
+}
+
+function closeVisualLightbox(): void {
+  enlargedVisualBlock.value = undefined
 }
 
 function chooseLocalFile(): void {
@@ -849,7 +1167,11 @@ function savePdfProgressImmediately(): void {
 
 onBeforeUnmount(() => {
   renderGeneration += 1
+  clearLibraryNotice()
+  stopPaneResize?.()
+  thumbnailObserver?.disconnect()
   layoutModelDownloadAbort?.abort()
+  if (layoutModelPanelCloseTimer !== undefined) window.clearTimeout(layoutModelPanelCloseTimer)
   coordinator.cancel()
   controller.close()
   pdfLayoutModelStore.close()

@@ -1,4 +1,5 @@
 import type { PdfBlockKind, PdfTextBlock, PdfTextSpan } from './layout'
+import { reconstructInlineMath } from './inlineMath'
 
 export interface PdfLayoutRegion {
   classId: number
@@ -19,6 +20,7 @@ interface Rect {
 interface SemanticLine extends Rect {
   id: string
   text: string
+  spans: PdfTextSpan[]
   fontHeight: number
   region?: PdfLayoutRegion & { index: number }
   visual: boolean
@@ -42,6 +44,7 @@ const TEXT_LABELS = new Set([
 ])
 const OMITTED_LABELS = new Set(['header', 'footer', 'number', 'seal', 'header_image', 'footer_image'])
 const CAPTION_LABELS = new Set(['figure_title', 'table_title', 'chart_title'])
+const INLINE_MATH_TEXT_LABELS = new Set(['text', 'content', 'abstract', 'aside_text'])
 const TERMINAL_LINE_END = /[.!?][“”"'’）)\]]?$/u
 
 function median(values: number[]): number {
@@ -70,6 +73,55 @@ function intersectionArea(left: Rect, right: Rect): number {
   return width * height
 }
 
+function isEmbeddedProseFormula(
+  region: PdfLayoutRegion,
+  spans: PdfTextSpan[],
+  pageWidth: number,
+  regions: PdfLayoutRegion[],
+): boolean {
+  if (region.label !== 'formula') return false
+  const target = regionRect(region)
+  const textHeights = spans.filter(span => span.text.trim() && span.height > 0).map(span => span.height)
+  const typicalTextHeight = Math.max(7, median(textHeights))
+  // A diagram containing mathematical notation may itself be classified as one
+  // large formula. Only override compact, line-sized detections inside prose.
+  if (target.height > Math.max(48, typicalTextHeight * 4.5) || target.width > pageWidth * 0.72) return false
+  const targetArea = Math.max(1, target.width * target.height)
+  const nestedInTextRegion = regions.some(candidate => (
+    candidate !== region
+    && INLINE_MATH_TEXT_LABELS.has(candidate.label)
+    && intersectionArea(target, regionRect(candidate)) / targetArea >= 0.55
+  ))
+  if (nestedInTextRegion) return true
+
+  const targetCenterY = target.y + target.height / 2
+  const adjacentProse = spans.filter(span => {
+    const text = span.text.trim()
+    if (!/\p{L}{2,}/u.test(text)) return false
+    const spanCenterY = span.y + span.height / 2
+    if (Math.abs(spanCenterY - targetCenterY) > Math.max(4, typicalTextHeight * 0.7)) return false
+    const horizontalGap = span.x + span.width < target.x
+      ? target.x - (span.x + span.width)
+      : span.x > target.x + target.width
+        ? span.x - (target.x + target.width)
+        : 0
+    return horizontalGap <= typicalTextHeight * 6
+  })
+  const proseOnLeft = adjacentProse.some(span => span.x + span.width <= target.x + typicalTextHeight)
+  const proseOnRight = adjacentProse.some(span => span.x >= target.x + target.width - typicalTextHeight)
+  if (proseOnLeft && proseOnRight) return true
+
+  const overlappingText = spans.filter(span => {
+    const horizontalOverlap = Math.max(0, Math.min(span.x + span.width, target.x + target.width) - Math.max(span.x, target.x))
+    const verticalOverlap = Math.max(0, Math.min(span.y + span.height, target.y + target.height) - Math.max(span.y, target.y))
+    return horizontalOverlap > 0 && verticalOverlap >= Math.min(span.height, target.height) * 0.55
+  }).map(span => span.text.trim()).filter(Boolean).join(' ')
+  if (!overlappingText) return false
+  const proseWords = overlappingText.match(/\p{L}{2,}/gu)?.length ?? 0
+  const hanCharacters = overlappingText.match(/\p{Script=Han}/gu)?.length ?? 0
+  return proseWords >= 5 || hanCharacters >= 10
+}
+
 function dominantRegion(rect: Rect, regions: PdfLayoutRegion[]): SemanticLine['region'] {
   let best: SemanticLine['region']
   let bestScore = 0
@@ -81,13 +133,37 @@ function dominantRegion(rect: Rect, regions: PdfLayoutRegion[]): SemanticLine['r
       && centerX <= target.x + target.width
       && centerY >= target.y
       && centerY <= target.y + target.height
-    const score = intersectionArea(rect, target) + (containsCenter ? Math.max(1, rect.width * rect.height) : 0)
+    const overlap = intersectionArea(rect, target)
+    const visualBonus = VISUAL_LABELS.has(region.label) && overlap > rect.width * rect.height * 0.55
+      ? rect.width * rect.height * 0.35
+      : 0
+    const score = overlap + (containsCenter ? Math.max(1, rect.width * rect.height) : 0) + visualBonus
     if (score > bestScore) {
       bestScore = score
       best = { ...region, index }
     }
   })
   return best
+}
+
+function isNearbyVisualDelimiterFragment(
+  text: string,
+  rect: Rect,
+  region: PdfLayoutRegion | undefined,
+): boolean {
+  if (!region || !VISUAL_LABELS.has(region.label)) return false
+  const compact = text.replace(/\s/g, '')
+  if (!/^(?:\(\)|\[\]|\{\}|\|\||[()[\]{}|])$/.test(compact)) return false
+  const target = regionRect(region)
+  const horizontalOverlap = Math.max(
+    0,
+    Math.min(rect.x + rect.width, target.x + target.width) - Math.max(rect.x, target.x),
+  )
+  const horizontalCoverage = horizontalOverlap / Math.max(1, Math.min(rect.width, target.width))
+  const verticalGap = target.y - (rect.y + rect.height)
+  return horizontalCoverage >= 0.45
+    && verticalGap >= -rect.height * 0.65
+    && verticalGap <= rect.height * 2.5
 }
 
 function shouldInsertSpace(previous: PdfTextSpan, current: PdfTextSpan): boolean {
@@ -178,10 +254,15 @@ function buildLines(
     const rect = unionRect(lineSpans)
     const region = dominantRegion(rect, regions)
     const overlap = region ? intersectionArea(rect, regionRect(region)) : 0
-    const visual = Boolean(region && VISUAL_LABELS.has(region.label) && overlap > rect.width * rect.height * 0.45)
+    const text = joinSpans(lineSpans)
+    const visual = Boolean(region && VISUAL_LABELS.has(region.label) && (
+      overlap > rect.width * rect.height * 0.45
+      || isNearbyVisualDelimiterFragment(text, rect, region)
+    ))
     return {
       id: `semantic-line-${index}`,
-      text: joinSpans(lineSpans),
+      text,
+      spans: lineSpans,
       fontHeight: Math.max(...lineSpans.map(span => span.height)),
       region,
       visual,
@@ -290,8 +371,17 @@ function blockKind(lines: SemanticLine[]): PdfBlockKind {
 }
 
 function dedupeVisualRegions(regions: PdfLayoutRegion[]): PdfLayoutRegion[] {
+  const structuralVisuals = regions.filter(region => region.label !== 'formula')
+  const withoutNestedFormulas = regions.filter(region => {
+    if (region.label !== 'formula') return true
+    const rect = regionRect(region)
+    const area = rect.width * rect.height
+    return !structuralVisuals.some(structural => (
+      intersectionArea(rect, regionRect(structural)) / Math.max(1, area) > 0.82
+    ))
+  })
   const kept: PdfLayoutRegion[] = []
-  for (const candidate of [...regions].sort((left, right) => right.score - left.score)) {
+  for (const candidate of [...withoutNestedFormulas].sort((left, right) => right.score - left.score)) {
     const rect = regionRect(candidate)
     const area = rect.width * rect.height
     const duplicate = kept.some(existing => {
@@ -318,8 +408,13 @@ export function buildSemanticPdfBlocks(
   regions: PdfLayoutRegion[],
   pageWidth: number,
   pageHeight: number,
+  tokenNamespace = 'page',
 ): PdfTextBlock[] {
-  const lines = buildLines(spans, regions, pageWidth, pageHeight)
+  // A layout detector may label inline notation inside a prose sentence as a
+  // standalone formula. The PDF text layer is the safer authority here: if the
+  // detected formula overlaps natural-language text, keep it in that paragraph.
+  const readingRegions = regions.filter(region => !isEmbeddedProseFormula(region, spans, pageWidth, regions))
+  const lines = buildLines(spans, readingRegions, pageWidth, pageHeight)
   const bodyLines = lines
     .filter(line => !line.visual && !OMITTED_LABELS.has(line.region?.label ?? ''))
     .sort(lineOrder)
@@ -331,6 +426,10 @@ export function buildSemanticPdfBlocks(
     const rect = unionRect(group)
     const kind = blockKind(group)
     const text = normalizeParagraphText(group)
+    const trustedTextRegion = group.some(line => INLINE_MATH_TEXT_LABELS.has(line.region?.label ?? ''))
+    const inlineMath = trustedTextRegion && ['body', 'abstract', 'list-item'].includes(kind)
+      ? reconstructInlineMath(group, `${tokenNamespace}:block-${textBlocks.length + 1}`)
+      : undefined
     textBlocks.push({
       id: `pdf-semantic-${textBlocks.length + 1}`,
       text,
@@ -340,6 +439,8 @@ export function buildSemanticPdfBlocks(
       translatable: ['heading', 'body', 'abstract', 'list-item', 'caption'].includes(kind) && text.length > 1,
       fontHeight: median(group.map(line => line.fontHeight)),
       regionLabel: group[0].region?.label,
+      mathSource: inlineMath?.source,
+      inlineMath: inlineMath?.expressions,
     })
     group = []
   }
@@ -350,7 +451,7 @@ export function buildSemanticPdfBlocks(
   })
   flush()
 
-  const visuals = dedupeVisualRegions(regions.filter(region => VISUAL_LABELS.has(region.label) && region.score >= 0.42))
+  const visuals = dedupeVisualRegions(readingRegions.filter(region => VISUAL_LABELS.has(region.label) && region.score >= 0.42))
     .map((region, index): PdfTextBlock => {
       const rect = regionRect(region)
       const centerX = rect.x + rect.width / 2

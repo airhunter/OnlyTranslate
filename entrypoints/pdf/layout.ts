@@ -4,7 +4,14 @@ export interface PdfTextSpan {
   y: number
   width: number
   height: number
+  baseline?: number
   fontName?: string
+}
+
+export interface PdfInlineMathExpression {
+  token: string
+  latex: string
+  source: string
 }
 
 export type PdfBlockKind =
@@ -34,6 +41,8 @@ export interface PdfTextBlock {
   regionLabel?: string
   visualKind?: 'image' | 'chart' | 'table' | 'formula' | 'algorithm'
   imageUrl?: string
+  mathSource?: string
+  inlineMath?: PdfInlineMathExpression[]
   hiddenInReadingFlow?: boolean
 }
 

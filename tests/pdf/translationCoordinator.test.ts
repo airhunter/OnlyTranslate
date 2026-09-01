@@ -116,6 +116,29 @@ describe('PdfTranslationCoordinator', () => {
     expect(onTranslation).toHaveBeenCalledWith('body', '尽管最近大语言模型研究进展迅速。')
   })
 
+  it('protects inline math markers and restores them after translation', async () => {
+    const token = '{{pdfmath:page-2:block-1:0}}'
+    const translate = vi.fn(async (text: string) => text.replace(
+      `The token ${'{{PDFMATH0}}'} is predicted.`,
+      `预测词元 ${'{{PDFMATH0}}'}。`,
+    ))
+    const onTranslation = vi.fn()
+    const coordinator = new PdfTranslationCoordinator({ translate, onTranslation })
+
+    await coordinator.start([{
+      ...block('body', `The token ${token} is predicted.`),
+      mathSource: `The token ${token} is predicted.`,
+      inlineMath: [{ token, latex: 'e_{1}^{i-1}', source: 'e_1^i-1' }],
+    }], 'paper · page 2')
+
+    expect(translate).toHaveBeenCalledWith(
+      'The token {{PDFMATH0}} is predicted.',
+      'paper · page 2',
+      expect.any(Object),
+    )
+    expect(onTranslation).toHaveBeenCalledWith('body', `预测词元 ${token}。`)
+  })
+
   it('uses one page-level language direction and retries unchanged prose outside the batch', async () => {
     const source = 'Mr. Bennet replied that he had not heard the latest news.'
     const translate = vi.fn()

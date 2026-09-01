@@ -13,9 +13,9 @@
 
 1. `01-web-translation.png`：真实网页识文演示，突出“正文双语、侧栏不打扰”。源文件位于 `source/smart-real-page.zh-CN.html`。
 2. `02-video-subtitles.png`：视频双语字幕，保留。
-3. `03-ebook-reader-beta.png`：本地 EPUB 翻译阅读器（Beta），保留。
-4. `04-popup-bookshelf.png`：Popup 书架和最近阅读入口，保留为辅助说明。
-5. `05-services-and-privacy.png`：翻译服务选择和本地隐私边界，保留为信任说明。
+3. `03-ebook-reader-beta.png`：本地 EPUB 翻译阅读器（Beta）。
+4. `04-pdf-reader-beta.png`：本地 PDF 双语阅读器（Beta），展示分页阅读、双语模式和可选本地版面模型。
+5. `05-services-and-privacy.png`：翻译服务选择，以及 EPUB / PDF 文件、书架和模型的本地隐私边界。
 
 原来的网页翻译效果图仍保留在 `../v2ex/zh-CN/01-web-translation.png`，适合用于帖子、文章或 README 备用展示。
 
@@ -28,21 +28,21 @@
 1. `01-web-translation.png`：Smart web translation
 2. `02-video-subtitles.png`：Bilingual video subtitles
 3. `03-ebook-reader-beta.png`：Local EPUB translation reader
-4. `04-popup-bookshelf.png`：Popup ebook library
-5. `05-services-and-privacy.png`：Services and privacy
+4. `04-pdf-reader-beta.png`：Local PDF bilingual reader
+5. `05-services-and-privacy.png`：Services and local EPUB / PDF privacy
 
 源文件位于 `source/listing.global.html` 和 `source/listing.css`。
 
 ## 宣传图
 
-- `small-promo-tile.png`：440 × 280，必填。由 ImageGen 底图和 `source/small-promo-tile.zh-CN.html` 叠加生成。
-- `marquee-promo.png`：1400 × 560，可选。由 ImageGen 底图和 `source/marquee-promo.zh-CN.html` 叠加生成。
+- `small-promo-tile.png`：440 × 280，必填。由 `source/small-promo-tile.zh-CN.html` 按当前米白、深蓝与青色品牌视觉生成。
+- `marquee-promo.png`：1400 × 560，可选。由 `source/marquee-promo.zh-CN.html` 按同一品牌视觉生成。
 
-ImageGen 原图位于 `generated/`。最终文字由 HTML/CSS 叠加，避免图片模型生成乱码。
+两张宣传图不能按语言本地化，因此使用一套少语言依赖的全球通用素材；底部能力标识为 `WEB · VIDEO · EPUB · PDF`。
 
 ## 上传状态
 
-Chrome Web Store 的中文截图、全球通用截图、小宣传图和 Marquee 宣传图已于 2026-07-24 更新。
+1.9.0 的中文截图、全球通用截图、小宣传图和 Marquee 宣传图已于 2026-09-01 在仓库中更新，仍需上传到 Chrome Web Store。
 
 ## 文案
 
