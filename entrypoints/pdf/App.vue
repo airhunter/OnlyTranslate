@@ -83,6 +83,7 @@
             <dl>
               <div class="reader-shortcut-row"><dt><kbd>←</kbd><kbd>→</kbd></dt><dd>{{ t('pdf.shortcutPageSwitch') }}</dd></div>
               <div class="reader-shortcut-row"><dt><kbd>PgUp</kbd><kbd>PgDn</kbd></dt><dd>{{ t('ebook.shortcutPageNavigation') }}</dd></div>
+              <div class="reader-shortcut-row"><dt><kbd>Ctrl / ⌘</kbd><span>+</span><kbd>{{ t('pdf.mouseWheel') }}</kbd></dt><dd>{{ t('pdf.shortcutOriginalZoom') }}</dd></div>
               <div class="reader-shortcut-row"><dt><kbd>Space</kbd></dt><dd>{{ t('ebook.shortcutScrollDown') }}</dd></div>
               <div class="reader-shortcut-row"><dt><kbd>Shift</kbd><span aria-hidden="true">+</span><kbd>Space</kbd></dt><dd>{{ t('ebook.shortcutScrollUp') }}</dd></div>
             </dl>
@@ -157,7 +158,10 @@
           <span v-else class="pdf-page-thumbnail__placeholder" aria-hidden="true" />
         </button>
       </aside>
-      <div ref="originalPanel" class="pdf-original-panel">
+      <div ref="originalPanel" class="pdf-original-panel" @wheel="handleOriginalWheel">
+        <span v-if="originalZoom !== 1" class="pdf-original-zoom-indicator" aria-live="polite">
+          {{ Math.round(originalZoom * 100) }}%
+        </span>
         <div v-if="displayMode === 'overlay'" class="pdf-overlay-status">
           <span>{{ t('pdf.layoutOverlay') }}</span>
           <strong v-if="translationStatus.running">
@@ -335,6 +339,7 @@ import {
   usesPdfSemanticLayout,
 } from './display'
 import { PDF_LAYOUT_MODEL, pdfLayoutModelStore } from './layoutModelStore'
+import { normalizedPdfPageAnchor, resolvePdfWheelZoom } from './zoom'
 
 interface PdfBlockView extends PdfContinuousBlock {
   translation?: string
@@ -387,8 +392,11 @@ const pageNumber = ref(1)
 const pageCount = ref(0)
 const thumbnailUrls = reactive(new Map<number, string>())
 const originalPaneWidth = ref<number>()
+const originalZoom = ref(1)
 const renderedWidth = ref(0)
 const renderedHeight = ref(0)
+const blockCoordinateWidth = ref(0)
+const blockCoordinateHeight = ref(0)
 const blocks = ref<PdfBlockView[]>([])
 const highlightedBlockId = ref('')
 const enlargedVisualBlock = ref<PdfBlockView>()
@@ -470,6 +478,15 @@ let thumbnailObserver: IntersectionObserver | undefined
 const thumbnailElements = new Map<number, HTMLElement>()
 const loadingThumbnails = new Set<number>()
 let stopPaneResize: (() => void) | undefined
+let originalZoomRenderTimer: number | undefined
+let originalZoomRenderGeneration = 0
+interface PdfZoomAnchor {
+  clientX: number
+  clientY: number
+  pageX: number
+  pageY: number
+}
+let pendingOriginalZoomAnchor: PdfZoomAnchor | undefined
 const coordinator = new PdfTranslationCoordinator({
   onTranslation: (blockId, translation) => {
     const block = blocks.value.find(item => item.id === blockId)
@@ -498,6 +515,18 @@ function resetThumbnails(): void {
   thumbnailElements.clear()
   loadingThumbnails.clear()
   thumbnailUrls.clear()
+}
+
+function cancelOriginalZoomRender(): void {
+  originalZoomRenderGeneration += 1
+  if (originalZoomRenderTimer !== undefined) window.clearTimeout(originalZoomRenderTimer)
+  originalZoomRenderTimer = undefined
+  pendingOriginalZoomAnchor = undefined
+}
+
+function resetOriginalZoom(): void {
+  cancelOriginalZoomRender()
+  originalZoom.value = 1
 }
 
 async function loadThumbnail(thumbnailPage: number): Promise<void> {
@@ -551,6 +580,7 @@ function refreshThumbnailNavigation(): void {
 
 async function openRemote(source: string): Promise<void> {
   resetThumbnails()
+  resetOriginalZoom()
   loadingDocument.value = true
   errorMessage.value = ''
   sourceLabel.value = source
@@ -583,6 +613,7 @@ async function openLocalFile(event: Event): Promise<void> {
   input.value = ''
   if (!file) return
   resetThumbnails()
+  resetOriginalZoom()
   loadingDocument.value = true
   errorMessage.value = ''
   sourceUrl.value = undefined
@@ -613,6 +644,7 @@ async function openStoredBook(book: EbookRecord): Promise<void> {
     return
   }
   resetThumbnails()
+  resetOriginalZoom()
   loadingDocument.value = true
   errorMessage.value = ''
   clearLibraryNotice()
@@ -722,6 +754,7 @@ async function savePdfProgress(): Promise<void> {
 }
 
 async function renderCurrentPage(): Promise<void> {
+  cancelOriginalZoomRender()
   const generation = ++renderGeneration
   await nextTick()
   if (!canvas.value || !originalPanel.value) return
@@ -731,7 +764,8 @@ async function renderCurrentPage(): Promise<void> {
   blocks.value = []
   try {
     const fallbackPanelWidth = Math.min(720, Math.max(420, window.innerWidth * 0.42))
-    const availableWidth = Math.max(240, (originalPanel.value.clientWidth || fallbackPanelWidth) - 42)
+    const fitWidth = Math.max(240, (originalPanel.value.clientWidth || fallbackPanelWidth) - 42)
+    const availableWidth = fitWidth * originalZoom.value
     const rendered = await controller.renderPage(pageNumber.value, canvas.value, availableWidth, {
       semanticLayout: usesInstalledSemanticLayout.value,
     })
@@ -750,6 +784,8 @@ async function renderCurrentPage(): Promise<void> {
     pageCount.value = rendered.pageCount
     renderedWidth.value = rendered.width
     renderedHeight.value = rendered.height
+    blockCoordinateWidth.value = rendered.width
+    blockCoordinateHeight.value = rendered.height
     blocks.value = continuousBlocks.map(block => ({ ...block }))
     layoutStatus.mode = rendered.layoutMode
     layoutStatus.elapsedMs = rendered.layoutElapsedMs ?? 0
@@ -768,6 +804,61 @@ async function renderCurrentPage(): Promise<void> {
   finally {
     if (generation === renderGeneration) loadingPage.value = false
   }
+}
+
+async function renderOriginalZoomAtAnchor(): Promise<void> {
+  originalZoomRenderTimer = undefined
+  const panel = originalPanel.value
+  const targetCanvas = canvas.value
+  const anchor = pendingOriginalZoomAnchor
+  pendingOriginalZoomAnchor = undefined
+  if (!panel || !targetCanvas || !anchor || !pageCount.value) return
+
+  const generation = ++originalZoomRenderGeneration
+  const fitWidth = Math.max(240, panel.clientWidth - 42)
+  try {
+    const rendered = await controller.renderPageCanvas(
+      pageNumber.value,
+      targetCanvas,
+      fitWidth * originalZoom.value,
+    )
+    if (generation !== originalZoomRenderGeneration) return
+    renderedWidth.value = rendered.width
+    renderedHeight.value = rendered.height
+    await nextTick()
+    const page = panel.querySelector<HTMLElement>('.pdf-page')
+    if (!page) return
+    const pageRect = page.getBoundingClientRect()
+    const anchoredClientX = pageRect.left + anchor.pageX * pageRect.width
+    const anchoredClientY = pageRect.top + anchor.pageY * pageRect.height
+    panel.scrollLeft += anchoredClientX - anchor.clientX
+    panel.scrollTop += anchoredClientY - anchor.clientY
+  }
+  catch {
+    // A newer wheel event or a page render can cancel the in-flight canvas render.
+  }
+}
+
+function handleOriginalWheel(event: WheelEvent): void {
+  if ((!event.ctrlKey && !event.metaKey) || loadingPage.value || !pageCount.value) return
+  const panel = originalPanel.value
+  const page = panel?.querySelector<HTMLElement>('.pdf-page')
+  if (!panel || !page) return
+  event.preventDefault()
+
+  const nextZoom = resolvePdfWheelZoom(originalZoom.value, event.deltaY, event.deltaMode)
+  if (nextZoom === originalZoom.value) return
+  const pageRect = page.getBoundingClientRect()
+  pendingOriginalZoomAnchor = {
+    clientX: event.clientX,
+    clientY: event.clientY,
+    pageX: normalizedPdfPageAnchor(event.clientX, pageRect.left, pageRect.width),
+    pageY: normalizedPdfPageAnchor(event.clientY, pageRect.top, pageRect.height),
+  }
+  originalZoom.value = nextZoom
+  originalZoomRenderGeneration += 1
+  if (originalZoomRenderTimer !== undefined) window.clearTimeout(originalZoomRenderTimer)
+  originalZoomRenderTimer = window.setTimeout(() => void renderOriginalZoomAtAnchor(), 90)
 }
 
 async function startTranslation(): Promise<void> {
@@ -789,14 +880,14 @@ function overlayFontSize(block: PdfBlockView): number {
 }
 
 function overlayBlockStyle(block: PdfBlockView): Record<string, string> {
-  if (!renderedWidth.value || !renderedHeight.value) return {}
+  if (!blockCoordinateWidth.value || !blockCoordinateHeight.value) return {}
   const horizontalPadding = 2
   const verticalPadding = Math.max(2, Math.min(6, (block.fontHeight ?? 10) * 0.24))
   return {
-    left: `calc(${block.x / renderedWidth.value * 100}% - ${horizontalPadding}px)`,
-    top: `calc(${block.y / renderedHeight.value * 100}% - ${verticalPadding}px)`,
-    width: `calc(${block.width / renderedWidth.value * 100}% + ${horizontalPadding * 2}px)`,
-    height: `calc(${block.height / renderedHeight.value * 100}% + ${verticalPadding * 2}px)`,
+    left: `calc(${block.x / blockCoordinateWidth.value * 100}% - ${horizontalPadding}px)`,
+    top: `calc(${block.y / blockCoordinateHeight.value * 100}% - ${verticalPadding}px)`,
+    width: `calc(${block.width / blockCoordinateWidth.value * 100}% + ${horizontalPadding * 2}px)`,
+    height: `calc(${block.height / blockCoordinateHeight.value * 100}% + ${verticalPadding * 2}px)`,
     '--pdf-overlay-font-size': `${overlayFontSize(block)}px`,
   }
 }
@@ -1005,12 +1096,12 @@ async function savePdfReaderSettings(): Promise<void> {
 }
 
 function sourceRegionStyle(block: PdfBlockView): Record<string, string> {
-  if (!renderedWidth.value || !renderedHeight.value) return {}
+  if (!blockCoordinateWidth.value || !blockCoordinateHeight.value) return {}
   return {
-    left: `${block.x / renderedWidth.value * 100}%`,
-    top: `${block.y / renderedHeight.value * 100}%`,
-    width: `${block.width / renderedWidth.value * 100}%`,
-    height: `${block.height / renderedHeight.value * 100}%`,
+    left: `${block.x / blockCoordinateWidth.value * 100}%`,
+    top: `${block.y / blockCoordinateHeight.value * 100}%`,
+    width: `${block.width / blockCoordinateWidth.value * 100}%`,
+    height: `${block.height / blockCoordinateHeight.value * 100}%`,
   }
 }
 
@@ -1167,6 +1258,7 @@ function savePdfProgressImmediately(): void {
 
 onBeforeUnmount(() => {
   renderGeneration += 1
+  cancelOriginalZoomRender()
   clearLibraryNotice()
   stopPaneResize?.()
   thumbnailObserver?.disconnect()

@@ -27,6 +27,11 @@ interface SemanticLine extends Rect {
   zone: ReadingZone
 }
 
+interface CaptionEnvelope {
+  rect: Rect
+  region: PdfLayoutRegion & { index: number }
+}
+
 const VISUAL_LABELS = new Set(['image', 'chart', 'table', 'formula', 'algorithm', 'header_image', 'footer_image'])
 const TEXT_LABELS = new Set([
   'text',
@@ -44,7 +49,8 @@ const TEXT_LABELS = new Set([
 ])
 const OMITTED_LABELS = new Set(['header', 'footer', 'number', 'seal', 'header_image', 'footer_image'])
 const CAPTION_LABELS = new Set(['figure_title', 'table_title', 'chart_title'])
-const INLINE_MATH_TEXT_LABELS = new Set(['text', 'content', 'abstract', 'aside_text'])
+const INLINE_MATH_TEXT_LABELS = new Set(['text', 'content', 'abstract', 'aside_text', ...CAPTION_LABELS])
+const CAPTION_START = /^(?:figure|fig\.|table|图|表)\s*\d+\s*[:.：]/iu
 const TERMINAL_LINE_END = /[.!?][“”"'’）)\]]?$/u
 
 function median(values: number[]): number {
@@ -166,6 +172,30 @@ function isNearbyVisualDelimiterFragment(
     && verticalGap <= rect.height * 2.5
 }
 
+function nearbyEquationNumberRegion(
+  text: string,
+  rect: Rect,
+  regions: PdfLayoutRegion[],
+): PdfLayoutRegion | undefined {
+  if (!/^\(\d+(?:\.\d+)*\)$/.test(text.replace(/\s/g, ''))) return undefined
+  return regions
+    .filter(region => region.label === 'formula')
+    .map(region => {
+      const target = regionRect(region)
+      const centerGap = Math.abs(
+        (rect.y + rect.height / 2) - (target.y + target.height / 2),
+      )
+      const horizontalGap = rect.x - (target.x + target.width)
+      return { region, target, centerGap, horizontalGap }
+    })
+    .filter(candidate => (
+      candidate.horizontalGap >= -rect.height
+      && candidate.horizontalGap <= rect.height * 6
+      && candidate.centerGap <= Math.max(rect.height, candidate.target.height) * 0.8
+    ))
+    .sort((left, right) => left.horizontalGap - right.horizontalGap)[0]?.region
+}
+
 function shouldInsertSpace(previous: PdfTextSpan, current: PdfTextSpan): boolean {
   const gap = current.x - (previous.x + previous.width)
   if (gap <= Math.max(1.5, Math.min(previous.height, current.height) * 0.13)) return false
@@ -221,6 +251,67 @@ function splitBaselinesIntoLines(spans: PdfTextSpan[], pageWidth: number): PdfTe
   })
 }
 
+function captionLabel(text: string): 'figure_title' | 'table_title' {
+  return /^(?:table|表)/iu.test(text.trim()) ? 'table_title' : 'figure_title'
+}
+
+function detectCaptionEnvelopes(lineGroups: PdfTextSpan[][], pageWidth: number): CaptionEnvelope[] {
+  const lines = lineGroups.map(spans => ({
+    spans,
+    text: joinSpans(spans),
+    rect: unionRect(spans),
+    fontHeight: Math.max(...spans.map(span => span.height)),
+  })).sort((left, right) => left.rect.y - right.rect.y || left.rect.x - right.rect.x)
+  const envelopes: CaptionEnvelope[] = []
+
+  lines.forEach((start, startIndex) => {
+    if (!CAPTION_START.test(start.text.trim())) return
+    const typicalHeight = Math.max(7, start.fontHeight)
+    const collected = [start.rect]
+    let bottom = start.rect.y + start.rect.height
+    const maximumBottom = start.rect.y + typicalHeight * 9
+
+    for (const candidate of lines.slice(startIndex + 1)) {
+      if (candidate.rect.y > maximumBottom) break
+      const verticalGap = candidate.rect.y - bottom
+      if (verticalGap > typicalHeight * 1.6) break
+      const current = unionRect(collected)
+      const horizontalOverlap = Math.max(
+        0,
+        Math.min(current.x + current.width, candidate.rect.x + candidate.rect.width)
+          - Math.max(current.x, candidate.rect.x),
+      )
+      const horizontallyRelated = horizontalOverlap > 0
+        || Math.abs(candidate.rect.x - current.x) <= typicalHeight * 1.5
+      if (!horizontallyRelated) continue
+      collected.push(candidate.rect)
+      bottom = Math.max(bottom, candidate.rect.y + candidate.rect.height)
+    }
+
+    const rect = unionRect(collected)
+    if (rect.width < pageWidth * 0.16) return
+    envelopes.push({
+      rect,
+      region: {
+        classId: -1,
+        label: captionLabel(start.text),
+        score: 1,
+        coordinate: [rect.x, rect.y, rect.x + rect.width, rect.y + rect.height],
+        index: -(envelopes.length + 1),
+      },
+    })
+  })
+
+  return envelopes
+}
+
+function matchingCaptionEnvelope(rect: Rect, envelopes: CaptionEnvelope[]): CaptionEnvelope | undefined {
+  return envelopes.find(envelope => {
+    const overlap = intersectionArea(rect, envelope.rect)
+    return overlap / Math.max(1, rect.width * rect.height) >= 0.35
+  })
+}
+
 function hasTwoColumnTextLayout(lines: SemanticLine[], pageWidth: number): boolean {
   const candidates = lines.filter(line => (
     !line.visual
@@ -249,14 +340,21 @@ function buildLines(
   regions: PdfLayoutRegion[],
   pageWidth: number,
   pageHeight: number,
-): SemanticLine[] {
-  const lines = splitBaselinesIntoLines(spans, pageWidth).map((lineSpans, index): SemanticLine => {
+): { lines: SemanticLine[]; captionEnvelopes: CaptionEnvelope[] } {
+  const lineGroups = splitBaselinesIntoLines(spans, pageWidth)
+  const captionEnvelopes = detectCaptionEnvelopes(lineGroups, pageWidth)
+  const lines = lineGroups.map((lineSpans, index): SemanticLine => {
     const rect = unionRect(lineSpans)
-    const region = dominantRegion(rect, regions)
-    const overlap = region ? intersectionArea(rect, regionRect(region)) : 0
     const text = joinSpans(lineSpans)
-    const visual = Boolean(region && VISUAL_LABELS.has(region.label) && (
-      overlap > rect.width * rect.height * 0.45
+    const caption = matchingCaptionEnvelope(rect, captionEnvelopes)
+    const equationNumberRegion = nearbyEquationNumberRegion(text, rect, regions)
+    const region = caption?.region ?? (equationNumberRegion
+      ? { ...equationNumberRegion, index: regions.indexOf(equationNumberRegion) }
+      : dominantRegion(rect, regions))
+    const overlap = region ? intersectionArea(rect, regionRect(region)) : 0
+    const visual = !caption && Boolean(region && VISUAL_LABELS.has(region.label) && (
+      Boolean(equationNumberRegion)
+      || overlap > rect.width * rect.height * 0.45
       || isNearbyVisualDelimiterFragment(text, rect, region)
     ))
     return {
@@ -273,6 +371,10 @@ function buildLines(
 
   const twoColumnLayout = hasTwoColumnTextLayout(lines, pageWidth)
   lines.forEach(line => {
+    if (CAPTION_LABELS.has(line.region?.label ?? '')) {
+      line.zone = 'single'
+      return
+    }
     const topMetadata = line.y < pageHeight * 0.285 && (
       line.region?.label === 'doc_title'
       || line.region?.label === 'footnote'
@@ -305,7 +407,7 @@ function buildLines(
   lines.forEach(line => {
     if (line.region?.label === 'footnote' && line.y > pageHeight * 0.42) line.zone = 'bottom'
   })
-  return lines
+  return { lines, captionEnvelopes }
 }
 
 function isHeadingLine(line: SemanticLine): boolean {
@@ -342,6 +444,10 @@ function lineOrder(left: SemanticLine, right: SemanticLine): number {
 function shouldStartParagraph(previous: SemanticLine | undefined, line: SemanticLine, group: SemanticLine[]): boolean {
   if (!previous || previous.zone !== line.zone) return true
   if (previous.region?.label === 'doc_title' && line.region?.label === 'doc_title' && previous.region?.index === line.region?.index) return false
+  if (
+    previous.region?.index === line.region?.index
+    && CAPTION_LABELS.has(line.region?.label ?? '')
+  ) return false
   if (isHeadingLine(previous) || isHeadingLine(line)) return true
   if (isListLine(line)) return true
   if (isListLine(group[0]) && TERMINAL_LINE_END.test(previous.text) && /^[A-Z]/.test(line.text)) return true
@@ -414,7 +520,7 @@ export function buildSemanticPdfBlocks(
   // standalone formula. The PDF text layer is the safer authority here: if the
   // detected formula overlaps natural-language text, keep it in that paragraph.
   const readingRegions = regions.filter(region => !isEmbeddedProseFormula(region, spans, pageWidth, regions))
-  const lines = buildLines(spans, readingRegions, pageWidth, pageHeight)
+  const { lines, captionEnvelopes } = buildLines(spans, readingRegions, pageWidth, pageHeight)
   const bodyLines = lines
     .filter(line => !line.visual && !OMITTED_LABELS.has(line.region?.label ?? ''))
     .sort(lineOrder)
@@ -427,7 +533,7 @@ export function buildSemanticPdfBlocks(
     const kind = blockKind(group)
     const text = normalizeParagraphText(group)
     const trustedTextRegion = group.some(line => INLINE_MATH_TEXT_LABELS.has(line.region?.label ?? ''))
-    const inlineMath = trustedTextRegion && ['body', 'abstract', 'list-item'].includes(kind)
+    const inlineMath = trustedTextRegion && ['body', 'abstract', 'list-item', 'caption'].includes(kind)
       ? reconstructInlineMath(group, `${tokenNamespace}:block-${textBlocks.length + 1}`)
       : undefined
     textBlocks.push({
@@ -452,8 +558,28 @@ export function buildSemanticPdfBlocks(
   flush()
 
   const visuals = dedupeVisualRegions(readingRegions.filter(region => VISUAL_LABELS.has(region.label) && region.score >= 0.42))
-    .map((region, index): PdfTextBlock => {
+    .filter(region => {
       const rect = regionRect(region)
+      const area = Math.max(1, rect.width * rect.height)
+      return !captionEnvelopes.some(caption => intersectionArea(rect, caption.rect) / area >= 0.45)
+    })
+    .map((region, index): PdfTextBlock => {
+      const detectedRect = regionRect(region)
+      const captionBelow = captionEnvelopes
+        .filter(caption => {
+          const horizontalOverlap = Math.max(
+            0,
+            Math.min(detectedRect.x + detectedRect.width, caption.rect.x + caption.rect.width)
+              - Math.max(detectedRect.x, caption.rect.x),
+          )
+          return caption.rect.y > detectedRect.y + detectedRect.height * 0.35
+            && caption.rect.y < detectedRect.y + detectedRect.height
+            && horizontalOverlap / Math.max(1, Math.min(detectedRect.width, caption.rect.width)) >= 0.45
+        })
+        .sort((left, right) => left.rect.y - right.rect.y)[0]
+      const rect = captionBelow
+        ? { ...detectedRect, height: Math.max(1, captionBelow.rect.y - detectedRect.y) }
+        : detectedRect
       const centerX = rect.x + rect.width / 2
       const centered = Math.abs(centerX - pageWidth / 2) < pageWidth * 0.18
       const column = rect.width > pageWidth * 0.68 || (centered && rect.y < pageHeight * 0.2)

@@ -46,11 +46,24 @@ describe('PDF library layout', () => {
     expect(pdfTemplate).toContain('goToPage(pageNumber.value + 1)');
   });
 
-  it('keeps scrolling inside the reader panes without horizontal overflow', () => {
+  it('keeps scrolling inside the reader panes and reserves horizontal scrolling for a zoomed original', () => {
     expect(pdfStyles).toContain('html, body, #app { width: 100%; height: 100%; overflow: hidden; }');
-    expect(pdfStyles).toContain('overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable;');
+    expect(pdfStyles).toContain('.pdf-original-panel { position: relative; overflow-x: auto;');
+    expect(pdfStyles).toContain('.pdf-translation-panel { overflow-x: hidden; }');
     expect(pdfStyles).toContain('.pdf-workspace { min-width: 0; min-height: 0; overflow: hidden;');
     expect(pdfTemplate).toContain('(originalPanel.value.clientWidth || fallbackPanelWidth) - 42');
+  });
+
+  it('zooms the original PDF around the pointer without rerunning layout or translation', () => {
+    expect(pdfTemplate).toContain('@wheel="handleOriginalWheel"');
+    expect(pdfTemplate).toContain('(!event.ctrlKey && !event.metaKey)');
+    expect(pdfTemplate).toContain('controller.renderPageCanvas(');
+    expect(pdfTemplate).toContain('normalizedPdfPageAnchor(event.clientX');
+    expect(pdfTemplate).toContain('panel.scrollLeft += anchoredClientX - anchor.clientX');
+    expect(pdfTemplate).toContain('{{ Math.round(originalZoom * 100) }}%');
+    expect(pdfTemplate).toContain("t('pdf.shortcutOriginalZoom')");
+    expect(pdfTemplate).toContain("t('pdf.mouseWheel')");
+    expect(pdfController).toContain('async renderPageCanvas(');
   });
 
   it('does not cover the original PDF with local layout diagnostics', () => {
@@ -100,6 +113,8 @@ describe('PDF library layout', () => {
     expect(pdfController).toContain('const cropViewport = viewport.clone({');
     expect(pdfController).toContain('offsetX: -x * cropScale');
     expect(pdfController).toContain('viewport: cropViewport');
+    expect(pdfController).toContain("block.visualKind === 'formula'");
+    expect(pdfController).toContain('refineFormulaCanvas(crop, cropContext, cropScale)');
     expect(pdfTemplate).toContain(':style="visualBlockStyle(block)"');
     expect(pdfStyles).toContain('width: min(100%, var(--pdf-visual-display-width, 760px));');
   });

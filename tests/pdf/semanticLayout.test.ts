@@ -112,6 +112,69 @@ describe('PDF semantic layout fusion', () => {
     })
   })
 
+  it('keeps a full-width formula-rich figure caption as one translatable block', () => {
+    const captionSpans = [
+      positionedSpan('Figure 2: Multi-agent-encoder-decoder overview. Each agent', 72, 307.84, 241.91, 9.96, 'caption'),
+      positionedSpan('a', 315.9, 307.84, 5.27, 9.96, 'math'),
+      positionedSpan('encodes a paragraph using a local encoder followed', 323.16, 307.84, 202.38, 9.96, 'caption'),
+      positionedSpan('by multiple contextual layers with agent communication through concentrated messages', 72, 321.4, 364.39, 9.96, 'caption'),
+      positionedSpan('z', 440.32, 321.4, 4.63, 9.96, 'math'),
+      positionedSpan('(', 445.39, 316.23, 3.11, 6.97, 'math-script'),
+      positionedSpan('k', 448.5, 316.23, 4.24, 6.97, 'math-script'),
+      positionedSpan(')', 452.9, 316.23, 3.11, 6.97, 'math-script'),
+      positionedSpan('a', 444.95, 322.57, 4.32, 6.97, 'math-script'),
+      positionedSpan('at each layer', 460.44, 321.4, 53.2, 9.96, 'caption'),
+      positionedSpan('k', 517.55, 321.4, 5.19, 9.96, 'math'),
+      positionedSpan('.', 523.05, 321.4, 2.49, 9.96, 'caption'),
+      positionedSpan('Communication is illustrated in Figure 3. The word context vectors', 72, 333.36, 289.05, 9.96, 'caption'),
+      positionedSpan('c', 364.41, 333.36, 4.31, 9.96, 'math'),
+      positionedSpan('t', 368.72, 329.74, 3.01, 6.97, 'math-script'),
+      positionedSpan('a', 368.72, 335.82, 4.32, 6.97, 'math-script'),
+      positionedSpan('are condensed into agent context', 376.9, 333.36, 133.91, 9.96, 'caption'),
+      positionedSpan('c', 514.16, 333.36, 4.31, 9.96, 'math'),
+      positionedSpan('∗', 518.47, 329.74, 4.08, 6.97, 'math-script'),
+      positionedSpan('t', 518.47, 335.82, 3.01, 6.97, 'math-script'),
+      positionedSpan('.', 523.05, 333.36, 2.49, 9.96, 'caption'),
+      positionedSpan('Agent specific generation probabilities,', 72, 345.31, 157.36, 9.96, 'caption'),
+      positionedSpan('p', 232.16, 345.31, 4.98, 9.96, 'math'),
+      positionedSpan('t', 237.15, 341.7, 3.01, 6.97, 'math-script'),
+      positionedSpan('a', 237.15, 347.78, 4.32, 6.97, 'math-script'),
+      positionedSpan(', enable voting for the suitable out-of-vocabulary words in', 241.97, 345.31, 283.58, 9.96, 'caption'),
+      positionedSpan('the final distribution.', 72, 357.27, 83.11, 9.96, 'caption'),
+    ]
+    const blocks = buildSemanticPdfBlocks([
+      ...captionSpans,
+      positionedSpan('The left column continues below the figure.', 72, 391.74, 205, 10.9, 'body'),
+      positionedSpan('2 Model', 307.28, 391.74, 50.47, 11.96, 'heading'),
+      positionedSpan('The right column starts its method description.', 307.28, 410, 220, 10.9, 'body'),
+    ], [
+      region('image', 65, 55, 470, 267, 0.94),
+      region('formula', 438, 307, 21, 17, 0.91),
+      region('formula', 362, 321, 13, 18, 0.9),
+      region('formula', 512, 321, 13, 18, 0.9),
+      region('text', 65, 382, 220, 35),
+      region('paragraph_title', 302, 380, 90, 25),
+      region('text', 302, 402, 235, 30),
+    ], 595, 842, 'page-2')
+
+    const caption = blocks.find(block => block.kind === 'caption')
+    expect(caption).toMatchObject({ translatable: true, column: 'full' })
+    expect(caption?.mathSource).toContain('Figure 2: Multi-agent-encoder-decoder overview.')
+    expect(caption?.mathSource).toContain('the final distribution.')
+    expect(caption?.inlineMath?.map(expression => expression.latex)).toEqual(expect.arrayContaining([
+      'z_{a}^{(k)}',
+      'c_{a}^{t}',
+      'c_{t}^{\\ast }',
+      'p_{a}^{t}',
+    ]))
+    expect(blocks.some(block => block.text.replace(/\s/g, '') === '(k)')).toBe(false)
+    expect(blocks.some(block => block.text.replace(/\s/g, '') === 'at')).toBe(false)
+    expect(blocks.find(block => block.kind === 'visual')).toMatchObject({
+      visualKind: 'image',
+      height: 242.88,
+    })
+  })
+
   it('keeps inline notation in prose while preserving a standalone display formula', () => {
     const blocks = buildSemanticPdfBlocks([
       span('For the notations, a subscript distinguishes the previous and current sentences.', 70, 120, 215),
@@ -198,6 +261,21 @@ describe('PDF semantic layout fusion', () => {
 
     expect(blocks.filter(block => block.kind === 'visual')).toHaveLength(1)
     expect(blocks.some(block => block.kind !== 'visual' && block.text.replace(/\s/g, '') === '()')).toBe(false)
+  })
+
+  it('keeps a right-aligned equation number with its standalone formula', () => {
+    const blocks = buildSemanticPdfBlocks([
+      positionedSpan('gH + (1 − g)Hcur', 375, 430.16, 85, 10.91, 'math'),
+      positionedSpan('(1)', 512.82, 430.16, 12.72, 10.91, 'body'),
+      positionedSpan('where the explanation begins.', 307.28, 456.54, 130, 10.91, 'body'),
+    ], [
+      region('formula', 365, 417, 105, 26, 0.93),
+      region('text', 302, 447, 225, 25),
+    ], 595, 842)
+
+    expect(blocks.filter(block => block.kind === 'visual')).toHaveLength(1)
+    expect(blocks.some(block => block.kind !== 'visual' && block.text.includes('(1)'))).toBe(false)
+    expect(blocks.some(block => block.text.includes('explanation begins'))).toBe(true)
   })
 
   it('keeps ordinary parenthetical prose when it is not adjacent to a visual region', () => {

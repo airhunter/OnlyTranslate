@@ -11,6 +11,7 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { buildPdfTextBlocks, type PdfTextBlock, type PdfTextSpan } from './layout'
 import { PdfLayoutModelClient } from './layoutModelClient'
 import { buildSemanticPdfBlocks } from './semanticLayout'
+import { refineFormulaCropBounds } from './formulaCrop'
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
@@ -27,6 +28,11 @@ export interface PdfRenderedPage {
 
 export interface PdfRenderOptions {
   semanticLayout?: boolean
+}
+
+export interface PdfRenderedCanvas {
+  width: number
+  height: number
 }
 
 export class PdfSourceError extends Error {
@@ -95,6 +101,43 @@ function createLayoutCanvas(source: HTMLCanvasElement, width: number, height: nu
   return canvas
 }
 
+function refineFormulaCanvas(
+  source: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+  cropScale: number,
+): HTMLCanvasElement {
+  const bounds = refineFormulaCropBounds(
+    context.getImageData(0, 0, source.width, source.height),
+    cropScale,
+  )
+  if (
+    bounds.x === 0
+    && bounds.y === 0
+    && bounds.width === source.width
+    && bounds.height === source.height
+  ) return source
+
+  const refined = document.createElement('canvas')
+  refined.width = bounds.width
+  refined.height = bounds.height
+  const refinedContext = refined.getContext('2d', { alpha: false })
+  if (!refinedContext) return source
+  refinedContext.fillStyle = '#ffffff'
+  refinedContext.fillRect(0, 0, refined.width, refined.height)
+  refinedContext.drawImage(
+    source,
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height,
+    0,
+    0,
+    bounds.width,
+    bounds.height,
+  )
+  return refined
+}
+
 async function attachVisualCrops(
   page: PDFPageProxy,
   blocks: PdfTextBlock[],
@@ -132,7 +175,10 @@ async function attachVisualCrops(
       viewport: cropViewport,
       background: '#ffffff',
     }).promise
-    imageUrls.set(block.id, crop.toDataURL('image/png'))
+    const output = block.visualKind === 'formula'
+      ? refineFormulaCanvas(crop, cropContext, cropScale)
+      : crop
+    imageUrls.set(block.id, output.toDataURL('image/png'))
   }
 
   return blocks.map(block => imageUrls.has(block.id)
@@ -194,7 +240,7 @@ export class PdfReaderController {
 
     const page = await document.getPage(safePageNumber)
     const baseViewport = page.getViewport({ scale: 1 })
-    const scale = Math.max(0.5, Math.min(2.5, availableWidth / baseViewport.width))
+    const scale = Math.max(0.25, Math.min(4, availableWidth / baseViewport.width))
     const viewport = page.getViewport({ scale })
     const outputScale = window.devicePixelRatio || 1
     const context = canvas.getContext('2d', { alpha: false })
@@ -255,6 +301,34 @@ export class PdfReaderController {
       layoutElapsedMs,
       layoutError,
     }
+  }
+
+  async renderPageCanvas(
+    pageNumber: number,
+    canvas: HTMLCanvasElement,
+    availableWidth: number,
+  ): Promise<PdfRenderedCanvas> {
+    const document = this.document
+    if (!document) throw new PdfSourceError('LOAD_FAILED', 'No PDF is open')
+    const safePageNumber = Math.min(document.numPages, Math.max(1, Math.trunc(pageNumber)))
+    this.renderTask?.cancel()
+
+    const page = await document.getPage(safePageNumber)
+    const baseViewport = page.getViewport({ scale: 1 })
+    const scale = Math.max(0.25, Math.min(4, availableWidth / baseViewport.width))
+    const viewport = page.getViewport({ scale })
+    const outputScale = window.devicePixelRatio || 1
+    const context = canvas.getContext('2d', { alpha: false })
+    if (!context) throw new PdfSourceError('LOAD_FAILED', 'Canvas rendering is unavailable')
+
+    canvas.width = Math.max(1, Math.floor(viewport.width * outputScale))
+    canvas.height = Math.max(1, Math.floor(viewport.height * outputScale))
+    canvas.style.width = `${Math.floor(viewport.width)}px`
+    canvas.style.height = `${Math.floor(viewport.height)}px`
+    const transform = outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0]
+    this.renderTask = page.render({ canvas, canvasContext: context, viewport, transform })
+    await this.renderTask.promise
+    return { width: viewport.width, height: viewport.height }
   }
 
   async renderThumbnail(pageNumber: number, width = 82): Promise<string> {
