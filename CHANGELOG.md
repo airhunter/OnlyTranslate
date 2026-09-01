@@ -1,5 +1,27 @@
 # Changelog
 
+# [1.9.0](https://github.com/airhunter/OnlyTranslate/compare/v1.8.2...v1.9.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **content:** 忽略隐藏内容并识别摘要块 ([a9be07f](https://github.com/airhunter/OnlyTranslate/commit/a9be07fe77fda4db1fd2cd705f685bb05439fca4))
+* **content:** 支持 Google 仅译文模式 ([94676d7](https://github.com/airhunter/OnlyTranslate/commit/94676d74e88bcad250cb2c5a806e533c01fc8bb4))
+* **service:** 移除第三方 Google 翻译密钥 ([76989c5](https://github.com/airhunter/OnlyTranslate/commit/76989c54023eb43e07591f2835f70287a668d167))
+
+
+### Features
+
+* **content:** 支持 Google 与微软仅译文模式 ([fbda838](https://github.com/airhunter/OnlyTranslate/commit/fbda838ea50742454662e7fe568c02628e28ff68))
+* **options:** 自动加载模型列表并统一保存体验 ([20e921d](https://github.com/airhunter/OnlyTranslate/commit/20e921d7e1e917ea8eb14c203517fc0007885e5f))
+* **pdf:** 加入本地语义重排实验能力 ([e47962b](https://github.com/airhunter/OnlyTranslate/commit/e47962b4832c9e88795e3cc6a1ca7b4b363d51f7))
+* **pdf:** 完善本地 PDF 双语阅读与书架整合 ([16b2634](https://github.com/airhunter/OnlyTranslate/commit/16b26342fbb127a9b65d433d22a0feff09b2ed59))
+* **release:** 完善可选模型并优化内容脚本加载 ([63aff2d](https://github.com/airhunter/OnlyTranslate/commit/63aff2d32ab9efd175317a3263441ee23cf52ff7))
+* **selection:** 优化划词翻译与解析切换 ([f58f666](https://github.com/airhunter/OnlyTranslate/commit/f58f666798c6fd41a8312c310106186990d57dda))
+* **translation:** 收敛默认翻译并增强划词防护 ([0765e71](https://github.com/airhunter/OnlyTranslate/commit/0765e7132996d0bf50586cbdaf6b9eb6b2cbcce3))
+* **translation:** 应用低成本上下文翻译方案 ([fd4f503](https://github.com/airhunter/OnlyTranslate/commit/fd4f503e1a0c8ac6cdc8c82412f1089068ccfb09))
+* **translation:** 优化上下文感知翻译策略 ([ac56dcd](https://github.com/airhunter/OnlyTranslate/commit/ac56dcdc50c42698ced4f6092aae085a4b448d0f))
+
 ## [1.8.2](https://github.com/airhunter/OnlyTranslate/compare/v1.8.1...v1.8.2) (2026-08-24)
 
 
