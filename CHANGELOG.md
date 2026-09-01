@@ -1,5 +1,13 @@
 # Changelog
 
+# [1.10.0](https://github.com/airhunter/OnlyTranslate/compare/v1.9.0...v1.10.0) (2026-09-01)
+
+
+### Features
+
+* **pdf:** 完善公式识别与原页缩放 ([7df3b2a](https://github.com/airhunter/OnlyTranslate/commit/7df3b2aed7e964b062db0c575864d52224afec17))
+* **pdf:** 完善阅读布局与公式显示 ([c356fea](https://github.com/airhunter/OnlyTranslate/commit/c356fea45fc669872ead61bdd79d183adcbfe6b7))
+
 # [1.9.0](https://github.com/airhunter/OnlyTranslate/compare/v1.8.2...v1.9.0) (2026-09-01)
 
 

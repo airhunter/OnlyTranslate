@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.10.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.10：PDF 阅读排版与公式增强',
+        items: [
+          '重做 PDF 阅读界面：新增页面缩略图导航、双语/仅译文/仅原文直达切换、可收起原页，以及更清晰的书架和本地版面模型状态。',
+          '支持学术 PDF 的同页跨栏续段与跨页合并，减少同一段文字被重复翻译、截断或拆成多个阅读块的问题。',
+          '增强数学内容排版：段内公式使用 KaTeX 还原，独立公式保留清晰原始图像，并修复上下标、图注公式和相邻公式碎片误识别。',
+          '提升图表和公式图片质量：使用更高分辨率裁切、自动清理多余边缘，并支持双击放大查看。',
+          'PDF 原页支持 Ctrl/⌘ + 鼠标滚轮围绕指针缩放，同时完善快捷键说明和缩放比例提示。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.10: Better PDF Layout and Math Reading',
+        items: [
+          'Redesigned the PDF reader with page thumbnails, direct bilingual/translation-only/original-only modes, a collapsible original page, and clearer bookshelf and local layout model states.',
+          'Reconstructs paragraphs that continue across columns or pages in academic PDFs, reducing duplicate translations, truncation, and fragmented reading blocks.',
+          'Improved mathematical content: inline expressions are rebuilt with KaTeX, standalone equations retain crisp source images, and recognition is more reliable for scripts, caption formulas, and neighboring equation fragments.',
+          'Improved figure and equation image quality with higher-resolution crops, automatic edge cleanup, and double-click enlargement.',
+          'Added pointer-anchored zoom for the original PDF page with Ctrl/Command + mouse wheel, together with updated shortcut guidance and a zoom percentage indicator.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.10：PDF 閱讀排版與公式增強',
+        items: [
+          '重新設計 PDF 閱讀介面：新增頁面縮圖導覽、雙語/僅譯文/僅原文快速切換、可收合原頁，以及更清楚的書架與本機版面模型狀態。',
+          '支援學術 PDF 的同頁跨欄續段與跨頁合併，減少同一段文字被重複翻譯、截斷或拆成多個閱讀區塊的問題。',
+          '增強數學內容排版：段內公式使用 KaTeX 還原，獨立公式保留清晰原始圖片，並修正上下標、圖說公式和相鄰公式碎片的誤判。',
+          '提升圖表與公式圖片品質：使用更高解析度裁切、自動清理多餘邊緣，並支援雙擊放大查看。',
+          'PDF 原頁支援 Ctrl/⌘ + 滑鼠滾輪以指標位置為中心縮放，同時補充快捷鍵說明與縮放比例提示。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.10：PDF レイアウトと数式表示を強化',
+        items: [
+          'PDF リーダーを刷新し、ページサムネイル、対訳/翻訳のみ/原文のみの直接切り替え、原文ページの折りたたみ、読書ライブラリとローカルレイアウトモデルの分かりやすい状態表示を追加しました。',
+          '学術 PDF で段落が同一ページの段組み間や次ページへ続く場合に再結合し、重複翻訳、途中切れ、細かな読書ブロックへの分断を減らしました。',
+          '数式表示を強化しました。文中数式は KaTeX で再構成し、独立数式は鮮明な原画像を維持しながら、上下付き文字、図キャプション内の数式、隣接数式の断片をより正確に判定します。',
+          '図表と数式画像を高解像度で切り出し、余分な縁を自動調整するほか、ダブルクリックで拡大表示できるようにしました。',
+          'Ctrl/⌘ + マウスホイールでポインター位置を基準に PDF 原文ページを拡大・縮小でき、ショートカット案内と倍率表示も追加しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.9.0',
     notes: {
       'zh-CN': {
