@@ -4,15 +4,18 @@
 
 [English](./README_EN.md) | 中文 | [官方网站](https://onlytranslate.top/)
 
-只译是一款开源双语阅读浏览器扩展：在原页面翻译网页正文、视频字幕、本地 EPUB 和 PDF，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
+只译是一款开源双语阅读浏览器扩展：支持网页正文、视频字幕、本地 EPUB 电子书，以及本地和在线 PDF 文档的翻译，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
 
 <p align="center">
-  <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="只译的真实网页识文翻译效果" width="32%" />
-  <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="只译的视频双语字幕效果" width="32%" />
-  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="只译的 EPUB 和 PDF 翻译阅读器" width="32%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="只译的真实网页识文翻译效果" width="48%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/02-video-subtitles.png" alt="只译的视频双语字幕效果" width="48%" />
+</p>
+<p align="center">
+  <img src="./store-assets/chrome-web-store/zh-CN/03-ebook-reader-beta.png" alt="只译的 EPUB 翻译阅读器" width="48%" />
+  <img src="./store-assets/chrome-web-store/zh-CN/04-pdf-reader-beta.png" alt="只译的 PDF 双语阅读器功能示意" width="48%" />
 </p>
 
 > 如果只译对你有帮助，欢迎点一个 ⭐ **Star** 支持项目，也让更多需要开源双语阅读工具的人发现它。
@@ -34,7 +37,8 @@ Popup 右上角的「更多」菜单提供清除缓存和帮助入口。帮助�
 - **多种操作入口**：可从扩展弹窗、页面悬浮工具栏、快捷键或右键菜单翻译当前网页。
 - **划词、悬停和输入框翻译**：选中内容、指向文字，或在网页光标旁预览译文候选；候选框内可切换目标语言，按 `Tab` 接受后才替换原输入。
 - **视频字幕翻译**：自动获取支持站点的原字幕，结合上下文分段翻译并显示双语字幕；播放调度与本地缓存减少等待和重复请求。
-- **电子书与 PDF 翻译（Beta）**：导入本地 EPUB/PDF 或保存可访问的在线 PDF；支持自动翻译、书架、阅读进度、书签和原文件备份。PDF 可选下载本地版面模型，以改善多栏、图表等复杂页面的阅读顺序。
+- **EPUB 电子书翻译（Beta）**：导入本地无 DRM 的 EPUB，支持章节自动翻译、目录、阅读进度、书签和阅读样式设置。
+- **PDF 文档翻译（Beta）**：阅读本地或可访问的在线 PDF，支持缩略图导航、双语 / 仅译文 / 仅原文切换、原页对照与缩放，以及图表和公式显示；可选本地版面模型改善复杂页面的阅读顺序。
 - **灵活的翻译服务**：提供微软翻译、Google 翻译、Chrome 内置翻译、DeepL、OpenAI、DeepSeek、Gemini、Claude 等预设，也支持 OpenAI Chat Completions 兼容网关。
 - **进阶 AI 设置**：支持按服务单独控制思考模式，也可以设置默认目标语言与互译语言。
 - **内置使用帮助**：简体中文、English、繁體中文、日本語四种语言均提供可搜索的离线说明和界面截图。
@@ -48,11 +52,25 @@ Popup 右上角的「更多」菜单提供清除缓存和帮助入口。帮助�
 
 ## 阅读与书架（Beta）
 
-从 Popup 底部进入「阅读与书架」，可以导入 EPUB/PDF、查看最近阅读和继续打开图书。EPUB 阅读器支持章节翻译、目录、书签、主题、字号和行距；PDF 阅读器支持按页双语阅读、仅译文、原版式译文、加入书架和导出原文件。
+从 Popup 底部进入「阅读与书架」，可以导入 EPUB/PDF、查看最近阅读和继续打开图书。完整书架支持管理图书、导出原文件，以及备份和恢复本地书架。
+
+### EPUB 电子书
+
+导入本地无 DRM 的 EPUB 后，在阅读时自动翻译当前章节；支持目录导航、阅读进度、位置书签，以及主题、字号和行距设置。
+
+### PDF 文档
+
+- **打开与保存**：从「阅读与书架」导入本地 PDF；浏览在线 PDF 时，可从扩展弹窗选择「用只译阅读此 PDF」，也可右键打开 PDF 链接。在线文档需要能够直接访问，打开后可加入书架继续阅读。
+- **阅读与对照**：顶部可直接切换双语、仅译文和仅原文；左侧缩略图支持跳页，原页预览可收起，原页与阅读流之间的宽度可拖动调整。支持主题、字号和行距设置。
+- **论文与公式**：尝试合并跨栏、跨页续段，减少段落碎片；段内公式支持数学排版，独立公式和图表保留原始图像，并支持双击放大查看。复杂文档的解析效果仍取决于原文件结构。
+- **翻页与缩放**：用 `←` / `→` 切换页面；在原页区域按住 `Ctrl` / `⌘` 并滚动鼠标滚轮，可围绕指针缩放原页。
+- **可选版面模型**：默认使用无需额外下载的基础版面分析。复杂 PDF 可从阅读器顶部的版面模型入口主动下载约 23 MB 的 PP-DocLayout-M 本地模型；模型校验后保存在扩展私有存储，可随时删除。未安装、下载失败或运行失败时会自动回退基础分析。
+- **文件与限制**：「更多」菜单可导出 PDF 原文件。翻译依赖页面中可提取的文字；纯扫描页可能无法翻译，可选版面模型不提供 OCR 文字识别。
+
+### 本地存储与使用边界
 
 - 支持本地无 DRM 的 EPUB、PDF，以及将可访问的在线 PDF 保存到书架；暂不支持 MOBI 或受 DRM/密码保护的图书。
-- PDF 默认使用无需额外下载的基础版面分析。复杂 PDF 可在阅读器「更多」菜单中主动下载约 23 MB 的 PP-DocLayout-M 本地模型；模型校验后保存在扩展私有存储，可随时删除。未安装、下载失败或运行失败时会自动回退基础分析，不影响普通 PDF 阅读。
-- 图书、阅读进度和书签保存在当前浏览器配置中；可以从完整书架备份和恢复这些数据，但暂不提供云同步、笔记或 AI 分析。
+- 图书、阅读进度和 EPUB 书签保存在当前浏览器配置中；可以从完整书架备份和恢复这些数据，但暂不提供云同步、笔记或 AI 分析。
 - EPUB/PDF 原文件不会发送给翻译服务或版面模型托管方；开始翻译后，提取出的待翻译文字会发送给当前选择的翻译服务。仅原文模式不会预先发送文本进行翻译。
 - 移除图书会同时删除对应的阅读进度和书签；卸载扩展或清除扩展数据也会丢失本地书架，请先使用“备份书架”。
 - 关闭扩展后仍可阅读已导入图书，但自动翻译会暂停。
@@ -122,7 +140,7 @@ corepack pnpm zip
 
 ## 致谢与项目来源
 
-OnlyTranslate 基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/FluentRead) 开发。在保留核心网页翻译能力的基础上，重点补充了视频字幕翻译、电子书翻译、识文 / 全页切换和更精简的设置体验。感谢原作者及所有贡献者的开源工作。
+OnlyTranslate 基于 [FluentRead（流畅阅读）](https://github.com/Bistutu/FluentRead) 开发。在保留核心网页翻译能力的基础上，重点补充了视频字幕翻译、EPUB 与 PDF 双语阅读、识文 / 全页切换和更精简的设置体验。感谢原作者及所有贡献者的开源工作。
 
 OnlyTranslate 的 EPUB 阅读功能在设计与实现过程中参考了 [taylorren/ai-reader](https://github.com/taylorren/ai-reader)。感谢该项目及其贡献者分享的开源思路与实践。
 
