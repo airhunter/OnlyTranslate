@@ -149,6 +149,7 @@ export const options = {
         {value: "ko", label: "한국어"},
         {value: "fr", label: "Français"},
         {value: "ru", label: "Русский"},
+        {value: "id", label: "Bahasa Indonesia"},
     ],
     keys: [
         {value: "none", label: "无", labelKey: "option.hotkeys.none"},
@@ -265,6 +266,7 @@ export const options = {
         {value: "de", label: "Deutsch"},
         {value: "pt", label: "Português"},
         {value: "it", label: "Italiano"},
+        {value: "id", label: "Bahasa Indonesia"},
     ],
     inputBoxTranslationTrigger: [
         {value: "disabled", label: "关闭", labelKey: "option.inputTrigger.disabled"},

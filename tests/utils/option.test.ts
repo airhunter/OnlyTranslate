@@ -31,6 +31,11 @@ describe('service options', () => {
     ])
   })
 
+  it('offers Indonesian as a page and input translation target', () => {
+    expect(options.to).toContainEqual({ value: 'id', label: 'Bahasa Indonesia' })
+    expect(options.inputBoxTranslationTarget).toContainEqual({ value: 'id', label: 'Bahasa Indonesia' })
+  })
+
   it('does not expose the retired fixed custom service in the popup list', () => {
     expect(options.services.some(item => item.value === services.custom)).toBe(false)
   })
