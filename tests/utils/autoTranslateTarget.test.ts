@@ -71,6 +71,7 @@ import {
 import { siteProfiles } from '@/entrypoints/main/siteProfiles'
 import { translateText } from '@/entrypoints/utils/translateApi'
 import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
+import { cache } from '@/entrypoints/utils/cache'
 
 describe('resolveAutoTranslateTarget behavior', () => {
   const originalLocation = window.location
@@ -786,6 +787,115 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(insertion?.style.width).toBe('')
     expect(translation?.style.display).toBe('')
     expect(translation?.style.width).toBe('')
+  })
+
+  it.each(['Spring Boot', ' \nSpring\u00a0\u00a0Boot\t '])('deduplicates unchanged bilingual output %j without modifying the host', async translation => {
+    document.body.innerHTML = '<p id="brand" style="max-height: 24px; overflow: hidden;"><a href="/boot">Spring Boot</a></p>'
+    const paragraph = document.querySelector<HTMLElement>('#brand')!
+    const originalHTML = paragraph.outerHTML
+    const link = paragraph.firstChild
+    vi.mocked(translateText).mockResolvedValue(translation)
+
+    await handleBilingualTranslation(paragraph, false)
+
+    expect(paragraph.outerHTML).toBe(originalHTML)
+    expect(paragraph.firstChild).toBe(link)
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}, br`)).toBeNull()
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+  })
+
+  it.each(['spring boot', 'Spring Boot!', 'Spring Boot 入门'])('keeps distinct bilingual output %j', async translation => {
+    document.body.innerHTML = '<p id="brand">Spring Boot</p>'
+    vi.mocked(translateText).mockResolvedValue(translation)
+    const paragraph = document.querySelector<HTMLElement>('#brand')!
+
+    await handleBilingualTranslation(paragraph, false)
+
+    expect(paragraph.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe(translation)
+    expect(paragraph.firstChild?.textContent).toBe('Spring Boot')
+  })
+
+  it.each([false, true])('deduplicates unchanged bilingual output after protected inline restoration (fallback: %s)', async fallback => {
+    document.body.innerHTML = '<p id="brand">Use <code>Spring Boot</code>.</p>'
+    const paragraph = document.querySelector<HTMLElement>('#brand')!
+    const originalHTML = paragraph.innerHTML
+    const code = paragraph.querySelector('code')
+    vi.mocked(translateText).mockImplementation(async origin => fallback ? 'Use Spring Boot.' : origin)
+
+    await handleBilingualTranslation(paragraph, false)
+
+    expect(translateText).toHaveBeenCalledTimes(fallback ? 2 : 1)
+    expect(paragraph.innerHTML).toBe(originalHTML)
+    expect(paragraph.querySelector('code')).toBe(code)
+    expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('deduplicates unchanged bilingual output from the cache', async () => {
+    vi.useFakeTimers()
+    const cached = vi.spyOn(cache, 'localGet').mockReturnValue(' Spring Boot ')
+    document.body.innerHTML = '<p id="brand">Spring Boot</p>'
+    const paragraph = document.querySelector<HTMLElement>('#brand')!
+    try {
+      const translation = handleBilingualTranslation(paragraph, false)
+      await vi.advanceTimersByTimeAsync(250)
+      await translation
+
+      expect(translateText).not.toHaveBeenCalled()
+      expect(paragraph.textContent).toBe('Spring Boot')
+      expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    } finally {
+      cached.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
+  it('deduplicates unchanged automatic bilingual output without repeated requests or rebuilding original links on restore', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+    }
+    vi.useFakeTimers()
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    const sendMessage = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('browser', { runtime: { sendMessage } })
+    document.body.innerHTML = '<main><p id="brand"><a href="/boot">Spring Boot</a></p></main>'
+    const paragraph = document.querySelector<HTMLElement>('#brand')!
+    const link = paragraph.querySelector('a')!
+    const listener = vi.fn((event: Event) => event.preventDefault())
+    link.addEventListener('click', listener)
+    vi.mocked(translateText).mockResolvedValue('Spring Boot')
+
+    try {
+      autoTranslateEnglishPage('full')
+      await vi.advanceTimersByTimeAsync(1500)
+
+      expect(translateText).toHaveBeenCalledTimes(1)
+      expect(translateText).toHaveBeenCalledWith('Spring Boot', expect.any(Object), expect.objectContaining({ allowBatch: true }))
+      expect(paragraph.getAttribute(TRANSLATED_ATTR)).toBe('true')
+      expect(collectDynamicTranslationNodes(paragraph, document.body, 'full')).toEqual([])
+      expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      expect(sendMessage).not.toHaveBeenCalled()
+
+      restoreOriginalContent()
+      expect(paragraph.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+      expect(paragraph.hasAttribute(TRANSLATED_ID_ATTR)).toBe(false)
+      expect(paragraph.querySelector('a')).toBe(link)
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      expect(listener).toHaveBeenCalledTimes(1)
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
   })
 
   it('removes the complete bilingual insertion when translation is toggled off', async () => {

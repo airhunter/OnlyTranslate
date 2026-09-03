@@ -247,7 +247,7 @@ export function restoreOriginalContent() {
         if (nodeId && originalContents.has(nodeId)) {
             const originalContent = originalContents.get(nodeId);
             if (originalContent === undefined) return;
-            node.innerHTML = originalContent;
+            if (node.innerHTML !== originalContent) node.innerHTML = originalContent;
             node.removeAttribute(TRANSLATED_ATTR);
             node.removeAttribute(TRANSLATED_ID_ATTR);
             
@@ -677,16 +677,14 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             translationState.htmlSet.delete(nodeOuterHTML);
             const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
             if (content) {
-                bilingualAppendChild(node, content);
-                notifyDiagnosticVisible(options);
+                if (bilingualAppendChild(node, content)) notifyDiagnosticVisible(options);
                 return;
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
                 text = await translateText(plainOrigin, promptContext, options);
             }
-            bilingualAppendChild(node, text);
-            notifyDiagnosticVisible(options);
+            if (bilingualAppendChild(node, text)) notifyDiagnosticVisible(options);
         })
         .catch((error: Error) => {
             spinner.remove();
@@ -840,6 +838,11 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
 
 
 function bilingualAppendChild(node: HTMLElement, text: string | Node): boolean {
+    // 只折叠空白用于比较，保留大小写和标点差异；行内占位符已在调用前还原。
+    const source = getTranslatableText(node).replace(/\s+/g, ' ').trim();
+    const translation = (typeof text === 'string' ? text : getTranslatableText(text)).replace(/\s+/g, ' ').trim();
+    // 自动目标保留本轮已处理标记，避免没有插入译文时被动态扫描反复请求。
+    if (translation === source) return false;
     return appendTranslationContent(node, text, false);
 }
 
