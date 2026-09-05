@@ -1221,6 +1221,57 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(texts).not.toContain('Log Event: Pinging Server West-2 for redundancy check. Filter Verdict: Hide. (Low Stakes, High Technicality).')
   })
 
+  it('recovers readable article segments around ads without collecting related or author blocks', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://segmented-article.example/story'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article id="story">
+          <header><h1>A long article split into several content sections</h1></header>
+          <div class="story-content">
+            <p id="opening">The opening paragraph contains enough readable prose to establish that this is the beginning of the article rather than a navigation item.</p>
+          </div>
+          <div class="ad-content">
+            <p id="advertisement">Advertisement copy should remain outside the recovered reading targets even when it contains a complete sentence.</p>
+          </div>
+          <div id="selected-segment" class="story-content">
+            <h2 id="section-title">The selected middle section</h2>
+            <p id="middle-copy">The middle paragraph represents the content root that a density-based detector selected from the longer segmented article.</p>
+          </div>
+          <section class="related-content">
+            <p id="related-copy">A related story teaser should not become part of the article merely because it also uses a content class.</p>
+          </section>
+          <div class="story-content">
+            <blockquote id="ending-quote">The final quoted passage remains part of the article after another layout boundary and must be recovered with the opening section.</blockquote>
+          </div>
+          <div class="author-content">
+            <p id="author-copy">The author biography should remain excluded from the translation targets recovered for the segmented article.</p>
+          </div>
+        </article>
+      </main>
+    `
+
+    const contentRoot = document.querySelector('#selected-segment')!
+    const scanContext = createScanContext()
+    const decisions = collectTranslationTargets(contentRoot, {
+      mode: 'smart',
+      scope: 'smart',
+      contentRoot,
+      grabOptions: {
+        siteCompatMode: 'smart',
+        scanContext
+      }
+    }, { includeSupplemental: true })
+    const ids = decisions.map(decision => decision.target.id)
+
+    expect(ids).toEqual(expect.arrayContaining(['opening', 'section-title', 'middle-copy', 'ending-quote']))
+    expect(ids).not.toContain('advertisement')
+    expect(ids).not.toContain('related-copy')
+    expect(ids).not.toContain('author-copy')
+  })
+
   it('unwraps direct text wrappers that are discarded during target collection', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://direct-wrapper-test.example/article'),

@@ -208,6 +208,10 @@ describe('site profile registry', () => {
     expect(selectCompatFn['nxgoai.com']).toBeTypeOf('function')
   })
 
+  it('registers Product Hunt product profile', () => {
+    expect(selectCompatFn['producthunt.com']).toBeTypeOf('function')
+  })
+
   it('registers Ars Technica article profile', () => {
     expect(selectCompatFn['arstechnica.com']).toBeTypeOf('function')
   })

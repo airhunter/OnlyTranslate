@@ -24,6 +24,10 @@ const LEADING_READING_TARGET_SELECTOR = 'h1, h2, h3, h4, p, li, blockquote, figc
 const LABELED_READING_HEADING_SELECTOR = 'h2, h3, h4, h5, h6';
 const LABELED_READING_HEADING_PATTERN = /^(abstract|summary|plain language summary|overview|background|key points?|highlights?)\s*:?[\s]*$/i;
 const LABELED_READING_BODY_TAGS = new Set(['p', 'span', 'blockquote', 'figcaption']);
+const SEGMENTED_ARTICLE_CONTAINER_SELECTOR = 'div, section';
+const SEGMENTED_ARTICLE_TARGET_SELECTOR = ':scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6, :scope > p, :scope > blockquote, :scope > figcaption';
+const SEGMENTED_ARTICLE_POSITIVE_PATTERN = /\b(article|body|content|entry|post|prose|story|text)\b/i;
+const SEGMENTED_ARTICLE_NEGATIVE_PATTERN = /\b(ad|ads|advert|advertisement|author|byline|caption|comment|comments|footer|nav|newsletter|promo|recommend|recommended|related|share|sidebar|social|sponsor|sponsored|subscribe)\b/i;
 const MAX_RECOVERED_LEADING_SIBLINGS = 4;
 const MAX_RECOVERED_LEADING_TEXT = 5000;
 
@@ -280,6 +284,7 @@ function collectGenericSupplementalReadingTargets(
     return [
         ...collectContentRootSiblingReadingTargets(context),
         ...collectLabeledReadingTargets(root, context),
+        ...collectSegmentedArticleReadingTargets(context),
         ...collectHighConfidenceReadingUnits(root, {
             scanContext: context.grabOptions?.scanContext,
             scanBudget: 'supplemental',
@@ -289,6 +294,86 @@ function collectGenericSupplementalReadingTargets(
     ]
         .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+function collectSegmentedArticleReadingTargets(context: TranslationTargetContext): Element[] {
+    if (context.mode !== 'smart') return [];
+
+    const article = findSegmentedArticleShell(context);
+    if (!article) return [];
+
+    const segments = Array.from(article.querySelectorAll<Element>(SEGMENTED_ARTICLE_CONTAINER_SELECTOR))
+        .filter(segment => isSegmentedArticleContainer(segment, context));
+    if (segments.length < 2) return [];
+
+    return Array.from(new Set(
+        segments.flatMap(segment => getSegmentedArticleDirectTargets(segment)
+            .filter(target => isRecoverableSegmentedArticleTarget(target, context)))
+    ));
+}
+
+function findSegmentedArticleShell(context: TranslationTargetContext): Element | null {
+    const closestArticle = context.contentRoot.closest('article, [role="article"]');
+    if (closestArticle && isHighConfidenceSegmentedArticle(closestArticle, context)) return closestArticle;
+
+    const articles = Array.from(document.querySelectorAll<Element>('article, [role="article"]'))
+        .filter(article => isVisibleForTranslation(article, context))
+        .filter(article => isHighConfidenceSegmentedArticle(article, context));
+    return articles.length === 1 ? articles[0] : null;
+}
+
+function isHighConfidenceSegmentedArticle(article: Element, context: TranslationTargetContext): boolean {
+    if (!article.querySelector('h1, h2, [role="heading"]')) return false;
+
+    const readableParagraphs = Array.from(article.querySelectorAll<Element>('p, blockquote'))
+        .filter(target => isRecoverableSegmentedArticleTarget(target, context));
+    return readableParagraphs.length >= 2;
+}
+
+function isSegmentedArticleContainer(segment: Element, context: TranslationTargetContext): boolean {
+    const hint = getStructuralHint(segment);
+    if (!SEGMENTED_ARTICLE_POSITIVE_PATTERN.test(hint)) return false;
+    if (SEGMENTED_ARTICLE_NEGATIVE_PATTERN.test(hint)) return false;
+
+    const directTargets = getSegmentedArticleDirectTargets(segment);
+    const readableTargets = directTargets.filter(target => isRecoverableSegmentedArticleTarget(target, context));
+    if (readableTargets.length === 0) return false;
+
+    const textLength = readableTargets.reduce(
+        (total, target) => total + getCachedNormalizedText(context.grabOptions?.scanContext, target).length,
+        0
+    );
+    if (textLength < 80) return false;
+
+    const evidence = getCachedProseEvidence(context.grabOptions?.scanContext, segment);
+    return evidence.strength !== 'none'
+        && evidence.linkDensity <= 0.35
+        && evidence.interactiveDensity <= 0.35;
+}
+
+function getSegmentedArticleDirectTargets(segment: Element): Element[] {
+    return Array.from(segment.querySelectorAll<Element>(SEGMENTED_ARTICLE_TARGET_SELECTOR));
+}
+
+function isRecoverableSegmentedArticleTarget(target: Element, context: TranslationTargetContext): boolean {
+    if (!isVisibleForTranslation(target, context)) return false;
+    if (target.closest('nav, aside, footer, form, dialog, [aria-hidden="true"], .notranslate, [translate="no"]')) return false;
+    if (SEGMENTED_ARTICLE_NEGATIVE_PATTERN.test(getStructuralHint(target))) return false;
+
+    const scanContext = context.grabOptions?.scanContext;
+    const filterDecision = getCachedContentFilterDecision(scanContext, target, getContentFilterDecision);
+    if (filterDecision !== 'keep') return false;
+
+    const text = getCachedNormalizedText(scanContext, target);
+    if (text.length < 3) return false;
+
+    const tag = target.tagName.toLowerCase();
+    if (/^h[2-6]$/.test(tag)) return text.length <= 240;
+
+    const evidence = getCachedProseEvidence(scanContext, target);
+    return evidence.strength !== 'none'
+        && evidence.linkDensity <= 0.35
+        && evidence.interactiveDensity <= 0.35;
 }
 
 function collectLabeledReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {

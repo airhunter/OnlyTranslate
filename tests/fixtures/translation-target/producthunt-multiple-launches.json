@@ -1,0 +1,11 @@
+{
+  "name": "Product Hunt profile includes the current launch on products with multiple launches",
+  "url": "https://www.producthunt.com/products/maritime",
+  "scope": "smart",
+  "html": "producthunt-multiple-launches.html",
+  "include": ["product-title", "product-tagline", "product-description", "current-launch-title", "current-launch-tagline", "current-launch-description", "comment-body"],
+  "exclude": ["launch-count", "current-launch-intro", "launch-badge", "visit-button", "pricing", "promotion", "promotion-title", "promotion-copy", "promotion-label", "promotion-action", "comment-author", "comment-upvote", "previous-launches", "previous-launches-title", "previous-launch-copy"],
+  "stats": {
+    "profileFastPathUsed": true
+  }
+}

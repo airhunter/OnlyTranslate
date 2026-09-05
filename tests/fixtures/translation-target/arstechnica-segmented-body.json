@@ -1,0 +1,7 @@
+{
+  "name": "Ars Technica profile keeps body blocks across advertising segments",
+  "url": "https://arstechnica.com/security/2026/08/a-segmented-story/",
+  "scope": "smart",
+  "html": "arstechnica-segmented-body.html",
+  "include": ["article-title", "opening", "section-title", "later-copy"]
+}

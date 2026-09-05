@@ -1,0 +1,11 @@
+{
+  "name": "Product Hunt product profile keeps product copy and comments instead of the promoted article",
+  "url": "https://www.producthunt.com/products/omlx",
+  "scope": "smart",
+  "html": "producthunt-product.html",
+  "include": ["product-title", "product-tagline", "product-description", "comment-body"],
+  "exclude": ["promotion", "promotion-title", "promotion-copy", "promotion-label", "promotion-action", "comment-author", "comment-upvote", "description-toggle"],
+  "stats": {
+    "profileFastPathUsed": true
+  }
+}
