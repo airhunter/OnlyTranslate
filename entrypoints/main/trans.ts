@@ -72,8 +72,13 @@ const translationState = {
     isAutoTranslating: false,
     observer: null as IntersectionObserver | null,
     mutationObserver: null as MutationObserver | null,
+    rootMutationObserver: null as MutationObserver | null,
+    navigationTimer: null as ReturnType<typeof setTimeout> | null,
     nodeIdCounter: 0
 };
+
+const translationDisplayModes = new Map<string, 'bilingual' | 'single'>();
+const appliedSingleTranslationContents = new Map<string, string>();
 
 let hasReportedInvalidatedExtensionContext = false;
 
@@ -131,6 +136,9 @@ function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElem
     translationState.observer = null;
     translationState.mutationObserver?.disconnect();
     translationState.mutationObserver = null;
+    translationState.rootMutationObserver?.disconnect();
+    translationState.rootMutationObserver = null;
+    clearNavigationRestartTimer();
     cancelAllTranslations();
     unfinishedNodes.forEach(clearUnfinishedAutoTranslation);
     clearStaleBilingualTranslationMarkers();
@@ -210,10 +218,61 @@ function clearTranslationHostMarkers(node: HTMLElement): void {
     const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
     if (nodeId) {
         originalContents.delete(nodeId);
+        translationDisplayModes.delete(nodeId);
+        appliedSingleTranslationContents.delete(nodeId);
         node.removeAttribute(TRANSLATED_ID_ATTR);
     }
     node.removeAttribute(TRANSLATED_ATTR);
     node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+}
+
+interface TranslationAttemptSnapshot {
+    sourceText: string;
+    sourceHTML: string;
+    nodeId: string | null;
+}
+
+function normalizeTranslationSource(value: string): string {
+    return value.replace(/\s+/g, ' ').trim();
+}
+
+function captureTranslationAttempt(node: HTMLElement, sourceText: string): TranslationAttemptSnapshot {
+    const sourceClone = node.cloneNode(true) as HTMLElement;
+    sourceClone.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`).forEach(element => element.remove());
+    return {
+        sourceText: normalizeTranslationSource(sourceText),
+        sourceHTML: sourceClone.innerHTML,
+        nodeId: node.getAttribute(TRANSLATED_ID_ATTR),
+    };
+}
+
+function isTranslationAttemptCurrent(node: HTMLElement, attempt: TranslationAttemptSnapshot): boolean {
+    if (!node.isConnected) return false;
+    if (attempt.nodeId && node.getAttribute(TRANSLATED_ID_ATTR) !== attempt.nodeId) return false;
+    const currentAttempt = captureTranslationAttempt(node, getTranslatableText(node));
+    return currentAttempt.sourceText === attempt.sourceText && currentAttempt.sourceHTML === attempt.sourceHTML;
+}
+
+function discardStaleTranslationAttempt(
+    node: HTMLElement,
+    nodeOuterHTML: string,
+    attempt: TranslationAttemptSnapshot,
+): void {
+    translationState.htmlSet.delete(nodeOuterHTML);
+    // 同一宿主可能已经因动态更新启动了下一轮翻译；旧请求不能清掉新一轮的标记和状态。
+    if (!attempt.nodeId || node.getAttribute(TRANSLATED_ID_ATTR) !== attempt.nodeId) return;
+    const wasAutomaticTarget = node.hasAttribute(TRANSLATED_ATTR);
+    clearUnfinishedAutoTranslation(node);
+    if (wasAutomaticTarget && translationState.isAutoTranslating && node.isConnected) {
+        translationState.observer?.observe(node);
+    }
+}
+
+function clearNavigationRestartTimer(): void {
+    if (translationState.navigationTimer !== null) {
+        clearTimeout(translationState.navigationTimer);
+        translationState.navigationTimer = null;
+    }
 }
 
 function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body): void {
@@ -236,24 +295,27 @@ function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body)
 export function restoreOriginalContent() {
     // 取消所有等待中的翻译任务
     cancelAllTranslations();
+    setAutoTranslating(false);
 
     restoreAllTranslationOnly().forEach(node => {
         clearTranslationHostMarkers(node);
     });
     
     // 1. 遍历所有已翻译的节点
-    document.querySelectorAll(`[${TRANSLATED_ATTR}="true"]`).forEach(node => {
+    document.querySelectorAll<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`).forEach(node => {
         const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
-        if (nodeId && originalContents.has(nodeId)) {
+        const displayMode = nodeId ? translationDisplayModes.get(nodeId) : undefined;
+        if (nodeId && displayMode === 'single') {
             const originalContent = originalContents.get(nodeId);
-            if (originalContent === undefined) return;
-            if (node.innerHTML !== originalContent) node.innerHTML = originalContent;
-            node.removeAttribute(TRANSLATED_ATTR);
-            node.removeAttribute(TRANSLATED_ID_ATTR);
-            
-            // 移除可能添加的翻译相关类
-            node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+            const appliedContent = appliedSingleTranslationContents.get(nodeId);
+            // 仅当宿主仍保持为只译写入的结果时恢复，避免覆盖网站在翻译期间的新渲染。
+            if (originalContent !== undefined && appliedContent !== undefined && node.innerHTML === appliedContent) {
+                node.innerHTML = originalContent;
+            }
         }
+
+        node.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
+        clearTranslationHostMarkers(node);
     });
     
     // 2. 移除所有翻译内容元素
@@ -276,6 +338,8 @@ export function restoreOriginalContent() {
     
     // 4. 清空存储的原始内容
     originalContents.clear();
+    translationDisplayModes.clear();
+    appliedSingleTranslationContents.clear();
     
     // 5. 停止所有观察器
     if (translationState.observer) {
@@ -286,10 +350,14 @@ export function restoreOriginalContent() {
         translationState.mutationObserver.disconnect();
         translationState.mutationObserver = null;
     }
+    if (translationState.rootMutationObserver) {
+        translationState.rootMutationObserver.disconnect();
+        translationState.rootMutationObserver = null;
+    }
     clearBackgroundTranslationTimer();
+    clearNavigationRestartTimer();
     
     // 6. 重置所有翻译相关的状态
-    setAutoTranslating(false);
     translationState.htmlSet.clear(); // 清空防抖集合
     translationState.nodeIdCounter = 0; // 重置节点ID计数器
     hasReportedInvalidatedExtensionContext = false;
@@ -323,8 +391,6 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     const { contentRoot, nodes, grabOptions } = resolveAutoTranslateTarget(scope);
     const activeGrabOptions = grabOptions ?? {};
 
-    if (!nodes.length) return;
-
     const diagnosticContext = {
         sessionId: createTranslationDiagnosticId('webpage'),
         scene: 'webpage' as const,
@@ -333,6 +399,18 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     };
 
     setAutoTranslating(true);
+    const initialPageUrl = document.location.href;
+    const observedBody = document.body;
+
+    const scheduleNavigationRestart = (): void => {
+        if (!translationState.isAutoTranslating || translationState.navigationTimer !== null) return;
+        translationState.navigationTimer = setTimeout(() => {
+            translationState.navigationTimer = null;
+            if (!translationState.isAutoTranslating) return;
+            restoreOriginalContent();
+            autoTranslateEnglishPage(scope);
+        }, 150);
+    };
     const translateAutoTarget = (
         node: Element,
         activeObserver?: IntersectionObserver,
@@ -349,6 +427,10 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
         // 保存原始内容
         originalContents.set(nodeId, node.innerHTML);
+        translationDisplayModes.set(
+            nodeId,
+            config.display === styles.bilingualTranslation ? 'bilingual' : 'single'
+        );
 
         // 标记为已翻译
         node.setAttribute(TRANSLATED_ATTR, 'true');
@@ -424,6 +506,56 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         nodes.forEach(node => translationState.observer?.observe(node));
     };
 
+    const refreshTranslatedHost = (host: HTMLElement): void => {
+        const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
+        if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return;
+        host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
+        host.querySelectorAll(ACTIVE_TRANSLATION_STATUS_SELECTOR).forEach(element => element.remove());
+        clearTranslationHostMarkers(host);
+        if (translationState.isAutoTranslating && host.isConnected) {
+            translationState.observer?.observe(host);
+        }
+    };
+
+    const handleTranslatedHostMutation = (mutation: MutationRecord): boolean => {
+        const targetElement = mutation.target instanceof Element
+            ? mutation.target
+            : mutation.target.parentElement;
+        if (!targetElement) return false;
+        if (targetElement.closest(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)) return true;
+
+        const host = targetElement.closest<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`);
+        if (!host) return false;
+        const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
+        if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return true;
+
+        if (mutation.type === 'characterData') {
+            refreshTranslatedHost(host);
+            return true;
+        }
+
+        if (mutation.type === 'childList') {
+            const addedNodes = Array.from(mutation.addedNodes);
+            const removedNodes = Array.from(mutation.removedNodes);
+            const isOwnedBilingualInsertion = (node: Node) => node instanceof Element
+                && node.matches(`.${BILINGUAL_CONTENT_CLASS}`);
+            const isOwnedStatusInsertion = (node: Node) => node instanceof Element
+                && node.matches(ACTIVE_TRANSLATION_STATUS_SELECTOR);
+            const isOwnedInsertion = (node: Node) => isOwnedBilingualInsertion(node) || isOwnedStatusInsertion(node);
+            const addedWebsiteContent = addedNodes.some(node => !isOwnedInsertion(node));
+            const removedWebsiteContent = removedNodes.some(node => !isOwnedInsertion(node));
+            // 加载提示的挂载/卸载是我们自己的正常生命周期，不能因此重译；只有译文节点本身被移除才需要修复。
+            const removedTranslation = removedNodes.some(isOwnedBilingualInsertion);
+            if (addedWebsiteContent || removedWebsiteContent || removedTranslation) {
+                refreshTranslatedHost(host);
+            }
+            return true;
+        }
+
+        // class / hidden / aria-* 变化只影响扫描可见性；不代表原文已经变化。
+        return true;
+    };
+
     // 单次 flush 最多处理的变更根节点数量。动画 / 框架重渲染的页面会在一帧内产生成百上千条 mutation，
     // 必须给待处理集合封顶，避免主线程被无界的扫描任务压垮。
     const MAX_PENDING_MUTATION_ROOTS = 32;
@@ -468,10 +600,15 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     // 创建 MutationObserver 监听 DOM 变化
     translationState.mutationObserver = new MutationObserver((mutations) => {
         if (!translationState.isAutoTranslating) return;
+        if (document.body !== observedBody || document.location.href !== initialPageUrl || !contentRoot.isConnected) {
+            scheduleNavigationRestart();
+            return;
+        }
 
         for (const mutation of mutations) {
             // 集合已满则停止本批处理，剩余变更会在后续 mutation 中被重新捕获，避免在卡死页面上空转。
             if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) break;
+            if (handleTranslatedHostMutation(mutation)) continue;
 
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
@@ -500,6 +637,16 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         attributeFilter: DYNAMIC_MUTATION_ATTRIBUTES,
         characterData: true
     });
+
+    // body 自身被 SPA 替换后，绑定在旧 body 上的高频观察器不会再收到事件；
+    // 单独用一个低成本根观察器只负责发现这类结构边界，不扫描 html/head 子树。
+    translationState.rootMutationObserver = new MutationObserver(() => {
+        if (!translationState.isAutoTranslating) return;
+        if (document.body !== observedBody || document.location.href !== initialPageUrl || !contentRoot.isConnected) {
+            scheduleNavigationRestart();
+        }
+    });
+    translationState.rootMutationObserver.observe(document.documentElement, { childList: true });
 }
 
 // 处理鼠标悬停翻译的主函数
@@ -561,6 +708,7 @@ export function handleBilingualTranslation(
 ): Promise<void> {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
+    const attempt = captureTranslationAttempt(node, originText);
     // 如果已经翻译过，250ms 后删除翻译结果
     let bilingualNode = searchClassName(node, BILINGUAL_WRAPPER_CLASS);
     if (bilingualNode) {
@@ -590,6 +738,11 @@ export function handleBilingualTranslation(
         return new Promise(resolve => setTimeout(() => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
+            if (!isTranslationAttemptCurrent(node, attempt)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                resolve();
+                return;
+            }
             bilingualAppendChild(node, cached);
             resolve();
         }, 250));
@@ -606,6 +759,7 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean, optio
     }
 
     let nodeOuterHTML = node.outerHTML;
+    const attempt = captureTranslationAttempt(node, getTranslatableText(node));
     let outerHTMLCache = cache.localGet(node.outerHTML, config.to, getWebpagePromptContext(node));
 
 
@@ -615,11 +769,23 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean, optio
         return new Promise(resolve => setTimeout(() => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
+            if (!isTranslationAttemptCurrent(node, attempt)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                resolve();
+                return;
+            }
 
             // 兼容部分网站独特的 DOM 结构
             let fn = replaceCompatFn[getMainDomain(document.location.hostname)];
             if (fn) fn(node, outerHTMLCache);
             else node.outerHTML = outerHTMLCache;
+
+            if (attempt.nodeId) {
+                const appliedNode = node.isConnected
+                    ? node
+                    : document.querySelector<HTMLElement>(`[${TRANSLATED_ID_ATTR}="${attempt.nodeId}"]`);
+                if (appliedNode) appliedSingleTranslationContents.set(attempt.nodeId, appliedNode.innerHTML);
+            }
 
             resolve();
         }, 250));
@@ -656,6 +822,7 @@ function handleSafeTranslationOnly(
 
 function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: TranslationRequestOptions = {}): Promise<void> {
     const plainOrigin = getTranslatableText(node);
+    const attempt = captureTranslationAttempt(node, plainOrigin);
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
     const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
     if (!shouldTranslateText(plainOrigin)) {
@@ -675,6 +842,10 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
+            if (!isTranslationAttemptCurrent(node, attempt)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                return;
+            }
             const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
             if (content) {
                 if (bilingualAppendChild(node, content)) notifyDiagnosticVisible(options);
@@ -683,6 +854,10 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
 
             if (protectedInlineOrigin.protectedInlines.length) {
                 text = await translateText(plainOrigin, promptContext, options);
+                if (!isTranslationAttemptCurrent(node, attempt)) {
+                    discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                    return;
+                }
             }
             if (bilingualAppendChild(node, text)) notifyDiagnosticVisible(options);
         })
@@ -757,7 +932,9 @@ function safeTranslationOnlyTranslate(
 
 
 export function singleTranslate(node: HTMLElement, options: TranslationRequestOptions = {}): Promise<void> {
+    const nodeOuterHTML = node.outerHTML;
     const translatableText = getTranslatableText(node);
+    const attempt = captureTranslationAttempt(node, translatableText);
     if (!shouldTranslateText(translatableText)) {
         clearUnfinishedAutoTranslation(node);
         return Promise.resolve();
@@ -778,6 +955,10 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
     return translateText(origin, promptContext, options)
         .then((text: string) => {
             spinner.remove();
+            if (!isTranslationAttemptCurrent(node, attempt)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                return;
+            }
             
             if (shouldBeautifyTranslatedHTML(origin, text)) {
                 text = beautyHTML(text);
@@ -791,6 +972,8 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
             let oldOuterHtml = node.outerHTML;
             node.innerHTML = text;
             let newOuterHtml = node.outerHTML;
+            const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
+            if (nodeId) appliedSingleTranslationContents.set(nodeId, node.innerHTML);
             
             // 缓存翻译结果
             cache.localSetDual(oldOuterHtml, newOuterHtml, config.to, promptContext);

@@ -54,7 +54,7 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
+import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
 import { TRANSLATION_ONLY_BACKUP_CLASS } from '@/entrypoints/main/translationOnly'
 import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
@@ -2620,5 +2620,376 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(nodes.map(node => node.id)).toContain('dynamic-readable')
     expect(scanContext.stats.classifiedElements).toBeLessThanOrEqual(800)
+  })
+
+  it('does not append an outdated bilingual result after the source text changes', async () => {
+    let resolveTranslation!: (value: string) => void
+    vi.mocked(translateText).mockReturnValue(new Promise(resolve => {
+      resolveTranslation = resolve
+    }))
+    document.body.innerHTML = `
+      <article>
+        <p id="target"><span id="source">CASE-PENDING-V1: The original paragraph is long enough to be translated before the host updates it.</span></p>
+      </article>
+    `
+
+    const target = document.querySelector('#target') as HTMLElement
+    const translation = handleBilingualTranslation(target, false)
+    document.querySelector('#source')!.textContent = 'CASE-PENDING-V2: The host replaced the paragraph while the translation request was still pending.'
+    resolveTranslation('CASE-PENDING-V1 的旧译文')
+    await translation
+
+    expect(target.textContent).toContain('CASE-PENDING-V2')
+    expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('does not let an older automatic request clear a newer translation attempt on the same host', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    let resolveFirstTranslation!: (value: string) => void
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => {
+      if (origin.includes('CASE-RACE-V1')) {
+        return new Promise(resolve => {
+          resolveFirstTranslation = resolve
+        })
+      }
+      return Promise.resolve('CASE-RACE-V2 的新译文')
+    })
+    document.body.innerHTML = '<main><article><p id="target"><span id="source">CASE-RACE-V1: The first request remains pending while the live host changes.</span></p></article></main>'
+
+    try {
+      autoTranslateEnglishPage('full')
+      const target = document.querySelector('#target') as HTMLElement
+      const source = document.querySelector('#source')!
+      const firstNodeId = target.getAttribute(TRANSLATED_ID_ATTR)
+      source.textContent = 'CASE-RACE-V2: The same connected host now contains newer text that needs its own translation.'
+
+      const bodyObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(document.body))
+      bodyObserver?.callback([{ type: 'characterData', target: source.firstChild! } as unknown as MutationRecord], bodyObserver as unknown as MutationObserver)
+      await Promise.resolve()
+      await Promise.resolve()
+
+      const secondNodeId = target.getAttribute(TRANSLATED_ID_ATTR)
+      expect(secondNodeId).not.toBe(firstNodeId)
+      expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('CASE-RACE-V2 的新译文')
+
+      resolveFirstTranslation('CASE-RACE-V1 的旧译文')
+      await Promise.resolve()
+      await Promise.resolve()
+
+      expect(target.getAttribute(TRANSLATED_ID_ATTR)).toBe(secondNodeId)
+      expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('CASE-RACE-V2 的新译文')
+      expect(target.textContent).not.toContain('CASE-RACE-V1 的旧译文')
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('does not overwrite updated host content with an outdated legacy translation-only result', async () => {
+    let resolveTranslation!: (value: string) => void
+    mockConfig.service = 'deepseek'
+    mockConfig.display = 0
+    vi.mocked(translateText).mockReturnValue(new Promise(resolve => {
+      resolveTranslation = resolve
+    }))
+    document.body.innerHTML = '<p id="target">CASE-SINGLE-V1: The original translation-only source is replaced while its request remains pending.</p>'
+
+    const target = document.querySelector('#target') as HTMLElement
+    const translation = handleSingleTranslation(target, false)
+    target.textContent = 'CASE-SINGLE-V2: The website supplied newer content before the legacy translation-only request completed.'
+    resolveTranslation('第一版对应的旧译文')
+    await translation
+
+    expect(target.textContent).toContain('CASE-SINGLE-V2')
+    expect(target.textContent).not.toContain('第一版对应的旧译文')
+  })
+
+  it('does not apply a cached legacy translation-only result after the source structure changes', async () => {
+    vi.useFakeTimers()
+    mockConfig.service = 'deepseek'
+    mockConfig.display = 0
+    const cached = vi.spyOn(cache, 'localGet').mockReturnValue('<p id="target"><a href="/old">缓存中的旧译文</a></p>')
+    document.body.innerHTML = '<p id="target"><a href="/first">CASE-CACHE-V1: The original linked source is ready for translation.</a></p>'
+
+    try {
+      const target = document.querySelector('#target') as HTMLElement
+      const translation = handleSingleTranslation(target, false)
+      target.innerHTML = '<a href="/second">CASE-CACHE-V1: The original linked source is ready for translation.</a>'
+      await vi.runAllTimersAsync()
+      await translation
+
+      expect(target.querySelector('a')?.getAttribute('href')).toBe('/second')
+      expect(target.textContent).not.toContain('缓存中的旧译文')
+    } finally {
+      cached.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
+  it('preserves host updates when automatic bilingual translation is restored', async () => {
+    vi.mocked(translateText).mockResolvedValue('第一版译文')
+    document.body.innerHTML = `
+      <article>
+        <p id="target"><span id="source">CASE-RESTORE-V1: The website initially rendered this readable paragraph for translation.</span></p>
+      </article>
+    `
+
+    const target = document.querySelector('#target') as HTMLElement
+    target.setAttribute(TRANSLATED_ATTR, 'true')
+    target.setAttribute(TRANSLATED_ID_ATTR, 'fr-node-restore')
+    originalContents.set('fr-node-restore', target.innerHTML)
+    await handleBilingualTranslation(target, false, { removeExisting: false })
+
+    document.querySelector('#source')!.textContent = 'CASE-RESTORE-V2: The website updated this paragraph after OnlyTranslate appended its translation.'
+    restoreOriginalContent()
+
+    expect(target.textContent).toContain('CASE-RESTORE-V2')
+    expect(target.textContent).not.toContain('CASE-RESTORE-V1')
+    expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('does not restore a legacy translation-only snapshot over newer host content', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    mockConfig.service = 'deepseek'
+    mockConfig.display = 0
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockResolvedValue('只译写入的仅译文结果')
+    document.body.innerHTML = '<main><article><p id="target">CASE-SINGLE-RESTORE-V1: The website rendered this paragraph before translation.</p></article></main>'
+
+    try {
+      autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const target = document.querySelector('#target') as HTMLElement
+      expect(target.textContent).toContain('只译写入的仅译文结果')
+
+      target.innerHTML = '<strong>CASE-SINGLE-RESTORE-V2: The website replaced the translated host with current content.</strong>'
+      restoreOriginalContent()
+
+      expect(target.textContent).toContain('CASE-SINGLE-RESTORE-V2')
+      expect(target.textContent).not.toContain('CASE-SINGLE-RESTORE-V1')
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('retranslates a translated host when its original text changes', async () => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => Promise.resolve(
+      origin.includes('CASE-AFTER-V2') ? '第二版译文' : '第一版译文'
+    ))
+    document.body.innerHTML = `
+      <main><article><p id="target"><span id="source">CASE-AFTER-V1: This original paragraph is translated before the live website updates it.</span></p></article></main>
+    `
+
+    try {
+      autoTranslateEnglishPage('full')
+      await vi.runAllTimersAsync()
+      const target = document.querySelector('#target') as HTMLElement
+      expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('第一版译文')
+
+      const bodyObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(document.body))
+      const loadingNode = document.createElement('span')
+      loadingNode.className = 'only-translate-loading'
+      const callsBeforeStatusRemoval = vi.mocked(translateText).mock.calls.length
+      bodyObserver?.callback([{
+        type: 'childList',
+        target,
+        addedNodes: [],
+        removedNodes: [loadingNode],
+      } as unknown as MutationRecord], bodyObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+      expect(vi.mocked(translateText)).toHaveBeenCalledTimes(callsBeforeStatusRemoval)
+
+      const source = document.querySelector('#source')!
+      source.textContent = 'CASE-AFTER-V2: The live website changed the original paragraph after translation completed.'
+      bodyObserver?.callback([{ type: 'characterData', target: source.firstChild! } as unknown as MutationRecord], bodyObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('CASE-AFTER-V2'))).toBe(true)
+      expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('第二版译文')
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+  })
+
+  it('restarts active translation after SPA main and body replacements', async () => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => Promise.resolve(`译文：${origin}`))
+    document.body.innerHTML = `
+      <main id="content-root"><article><p>CASE-SPA-V1: The first route contains a readable article before client-side navigation.</p></article></main>
+    `
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+
+      const replacementMain = document.createElement('main')
+      replacementMain.id = 'content-root'
+      replacementMain.innerHTML = '<article><p>CASE-SPA-MAIN-V2: The second route replaced the main reading region without reloading the document.</p></article>'
+      document.querySelector('#content-root')!.replaceWith(replacementMain)
+      const bodyObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(document.body))
+      bodyObserver?.callback([{ type: 'childList', target: document.body, addedNodes: [replacementMain] } as unknown as MutationRecord], bodyObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('CASE-SPA-MAIN-V2'))).toBe(true)
+
+      const replacementBody = document.createElement('body')
+      replacementBody.innerHTML = '<main><article><p>CASE-SPA-BODY-V3: The third route replaced the complete body while preserving the document.</p></article></main>'
+      document.documentElement.replaceChild(replacementBody, document.body)
+      const rootObserver = CapturingMutationObserver.instances
+        .filter(observer => observer.observedTargets.includes(document.documentElement))
+        .slice(-1)[0]
+      rootObserver?.callback([{ type: 'childList', target: document.documentElement, addedNodes: [replacementBody] } as unknown as MutationRecord], rootObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('CASE-SPA-BODY-V3'))).toBe(true)
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps the translation lifecycle alive across an empty SPA route', async () => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => Promise.resolve(`译文：${origin}`))
+    document.body.innerHTML = '<main id="content-root"><article><p>CASE-EMPTY-SPA-V1: The first route starts with a readable English article.</p></article></main>'
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+
+      const emptyMain = document.createElement('main')
+      emptyMain.id = 'content-root'
+      window.history.pushState({}, '', '/empty-spa-route')
+      document.querySelector('#content-root')!.replaceWith(emptyMain)
+      const firstBodyObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(document.body))
+      firstBodyObserver?.callback([{ type: 'childList', target: document.body, addedNodes: [emptyMain] } as unknown as MutationRecord], firstBodyObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      const currentBodyObserver = CapturingMutationObserver.instances
+        .filter(observer => observer.observedTargets.includes(document.body))
+        .slice(-1)[0]
+      expect(currentBodyObserver).toBeDefined()
+      expect(currentBodyObserver).not.toBe(firstBodyObserver)
+
+      const lateArticle = document.createElement('article')
+      lateArticle.innerHTML = '<p>CASE-EMPTY-SPA-V2: English article content arrived after an intermediate route initially rendered no translation targets.</p>'
+      emptyMain.appendChild(lateArticle)
+      currentBodyObserver?.callback([{ type: 'childList', target: emptyMain, addedNodes: [lateArticle] } as unknown as MutationRecord], currentBodyObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('CASE-EMPTY-SPA-V2'))).toBe(true)
+      expect(lateArticle.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).not.toBeNull()
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
   })
 })
