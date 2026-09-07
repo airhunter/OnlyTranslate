@@ -57,7 +57,7 @@ vi.mock('element-plus', () => ({
 import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
 import { TRANSLATION_ONLY_BACKUP_CLASS } from '@/entrypoints/main/translationOnly'
-import { collectTranslationTargets } from '@/entrypoints/main/translationTarget/collect'
+import { collectTranslationTargets, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
@@ -2730,6 +2730,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     try {
       autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 0))
       const target = document.querySelector('#target') as HTMLElement
       const source = document.querySelector('#source')!
       const firstNodeId = target.getAttribute(TRANSLATED_ID_ATTR)
@@ -3037,6 +3038,193 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
       expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('CASE-EMPTY-SPA-V2'))).toBe(true)
       expect(lateArticle.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).not.toBeNull()
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+  })
+
+  it('collects nested open-shadow reading targets without admitting time or page noise', () => {
+    // Minimal open-root structure and text captured from the 2026-09-07 RSVP and Lit real-page audits.
+    document.body.innerHTML = '<rsvp-connected-guest-client id="client"></rsvp-connected-guest-client><litdev-cookie-banner id="cookie"></litdev-cookie-banner>'
+    const clientRoot = document.querySelector('#client')!.attachShadow({ mode: 'open' })
+    clientRoot.innerHTML = '<main id="main"><rsvp-site-hero id="hero"></rsvp-site-hero><rsvp-site-agenda id="agenda"></rsvp-site-agenda></main>'
+    const heroRoot = clientRoot.querySelector('#hero')!.attachShadow({ mode: 'open' })
+    heroRoot.innerHTML = '<h1 id="event-title">DevFest in Silicon Valley 2025</h1><p>Get ready for a full day of innovation!</p>'
+    const agendaHost = clientRoot.querySelector('#agenda')!
+    const agendaRoot = agendaHost.attachShadow({ mode: 'open' })
+    agendaRoot.innerHTML = `
+      <h2 id="agenda-title">Agenda</h2>
+      <p>Please note seating is available on a first-come, first-served basis, regardless of session reservation status.</p>
+      <rsvp-site-session-item id="session"></rsvp-site-session-item>
+    `
+    const sessionRoot = agendaRoot.querySelector('#session')!.attachShadow({ mode: 'open' })
+    sessionRoot.innerHTML = `
+      <span id="session-title" class="session__title">Registration &amp; Networking</span>
+      <span id="session-time" class="session__time">08:00 - 09:00</span>
+      <p id="session-copy">Light breakfast will be served.</p>
+    `
+    const cookieRoot = document.querySelector('#cookie')!.attachShadow({ mode: 'open' })
+    cookieRoot.innerHTML = '<h2>Cookies consent notice</h2><p id="cookie-copy">We use cookies to improve your experience.</p>'
+
+    const result = resolveAutoTranslateTarget('smart')
+
+    expect(result.nodes).toContain(heroRoot.querySelector('#event-title'))
+    expect(result.nodes).toContain(agendaRoot.querySelector('#agenda-title'))
+    expect(result.nodes).toContain(sessionRoot.querySelector('#session-title'))
+    expect(result.nodes).toContain(sessionRoot.querySelector('#session-copy'))
+    expect(result.nodes).not.toContain(sessionRoot.querySelector('#session-time'))
+    expect(result.nodes).not.toContain(cookieRoot.querySelector('#cookie-copy'))
+  })
+
+  it('supports cancelling asynchronous open-shadow target discovery', async () => {
+    const controller = new AbortController()
+    controller.abort()
+
+    await expect(resolveAutoTranslationTargetAsync('smart', { signal: controller.signal }))
+      .rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('does not start translations after a pending target collection is restored', async () => {
+    vi.useFakeTimers()
+    document.body.innerHTML = `<article><p id="source">The article remains unchanged when collection is cancelled.</p>${
+      Array.from({ length: 450 }, (_, index) => `<div data-index="${index}"></div>`).join('')
+    }</article>`
+
+    try {
+      autoTranslateEnglishPage('smart')
+      restoreOriginalContent()
+      await vi.runAllTimersAsync()
+
+      expect(translateText).not.toHaveBeenCalled()
+      expect(document.querySelector('#source')?.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+    } finally {
+      restoreOriginalContent()
+      vi.useRealTimers()
+    }
+  })
+
+  it('uses assigned slot content once and falls back when the assignment changes', () => {
+    document.body.innerHTML = `
+      <article>
+        <p>The article context keeps the projected component inside smart reading scope.</p>
+        <projected-copy id="host"><p id="assigned" slot="copy">Assigned article copy should be translated exactly once.</p></projected-copy>
+      </article>
+    `
+    const root = document.querySelector('#host')!.attachShadow({ mode: 'open' })
+    root.innerHTML = '<slot name="copy"><p id="fallback">Fallback article copy becomes visible without an assignment.</p></slot>'
+    const assigned = document.querySelector('#assigned')!
+    const fallback = root.querySelector('#fallback')!
+
+    const assignedResult = resolveAutoTranslateTarget('smart')
+    expect(assignedResult.nodes.filter(node => node === assigned)).toHaveLength(1)
+    expect(assignedResult.nodes).not.toContain(fallback)
+
+    assigned.setAttribute('slot', 'unused')
+    const fallbackResult = resolveAutoTranslateTarget('smart')
+    expect(fallbackResult.nodes).not.toContain(assigned)
+    expect(fallbackResult.nodes).toContain(fallback)
+  })
+
+  it.each([1, 0])('applies and restores display mode %s inside an open shadow root', async display => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class NoopMutationObserver {
+      constructor(_callback: MutationCallback) {}
+      observe(_target: Node) {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => Promise.resolve(`译文：${origin}`))
+    mockConfig.display = display
+    document.body.innerHTML = `
+      <article><p>The outer paragraph establishes the primary reading scope for this test.</p><event-copy id="host"></event-copy></article>
+    `
+    const root = document.querySelector('#host')!.attachShadow({ mode: 'open' })
+    root.innerHTML = '<p id="shadow-copy">The session description is rendered inside an open shadow root.</p>'
+    const original = root.querySelector('#shadow-copy')!.innerHTML
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      const translated = root.querySelector<HTMLElement>('#shadow-copy')!
+      expect(translated.getAttribute(TRANSLATED_ATTR)).toBe('true')
+      expect(translated.textContent).toContain('译文：')
+
+      restoreOriginalContent()
+      expect(root.querySelector('#shadow-copy')?.innerHTML).toBe(original)
+      expect(root.querySelector(`[${TRANSLATED_ATTR}], .${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      expect(root.querySelector('style[data-only-translate-shadow-style="true"]')).toBeNull()
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('continues dynamic shadow-root work beyond the per-flush batch limit', async () => {
+    vi.useFakeTimers()
+    class PassiveIntersectionObserver {
+      observe(_target: Element) {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() { this.observedTargets = [] }
+      takeRecords() { return [] }
+    }
+
+    vi.stubGlobal('IntersectionObserver', PassiveIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    vi.mocked(translateText).mockImplementation((origin: string) => Promise.resolve(`译文：${origin}`))
+    document.body.innerHTML = `
+      <article><p>The primary article introduces a long sequence of live agenda updates.</p><live-agenda id="host"></live-agenda></article>
+    `
+    const root = document.querySelector('#host')!.attachShadow({ mode: 'open' })
+    root.innerHTML = '<section id="updates"><p>An initial agenda entry is already visible.</p></section>'
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+      const contentObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(root))
+      expect(contentObserver).toBeDefined()
+
+      const updates = root.querySelector('#updates')!
+      const records: MutationRecord[] = []
+      for (let index = 0; index < 40; index++) {
+        const paragraph = document.createElement('p')
+        paragraph.textContent = `Dynamic agenda item ${index}: this description contains enough readable English text for translation.`
+        updates.appendChild(paragraph)
+        records.push({
+          type: 'childList',
+          target: updates,
+          addedNodes: [paragraph],
+          removedNodes: []
+        } as unknown as MutationRecord)
+      }
+      contentObserver!.callback(records, contentObserver as unknown as MutationObserver)
+      await vi.runAllTimersAsync()
+
+      expect(vi.mocked(translateText).mock.calls.some(([origin]) => origin.includes('Dynamic agenda item 39'))).toBe(true)
     } finally {
       restoreOriginalContent()
       vi.unstubAllGlobals()

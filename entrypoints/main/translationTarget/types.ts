@@ -17,7 +17,8 @@ export type TranslationTargetSource =
     | 'content-unit'
     | 'dom-unit'
     | 'supplemental'
-    | 'fallback';
+    | 'fallback'
+    | 'shadow-root';
 
 export interface TranslationTargetDecision {
     node: Element;

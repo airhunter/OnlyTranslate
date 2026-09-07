@@ -2,19 +2,18 @@ import type { GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { getMainDomain } from '@/entrypoints/utils/domain';
-import { collectTranslationTargets } from './collect';
-import {
-    BILINGUAL_CONTENT_CLASS,
-    TRANSLATED_ATTR
-} from './constants';
+import { collectTargetsAcrossRegisteredRoots } from './collect';
+import { TRANSLATED_ATTR } from './constants';
 import { decideTranslationTarget, isOpenExpandableReadingContainer, isVisibleForTranslation } from './decision';
 import {
     getCachedContentUnitDecision,
+    discoverScanShadowRoots,
     invalidateScanCache,
     isLikelyReadingCandidate,
     isObviousUiSubtree,
     resetScanBudget
 } from './scanContext';
+import { composedClosest, composedContains, getComposedParentElement, isManagedComposedSubtree } from './composedTree';
 import type { TranslationTargetContext } from './types';
 
 const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
@@ -26,6 +25,7 @@ export function collectDynamicTranslationNodes(
     grabOptions: GrabAllNodeOptions = {}
 ): Element[] {
     invalidateScanCache(grabOptions.scanContext, root);
+    discoverScanShadowRoots(grabOptions.scanContext, root);
     if (isManagedTranslationNode(root)) return [];
 
     const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, grabOptions);
@@ -54,14 +54,14 @@ export function collectDynamicTranslationNodes(
         return decision.policy === 'allow' ? [decision.target] : [];
     }
 
-    return collectTranslationTargets(scanRoot, context, { includeSupplemental: false })
+    return collectTargetsAcrossRegisteredRoots(scanRoot, context, { includeSupplemental: false })
         .map(decision => decision.target)
         .filter(node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node) && isVisibleForTranslation(node, context));
 }
 
 export function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
-    return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+    return isManagedComposedSubtree(node);
 }
 
 export function isInTranslationScope(
@@ -70,7 +70,7 @@ export function isInTranslationScope(
     scope: string,
     grabOptions: GrabAllNodeOptions = {}
 ): boolean {
-    if (scope === 'full' || contentRoot.contains(root)) return true;
+    if (scope === 'full' || composedContains(contentRoot, root)) return true;
 
     const context: TranslationTargetContext = {
         mode: grabOptions.siteCompatMode ?? (scope === 'full' ? 'full' : 'smart'),
@@ -93,7 +93,7 @@ export function isInTranslationScope(
         if (decision.action === 'allow' && decision.confidence >= SUPPLEMENTAL_READING_CONFIDENCE) {
             return true;
         }
-        current = current.parentElement;
+        current = getComposedParentElement(current);
     }
 
     return false;
@@ -109,7 +109,7 @@ function isProfileTranslationScope(element: Element, context: TranslationTargetC
     if (profile.allowTarget?.(element, context)) return true;
 
     const expanded = profile.expandTarget?.(element, context);
-    return Array.isArray(expanded) && expanded.some(node => node === element || element.contains(node));
+    return Array.isArray(expanded) && expanded.some(node => node === element || composedContains(element, node));
 }
 
 export function getDynamicTranslationScanRoot(
@@ -144,7 +144,7 @@ export function getDynamicTranslationScanRoot(
     const profileSkip = getCurrentSiteProfile()?.skipTarget?.(root, context);
     if (profileSkip && profileSkip.policy === 'hard-skip' && profileSkip.role !== 'layout') return null;
 
-    if (scope !== 'full' && !contentRoot.contains(root)) {
+    if (scope !== 'full' && !composedContains(contentRoot, root)) {
         if (isInTranslationScope(root, contentRoot, scope, grabOptions)) return root;
         const scanRoot = getProfileScanRoot();
         return scanRoot && isInTranslationScope(scanRoot, contentRoot, scope, grabOptions)
@@ -154,8 +154,8 @@ export function getDynamicTranslationScanRoot(
 
     if (isLikelyReadingCandidate(root)) return root;
 
-    const closest = root.closest('article, main, section, [role="article"], [role="main"], [class*="content"], [class*="article"], [class*="post"], [class*="story"]');
-    if (closest && closest instanceof Element && contentRoot.contains(closest) && !isObviousUiSubtree(grabOptions.scanContext, closest)) {
+    const closest = composedClosest(root, 'article, main, section, [role="article"], [role="main"], [class*="content"], [class*="article"], [class*="post"], [class*="story"]');
+    if (closest && composedContains(contentRoot, closest) && !isObviousUiSubtree(grabOptions.scanContext, closest)) {
         return closest;
     }
 
@@ -170,7 +170,7 @@ function findProfileTranslationScopeRoot(root: Element, context: TranslationTarg
     while (current && current !== document.body) {
         const skip = profile.skipTarget?.(current, context);
         if (skip && skip.policy === 'hard-skip' && skip.role !== 'layout') {
-            current = current.parentElement;
+            current = getComposedParentElement(current);
             continue;
         }
 
@@ -179,7 +179,7 @@ function findProfileTranslationScopeRoot(root: Element, context: TranslationTarg
         const expanded = profile.expandTarget?.(current, context);
         if (Array.isArray(expanded) && expanded.length > 0) return current;
 
-        current = current.parentElement;
+        current = getComposedParentElement(current);
     }
 
     return null;

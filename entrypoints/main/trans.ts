@@ -41,7 +41,7 @@ import {
     restoreTranslationOnly,
     type PreparedTranslationOnly,
 } from '@/entrypoints/main/translationOnly';
-import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect';
+import { resolveAutoTranslationTarget, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
 import {
     collectDynamicTranslationNodes as collectDynamicTargetNodes,
@@ -56,10 +56,19 @@ import {
     TRANSLATED_ATTR,
     TRANSLATED_ID_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
+import {
+    composedContains,
+    composedClosest,
+    getComposedParentElement,
+    isManagedComposedSubtree,
+    querySelectorAllComposed
+} from '@/entrypoints/main/translationTarget/composedTree';
+import { discoverScanShadowRoots, isElementVisible } from '@/entrypoints/main/translationTarget/scanContext';
+import shadowTranslationStyles from '@/entrypoints/style.css?inline';
 
-// 刻意不监听 style：内联 style 是动画/过渡产生 mutation 风暴的主要来源，且对“是否需要翻译”几乎没有信号价值；
-// 内容显隐由 class / hidden / aria-* 覆盖即可。
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'hidden', 'aria-hidden', 'aria-expanded'];
+// style 只进入合并后的动态队列，用于捕获组件直接通过内联样式切换正文显隐的情况；
+// 回调本身不读取布局，避免把动画 mutation 的成本放在 Observer 回调中。
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
 const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
 const BACKGROUND_TRANSLATION_START_DELAY = 1000;
 const BACKGROUND_TRANSLATION_INTERVAL = 250;
@@ -74,8 +83,18 @@ const translationState = {
     mutationObserver: null as MutationObserver | null,
     rootMutationObserver: null as MutationObserver | null,
     navigationTimer: null as ReturnType<typeof setTimeout> | null,
-    nodeIdCounter: 0
+    dynamicScanTimer: null as number | null,
+    nodeIdCounter: 0,
+    sessionVersion: 0,
+    shadowRoots: new Set<ShadowRoot>(),
+    observedShadowRoots: new Set<ShadowRoot>(),
+    styledShadowRoots: new Set<ShadowRoot>(),
+    translatedHosts: new Set<HTMLElement>(),
+    slotChangeHandler: null as EventListener | null,
+    targetCollectionController: null as AbortController | null
 };
+
+let sharedShadowStyleSheet: CSSStyleSheet | null = null;
 
 const translationDisplayModes = new Map<string, 'bilingual' | 'single'>();
 const appliedSingleTranslationContents = new Map<string, string>();
@@ -116,6 +135,59 @@ function clearBackgroundTranslationTimer(): void {
     }
 }
 
+function clearDynamicScanTimer(): void {
+    if (translationState.dynamicScanTimer !== null) {
+        clearTimeout(translationState.dynamicScanTimer);
+        translationState.dynamicScanTimer = null;
+    }
+}
+
+function removeShadowRootListeners(): void {
+    if (translationState.slotChangeHandler) {
+        translationState.observedShadowRoots.forEach(root => {
+            root.removeEventListener('slotchange', translationState.slotChangeHandler!, true);
+        });
+    }
+    translationState.slotChangeHandler = null;
+    translationState.observedShadowRoots.clear();
+}
+
+function ensureShadowTranslationStyles(node: Element): void {
+    const root = node.getRootNode();
+    if (!(root instanceof ShadowRoot) || translationState.styledShadowRoots.has(root)) return;
+
+    try {
+        if (!sharedShadowStyleSheet) {
+            sharedShadowStyleSheet = new CSSStyleSheet();
+            sharedShadowStyleSheet.replaceSync(shadowTranslationStyles);
+        }
+        if (!root.adoptedStyleSheets.includes(sharedShadowStyleSheet)) {
+            root.adoptedStyleSheets = [...root.adoptedStyleSheets, sharedShadowStyleSheet];
+        }
+    } catch (_) {
+        const style = document.createElement('style');
+        style.dataset.onlyTranslateShadowStyle = 'true';
+        style.textContent = shadowTranslationStyles;
+        root.appendChild(style);
+    }
+    translationState.styledShadowRoots.add(root);
+}
+
+function removeShadowTranslationStyle(root: ShadowRoot): void {
+    root.querySelectorAll('style[data-only-translate-shadow-style="true"]').forEach(style => style.remove());
+    try {
+        if (sharedShadowStyleSheet && root.adoptedStyleSheets.includes(sharedShadowStyleSheet)) {
+            root.adoptedStyleSheets = root.adoptedStyleSheets.filter(sheet => sheet !== sharedShadowStyleSheet);
+        }
+    } catch (_) {}
+    translationState.styledShadowRoots.delete(root);
+}
+
+function removeShadowTranslationStyles(): void {
+    Array.from(translationState.styledShadowRoots).forEach(removeShadowTranslationStyle);
+    translationState.styledShadowRoots.clear();
+}
+
 function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElement): boolean {
     if (!isExtensionContextInvalidatedError(error)) return false;
     if (hasReportedInvalidatedExtensionContext) {
@@ -124,24 +196,31 @@ function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElem
     }
 
     hasReportedInvalidatedExtensionContext = true;
+    translationState.sessionVersion += 1;
     const unfinishedNodes = new Set<HTMLElement>([failedNode]);
-    document.querySelectorAll<HTMLElement>('.only-translate-loading').forEach(element => {
+    querySelectorAllComposed<HTMLElement>('.only-translate-loading', translationState.shadowRoots).forEach(element => {
         if (element.parentElement) unfinishedNodes.add(element.parentElement);
         element.remove();
     });
     setAutoTranslating(false);
+    translationState.targetCollectionController?.abort();
+    translationState.targetCollectionController = null;
     clearHoverTimer();
     clearBackgroundTranslationTimer();
+    clearDynamicScanTimer();
     translationState.observer?.disconnect();
     translationState.observer = null;
     translationState.mutationObserver?.disconnect();
     translationState.mutationObserver = null;
     translationState.rootMutationObserver?.disconnect();
     translationState.rootMutationObserver = null;
+    removeShadowRootListeners();
     clearNavigationRestartTimer();
     cancelAllTranslations();
     unfinishedNodes.forEach(clearUnfinishedAutoTranslation);
     clearStaleBilingualTranslationMarkers();
+    translationState.shadowRoots.forEach(root => clearStaleBilingualTranslationMarkers(root));
+    removeShadowTranslationStyles();
     showExtensionReloadedTip();
     return true;
 }
@@ -160,7 +239,7 @@ interface BilingualTranslationOptions extends TranslationRequestOptions {
 
 function isManagedTranslationNode(node: Node): boolean {
     if (!(node instanceof Element)) return false;
-    return Boolean(node.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"]`));
+    return isManagedComposedSubtree(node);
 }
 
 export function collectDynamicTranslationNodes(
@@ -224,12 +303,14 @@ function clearTranslationHostMarkers(node: HTMLElement): void {
     }
     node.removeAttribute(TRANSLATED_ATTR);
     node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+    translationState.translatedHosts.delete(node);
 }
 
 interface TranslationAttemptSnapshot {
     sourceText: string;
     sourceHTML: string;
     nodeId: string | null;
+    sessionVersion: number;
 }
 
 function normalizeTranslationSource(value: string): string {
@@ -243,11 +324,13 @@ function captureTranslationAttempt(node: HTMLElement, sourceText: string): Trans
         sourceText: normalizeTranslationSource(sourceText),
         sourceHTML: sourceClone.innerHTML,
         nodeId: node.getAttribute(TRANSLATED_ID_ATTR),
+        sessionVersion: translationState.sessionVersion,
     };
 }
 
 function isTranslationAttemptCurrent(node: HTMLElement, attempt: TranslationAttemptSnapshot): boolean {
     if (!node.isConnected) return false;
+    if (attempt.sessionVersion !== translationState.sessionVersion) return false;
     if (attempt.nodeId && node.getAttribute(TRANSLATED_ID_ATTR) !== attempt.nodeId) return false;
     const currentAttempt = captureTranslationAttempt(node, getTranslatableText(node));
     return currentAttempt.sourceText === attempt.sourceText && currentAttempt.sourceHTML === attempt.sourceHTML;
@@ -295,14 +378,21 @@ function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body)
 export function restoreOriginalContent() {
     // 取消所有等待中的翻译任务
     cancelAllTranslations();
+    translationState.targetCollectionController?.abort();
+    translationState.targetCollectionController = null;
     setAutoTranslating(false);
+    translationState.sessionVersion += 1;
 
     restoreAllTranslationOnly().forEach(node => {
         clearTranslationHostMarkers(node);
     });
     
     // 1. 遍历所有已翻译的节点
-    document.querySelectorAll<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`).forEach(node => {
+    const translatedHosts = new Set<HTMLElement>([
+        ...translationState.translatedHosts,
+        ...querySelectorAllComposed<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`, translationState.shadowRoots)
+    ]);
+    translatedHosts.forEach(node => {
         const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
         const displayMode = nodeId ? translationDisplayModes.get(nodeId) : undefined;
         if (nodeId && displayMode === 'single') {
@@ -319,20 +409,20 @@ export function restoreOriginalContent() {
     });
     
     // 2. 移除所有翻译内容元素
-    document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => {
+    querySelectorAllComposed(`.${BILINGUAL_CONTENT_CLASS}`, translationState.shadowRoots).forEach(element => {
         element.remove();
     });
 
-    document.querySelectorAll(`.${BILINGUAL_WRAPPER_CLASS}`).forEach(element => {
+    querySelectorAllComposed(`.${BILINGUAL_WRAPPER_CLASS}`, translationState.shadowRoots).forEach(element => {
         element.classList.remove(BILINGUAL_WRAPPER_CLASS);
     });
     
     // 3. 移除所有翻译过程中添加的加载动画和错误提示
-    document.querySelectorAll('.only-translate-loading, .only-translate-retry-wrapper').forEach(element => {
+    querySelectorAllComposed('.only-translate-loading, .only-translate-retry-wrapper', translationState.shadowRoots).forEach(element => {
         element.remove();
     });
 
-    document.querySelectorAll(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`).forEach(element => {
+    querySelectorAllComposed(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`, translationState.shadowRoots).forEach(element => {
         unwrapDirectTextTarget(element);
     });
     
@@ -340,6 +430,7 @@ export function restoreOriginalContent() {
     originalContents.clear();
     translationDisplayModes.clear();
     appliedSingleTranslationContents.clear();
+    translationState.translatedHosts.clear();
     
     // 5. 停止所有观察器
     if (translationState.observer) {
@@ -354,17 +445,20 @@ export function restoreOriginalContent() {
         translationState.rootMutationObserver.disconnect();
         translationState.rootMutationObserver = null;
     }
+    removeShadowRootListeners();
+    clearDynamicScanTimer();
     clearBackgroundTranslationTimer();
     clearNavigationRestartTimer();
+    const tempStyleElements = querySelectorAllComposed('style[data-fr-temp-style]', translationState.shadowRoots);
+    tempStyleElements.forEach(el => el.remove());
+    removeShadowTranslationStyles();
+    translationState.shadowRoots.clear();
     
     // 6. 重置所有翻译相关的状态
     translationState.htmlSet.clear(); // 清空防抖集合
     translationState.nodeIdCounter = 0; // 重置节点ID计数器
     hasReportedInvalidatedExtensionContext = false;
     
-    // 7. 消除可能存在的全局样式污染
-    const tempStyleElements = document.querySelectorAll('style[data-fr-temp-style]');
-    tempStyleElements.forEach(el => el.remove());
 }
 
 // 自动翻译整个页面的功能
@@ -372,8 +466,20 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     // 如果已经在翻译中，则返回
     if (translationState.isAutoTranslating) return;
 
-    clearStaleBilingualTranslationMarkers();
-    
+    translationState.sessionVersion += 1;
+    setAutoTranslating(true);
+    const sessionVersion = translationState.sessionVersion;
+    const controller = new AbortController();
+    translationState.targetCollectionController = controller;
+    void startAutoTranslation(scopeOverride, sessionVersion, controller);
+}
+
+async function startAutoTranslation(
+    scopeOverride: string | undefined,
+    sessionVersion: number,
+    controller: AbortController
+): Promise<void> {
+
     // 获取当前页面的语言（暂时注释，存在识别问题）
     // const text = document.documentElement.innerText || '';
     // const cleanText = text.replace(/[\s\u3000]+/g, ' ').trim().slice(0, 500);
@@ -388,8 +494,26 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
     const scope = scopeOverride ?? config.translationScope;
-    const { contentRoot, nodes, grabOptions } = resolveAutoTranslateTarget(scope);
+    let target: AutoTranslateTarget;
+    try {
+        target = await resolveAutoTranslationTargetAsync(scope, {
+            signal: controller.signal,
+            beforeCollect: roots => {
+                clearStaleBilingualTranslationMarkers();
+                roots.forEach(root => clearStaleBilingualTranslationMarkers(root));
+            }
+        });
+    } catch (error) {
+        if (controller.signal.aborted) return;
+        if (translationState.sessionVersion === sessionVersion) setAutoTranslating(false);
+        console.error('自动翻译目标收集失败:', error);
+        return;
+    }
+    if (controller.signal.aborted || translationState.sessionVersion !== sessionVersion) return;
+    translationState.targetCollectionController = null;
+    const { contentRoot, nodes, grabOptions } = target;
     const activeGrabOptions = grabOptions ?? {};
+    translationState.shadowRoots = activeGrabOptions.scanContext?.openShadowRoots ?? new Set<ShadowRoot>();
 
     const diagnosticContext = {
         sessionId: createTranslationDiagnosticId('webpage'),
@@ -398,7 +522,6 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         pageUrl: document.location.href,
     };
 
-    setAutoTranslating(true);
     const initialPageUrl = document.location.href;
     const observedBody = document.body;
 
@@ -424,6 +547,8 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         // 为节点分配唯一ID
         const nodeId = `fr-node-${translationState.nodeIdCounter++}`;
         node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
+        translationState.translatedHosts.add(node);
+        ensureShadowTranslationStyles(node);
 
         // 保存原始内容
         originalContents.set(nodeId, node.innerHTML);
@@ -502,8 +627,16 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
 
     scheduleBackgroundTranslation(BACKGROUND_TRANSLATION_START_DELAY);
 
-    const observeTranslationNodes = (nodes: Element[]) => {
-        nodes.forEach(node => translationState.observer?.observe(node));
+    const observedTranslationNodes = new Set<Element>(nodes);
+    const observeTranslationNodes = (newNodes: Element[]) => {
+        newNodes.forEach(node => {
+            if (!observedTranslationNodes.has(node)) {
+                observedTranslationNodes.add(node);
+                nodes.push(node);
+            }
+            translationState.observer?.observe(node);
+        });
+        if (newNodes.length > 0) scheduleBackgroundTranslation();
     };
 
     const refreshTranslatedHost = (host: HTMLElement): void => {
@@ -520,11 +653,15 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
     const handleTranslatedHostMutation = (mutation: MutationRecord): boolean => {
         const targetElement = mutation.target instanceof Element
             ? mutation.target
-            : mutation.target.parentElement;
+            : getComposedParentElement(mutation.target);
         if (!targetElement) return false;
-        if (targetElement.closest(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)) return true;
+        if (composedClosest(targetElement, `.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)) return true;
 
-        const host = targetElement.closest<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`);
+        let host: HTMLElement | null = targetElement instanceof HTMLElement ? targetElement : null;
+        while (host && !host.hasAttribute(TRANSLATED_ATTR)) {
+            const parent = getComposedParentElement(host);
+            host = parent instanceof HTMLElement ? parent : null;
+        }
         if (!host) return false;
         const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
         if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return true;
@@ -556,45 +693,117 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         return true;
     };
 
-    // 单次 flush 最多处理的变更根节点数量。动画 / 框架重渲染的页面会在一帧内产生成百上千条 mutation，
-    // 必须给待处理集合封顶，避免主线程被无界的扫描任务压垮。
-    const MAX_PENDING_MUTATION_ROOTS = 32;
+    // 每批只处理固定数量，但保留剩余项继续调度，避免高频页面既阻塞主线程又永久漏掉正文。
+    const MAX_MUTATION_ROOTS_PER_FLUSH = 32;
     const pendingMutationRoots = new Set<Element>();
-    let dynamicScanTimer: number | null = null;
+    const styleVisibilityState = new WeakMap<Element, boolean>();
+    let dynamicScanRunning = false;
+
+    const mutationOptions: MutationObserverInit = {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: DYNAMIC_MUTATION_ATTRIBUTES,
+        characterData: true
+    };
+
+    const scheduleDynamicScan = (delay = 150): void => {
+        if (translationState.dynamicScanTimer !== null || dynamicScanRunning) return;
+        translationState.dynamicScanTimer = window.setTimeout(() => void flushDynamicScans(), delay);
+    };
+
+    const observeRegisteredShadowRoots = (): void => {
+        for (const root of translationState.shadowRoots) {
+            if (!root.host.isConnected || translationState.observedShadowRoots.has(root)) continue;
+            translationState.mutationObserver?.observe(root, mutationOptions);
+            if (translationState.slotChangeHandler) {
+                root.addEventListener('slotchange', translationState.slotChangeHandler, true);
+            }
+            translationState.observedShadowRoots.add(root);
+        }
+    };
+
+    const pruneDisconnectedShadowRoots = (): void => {
+        const disconnected = Array.from(translationState.shadowRoots).filter(root => !root.host.isConnected);
+        if (disconnected.length === 0) return;
+        disconnected.forEach(root => {
+            root.removeEventListener('slotchange', translationState.slotChangeHandler!, true);
+            Array.from(translationState.translatedHosts)
+                .filter(host => !host.isConnected && host.getRootNode() === root)
+                .forEach(host => {
+                    restoreTranslationOnly(host);
+                    host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)
+                        .forEach(element => element.remove());
+                    clearTranslationHostMarkers(host);
+                });
+            removeShadowTranslationStyle(root);
+            translationState.shadowRoots.delete(root);
+            translationState.observedShadowRoots.delete(root);
+        });
+        translationState.mutationObserver?.disconnect();
+        translationState.mutationObserver?.observe(document.body, mutationOptions);
+        translationState.observedShadowRoots.clear();
+        observeRegisteredShadowRoots();
+    };
 
     // 真正昂贵的作用域判定（invalidateScanCache / getDynamicTranslationScanRoot / 作用域回溯）全部推迟到防抖
     // flush 中执行，并对处理数量封顶。否则会在 MutationObserver 回调里逐条同步执行 querySelectorAll('*') 与
     // closest() 选择器链——在高频 DOM 变更的页面上这会让主线程持续 100% 卡死。
-    function flushDynamicScans(): void {
-        dynamicScanTimer = null;
-        const roots = Array.from(pendingMutationRoots);
-        pendingMutationRoots.clear();
+    async function flushDynamicScans(): Promise<void> {
+        translationState.dynamicScanTimer = null;
+        if (!translationState.isAutoTranslating) return;
+        dynamicScanRunning = true;
+        const roots = Array.from(pendingMutationRoots).slice(0, MAX_MUTATION_ROOTS_PER_FLUSH);
+        roots.forEach(root => pendingMutationRoots.delete(root));
 
         const scanRoots = new Set<Element>();
-        roots.forEach(root => {
+        let sliceStarted = performance.now();
+        for (const root of roots) {
             invalidateScanCache(activeGrabOptions.scanContext, root);
-            if (isManagedTranslationNode(root)) return;
+            if (isManagedTranslationNode(root)) continue;
             const scanRoot = getDynamicTranslationScanRoot(root, contentRoot, scope, activeGrabOptions);
-            if (!scanRoot) return;
-            if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) return;
+            if (!scanRoot) continue;
+            if (!isDynamicInTranslationScope(scanRoot, contentRoot, scope, activeGrabOptions)) continue;
             scanRoots.add(scanRoot);
-        });
+            if (performance.now() - sliceStarted >= 4) {
+                await new Promise<void>(resolve => setTimeout(resolve, 0));
+                if (!translationState.isAutoTranslating) {
+                    dynamicScanRunning = false;
+                    return;
+                }
+                sliceStarted = performance.now();
+            }
+        }
 
-        scanRoots.forEach(scanRoot => {
+        for (const scanRoot of scanRoots) {
             observeTranslationNodes(
                 collectDynamicTranslationNodes(scanRoot, contentRoot, scope, activeGrabOptions)
             );
-        });
+            if (performance.now() - sliceStarted >= 4) {
+                await new Promise<void>(resolve => setTimeout(resolve, 0));
+                if (!translationState.isAutoTranslating) {
+                    dynamicScanRunning = false;
+                    return;
+                }
+                sliceStarted = performance.now();
+            }
+        }
+        discoverScanShadowRoots(activeGrabOptions.scanContext, document.body);
+        observeRegisteredShadowRoots();
+        pruneDisconnectedShadowRoots();
+        dynamicScanRunning = false;
+        if (pendingMutationRoots.size > 0) scheduleDynamicScan(0);
     }
 
     // 回调里只做最廉价的过滤与收集：跳过自身注入的受管节点，其余加入待处理集合并触发防抖。
     const enqueueMutationRoot = (root: Element): void => {
-        if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) return;
         if (isManagedTranslationNode(root)) return;
-        pendingMutationRoots.add(root);
-        if (dynamicScanTimer === null) {
-            dynamicScanTimer = window.setTimeout(flushDynamicScans, 150);
+        if (Array.from(pendingMutationRoots).some(existing => composedContains(existing, root))) return;
+        for (const existing of pendingMutationRoots) {
+            if (composedContains(root, existing)) pendingMutationRoots.delete(existing);
         }
+        pendingMutationRoots.add(root);
+        scheduleDynamicScan();
     };
 
     // 创建 MutationObserver 监听 DOM 变化
@@ -606,37 +815,53 @@ export function autoTranslateEnglishPage(scopeOverride?: string) {
         }
 
         for (const mutation of mutations) {
-            // 集合已满则停止本批处理，剩余变更会在后续 mutation 中被重新捕获，避免在卡死页面上空转。
-            if (pendingMutationRoots.size >= MAX_PENDING_MUTATION_ROOTS) break;
             if (handleTranslatedHostMutation(mutation)) continue;
 
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
-                    if (node instanceof Element) enqueueMutationRoot(node);
+                    if (node instanceof Element) {
+                        enqueueMutationRoot(node);
+                    } else {
+                        const parent = getComposedParentElement(node) ?? getComposedParentElement(mutation.target);
+                        if (parent) enqueueMutationRoot(parent);
+                    }
                 });
+                if ((mutation.removedNodes?.length ?? 0) > 0) {
+                    const parent = mutation.target instanceof Element
+                        ? mutation.target
+                        : getComposedParentElement(mutation.target);
+                    if (parent) enqueueMutationRoot(parent);
+                }
                 continue;
             }
 
             if (mutation.type === 'attributes' && mutation.target instanceof Element) {
+                if (mutation.attributeName === 'style') {
+                    const visible = isElementVisible(mutation.target);
+                    const previous = styleVisibilityState.get(mutation.target);
+                    styleVisibilityState.set(mutation.target, visible);
+                    if (previous !== undefined && previous === visible) continue;
+                }
                 enqueueMutationRoot(mutation.target);
                 continue;
             }
 
             if (mutation.type === 'characterData') {
-                const parent = mutation.target.parentElement;
+                const parent = getComposedParentElement(mutation.target);
                 if (parent) enqueueMutationRoot(parent);
             }
         }
     });
 
     // 监听整个 body 的变化
-    translationState.mutationObserver.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: DYNAMIC_MUTATION_ATTRIBUTES,
-        characterData: true
-    });
+    translationState.mutationObserver.observe(document.body, mutationOptions);
+    translationState.slotChangeHandler = event => {
+        const slot = event.target;
+        if (!(slot instanceof HTMLSlotElement)) return;
+        const root = slot.getRootNode();
+        enqueueMutationRoot(root instanceof ShadowRoot ? root.host : slot);
+    };
+    observeRegisteredShadowRoots();
 
     // body 自身被 SPA 替换后，绑定在旧 body 上的高频观察器不会再收到事件；
     // 单独用一个低成本根观察器只负责发现这类结构边界，不扫描 html/head 子树。

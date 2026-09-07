@@ -28,6 +28,7 @@ import type {
     TranslationTargetRole,
     TranslationTargetSkip
 } from './types';
+import { composedClosest, getComposedParentElement, isUnassignedLightDomSubtree } from './composedTree';
 
 const HARD_SKIP_SELECTOR = [
     'script',
@@ -163,6 +164,7 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
 }
 
 export function isVisibleForTranslation(element: Element, context?: TranslationTargetContext): boolean {
+    if (isUnassignedLightDomSubtree(element)) return false;
     return getCachedVisibility(context?.grabOptions?.scanContext, element, isElementVisible);
 }
 
@@ -229,20 +231,25 @@ function getContentFilterSkip(element: Element, context: TranslationTargetContex
         if (decision === 'skip-self') {
             return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${current.tagName.toLowerCase()}:skip-self` };
         }
-        current = current.parentElement;
+        current = getComposedParentElement(current);
     }
 
     return undefined;
 }
 
 function getGenericHardSkipReason(element: Element, context: TranslationTargetContext): string | undefined {
-    if (element.matches(HARD_SKIP_SELECTOR) || element.closest(HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
+    if (composedClosest(element, HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
     if (!isVisibleForTranslation(element, context)) return 'not-visible';
     if (element instanceof HTMLElement && element.isContentEditable) return 'contenteditable';
 
-    const role = element.getAttribute('role')?.toLowerCase();
-    if (role && HARD_SKIP_ROLES.has(role)) return `hard-skip-role:${role}`;
-    if (role === 'button' && !isExpandableReadingContainer(element)) return 'hard-skip-role:button';
+    let interactiveAncestor: Element | null = element;
+    while (interactiveAncestor) {
+        const role = interactiveAncestor.getAttribute('role')?.toLowerCase();
+        if (role && HARD_SKIP_ROLES.has(role)) return `hard-skip-role:${role}`;
+        if ((interactiveAncestor.matches('button') || role === 'button')
+            && !isExpandableReadingContainer(interactiveAncestor)) return 'hard-skip-role:button';
+        interactiveAncestor = getComposedParentElement(interactiveAncestor);
+    }
 
     const text = getCachedNormalizedText(context.grabOptions?.scanContext, element) || getTranslatableText(element).replace(/\s+/g, ' ').trim();
     if (text.length < 3) return 'too-short';

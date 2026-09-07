@@ -10,6 +10,7 @@ import { decideTranslationTarget, isExpandableReadingContainer, isOpenExpandable
 import {
     cloneScanStats,
     createScanContext,
+    discoverScanShadowRoots,
     getCachedContentFilterDecision,
     getCachedNormalizedText,
     getCachedProseEvidence,
@@ -17,6 +18,12 @@ import {
     type TranslationTargetStats
 } from './scanContext';
 import type { TranslationTargetCandidate, TranslationTargetContext, TranslationTargetDecision } from './types';
+import {
+    composedContains,
+    discoverOpenShadowRootsAsync,
+    getComposedParentElement,
+    isInactiveSlotFallback
+} from './composedTree';
 
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
@@ -39,8 +46,25 @@ export interface AutoTranslationTargetResult {
     stats?: TranslationTargetStats;
 }
 
-export function resolveAutoTranslationTarget(scope: string): AutoTranslationTargetResult {
+export interface TranslationTargetResolveOptions {
+    includeOpenShadowRoots?: boolean;
+}
+
+export function resolveAutoTranslationTarget(
+    scope: string,
+    options: TranslationTargetResolveOptions = {}
+): AutoTranslationTargetResult {
     const scanContext = createScanContext();
+    if (options.includeOpenShadowRoots !== false) {
+        discoverScanShadowRoots(scanContext, document.body);
+    }
+    return resolveAutoTranslationTargetWithContext(scope, scanContext);
+}
+
+function resolveAutoTranslationTargetWithContext(
+    scope: string,
+    scanContext: ReturnType<typeof createScanContext>
+): AutoTranslationTargetResult {
 
     if (scope === 'full') {
         const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full', scanContext };
@@ -50,7 +74,7 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
             contentRoot: document.body,
             grabOptions
         };
-        const decisions = collectTranslationTargets(document.body, context, { includeSupplemental: false });
+        const decisions = collectTargetsAcrossRegisteredRoots(document.body, context, { includeSupplemental: false });
         return {
             contentRoot: document.body,
             nodes: decisions.map(decision => decision.target),
@@ -74,7 +98,7 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
         grabOptions
     };
 
-    const decisions = collectTranslationTargets(contentRoot, context, { includeSupplemental: true });
+    const decisions = collectTargetsAcrossRegisteredRoots(contentRoot, context, { includeSupplemental: true });
     if (decisions.length > 0) {
         return {
             contentRoot,
@@ -92,7 +116,7 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
         contentRoot,
         grabOptions: fallbackOptions
     };
-    const fallbackDecisions = collectTranslationTargets(contentRoot, fallbackContext, {
+    const fallbackDecisions = collectTargetsAcrossRegisteredRoots(contentRoot, fallbackContext, {
         includeSupplemental: false,
         fallback: true
     });
@@ -112,11 +136,94 @@ export function resolveAutoTranslationTarget(scope: string): AutoTranslationTarg
         contentRoot: document.body,
         grabOptions: fallbackOptions
     };
-    const bodyDecisions = collectTranslationTargets(document.body, bodyContext, {
+    const bodyDecisions = collectTargetsAcrossRegisteredRoots(document.body, bodyContext, {
         includeSupplemental: false,
         fallback: true
     });
 
+    return {
+        contentRoot: document.body,
+        nodes: bodyDecisions.map(decision => decision.target),
+        decisions: bodyDecisions,
+        grabOptions: fallbackOptions,
+        stats: cloneScanStats(scanContext)
+    };
+}
+
+async function resolveAutoTranslationTargetWithContextAsync(
+    scope: string,
+    scanContext: ReturnType<typeof createScanContext>,
+    signal?: AbortSignal
+): Promise<AutoTranslationTargetResult> {
+    if (scope === 'full') {
+        const grabOptions: GrabAllNodeOptions = { siteCompatMode: 'full', scanContext };
+        const context: TranslationTargetContext = {
+            mode: 'full', scope, contentRoot: document.body, grabOptions
+        };
+        const decisions = await collectTargetsAcrossRegisteredRootsAsync(
+            document.body, context, { includeSupplemental: false }, signal
+        );
+        return {
+            contentRoot: document.body,
+            nodes: decisions.map(decision => decision.target),
+            decisions,
+            grabOptions,
+            stats: cloneScanStats(scanContext)
+        };
+    }
+
+    const contentRoot = findMainContent(scanContext);
+    const grabOptions: GrabAllNodeOptions = {
+        contentFilter: getContentFilterDecision,
+        contentUnitClassifier: classifyContentUnit,
+        siteCompatMode: 'smart',
+        scanContext
+    };
+    const context: TranslationTargetContext = {
+        mode: 'smart', scope, contentRoot, grabOptions
+    };
+    const decisions = await collectTargetsAcrossRegisteredRootsAsync(
+        contentRoot, context, { includeSupplemental: true }, signal
+    );
+    if (decisions.length > 0) {
+        return {
+            contentRoot,
+            nodes: decisions.map(decision => decision.target),
+            decisions,
+            grabOptions,
+            stats: cloneScanStats(scanContext)
+        };
+    }
+
+    const fallbackOptions: GrabAllNodeOptions = { siteCompatMode: 'full', scanContext };
+    const fallbackContext: TranslationTargetContext = {
+        mode: 'full', scope, contentRoot, grabOptions: fallbackOptions
+    };
+    const fallbackDecisions = await collectTargetsAcrossRegisteredRootsAsync(
+        contentRoot,
+        fallbackContext,
+        { includeSupplemental: false, fallback: true },
+        signal
+    );
+    if (fallbackDecisions.length > 0) {
+        return {
+            contentRoot,
+            nodes: fallbackDecisions.map(decision => decision.target),
+            decisions: fallbackDecisions,
+            grabOptions: fallbackOptions,
+            stats: cloneScanStats(scanContext)
+        };
+    }
+
+    const bodyContext: TranslationTargetContext = {
+        mode: 'full', scope, contentRoot: document.body, grabOptions: fallbackOptions
+    };
+    const bodyDecisions = await collectTargetsAcrossRegisteredRootsAsync(
+        document.body,
+        bodyContext,
+        { includeSupplemental: false, fallback: true },
+        signal
+    );
     return {
         contentRoot: document.body,
         nodes: bodyDecisions.map(decision => decision.target),
@@ -294,6 +401,165 @@ function collectGenericSupplementalReadingTargets(
     ]
         .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+export interface AsyncTranslationTargetOptions {
+    signal?: AbortSignal;
+    includeOpenShadowRoots?: boolean;
+    beforeCollect?: (openShadowRoots: ReadonlySet<ShadowRoot>) => void;
+}
+
+export async function resolveAutoTranslationTargetAsync(
+    scope: string,
+    options: AsyncTranslationTargetOptions = {}
+): Promise<AutoTranslationTargetResult> {
+    const scanContext = createScanContext();
+    if (options.includeOpenShadowRoots !== false) {
+        await discoverOpenShadowRootsAsync(document.body, scanContext.openShadowRoots, options.signal);
+        scanContext.stats.openShadowRoots = scanContext.openShadowRoots.size;
+    }
+    if (options.signal?.aborted) throw new DOMException('Target collection cancelled', 'AbortError');
+    options.beforeCollect?.(scanContext.openShadowRoots);
+    if (options.signal?.aborted) throw new DOMException('Target collection cancelled', 'AbortError');
+    return resolveAutoTranslationTargetWithContextAsync(scope, scanContext, options.signal);
+}
+
+export function collectTargetsAcrossRegisteredRoots(
+    root: Element,
+    context: TranslationTargetContext,
+    options: { includeSupplemental?: boolean; fallback?: boolean }
+): TranslationTargetDecision[] {
+    const ordinary = collectTranslationTargets(root, context, options);
+    const shadowRoots = context.grabOptions?.scanContext?.openShadowRoots ?? new Set<ShadowRoot>();
+    const shadow: TranslationTargetDecision[] = [];
+    const boundaryCache = new WeakMap<Element, boolean>();
+
+    for (const shadowRoot of shadowRoots) {
+        shadow.push(...collectSingleShadowRootTargets(root, shadowRoot, context, options, boundaryCache));
+    }
+
+    return mergeTranslationDecisions([...ordinary, ...shadow], context);
+}
+
+async function collectTargetsAcrossRegisteredRootsAsync(
+    root: Element,
+    context: TranslationTargetContext,
+    options: { includeSupplemental?: boolean; fallback?: boolean },
+    signal?: AbortSignal
+): Promise<TranslationTargetDecision[]> {
+    const ordinary = collectTranslationTargets(root, context, options);
+    const shadowRoots = context.grabOptions?.scanContext?.openShadowRoots ?? new Set<ShadowRoot>();
+    const shadow: TranslationTargetDecision[] = [];
+    const boundaryCache = new WeakMap<Element, boolean>();
+    let sliceStarted = performance.now();
+
+    for (const shadowRoot of shadowRoots) {
+        if (signal?.aborted) throw new DOMException('Target collection cancelled', 'AbortError');
+        shadow.push(...collectSingleShadowRootTargets(root, shadowRoot, context, options, boundaryCache));
+        if (performance.now() - sliceStarted >= 4) {
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+            sliceStarted = performance.now();
+        }
+    }
+
+    if (signal?.aborted) throw new DOMException('Target collection cancelled', 'AbortError');
+    return mergeTranslationDecisions([...ordinary, ...shadow], context);
+}
+
+function collectSingleShadowRootTargets(
+    scanRoot: Element,
+    shadowRoot: ShadowRoot,
+    context: TranslationTargetContext,
+    options: { fallback?: boolean },
+    boundaryCache: WeakMap<Element, boolean>
+): TranslationTargetDecision[] {
+    if (!shadowRoot.host.isConnected || !composedContains(scanRoot, shadowRoot.host)) return [];
+    if (!isVisibleForTranslation(shadowRoot.host, context)) return [];
+    if (context.mode === 'smart'
+        && !isAllowedSmartShadowBoundary(shadowRoot.host, context.contentRoot, boundaryCache)) return [];
+    if (!hasLocalTranslatableText(shadowRoot)) return [];
+
+    const previousSkip = context.grabOptions?.shouldSkipSubtree;
+    const shadowContext: TranslationTargetContext = {
+        ...context,
+        grabOptions: {
+            ...context.grabOptions,
+            shouldSkipSubtree: element => isInactiveSlotFallback(element) || Boolean(previousSkip?.(element))
+        }
+    };
+    return collectTranslationTargets(shadowRoot, shadowContext, {
+        includeSupplemental: false,
+        fallback: options.fallback
+    })
+        .filter(decision => isAllowedShadowDecision(decision, shadowContext, boundaryCache))
+        .map(decision => ({
+            ...decision,
+            source: decision.source === 'fallback' ? 'fallback' : 'shadow-root',
+            reasons: [...decision.reasons, 'open-shadow-root']
+        }));
+}
+
+function hasLocalTranslatableText(root: ShadowRoot): boolean {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let current: Node | null;
+    while (current = walker.nextNode()) {
+        if (!current.textContent?.trim()) continue;
+        const parent = current.parentElement;
+        if (!parent || parent.closest('script, style, noscript, template')) continue;
+        if (isInactiveSlotFallback(parent)) continue;
+        return true;
+    }
+    return false;
+}
+
+function isAllowedShadowDecision(
+    decision: TranslationTargetDecision,
+    context: TranslationTargetContext,
+    boundaryCache: WeakMap<Element, boolean>
+): boolean {
+    const target = decision.target;
+    if (isInactiveSlotFallback(target)) return false;
+    if (context.mode === 'full') return true;
+    if (!isAllowedSmartShadowBoundary(target, context.contentRoot, boundaryCache)) return false;
+
+    const text = getCachedNormalizedText(context.grabOptions?.scanContext, target);
+    const hint = getStructuralHint(target);
+    if (/session[_-]*(time|duration)|visually[_-]*hidden|screen[_-]*reader|sr[_-]*only/i.test(hint)) return false;
+    if (target.matches('time')) return false;
+    if (target.matches('a') && text.length < 80) return false;
+    if (/^(?:\d{1,2}:\d{2}|\d{1,2}\s*(?:am|pm))(?:\s*[-–—].*)?$/i.test(text)) return false;
+
+    return true;
+}
+
+function isAllowedSmartShadowBoundary(
+    element: Element,
+    contentRoot: Element,
+    cache: WeakMap<Element, boolean>
+): boolean {
+    if (element === document.body) return true;
+    const cached = cache.get(element);
+    if (cached !== undefined) return cached;
+
+    const hint = [
+        element.tagName,
+        element.id,
+        typeof element.className === 'string' ? element.className : '',
+        element.getAttribute('role') ?? '',
+        element.getAttribute('aria-label') ?? ''
+    ].join(' ');
+    let allowed = !/\b(cookie|feedback|advert|advertisement|promo|toolbar|menu|nav|navigation)\b/i.test(hint);
+    if (allowed && /visually[_-]*hidden|screen[_-]*reader|sr[_-]*only/i.test(hint)) allowed = false;
+    if (allowed && /session[_-]*(time|duration)/i.test(hint)) allowed = false;
+    if (allowed && (element.matches('button') || element.getAttribute('role')?.toLowerCase() === 'button')) {
+        allowed = element.hasAttribute('aria-expanded');
+    }
+    if (allowed && element !== contentRoot) {
+        const parent = getComposedParentElement(element);
+        allowed = Boolean(parent && isAllowedSmartShadowBoundary(parent, contentRoot, cache));
+    }
+    cache.set(element, allowed);
+    return allowed;
 }
 
 function collectSegmentedArticleReadingTargets(context: TranslationTargetContext): Element[] {

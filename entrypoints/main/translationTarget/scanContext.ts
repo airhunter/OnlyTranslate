@@ -9,6 +9,7 @@ import {
     BILINGUAL_CONTENT_CLASS,
     TRANSLATED_ATTR
 } from './constants';
+import { composedClosest, composedContains, discoverOpenShadowRoots, getComposedParentElement } from './composedTree';
 
 export type ScanBudgetKind = 'supplemental' | 'dynamic';
 
@@ -18,6 +19,7 @@ export interface TranslationTargetStats {
     skippedSubtrees: number;
     budgetExceeded: boolean;
     profileFastPathUsed: boolean;
+    openShadowRoots: number;
 }
 
 export interface ScanContext {
@@ -31,6 +33,7 @@ export interface ScanContext {
     proseEvidence: WeakMap<Element, ProseEvidence>;
     visibility: WeakMap<Element, boolean>;
     uiSubtree: WeakMap<Element, boolean>;
+    openShadowRoots: Set<ShadowRoot>;
 }
 
 export interface ScanContextOptions {
@@ -86,7 +89,8 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
             classifiedElements: 0,
             skippedSubtrees: 0,
             budgetExceeded: false,
-            profileFastPathUsed: false
+            profileFastPathUsed: false,
+            openShadowRoots: 0
         },
         budgets: {
             supplemental: options.supplementalBudget ?? DEFAULT_SUPPLEMENTAL_BUDGET,
@@ -102,8 +106,16 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
         contentUnit: new WeakMap(),
         proseEvidence: new WeakMap(),
         visibility: new WeakMap(),
-        uiSubtree: new WeakMap()
+        uiSubtree: new WeakMap(),
+        openShadowRoots: new Set()
     };
+}
+
+export function discoverScanShadowRoots(context: ScanContext | undefined, root: ParentNode): Set<ShadowRoot> {
+    const registry = context?.openShadowRoots ?? new Set<ShadowRoot>();
+    discoverOpenShadowRoots(root, registry);
+    if (context) context.stats.openShadowRoots = registry.size;
+    return registry;
 }
 
 export function cloneScanStats(context?: ScanContext): TranslationTargetStats | undefined {
@@ -153,6 +165,21 @@ export function invalidateScanCache(context: ScanContext | undefined, root: Elem
         deleteScanCacheEntry(context, walker.currentNode as Element);
         if (++processed >= MAX_INVALIDATION_DESCENDANTS) break;
     }
+
+    for (const shadowRoot of context.openShadowRoots) {
+        if (!shadowRoot.host.isConnected || !composedContains(root, shadowRoot.host)) continue;
+        const shadowWalker = document.createTreeWalker(shadowRoot, NodeFilter.SHOW_ELEMENT);
+        let shadowNode: Node | null;
+        while (shadowNode = shadowWalker.nextNode()) {
+            deleteScanCacheEntry(context, shadowNode as Element);
+        }
+    }
+
+    let ancestor = getComposedParentElement(root);
+    while (ancestor) {
+        deleteScanCacheEntry(context, ancestor);
+        ancestor = getComposedParentElement(ancestor);
+    }
 }
 
 export function tryUseScanBudget(context: ScanContext | undefined, budget?: ScanBudgetKind): boolean {
@@ -188,7 +215,7 @@ export function isElementVisible(element: Element): boolean {
 
     while (current) {
         if (isElementSelfHidden(current)) return false;
-        current = current.parentElement;
+        current = getComposedParentElement(current);
     }
 
     return true;
@@ -320,8 +347,8 @@ export function hasEnoughProfileTargets(targets: Element[], context?: ScanContex
 
 function computeObviousUiSubtree(context: ScanContext | undefined, element: Element): boolean {
     if (element.matches(OBVIOUS_UI_SELECTOR)) return true;
-    if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tablist"]')) return true;
-    if (element.closest(`.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`)) return true;
+    if (composedClosest(element, 'nav, footer, form, dialog, [role="navigation"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tablist"]')) return true;
+    if (composedClosest(element, `.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`)) return true;
 
     const hint = getStructuralHint(element);
     if (!NOISE_HINT_PATTERN.test(hint)) return false;
