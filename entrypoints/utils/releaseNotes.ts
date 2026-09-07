@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.11.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.11：网页翻译覆盖与稳定性增强',
+        items: [
+          '新增印尼语作为网页、视频字幕、电子书和 PDF 的目标翻译语言。',
+          '支持翻译开放式 Shadow DOM 中的可读内容，覆盖更多采用 Web Components 的网页。',
+          '增强智能识文：广告等模块将文章切分时，仍可识别并翻译后续正文，同时更准确排除推广内容。',
+          '修复动态页面在内容替换、路由切换或更新后翻译任务可能失效的问题。',
+          '修复双语模式偶尔重复显示相同译文的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.11: Broader Page Coverage and Better Stability',
+        items: [
+          'Added Indonesian as a target language for webpages, video subtitles, ebooks, and PDFs.',
+          'Added translation for readable content inside open Shadow DOM, covering more pages built with Web Components.',
+          'Improved Smart translation on articles split by ads and similar modules, restoring later body sections while filtering promotional content more accurately.',
+          'Fixed translation tasks that could stop working after dynamic pages replaced content, changed routes, or updated.',
+          'Fixed an issue that could show the same translation twice in bilingual mode.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.11：網頁翻譯涵蓋範圍與穩定性增強',
+        items: [
+          '新增印尼語作為網頁、影片字幕、電子書與 PDF 的目標翻譯語言。',
+          '支援翻譯開放式 Shadow DOM 中的可讀內容，涵蓋更多採用 Web Components 的網頁。',
+          '增強智慧識文：文章被廣告等模組切開時，仍可辨識並翻譯後續正文，同時更準確排除推廣內容。',
+          '修正動態頁面在內容替換、路由切換或更新後，翻譯工作可能失效的問題。',
+          '修正雙語模式偶爾重複顯示相同譯文的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.11：Web 翻訳の対応範囲と安定性を強化',
+        items: [
+          'Web ページ、動画字幕、電子書籍、PDF の翻訳先言語にインドネシア語を追加しました。',
+          'オープンな Shadow DOM 内の可読コンテンツを翻訳できるようになり、Web Components を利用したページにもより広く対応します。',
+          '広告などで分割された記事でも後半の本文を検出・翻訳できるよう、スマート翻訳を改善し、宣伝コンテンツの除外精度も高めました。',
+          '動的ページでコンテンツの置換、ルート変更、更新が起きた後に翻訳処理が動かなくなることがある問題を修正しました。',
+          '対訳表示で同じ翻訳が重複して表示されることがある問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.10.0',
     notes: {
       'zh-CN': {

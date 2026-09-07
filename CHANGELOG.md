@@ -1,5 +1,20 @@
 # Changelog
 
+# [1.11.0](https://github.com/airhunter/OnlyTranslate/compare/v1.10.0...v1.11.0) (2026-09-07)
+
+
+### Bug Fixes
+
+* **content:** 避免双语模式重复显示相同译文 ([8a2a882](https://github.com/airhunter/OnlyTranslate/commit/8a2a882482c11beb90066397134c48322a3e161d)), closes [#6](https://github.com/airhunter/OnlyTranslate/issues/6)
+* **content:** 修复动态页面翻译生命周期失效 ([9d7b3b9](https://github.com/airhunter/OnlyTranslate/commit/9d7b3b92839c1e31dc2a6b650452338b58efb485))
+* **content:** 修复正文漏译与推广内容误判 ([1b6440c](https://github.com/airhunter/OnlyTranslate/commit/1b6440c406e2aa93bff9abc9d73c976a2a3a7cc4))
+
+
+### Features
+
+* **content:** 支持开放 Shadow DOM 完整翻译 ([5968716](https://github.com/airhunter/OnlyTranslate/commit/596871661cf209b17f57a0fd07a7c741d567bff3))
+* **options:** 添加印尼语翻译目标语言 ([db58da3](https://github.com/airhunter/OnlyTranslate/commit/db58da34b314773efe9ac5a81b466a53c328a0a4)), closes [#4](https://github.com/airhunter/OnlyTranslate/issues/4)
+
 # [1.10.0](https://github.com/airhunter/OnlyTranslate/compare/v1.9.0...v1.10.0) (2026-09-01)
 
 
