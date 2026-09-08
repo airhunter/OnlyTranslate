@@ -1,0 +1,8 @@
+{
+  "name": "DEV.to article keeps the main title with the separately detected article body",
+  "url": "https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj",
+  "scope": "smart",
+  "html": "devto-article-header.html",
+  "include": ["target-one", "article-summary", "article-paragraph", "section-heading", "section-paragraph"],
+  "exclude": ["author", "published", "tags", "related-heading", "related-link", "footer"]
+}
