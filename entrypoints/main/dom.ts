@@ -1,4 +1,4 @@
-import { keepSelectorCompatFn, selectCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
+import { keepSelectorCompatFn, selectCompatFn, textExcludeCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
@@ -65,20 +65,21 @@ export interface TranslatableTextWithProtectedInline {
 
 export function getTranslatableTextWithProtectedInline(node: Node): TranslatableTextWithProtectedInline {
     const protectedInlines: ProtectedInlinePlaceholder[] = [];
+    const boundary = node instanceof Element ? node : undefined;
 
     const collect = (current: Node): string => {
         if (current instanceof Text) {
-            return isInsideNonTranslatableContent(current) ? '' : current.nodeValue ?? '';
+            return isInsideNonTranslatableContent(current, boundary) ? '' : current.nodeValue ?? '';
         }
 
         if (!(current instanceof Element)) return current.textContent ?? '';
-        if (isNonTranslatableContentElement(current)) return '';
+        if (isNonTranslatableContentElement(current) || isExcludedFromTranslatableText(current)) return '';
 
         if (isProtectedInlineElement(current)) {
             const placeholder = buildProtectedInlinePlaceholder(current, protectedInlines.length);
             protectedInlines.push({
                 placeholder,
-                node: current.cloneNode(true) as Element
+                node: cloneProtectedInline(current)
             });
             return placeholder;
         }
@@ -99,6 +100,13 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
 function isProtectedInlineElement(node: Element): boolean {
     if (isProseLikeInlineCode(node)) return false;
     return matchesSelectorList(node, getActiveKeepSelector());
+}
+
+function cloneProtectedInline(node: Element): Element {
+    const clone = node.cloneNode(true) as Element;
+    if (clone.hasAttribute('id')) clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(descendant => descendant.removeAttribute('id'));
+    return clone;
 }
 
 function isProseLikeInlineCode(node: Element): boolean {
@@ -1423,7 +1431,7 @@ export function getTranslatableText(node: Node): string {
     }
 
     if (!(node instanceof Element)) return node.textContent ?? '';
-    if (isNonTranslatableContentElement(node)) return '';
+    if (isNonTranslatableContentElement(node) || isExcludedFromTranslatableText(node)) return '';
 
     let text = '';
     const walker = document.createTreeWalker(
@@ -1431,7 +1439,7 @@ export function getTranslatableText(node: Node): string {
         NodeFilter.SHOW_TEXT,
         {
             acceptNode: (textNode: Node): number => {
-                return isInsideNonTranslatableContent(textNode)
+                return isInsideNonTranslatableContent(textNode, node)
                     ? NodeFilter.FILTER_REJECT
                     : NodeFilter.FILTER_ACCEPT;
             }
@@ -1456,9 +1464,34 @@ function isNonTranslatableContentElement(node: Element): boolean {
     return node.matches(nonTranslatableContentSelector);
 }
 
-function isInsideNonTranslatableContent(node: Node): boolean {
-    const parent = node.parentElement;
-    return Boolean(parent?.closest(nonTranslatableContentSelector));
+function isInsideNonTranslatableContent(node: Node, boundary?: Element): boolean {
+    let current = node.parentElement;
+    while (current) {
+        if (isNonTranslatableContentElement(current) || isExcludedFromTranslatableText(current)) return true;
+        if (current === boundary) return false;
+        current = current.parentElement;
+    }
+    return false;
+}
+
+export function isExcludedFromTranslatableText(node: Element): boolean {
+    const exclude = textExcludeCompatFn[getMainDomain(location.href)];
+    return Boolean(exclude?.(node));
+}
+
+export function removeExcludedTranslatableTextContent(root: Element): void {
+    Array.from(root.querySelectorAll<Element>('*'))
+        .filter(isExcludedFromTranslatableText)
+        .forEach(node => node.remove());
+}
+
+export function hasExcludedTranslatableTextBoundary(parent: Element, child: Element): boolean {
+    let current: Element | null = child;
+    while (current && current !== parent) {
+        if (isExcludedFromTranslatableText(current)) return true;
+        current = current.parentElement;
+    }
+    return false;
 }
 
 export function beautyHTML(text: string): string {

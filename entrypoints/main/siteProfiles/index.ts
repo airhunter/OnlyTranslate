@@ -11,6 +11,7 @@ import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
 import { mediumProfile } from './medium';
+import { maxwellForbesProfile } from './maxwellForbes';
 import { mempkoProfile } from './mempko';
 import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
@@ -29,6 +30,7 @@ import type {
     ReplaceCompatFn,
     SelectCompatFn,
     ShouldKeepNestedTargetCompatFn,
+    TextExcludeCompatFn,
     SiteProfile,
     SiteProfileSelect,
     SupplementalCompatFn
@@ -57,10 +59,12 @@ export type {
     SiteProfileAppendTarget,
     SiteProfileExpandTarget,
     SiteProfileShouldKeepNestedTarget,
+    SiteProfileTextExclude,
     AfterBilingualAppendCompatFn,
     ExpandTargetCompatFn,
     ShouldKeepNestedTargetCompatFn,
-    SupplementalCompatFn
+    SupplementalCompatFn,
+    TextExcludeCompatFn
 } from './types';
 
 export const siteProfiles: SiteProfile[] = [
@@ -73,6 +77,7 @@ export const siteProfiles: SiteProfile[] = [
     githubProfile,
     stackOverflowProfile,
     mediumProfile,
+    maxwellForbesProfile,
     mempkoProfile,
     nxgoaiProfile,
     productHuntProfile,
@@ -143,6 +148,16 @@ export const siteProfileKeepSelectorFns: KeepSelectorCompatFn = siteProfiles.red
 
     for (const domain of profile.domains) {
         map[domain] = profile.keepSelector;
+    }
+
+    return map;
+}, {});
+
+export const siteProfileTextExcludeFns: TextExcludeCompatFn = siteProfiles.reduce<TextExcludeCompatFn>((map, profile) => {
+    if (!profile.excludeFromText) return map;
+
+    for (const domain of profile.domains) {
+        map[domain] = profile.excludeFromText;
     }
 
     return map;

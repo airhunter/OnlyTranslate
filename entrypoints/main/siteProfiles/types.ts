@@ -27,6 +27,7 @@ export type SiteProfileAppendTarget = (node: HTMLElement, context: TranslationTa
 export type SiteProfileExpandTarget = (node: Element, context: TranslationTargetContext) => Element[] | false | undefined;
 export type SiteProfileFastPathTargetCollector = (root: ParentNode, context: SiteProfileContext) => Element[] | false | undefined;
 export type SiteProfileShouldKeepNestedTarget = (parent: Element, child: Element, context: TranslationTargetContext) => boolean;
+export type SiteProfileTextExclude = (node: Element) => boolean;
 
 export interface SiteProfile {
     id: string;
@@ -48,6 +49,8 @@ export interface SiteProfile {
     // Complete smart-mode target set. When it has enough readable text, the generic DOM scan is skipped.
     collectFastPathTargets?: SiteProfileFastPathTargetCollector;
     shouldKeepNestedTarget?: SiteProfileShouldKeepNestedTarget;
+    // Exclude duplicated or derived descendants from a parent target's bilingual source text.
+    excludeFromText?: SiteProfileTextExclude;
 }
 
 export interface SelectCompatFn {
@@ -76,4 +79,8 @@ export interface ExpandTargetCompatFn {
 
 export interface ShouldKeepNestedTargetCompatFn {
     [domain: string]: SiteProfileShouldKeepNestedTarget;
+}
+
+export interface TextExcludeCompatFn {
+    [domain: string]: SiteProfileTextExclude;
 }

@@ -55,7 +55,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
-import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, grabNode } from '@/entrypoints/main/dom'
+import { DIRECT_TEXT_TARGET_ATTR, getTranslatableText, getTranslatableTextWithProtectedInline, grabAllNode, grabNode } from '@/entrypoints/main/dom'
 import { TRANSLATION_ONLY_BACKUP_CLASS } from '@/entrypoints/main/translationOnly'
 import { collectTranslationTargets, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
@@ -459,6 +459,94 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(paragraph.outerHTML.length).toBeGreaterThan(4096)
     expect(paragraphTargets).toEqual([paragraph])
+  })
+
+  it('translates Maxwell Forbes sidenotes separately without merging them into paragraph text', async () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://maxwellforbes.com/posts/dont-try-to-reform-science/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Don't Try to Reform Science</h1>
+          <p id="science-paragraph">Science 2 is a social practice because it must be.<sup class="footnote-ref"><a href="#fn2" id="fnref2">02</a></sup><span id="generated-sidenote" style="display:block"><span aria-hidden="true">02</span><span id="sidenote-copy">I am not a historian, please excuse these brazenly basic examples.</span></span></p>
+          <p>Because Science 2 is a social activity, most of what happens is communication between humans.</p>
+          <section class="footnotes" style="display:none">
+            <ol><li id="fn2" class="footnote-item"><p>I am not a historian, please excuse these brazenly basic examples. <a class="footnote-backref" href="#fnref2">↩︎</a></p></li></ol>
+          </section>
+        </article>
+      </main>
+    `
+
+    const paragraph = document.querySelector<HTMLElement>('#science-paragraph')!
+    const sidenoteCopy = document.querySelector<HTMLElement>('#sidenote-copy')!
+    const target = resolveAutoTranslateTarget('smart')
+    const fullTarget = resolveAutoTranslateTarget('full')
+    const protectedOrigin = getTranslatableTextWithProtectedInline(paragraph)
+
+    expect(target.nodes).toEqual(expect.arrayContaining([paragraph, sidenoteCopy]))
+    expect(fullTarget.nodes).toEqual(expect.arrayContaining([paragraph, sidenoteCopy]))
+    expect(getTranslatableText(paragraph)).toBe('Science 2 is a social practice because it must be.02')
+    expect(protectedOrigin.text).not.toContain('I am not a historian')
+    expect(protectedOrigin.text).not.toContain('02')
+    expect(protectedOrigin.protectedInlines).toHaveLength(1)
+
+    vi.mocked(translateText).mockImplementation(async origin => {
+      if (origin.includes('I am not a historian')) return '我不是历史学家，请原谅这些大胆的基本例子。'
+      return origin.replace('Science 2 is a social practice because it must be.', '科学2是一种社会实践，因为它必须如此。')
+    })
+
+    await handleBilingualTranslation(sidenoteCopy, false)
+    await handleBilingualTranslation(paragraph, false)
+
+    const paragraphTranslation = paragraph.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)!
+    const sidenoteTranslation = sidenoteCopy.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)!
+    expect(paragraphTranslation.textContent).toContain('科学2是一种社会实践')
+    expect(paragraphTranslation.textContent).not.toContain('我不是历史学家')
+    expect(paragraphTranslation.querySelector('a[href="#fn2"]')?.textContent).toBe('02')
+    expect(paragraphTranslation.querySelector('[id="fnref2"]')).toBeNull()
+    expect(sidenoteTranslation.textContent).toContain('我不是历史学家')
+  })
+
+  it('keeps narrow Maxwell Forbes footnotes at the original endnote location', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://maxwellforbes.com/posts/dont-try-to-reform-science/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Don't Try to Reform Science</h1>
+          <p id="science-paragraph">Science 2 is a social practice because it must be.<sup class="footnote-ref"><a href="#fn2">02</a></sup><span style="display:none"><span>02</span><span id="hidden-sidenote-copy">I am not a historian, please excuse these brazenly basic examples.</span></span></p>
+          <p>Because Science 2 is a social activity, most of what happens is communication between humans.</p>
+          <section class="footnotes">
+            <ol><li id="fn2" class="footnote-item"><p id="visible-footnote-copy">I am not a historian, please excuse these brazenly basic examples. <a class="footnote-backref" href="#fnref2">↩︎</a></p></li></ol>
+          </section>
+        </article>
+      </main>
+    `
+
+    const paragraph = document.querySelector<HTMLElement>('#science-paragraph')!
+    const ids = resolveAutoTranslateTarget('smart').nodes.map(node => node.id)
+
+    expect(getTranslatableText(paragraph)).toBe('Science 2 is a social practice because it must be.02')
+    expect(ids).toContain('visible-footnote-copy')
+    expect(ids).not.toContain('hidden-sidenote-copy')
+  })
+
+  it('does not exclude unrelated inline content after a Maxwell Forbes footnote marker', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://maxwellforbes.com/posts/dont-try-to-reform-science/'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <p id="paragraph">Readable article text.<sup class="footnote-ref"><a href="#fn2">02</a></sup><span>Different inline explanation.</span></p>
+      <section class="footnotes"><ol><li id="fn2" class="footnote-item"><p>Actual referenced footnote.</p></li></ol></section>
+    `
+
+    expect(getTranslatableText(document.querySelector('#paragraph')!))
+      .toBe('Readable article text.02Different inline explanation.')
   })
 
   it('keeps Reddit multimedia text leaves when player markup exceeds the target size limit', () => {

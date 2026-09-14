@@ -1,4 +1,4 @@
-import { checkConfig, searchClassName, skipNode } from "../utils/check";
+import { checkConfig, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
 import { options, services, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner, showExtensionReloadedTip } from "../utils/icon";
@@ -8,6 +8,8 @@ import {
     getTranslatableHTML,
     getTranslatableText,
     getTranslatableTextWithProtectedInline,
+    hasExcludedTranslatableTextBoundary,
+    removeExcludedTranslatableTextContent,
     grabNode,
     renderTextWithProtectedInline,
     type GrabAllNodeOptions,
@@ -288,7 +290,7 @@ function shouldStartTranslation(node: HTMLElement): boolean {
 
 function clearUnfinishedAutoTranslation(node: HTMLElement): void {
     if (!node.hasAttribute(TRANSLATED_ATTR)) return;
-    if (node.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)) return;
+    if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return;
 
     clearTranslationHostMarkers(node);
 }
@@ -320,6 +322,7 @@ function normalizeTranslationSource(value: string): string {
 function captureTranslationAttempt(node: HTMLElement, sourceText: string): TranslationAttemptSnapshot {
     const sourceClone = node.cloneNode(true) as HTMLElement;
     sourceClone.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`).forEach(element => element.remove());
+    removeExcludedTranslatableTextContent(sourceClone);
     return {
         sourceText: normalizeTranslationSource(sourceText),
         sourceHTML: sourceClone.innerHTML,
@@ -366,7 +369,7 @@ function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body)
     }
 
     translatedElements.forEach(element => {
-        if (element.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)) return;
+        if (findOwnedClassName(element, BILINGUAL_CONTENT_CLASS)) return;
         if (element.matches(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
         if (element.querySelector(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
 
@@ -540,6 +543,11 @@ async function startAutoTranslation(
         requestOptions: TranslationRequestOptions = { allowBatch: true, priority: 'high' }
     ): Promise<void> => {
         if (!(node instanceof HTMLElement)) return Promise.resolve();
+        if (config.display !== styles.bilingualTranslation
+            && hasExcludedTranslatableTextBoundary(document.body, node)) {
+            activeObserver?.unobserve(node);
+            return Promise.resolve();
+        }
 
         // 去重
         if (node.hasAttribute(TRANSLATED_ATTR)) return Promise.resolve();
@@ -642,8 +650,8 @@ async function startAutoTranslation(
     const refreshTranslatedHost = (host: HTMLElement): void => {
         const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
         if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return;
-        host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
-        host.querySelectorAll(ACTIVE_TRANSLATION_STATUS_SELECTOR).forEach(element => element.remove());
+        queryOwnedElements(host, `.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
+        queryOwnedElements(host, ACTIVE_TRANSLATION_STATUS_SELECTOR).forEach(element => element.remove());
         clearTranslationHostMarkers(host);
         if (translationState.isAutoTranslating && host.isConnected) {
             translationState.observer?.observe(host);
@@ -935,7 +943,7 @@ export function handleBilingualTranslation(
     const originText = getTranslatableText(node);
     const attempt = captureTranslationAttempt(node, originText);
     // 如果已经翻译过，250ms 后删除翻译结果
-    let bilingualNode = searchClassName(node, BILINGUAL_WRAPPER_CLASS);
+    let bilingualNode = findOwnedClassName(node, BILINGUAL_WRAPPER_CLASS);
     if (bilingualNode) {
         if (options.removeExisting === false) {
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -948,9 +956,9 @@ export function handleBilingualTranslation(
         let spinner = insertLoadingSpinner(bilingualNode as HTMLElement, true);
         return new Promise(resolve => setTimeout(() => {
             spinner.remove();
-            const content = searchClassName(bilingualNode as HTMLElement, BILINGUAL_CONTENT_CLASS);
-            if (content && content instanceof HTMLElement) content.remove();
-            (bilingualNode as HTMLElement).classList.remove(BILINGUAL_WRAPPER_CLASS);
+            const content = findOwnedClassName(bilingualNode, BILINGUAL_CONTENT_CLASS);
+            content?.remove();
+            bilingualNode.classList.remove(BILINGUAL_WRAPPER_CLASS);
             translationState.htmlSet.delete(nodeOuterHTML);
             resolve();
         }, 250));
@@ -1269,7 +1277,7 @@ function appendTranslationContent(
     text: string | Node,
     translationOnly: PreparedTranslationOnly | false,
 ): boolean {
-    if (searchClassName(node, BILINGUAL_CONTENT_CLASS)) return false;
+    if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return false;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);
     smashTruncationStyle(node);
@@ -1317,6 +1325,16 @@ function notifyDiagnosticVisible(options: TranslationRequestOptions): void {
         type: 'TRANSLATION_DIAGNOSTIC_VISIBLE',
         sessionId,
     })?.catch(() => undefined);
+}
+
+function findOwnedClassName(node: HTMLElement, className: string): HTMLElement | null {
+    if (node.classList.contains(className)) return node;
+    return queryOwnedElements(node, `.${className}`)[0] ?? null;
+}
+
+function queryOwnedElements(node: HTMLElement, selector: string): HTMLElement[] {
+    return Array.from(node.querySelectorAll<HTMLElement>(selector))
+        .filter(candidate => !hasExcludedTranslatableTextBoundary(node, candidate));
 }
 
 type BilingualInsertionLayout = 'normal-flow' | 'float-aware-inline' | 'blockified-flex' | 'preserved-flex';

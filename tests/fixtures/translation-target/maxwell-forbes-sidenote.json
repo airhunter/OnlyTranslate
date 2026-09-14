@@ -1,0 +1,10 @@
+{
+  "name": "Maxwell Forbes wide sidenotes stay separate from article paragraphs",
+  "url": "https://maxwellforbes.com/posts/dont-try-to-reform-science/",
+  "scope": "smart",
+  "html": "maxwell-forbes-sidenote.html",
+  "contentRoot": "main",
+  "include": ["story-title", "science-paragraph", "sidenote-copy", "next-paragraph"],
+  "exclude": ["generated-sidenote", "sidenote-number", "footnote-copy"],
+  "nodesEveryElement": true
+}

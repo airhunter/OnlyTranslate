@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/entrypoints/utils/config', () => ({
   config: {
-    translationScope: 'smart'
+    translationScope: 'smart',
+    display: 1
   }
 }))
 

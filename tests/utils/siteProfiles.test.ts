@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { afterBilingualAppendCompatFn, replaceCompatFn, selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat'
+import { afterBilingualAppendCompatFn, replaceCompatFn, selectCompatFn, supplementalCompatFn, textExcludeCompatFn } from '@/entrypoints/main/compat'
 import {
   siteProfiles,
   siteProfileExpandTargetFns,
@@ -185,6 +185,10 @@ describe('site profile registry', () => {
 
   it('registers Asterisk bilingual append profile', () => {
     expect(afterBilingualAppendCompatFn['asteriskmag.com']).toBeTypeOf('function')
+  })
+
+  it('registers Maxwell Forbes duplicated sidenote text exclusion', () => {
+    expect(textExcludeCompatFn['maxwellforbes.com']).toBeTypeOf('function')
   })
 
   it('registers Claude learning supplemental profile', () => {

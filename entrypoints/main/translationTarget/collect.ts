@@ -1,6 +1,6 @@
 import { selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
-import { cleanupDirectTextTargets, grabAllNode, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
+import { cleanupDirectTextTargets, grabAllNode, hasExcludedTranslatableTextBoundary, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
@@ -955,6 +955,7 @@ function mergeTranslationDecisions(
         if (unique.some(other =>
             decision !== other
             && decision.target.contains(other.target)
+            && !hasExcludedTranslatableTextBoundary(decision.target, other.target)
             && shouldKeepNestedTarget(decision.target, other.target, context)
         )) {
             return false;
@@ -962,6 +963,7 @@ function mergeTranslationDecisions(
 
         return !unique.some(other => {
             if (decision === other || !other.target.contains(decision.target)) return false;
+            if (hasExcludedTranslatableTextBoundary(other.target, decision.target)) return false;
             return !shouldKeepNestedTarget(other.target, decision.target, context);
         });
     });
