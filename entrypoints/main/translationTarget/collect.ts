@@ -24,6 +24,7 @@ import {
     getComposedParentElement,
     isInactiveSlotFallback
 } from './composedTree';
+import { TRANSLATED_ATTR } from './constants';
 
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
@@ -951,12 +952,20 @@ function mergeTranslationDecisions(
     context: TranslationTargetContext
 ): TranslationTargetDecision[] {
     const unique = Array.from(new Map(decisions.map(decision => [decision.target, decision])).values());
+    const segmentedBlockquotes = collectSegmentedBlockquotes(unique);
+    const shouldKeepNested = (parent: Element, child: Element): boolean => {
+        if (segmentedBlockquotes.has(parent) && child.parentElement === parent) return true;
+        return shouldKeepNestedTarget(parent, child, context);
+    };
+
     return unique.filter(decision => {
+        if (segmentedBlockquotes.has(decision.target)) return false;
+
         if (unique.some(other =>
             decision !== other
             && decision.target.contains(other.target)
             && !hasExcludedTranslatableTextBoundary(decision.target, other.target)
-            && shouldKeepNestedTarget(decision.target, other.target, context)
+            && shouldKeepNested(decision.target, other.target)
         )) {
             return false;
         }
@@ -964,9 +973,27 @@ function mergeTranslationDecisions(
         return !unique.some(other => {
             if (decision === other || !other.target.contains(decision.target)) return false;
             if (hasExcludedTranslatableTextBoundary(other.target, decision.target)) return false;
-            return !shouldKeepNestedTarget(other.target, decision.target, context);
+            return !shouldKeepNested(other.target, decision.target);
         });
     });
+}
+
+function collectSegmentedBlockquotes(decisions: TranslationTargetDecision[]): Set<Element> {
+    const targets = new Set(decisions.map(decision => decision.target));
+
+    return new Set(decisions
+        .map(decision => decision.target)
+        .filter(target => {
+            if (!target.matches('blockquote')) return false;
+            if (Array.from(target.childNodes).some(node => node instanceof Text && Boolean(node.textContent?.trim()))) {
+                return false;
+            }
+
+            const children = Array.from(target.children);
+            return children.length >= 2
+                && children.every(child => child.matches('p'))
+                && children.every(child => targets.has(child) || child.getAttribute(TRANSLATED_ATTR) === 'true');
+        }));
 }
 
 function shouldKeepNestedTarget(parent: Element, child: Element, context: TranslationTargetContext): boolean {

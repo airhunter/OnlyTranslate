@@ -461,6 +461,51 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(paragraphTargets).toEqual([paragraph])
   })
 
+  it('inserts Medium multi-paragraph blockquote translations after their matching paragraphs', async () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903'),
+      configurable: true
+    })
+    document.body.innerHTML = `
+      <main>
+        <article>
+          <h1>Then They Came For The Programmers</h1>
+          <blockquote id="quote">
+            <p id="quote-line-1">First they came for the Em Dashes, and I did not speak out — Because I was not an Em Dash.</p>
+            <p id="quote-line-2">Then they came for the artists, and I did not speak out — Because I was not an artist.</p>
+            <p id="quote-line-3">Then they came for the writers, and I did not speak out — Because I was not a writer.</p>
+            <p id="quote-line-4">Then they came for the programmers, and there was no one left to speak for me.</p>
+          </blockquote>
+          <p>The article continues with enough ordinary prose to keep the quotation inside the detected reading content.</p>
+        </article>
+      </main>
+    `
+
+    const quote = document.querySelector<HTMLElement>('#quote')!
+    const paragraphs = Array.from(quote.querySelectorAll<HTMLElement>(':scope > p'))
+    const target = resolveAutoTranslateTarget('smart')
+    const quoteTargets = target.nodes.filter(node => quote.contains(node))
+    const translations = ['第一句译文', '第二句译文', '第三句译文', '第四句译文']
+    vi.mocked(translateText).mockImplementation(async origin => {
+      const index = paragraphs.findIndex(paragraph => paragraph.textContent === origin)
+      return translations[index] ?? '译文'
+    })
+
+    expect(quoteTargets).toEqual(paragraphs)
+
+    await Promise.all(paragraphs.map(paragraph => handleBilingualTranslation(paragraph, false)))
+
+    expect(quote.querySelector(`:scope > .${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    paragraphs.forEach((paragraph, index) => {
+      const translation = paragraph.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+      expect(translation?.textContent).toContain(translations[index])
+      paragraph.setAttribute(TRANSLATED_ATTR, 'true')
+    })
+
+    const rescannedTargets = resolveAutoTranslateTarget('smart').nodes
+    expect(rescannedTargets).not.toContain(quote)
+  })
+
   it('translates Maxwell Forbes sidenotes separately without merging them into paragraph text', async () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://maxwellforbes.com/posts/dont-try-to-reform-science/'),

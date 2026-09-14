@@ -1,0 +1,22 @@
+{
+  "name": "Medium multi-paragraph blockquotes keep paragraph-aligned translation targets",
+  "url": "https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903",
+  "scope": "smart",
+  "html": "medium-multi-paragraph-blockquote.html",
+  "include": [
+    "story-title",
+    "quote-line-1",
+    "quote-line-2",
+    "quote-line-3",
+    "quote-line-4",
+    "single-paragraph-quote",
+    "mixed-quote",
+    "article-body"
+  ],
+  "exclude": [
+    "multi-paragraph-quote",
+    "single-quote-line",
+    "mixed-quote-detail"
+  ],
+  "nodesEveryElement": true
+}
