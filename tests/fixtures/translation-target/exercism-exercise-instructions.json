@@ -1,0 +1,25 @@
+{
+  "name": "Exercism exercise keeps instructions after the separately detected introduction",
+  "url": "https://exercism.org/tracks/cpp/exercises/making-the-grade",
+  "scope": "smart",
+  "html": "exercism-exercise-instructions.html",
+  "contentRoot": ".instructions > .border-b-1",
+  "contentRootExcludes": ["#instructions-heading"],
+  "include": [
+    "introduction-topic",
+    "introduction-paragraph",
+    "instructions-heading",
+    "instructions-story",
+    "task-heading",
+    "task-description",
+    "task-requirement"
+  ],
+  "exclude": [
+    "track-link",
+    "edit-link",
+    "footer"
+  ],
+  "stats": {
+    "profileFastPathUsed": true
+  }
+}
