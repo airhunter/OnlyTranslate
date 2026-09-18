@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.11.1',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.11.1：网页内容识别与译文显示修复',
+        items: [
+          '修复 DEV.to 文章标题在智能翻译中漏译的问题。',
+          '修复 Maxwell Forbes 文章旁注被重复翻译的问题。',
+          '修复多段引用的译文无法按原结构合并显示的问题。',
+          '修复 Exercism 练习说明部分内容漏译的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.11.1: Page Detection and Translation Display Fixes',
+        items: [
+          'Fixed article titles being missed by Smart translation on DEV.to.',
+          'Fixed generated sidenotes being translated twice on Maxwell Forbes articles.',
+          'Fixed translations for multi-paragraph blockquotes not being merged in the original structure.',
+          'Fixed parts of Exercism exercise instructions being missed by translation.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.11.1：網頁內容識別與譯文顯示修復',
+        items: [
+          '修復 DEV.to 文章標題在智慧翻譯中漏譯的問題。',
+          '修復 Maxwell Forbes 文章旁註被重複翻譯的問題。',
+          '修復多段引用的譯文無法依原結構合併顯示的問題。',
+          '修復 Exercism 練習說明部分內容漏譯的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.11.1：Web コンテンツ検出と翻訳表示を修正',
+        items: [
+          'DEV.to の記事タイトルがスマート翻訳の対象から漏れる問題を修正しました。',
+          'Maxwell Forbes の記事で生成された注釈が二重に翻訳される問題を修正しました。',
+          '複数段落の引用文の翻訳が元の構造どおりにまとめて表示されない問題を修正しました。',
+          'Exercism の練習問題の説明の一部が翻訳されない問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.11.0',
     notes: {
       'zh-CN': {

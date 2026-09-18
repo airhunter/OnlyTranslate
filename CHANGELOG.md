@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.11.1](https://github.com/airhunter/OnlyTranslate/compare/v1.11.0...v1.11.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **content:** 修复 DEV.to 文章标题漏译 ([0778567](https://github.com/airhunter/OnlyTranslate/commit/0778567354cc441596a193f83d7cbc19a1dff55b))
+* **content:** 修复 Exercism 练习说明漏译 ([a61de45](https://github.com/airhunter/OnlyTranslate/commit/a61de45bddf755d6af22c1b8f064ee4c1e5f2f44))
+* **content:** 修复 Maxwell Forbes 旁注重复翻译 ([bee1c0c](https://github.com/airhunter/OnlyTranslate/commit/bee1c0c6201e5e2066ceeef64a8085e00942a5f8))
+* **content:** 修复多段引用译文合并显示 ([f472375](https://github.com/airhunter/OnlyTranslate/commit/f4723758201d6b1dd273d780338094eb423386d0))
+
 # [1.11.0](https://github.com/airhunter/OnlyTranslate/compare/v1.10.0...v1.11.0) (2026-09-07)
 
 
