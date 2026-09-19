@@ -1,0 +1,78 @@
+<header id="header-top">
+  <a id="navigation" href="/active">Active</a>
+  <a href="/recent">Recent</a>
+</header>
+<main id="inside">
+  <ol class="stories">
+    <li id="story_rfn2mn" class="story">
+      <div class="story_liner h-entry">
+        <div class="voters"><a class="upvoter" href="/login">53</a></div>
+        <div class="details" id="header_story_01m1t7e0tse3tvpeeawnkdtyjy">
+          <span id="story-heading" role="heading" aria-level="1" class="link h-cite u-repost-of">
+            <a id="story-title" href="https://zachkehs.com/blog/theres_no_limit_to_how_bad_code_can_get/">There's No Limit to How Bad Code Can Get</a>
+          </span>
+          <ul class="tags"><li><a id="tag" href="/t/practices">practices</a></li></ul>
+          <div class="byline"><a id="story-author" href="/~rau">rau</a><time>13 days ago</time></div>
+        </div>
+      </div>
+    </li>
+  </ol>
+  <div class="story_content"></div>
+  <ol class="comments comments1">
+    <li id="form-tree" class="comments_subtree">
+      <div class="comment_form_container">
+        <form id="comment-form">
+          <textarea>You must be logged in to leave a comment.</textarea>
+          <button disabled>Preview</button>
+        </form>
+      </div>
+    </li>
+    <li class="comments_subtree" id="comments-rfn2mn"><ol id="story_comments" class="comments">
+    <li class="comments_subtree">
+      <div id="c_uwdehe" class="comment">
+        <div class="voters"><a class="upvoter" href="/login">38</a></div>
+        <div class="details">
+          <div class="byline"><a id="comment-author" href="/~hyperpape">hyperpape</a><time>12 days ago</time></div>
+          <div role="heading" aria-level="3" class="comment_text">
+            <p id="comment-one-first">I’m always a bit baffled how someone can see a system with business logic they don’t understand and think “rearchitecting it will make it clear”.</p>
+            <p id="comment-one-second">To rearchitect it, you have to understand it. The difficulty is that rearchitecting something sounds sophisticated, while understanding the function of an existing system sounds like grunt work.</p>
+          </div>
+        </div>
+      </div>
+      <ol class="comments">
+        <li class="comments_subtree">
+          <div id="c_opqyyy" class="comment">
+            <div class="voters"><a class="upvoter" href="/login">10</a></div>
+            <div class="details">
+              <div class="byline"><a id="reply-author" href="/~Loup-Vaillant">Loup-Vaillant</a><time>12 days ago</time></div>
+              <div role="heading" aria-level="3" class="comment_text">
+                <p id="reply-first">On the other hand, the most efficient way to understand the business logic might not be to study the code base. It's legacy after all, lots of noise along the signal.</p>
+                <p id="reply-second">Now if there's no documentation and the first devs are gone...</p>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ol>
+    </li>
+    <li class="comments_subtree">
+      <div id="c_8kdtaw" class="comment">
+        <div class="voters"><a class="upvoter" href="/login">54</a></div>
+        <div class="details">
+          <div class="byline"><a id="long-comment-author" href="/~simonw">simonw</a><time>12 days ago</time></div>
+          <div role="heading" aria-level="3" class="comment_text">
+            <p id="long-comment-one">A replacement project often begins with a team convinced that the old system cannot be maintained. They draft a cleaner architecture and plan a complete rewrite, while the existing software continues to serve real users every day.</p>
+            <p id="long-comment-two">The older application keeps changing because customers still depend on it. Its developers must add features and repair defects, so the target for the replacement project moves even while the new team is trying to understand the original behavior.</p>
+            <p id="long-comment-three">At first the new implementation moves quickly. Later the team discovers rules that were never written down, corner cases hidden in old code, and decisions that only make sense after watching how people actually use the product.</p>
+            <p id="long-comment-four">A launch deadline then arrives before the replacement is complete. The new system handles a narrow slice of the work, and the original system continues to handle everything else. Both implementations now require maintenance and coordination.</p>
+            <p id="long-comment-five">This does not mean a rewrite can never succeed. It means the team needs a reliable account of current behavior, a way to compare outputs, and enough time to migrate users without losing the features that still matter to them.</p>
+            <p id="long-comment-six">The safest early work may be to add tests around the older application and make its boundaries easier to understand. Those tests can reveal assumptions that a replacement would otherwise discover only after customers report missing behavior.</p>
+            <p id="long-comment-seven">Small improvements also give developers a chance to learn the system before changing its architecture. As the behavior becomes clearer, they can replace individual components while keeping the surrounding application useful.</p>
+            <p id="long-comment-eight">If the new component can run alongside the old one, the team can compare results on real requests. Differences become concrete questions to investigate instead of surprises discovered after the original implementation has been removed.</p>
+            <p id="long-comment-nine">The goal is to improve the software while preserving what people depend on. A thoughtful migration plan should explain what will move first, how correctness will be checked, and when the original path can safely be retired.</p>
+          </div>
+        </div>
+      </div>
+    </li>
+    </ol></li>
+  </ol>
+</main>

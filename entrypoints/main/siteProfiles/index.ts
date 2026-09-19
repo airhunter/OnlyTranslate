@@ -11,6 +11,7 @@ import { githubProfile } from './github';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
+import { lobstersProfile } from './lobsters';
 import { mediumProfile } from './medium';
 import { maxwellForbesProfile } from './maxwellForbes';
 import { mempkoProfile } from './mempko';
@@ -88,6 +89,7 @@ export const siteProfiles: SiteProfile[] = [
     substackProfile,
     tucProfile,
     hackerNewsProfile,
+    lobstersProfile,
     huggingFaceProfile,
     jacobGoldProfile,
     natureProfile,

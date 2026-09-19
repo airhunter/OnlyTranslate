@@ -1,0 +1,11 @@
+{
+  "name": "semantic article heading does not pull competing comments into the content root",
+  "url": "https://example.com/semantic-article-with-comments",
+  "scope": "smart",
+  "html": "semantic-article-with-comments.html",
+  "contentRoot": "#story-root",
+  "contentRootExcludes": ["#comment-competitor"],
+  "include": ["story-title", "promo-copy", "newsletter-note", "copyable-prose", "linked-keyword-prose"],
+  "exclude": ["comment-competitor", "real-share-box", "real-subscribe-box", "real-related-box"],
+  "textExcludes": ["Reader comments", "Share this article", "Subscribe to our newsletter"]
+}

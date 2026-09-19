@@ -231,7 +231,7 @@ function isSemanticContentShell(el: Element): boolean {
 }
 
 function hasPrimaryHeading(el: Element, scanContext?: ScanContext): boolean {
-    return Array.from(el.querySelectorAll<Element>('h1, h2'))
+    return Array.from(el.querySelectorAll<Element>('h1, h2, [role="heading"][aria-level="1"]'))
         .some(heading => isVisible(heading, scanContext));
 }
 

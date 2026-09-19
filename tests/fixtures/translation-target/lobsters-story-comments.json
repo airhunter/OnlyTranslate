@@ -1,0 +1,39 @@
+{
+  "name": "Lobsters story translates its linked title and nested comment prose",
+  "url": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+  "scope": "smart",
+  "html": "lobsters-story-comments.html",
+  "include": [
+    "story-title",
+    "comment-one-first",
+    "comment-one-second",
+    "reply-first",
+    "reply-second",
+    "long-comment-one",
+    "long-comment-nine"
+  ],
+  "exclude": [
+    "inside",
+    "story_rfn2mn",
+    "header_story_01m1t7e0tse3tvpeeawnkdtyjy",
+    "story-author",
+    "comment-author",
+    "reply-author",
+    "long-comment-author",
+    "comment-form",
+    "form-tree",
+    "tag",
+    "navigation"
+  ],
+  "textExcludes": [
+    "13 days ago",
+    "12 days ago",
+    "hyperpape",
+    "Loup-Vaillant",
+    "You must be logged in",
+    "Preview"
+  ],
+  "stats": {
+    "profileFastPathUsed": true
+  }
+}

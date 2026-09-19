@@ -241,6 +241,7 @@ function getGenericHardSkipReason(element: Element, context: TranslationTargetCo
     if (composedClosest(element, HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
     if (!isVisibleForTranslation(element, context)) return 'not-visible';
     if (element instanceof HTMLElement && element.isContentEditable) return 'contenteditable';
+    if (isFormOnlyContainer(element)) return 'form-only-container';
 
     let interactiveAncestor: Element | null = element;
     while (interactiveAncestor) {
@@ -258,6 +259,19 @@ function getGenericHardSkipReason(element: Element, context: TranslationTargetCo
     }
 
     return undefined;
+}
+
+function isFormOnlyContainer(element: Element): boolean {
+    if (!element.querySelector('form')) return false;
+
+    const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+        const textNode = walker.currentNode;
+        if (!textNode.textContent?.trim()) continue;
+        if (!textNode.parentElement?.closest('form')) return false;
+    }
+
+    return true;
 }
 
 function getCurrentSiteProfile() {

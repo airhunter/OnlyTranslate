@@ -186,7 +186,9 @@ function scoreTitle(element: Element, metrics: UnitMetrics): number {
     if (isEarlyInContainer(element)) score += 1;
 
     score -= getUiPenalty(element, metrics);
-    score -= metrics.linkDensity > 0.4 && !isLinkedPrimaryArticleHeading(element, metrics) ? 2 : 0;
+    score -= metrics.linkDensity > 0.4
+        && !isLinkedPrimaryArticleHeading(element, metrics)
+        && !isLinkedPrimarySemanticHeading(element, metrics) ? 2 : 0;
 
     return score;
 }
@@ -203,6 +205,22 @@ function isLinkedPrimaryArticleHeading(element: Element, metrics: UnitMetrics): 
     if (!article) return false;
 
     const substantialParagraphs = Array.from(article.querySelectorAll('p, blockquote'))
+        .filter(paragraph => getNormalizedText(paragraph).length >= 80);
+    return substantialParagraphs.length >= 2;
+}
+
+function isLinkedPrimarySemanticHeading(element: Element, metrics: UnitMetrics): boolean {
+    if (element.getAttribute('role') !== 'heading' || element.getAttribute('aria-level') !== '1') return false;
+    if (metrics.linkCount !== 1 || metrics.linkDensity < 0.85) return false;
+
+    const link = element.firstElementChild;
+    if (!link?.matches('a[href]') || element.children.length !== 1) return false;
+    if (getNormalizedText(link) !== metrics.text) return false;
+
+    const main = element.closest('main, [role="main"]');
+    if (!main || main.querySelectorAll('[role="heading"][aria-level="1"]').length !== 1) return false;
+
+    const substantialParagraphs = Array.from(main.querySelectorAll('p, blockquote'))
         .filter(paragraph => getNormalizedText(paragraph).length >= 80);
     return substantialParagraphs.length >= 2;
 }

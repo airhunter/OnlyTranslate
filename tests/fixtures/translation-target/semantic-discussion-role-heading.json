@@ -1,0 +1,25 @@
+{
+  "name": "generic discussion with a semantic heading keeps the title and separate comments",
+  "url": "https://example.com/discussion/semantic-heading",
+  "scope": "smart",
+  "html": "lobsters-story-comments.html",
+  "contentRoot": "#inside",
+  "include": [
+    "story-heading",
+    "comment-one-first",
+    "reply-first",
+    "long-comment-one",
+    "long-comment-nine"
+  ],
+  "exclude": [
+    "story-author",
+    "comment-author",
+    "reply-author",
+    "long-comment-author",
+    "comment-form",
+    "form-tree",
+    "tag",
+    "navigation"
+  ],
+  "textExcludes": ["Preview"]
+}

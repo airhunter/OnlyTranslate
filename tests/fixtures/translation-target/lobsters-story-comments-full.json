@@ -1,0 +1,15 @@
+{
+  "name": "Lobsters full scope keeps the story title and nested comments",
+  "url": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+  "scope": "full",
+  "html": "lobsters-story-comments.html",
+  "include": [
+    "story-title",
+    "comment-one-first",
+    "comment-one-second",
+    "reply-first",
+    "reply-second",
+    "long-comment-one",
+    "long-comment-nine"
+  ]
+}
