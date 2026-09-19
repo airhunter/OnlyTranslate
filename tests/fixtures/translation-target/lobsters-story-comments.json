@@ -4,7 +4,7 @@
   "scope": "smart",
   "html": "lobsters-story-comments.html",
   "include": [
-    "story-title",
+    "story-heading",
     "comment-one-first",
     "comment-one-second",
     "reply-first",
@@ -31,9 +31,10 @@
     "hyperpape",
     "Loup-Vaillant",
     "You must be logged in",
-    "Preview"
+    "Preview",
+    "21 comments"
   ],
   "stats": {
-    "profileFastPathUsed": true
+    "profileFastPathUsed": false
   }
 }

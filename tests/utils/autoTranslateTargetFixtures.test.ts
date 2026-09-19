@@ -27,6 +27,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect'
+import { invalidateContentFilterCache } from '@/entrypoints/utils/contentFilter'
 
 interface TranslationTargetFixture {
   name: string
@@ -68,6 +69,9 @@ describe('translation target fixtures', () => {
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    // Each fixture represents a new page; body/html survive innerHTML replacement.
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
     Object.defineProperty(window, 'location', {
       value: originalLocation,
       configurable: true

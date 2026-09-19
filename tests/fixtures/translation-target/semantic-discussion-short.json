@@ -1,0 +1,10 @@
+{
+  "name": "generic short discussion keeps its linked primary heading without long metadata",
+  "url": "https://example.com/discussion/short",
+  "scope": "smart",
+  "html": "semantic-discussion-short.html",
+  "include": ["unit-one", "unit-two"],
+  "exclude": ["header", "header-top", "unit-three", "form-tree"],
+  "textExcludes": ["Active", "Recent", "1 comment", "Preview"],
+  "stats": { "profileFastPathUsed": false }
+}

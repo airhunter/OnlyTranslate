@@ -1,0 +1,9 @@
+{
+  "name": "full scope keeps a sparse discussion title and prose",
+  "url": "https://example.com/discussion/short",
+  "scope": "full",
+  "html": "semantic-discussion-short.html",
+  "include": ["unit-one", "unit-two"],
+  "exclude": ["form-tree"],
+  "textExcludes": ["Preview"]
+}

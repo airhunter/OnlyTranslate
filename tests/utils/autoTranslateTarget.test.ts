@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockCanUseBatchTranslationForCurrentConfig = vi.hoisted(() => vi.fn(() => false))
@@ -72,6 +73,7 @@ import { siteProfiles } from '@/entrypoints/main/siteProfiles'
 import { translateText } from '@/entrypoints/utils/translateApi'
 import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
 import { cache } from '@/entrypoints/utils/cache'
+import { invalidateContentFilterCache } from '@/entrypoints/utils/contentFilter'
 
 describe('resolveAutoTranslateTarget behavior', () => {
   const originalLocation = window.location
@@ -727,6 +729,34 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(insertion?.getAttribute('slot')).toBe('text-body')
     expect(insertion?.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('Reddit 帖子正文译文。')
     expect(textBodySlot.assignedElements()).toContain(insertion)
+  })
+
+  it('inserts and restores bilingual text for a generic linked semantic title and its comment', async () => {
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/semantic-discussion-short.html', 'utf8')
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
+    vi.mocked(translateText).mockImplementation(async text => text.includes('Why understanding') ? '为什么理解现有代码很重要' : '理解已有系统需要仔细研究它的行为。')
+    const title = document.querySelector<HTMLElement>('#unit-one')!
+    const paragraph = document.querySelector<HTMLElement>('#unit-two')!
+    const originalLink = title.querySelector('a')!
+    const originalLinkHtml = originalLink.outerHTML
+    const targets = resolveAutoTranslateTarget('smart').nodes
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+
+    try {
+      await Promise.all(targets.map(node => handleBilingualTranslation(node, false)))
+
+      expect(translateText).toHaveBeenCalledTimes(2)
+      expect(title.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('为什么理解现有代码很重要')
+      expect(paragraph.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('理解已有系统需要仔细研究它的行为。')
+      expect(originalLink.outerHTML).toBe(originalLinkHtml)
+      expect(document.querySelector('#unit-three')?.textContent).toBe('1 comment')
+    } finally {
+      restoreOriginalContent()
+    }
+
+    expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    expect(title.querySelector('a')?.outerHTML).toBe(originalLinkHtml)
   })
 
   it('translates prose wrapped in code tags instead of restoring it as protected code', async () => {

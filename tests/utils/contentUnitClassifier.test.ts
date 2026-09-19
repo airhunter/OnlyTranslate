@@ -77,6 +77,57 @@ describe('contentUnitClassifier', () => {
     expect(classifyContentUnit(document.querySelector('#card-title')!).confidence).toBeLessThan(0.7)
   })
 
+  it.each(['h1', 'span role="heading" aria-level="1"'])('keeps a unique linked %s in main without body or metadata text', heading => {
+    const tag = heading.split(' ')[0]
+    document.body.innerHTML = `<main><${heading} id="sample"><a href="/story">Understanding the behavior of existing software</a></${tag}></main>`
+
+    const decision = classifyContentUnit(document.querySelector('#sample')!)
+    expect(decision.kind).toBe('title')
+    expect(decision.confidence).toBeGreaterThanOrEqual(0.72)
+  })
+
+  it.each(['h1', 'span role="heading" aria-level="1"'])('does not treat linked semantic cards as the unique main title beside a %s', competingHeading => {
+    const tag = competingHeading.split(' ')[0]
+    document.body.innerHTML = `
+      <main>
+        <${competingHeading}>Other primary heading</${tag}>
+        <div><span id="sample" role="heading" aria-level="1"><a href="/story">Understanding the behavior of existing software</a></span></div>
+      </main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#sample')!).confidence).toBeLessThan(0.7)
+  })
+
+  it('does not boost an ARIA heading in a compact article card', () => {
+    document.body.innerHTML = `
+      <main><article>
+        <span id="sample" role="heading" aria-level="1"><a href="/story">Understanding the behavior of existing software</a></span>
+        <p>A short preview for the card.</p>
+      </article></main>
+    `
+
+    expect(classifyContentUnit(document.querySelector('#sample')!).confidence).toBeLessThan(0.7)
+  })
+
+  it('keeps navigation excluded even when it contains the only primary heading', () => {
+    document.body.innerHTML = `<main><nav><span id="sample" role="heading" aria-level="1"><a href="/topics">Browse all available discussion topics</a></span></nav></main>`
+
+    expect(classifyContentUnit(document.querySelector('#sample')!).action).toBe('skip')
+  })
+
+  it.each(['1 comment', 'no comment', '0 comments', '1 reply', 'no replies', '1 view'])('recognizes %s as metadata even with a heading role', text => {
+    document.body.innerHTML = `<main><a id="sample" role="heading" aria-level="2" href="#comments">${text}</a></main>`
+
+    expect(classifyContentUnit(document.querySelector('#sample')!)).toMatchObject({ action: 'skip', kind: 'metadata' })
+  })
+
+  it('does not mistake a brief user comment saying no comment for a counter', () => {
+    document.body.innerHTML = `<main><div id="sample" class="comment_text" role="heading" aria-level="3"><p>No comment</p></div></main>`
+
+    expect(classifyContentUnit(document.querySelector('#sample')!).action).not.toBe('skip')
+    expect(classifyContentUnit(document.querySelector('p')!).action).not.toBe('skip')
+  })
+
   it('allows document-style content cards', () => {
     document.body.innerHTML = `
       <main class="document">

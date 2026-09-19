@@ -1,0 +1,11 @@
+{
+  "name": "generic empty discussion keeps only its primary heading without falling back to navigation",
+  "url": "https://example.com/discussion/empty",
+  "scope": "smart",
+  "html": "semantic-discussion-empty.html",
+  "include": ["unit-one"],
+  "exclude": ["header", "header-top", "unit-three", "form-tree"],
+  "textExcludes": ["Active", "Recent", "no comment", "Preview"],
+  "grabOptions": { "siteCompatMode": "smart" },
+  "stats": { "profileFastPathUsed": false }
+}

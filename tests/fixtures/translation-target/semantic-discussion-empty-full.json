@@ -1,0 +1,9 @@
+{
+  "name": "full scope keeps the linked title of a discussion without comments",
+  "url": "https://example.com/discussion/empty",
+  "scope": "full",
+  "html": "semantic-discussion-empty.html",
+  "include": ["unit-one"],
+  "exclude": ["form-tree"],
+  "textExcludes": ["Preview"]
+}

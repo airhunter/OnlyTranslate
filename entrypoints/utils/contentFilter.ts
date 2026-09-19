@@ -125,6 +125,10 @@ function isTagCluster(element: Element, hint: string, metrics: BlockMetrics): bo
     if (metrics.linkCount < 3 && metrics.shortInteractiveCount < 3) return false;
 
     const hasTagHint = TAG_PATTERN.test(hint);
+    // 简短内容页的标题、作者链接和操作按钮也会形成高链接密度，不能据此当作标签列表。
+    if (!hasTagHint
+        && element.matches('html, body, main, article, [role="main"], [role="article"]')
+        && element.querySelector('h1, [role="heading"][aria-level="1"]')) return false;
     const looksLikePills = metrics.shortInteractiveCount >= 3
         && metrics.textLength <= 220
         && metrics.linkDensity >= 0.45;

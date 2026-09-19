@@ -185,42 +185,31 @@ function scoreTitle(element: Element, metrics: UnitMetrics): number {
     if (hasNearbyReadableText(element)) score += 2;
     if (isEarlyInContainer(element)) score += 1;
 
+    const isPrimaryHeading = isLinkedPrimaryHeading(element, metrics);
+    if (isPrimaryHeading) score += 1;
     score -= getUiPenalty(element, metrics);
-    score -= metrics.linkDensity > 0.4
-        && !isLinkedPrimaryArticleHeading(element, metrics)
-        && !isLinkedPrimarySemanticHeading(element, metrics) ? 2 : 0;
+    score -= metrics.linkDensity > 0.4 && !isPrimaryHeading ? 2 : 0;
 
     return score;
 }
 
-function isLinkedPrimaryArticleHeading(element: Element, metrics: UnitMetrics): boolean {
-    if (element.tagName.toLowerCase() !== 'h1') return false;
+function isLinkedPrimaryHeading(element: Element, metrics: UnitMetrics): boolean {
+    if (!element.matches('h1, [role="heading"][aria-level="1"]')) return false;
     if (metrics.linkCount !== 1 || metrics.linkDensity < 0.85) return false;
 
     const link = element.firstElementChild;
     if (!link?.matches('a[href]') || element.children.length !== 1) return false;
     if (getNormalizedText(link) !== metrics.text) return false;
 
-    const article = element.closest('article, [role="article"]');
-    if (!article) return false;
+    const container = element.closest('article, [role="article"], main, [role="main"]');
+    if (!container) return false;
 
-    const substantialParagraphs = Array.from(article.querySelectorAll('p, blockquote'))
-        .filter(paragraph => getNormalizedText(paragraph).length >= 80);
-    return substantialParagraphs.length >= 2;
-}
+    // 页面唯一的一级标题不依赖评论长度；article 内的标题仍需正文证据，避免提升文章卡片。
+    if (container.matches('main, [role="main"]')) {
+        return container.querySelectorAll('h1, [role="heading"][aria-level="1"]').length === 1;
+    }
 
-function isLinkedPrimarySemanticHeading(element: Element, metrics: UnitMetrics): boolean {
-    if (element.getAttribute('role') !== 'heading' || element.getAttribute('aria-level') !== '1') return false;
-    if (metrics.linkCount !== 1 || metrics.linkDensity < 0.85) return false;
-
-    const link = element.firstElementChild;
-    if (!link?.matches('a[href]') || element.children.length !== 1) return false;
-    if (getNormalizedText(link) !== metrics.text) return false;
-
-    const main = element.closest('main, [role="main"]');
-    if (!main || main.querySelectorAll('[role="heading"][aria-level="1"]').length !== 1) return false;
-
-    const substantialParagraphs = Array.from(main.querySelectorAll('p, blockquote'))
+    const substantialParagraphs = Array.from(container.querySelectorAll('p, blockquote'))
         .filter(paragraph => getNormalizedText(paragraph).length >= 80);
     return substantialParagraphs.length >= 2;
 }
@@ -345,7 +334,9 @@ function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
     if (STAT_TEXT_PATTERN.test(text)) return true;
     if (FILE_META_TEXT_PATTERN.test(text) && metrics.textLength <= 140) return true;
     if (/^\d+(\.\d+)?[kKmM]?$/.test(text)) return true;
-    if (/^\d+\s*(replies|views|comments|likes|votes)$/i.test(text)) return true;
+    if (/^\d+\s*(repl(?:y|ies)|views?|comments?|likes?|votes?)$/i.test(text)) return true;
+    if (/^no\s+(repl(?:y|ies)|views?|comments?|likes?|votes?)$/i.test(text)
+        && element.matches('a, h2, [role="heading"][aria-level="2"]')) return true;
     if (/^\d+[smhdw]\s*(ago)?$/i.test(text)) return true;
 
     return false;
