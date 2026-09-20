@@ -28,6 +28,8 @@ export function sanitizeEbookDocument(document: Document): void {
   document.querySelectorAll(FORBIDDEN_TAGS.join(',')).forEach(element => element.remove());
   const purifier = createDOMPurify((document.defaultView ?? window) as unknown as Parameters<typeof createDOMPurify>[0]);
   document.body.innerHTML = purifier.sanitize(document.body.innerHTML, {
+    // Firefox requires XHTML markup to remain XML-serializable when written back.
+    PARSER_MEDIA_TYPE: document.contentType === 'application/xhtml+xml' ? 'application/xhtml+xml' : 'text/html',
     FORBID_TAGS: FORBIDDEN_TAGS,
     FORBID_ATTR: ['srcdoc'],
     ADD_ATTR: ['epub:type'],

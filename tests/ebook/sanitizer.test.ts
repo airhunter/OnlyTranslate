@@ -27,6 +27,16 @@ describe('EPUB sanitization', () => {
     expect(document.querySelector('a[href^="chapter"]')?.getAttribute('href')).toBe('chapter-2.xhtml#note');
   });
 
+  it('preserves local chapter images and text while sanitizing them', () => {
+    const document = parse('<p onclick="evil()">Chapter text <img src="figure.png" alt="Figure"></p><script>evil()</script>');
+    sanitizeEbookDocument(document);
+
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('figure.png');
+    expect(document.body.textContent).toContain('Chapter text');
+    expect(document.querySelector('[onclick]')).toBeNull();
+    expect(document.querySelector('script')).toBeNull();
+  });
+
   it('allows safe inline translation structure but strips unsafe markup', () => {
     const cleaned = sanitizeTranslatedInlineHtml('<strong>Text</strong><ruby>漢<rt>かん</rt></ruby><a href="javascript:evil()">bad</a><img src=x>');
     expect(cleaned).toContain('<strong>Text</strong>');
