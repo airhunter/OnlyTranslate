@@ -254,7 +254,9 @@ function getGenericHardSkipReason(element: Element, context: TranslationTargetCo
 
     const text = getCachedNormalizedText(context.grabOptions?.scanContext, element) || getTranslatableText(element).replace(/\s+/g, ' ').trim();
     if (text.length < 3) return 'too-short';
-    if (text.length > 3072 || (element.outerHTML.length > 4096 && !isSemanticInlineTextBlock(element))) {
+    if (text.length > 3072 || (element.outerHTML.length > 4096
+        && !isSemanticInlineTextBlock(element)
+        && !getCurrentSiteProfile()?.allowOversizedMarkup?.(element))) {
         return 'too-long';
     }
 

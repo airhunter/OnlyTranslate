@@ -1,0 +1,9 @@
+{
+  "name": "Google AI Mode smart translation keeps inline answer fragments in whole paragraphs",
+  "url": "https://www.google.com/search?q=recent+book+in+uk&udm=50",
+  "scope": "smart",
+  "html": "google-ai-mode-inline-answer.html",
+  "include": ["answer-release", "answer-while", "answer-next", "answer-bullet"],
+  "exclude": ["question", "release-title", "release-date", "book-title", "intro-fragment", "ending-fragment", "release-citation", "answer-citation", "bullet-label", "bullet-link", "bullet-citation"],
+  "textIncludes": ["Swan Song: Diana, My Sister", "is scheduled for global release on", "Prince Harry", "resulting royal fallout", "Spencer has publicly doubled down"]
+}

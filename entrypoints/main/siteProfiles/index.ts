@@ -8,6 +8,7 @@ import { devToProfile } from './devTo';
 import { devinDocsProfile } from './devinDocs';
 import { exercismProfile } from './exercism';
 import { githubProfile } from './github';
+import { googleAiModeProfile } from './googleAiMode';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
@@ -76,6 +77,7 @@ export const siteProfiles: SiteProfile[] = [
     xProfile,
     xdaDevelopersProfile,
     githubProfile,
+    googleAiModeProfile,
     stackOverflowProfile,
     mediumProfile,
     maxwellForbesProfile,

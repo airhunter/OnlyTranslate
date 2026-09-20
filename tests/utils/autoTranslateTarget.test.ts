@@ -109,6 +109,80 @@ describe('resolveAutoTranslateTarget behavior', () => {
     })
   })
 
+  it('translates Google AI Mode answers as complete paragraphs below their inline source text', async () => {
+    const url = new URL('https://www.google.com/search?q=recent+book+in+uk&udm=50')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/google-ai-mode-inline-answer.html', 'utf8')
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
+    const answer = document.querySelector<HTMLElement>('#answer-while')!
+    const release = document.querySelector<HTMLElement>('#answer-release')!
+    const bullet = document.querySelector<HTMLElement>('#answer-bullet')!
+    const inlineBookTitle = document.querySelector('#book-title')!
+    const bulletLink = document.querySelector('#bullet-link')!
+    for (const block of [answer, release, bullet]) {
+      block.querySelector('.notranslate')!.setAttribute('data-google-citation', 'x'.repeat(5000))
+      expect(block.outerHTML.length).toBeGreaterThan(4096)
+    }
+
+    const targets = resolveAutoTranslateTarget('full').nodes
+    expect(targets).toContain(answer)
+    expect(targets).toContain(release)
+    expect(targets).toContain(bullet)
+    expect(targets).not.toContain(inlineBookTitle)
+    const smartTargets = resolveAutoTranslateTarget('smart').nodes
+    expect(smartTargets).toContain(answer)
+    expect(smartTargets).toContain(release)
+    expect(smartTargets).toContain(bullet)
+    expect(getTranslatableText(release)).toContain('is scheduled for global release on September 22, 2026')
+    expect(getTranslatableText(release)).not.toContain('Wikipedia')
+    expect(getTranslatableText(answer)).toContain('Prince Harry and Meghan Markle have become heavily intertwined')
+    expect(getTranslatableText(answer)).not.toContain('Related results')
+    expect(getTranslatableText(bullet)).toContain('Spencer has publicly doubled down')
+    expect(getTranslatableText(bullet)).not.toContain('BBC +3')
+
+    const dynamicTargets = collectDynamicTranslationNodes(
+      document.querySelector('#intro-fragment')!, document.body, 'smart'
+    )
+    expect(dynamicTargets).toContain(answer)
+    expect(dynamicTargets).not.toContain(document.querySelector('#intro-fragment'))
+    expect(collectDynamicTranslationNodes(bulletLink, document.body, 'smart')).toContain(bullet)
+
+    vi.mocked(translateText).mockImplementation(async origin =>
+      origin.includes('The Palace Fires Back')
+        ? '王室作出了回应。'
+        : origin.includes('is scheduled for global release')
+          ? '该书定于2026年9月22日发行。'
+          : '这本书与哈里王子和梅根的关系。'
+    )
+    await handleBilingualTranslation(answer, false)
+
+    expect(translateText).toHaveBeenCalledWith(
+      expect.stringContaining('Prince Harry and Meghan Markle have become heavily intertwined'),
+      expect.any(Object), expect.any(Object)
+    )
+    const insertion = answer.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+    expect(insertion).toBe(answer.lastElementChild)
+    expect(insertion?.firstElementChild?.tagName).toBe('BR')
+    expect(insertion?.textContent).toContain('这本书与哈里王子和梅根的关系。')
+    expect(document.querySelector('#book-title')).toBe(inlineBookTitle)
+
+    await handleBilingualTranslation(release, false)
+    const releaseInsertion = release.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+    expect(releaseInsertion).toBe(release.lastElementChild)
+    expect(releaseInsertion?.firstElementChild?.tagName).toBe('BR')
+    expect(releaseInsertion?.textContent).toContain('该书定于2026年9月22日发行。')
+    expect(release.querySelector('#release-date')?.textContent).toBe('September 22, 2026')
+
+    await handleBilingualTranslation(bullet, false)
+    const bulletInsertion = bullet.querySelector<HTMLElement>(`:scope > .${BILINGUAL_CONTENT_CLASS}`)
+    expect(bulletInsertion).toBe(bullet.lastElementChild)
+    expect(bulletInsertion?.firstElementChild?.tagName).toBe('BR')
+    expect(bulletInsertion?.textContent).toContain('王室作出了回应。')
+    expect(document.querySelector('#bullet-link')).toBe(bulletLink)
+  })
+
   it('translates button text through the shared translateText entrypoint', async () => {
     vi.mocked(translateText).mockResolvedValue('开始操作')
     document.body.innerHTML = `<p>Choose <button id="action">Start action</button> when ready.</p>`

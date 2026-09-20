@@ -43,6 +43,7 @@ export interface SiteProfile {
     preserveSupplementalTargets?: boolean;
     afterBilingualAppend?: SiteProfileAfterBilingualAppend;
     allowTarget?: SiteProfileTargetAllow;
+    allowOversizedMarkup?: (node: Element) => boolean;
     skipTarget?: SiteProfileTargetSkip;
     appendTarget?: SiteProfileAppendTarget;
     expandTarget?: SiteProfileExpandTarget;
