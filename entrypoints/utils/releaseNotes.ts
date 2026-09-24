@@ -25,6 +25,43 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.11.2',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.11.2：网页与电子书翻译修复',
+        items: [
+          '修复 Firefox 阅读 EPUB 时部分章节正文空白的问题。',
+          '修复 Google AI 模式回答漏译和双语混排的问题，译文会另起一行。',
+          '改进简短讨论页及语义标题页面的智能识文覆盖。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.11.2: Web and Ebook Translation Fixes',
+        items: [
+          'Fixed blank chapter content in some EPUB books on Firefox.',
+          'Fixed missed text and mixed inline translations in Google AI Mode answers; translations now start on a separate line.',
+          'Improved Smart translation coverage on short discussion pages and pages with semantic headings.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.11.2：網頁與電子書翻譯修復',
+        items: [
+          '修復 Firefox 閱讀 EPUB 時部分章節正文空白的問題。',
+          '修復 Google AI 模式回答漏譯與雙語混排的問題，譯文會另起一行。',
+          '改善簡短討論頁及語意標題頁面的智慧識文涵蓋範圍。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.11.2：Web と電子書の翻訳を修正',
+        items: [
+          'Firefox で一部の EPUB の章が空白になる問題を修正しました。',
+          'Google AI モードの回答で翻訳が抜けたり原文と混在したりする問題を修正し、訳文を改行して表示します。',
+          '短いディスカッションページや意味的な見出しを持つページで、スマート翻訳の対象範囲を改善しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.11.1',
     notes: {
       'zh-CN': {
