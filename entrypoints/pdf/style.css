@@ -296,3 +296,39 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   .pdf-layout-model-control > summary > span:last-child { display: none; }
   .pdf-layout-model-control > summary { width: 34px; justify-content: center; padding: 0; }
 }
+
+.pdf-export-progress, .pdf-export-preview { position: fixed; inset: 0; z-index: 1000; overflow: auto; background: rgb(15 23 42 / 75%); }
+.pdf-export-progress { display: grid; place-items: center; padding: 24px; }
+.pdf-export-progress__card { width: min(100%, 440px); padding: 28px; border-radius: 16px; background: #fff; color: #1e293b; box-shadow: 0 20px 60px rgb(0 0 0 / 20%); }
+.pdf-export-progress__card strong { font-size: 18px; }
+.pdf-export-progress__card p { line-height: 1.6; color: #64748b; }
+.pdf-export-progress__card button, .pdf-export-preview__toolbar button { border: 1px solid #a8b7d0; border-radius: 8px; padding: 9px 14px; background: #fff; color: #235ca9; cursor: pointer; }
+.pdf-export-preview__toolbar { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 14px; padding: 12px 24px; background: #f7faff; color: #26364f; box-shadow: 0 2px 10px rgb(0 0 0 / 10%); }
+.pdf-export-preview__toolbar span { flex: 1; }
+.pdf-export-print { width: min(100% - 32px, 800px); margin: 24px auto; padding: 42px; background: #fff; color: #1e293b; font: 16px/1.65 system-ui, sans-serif; }
+.pdf-export-print__heading h1 { margin: 0 0 4px; font-size: 28px; overflow-wrap: anywhere; }
+.pdf-export-print__heading p { margin: 0; color: #64748b; }
+.pdf-export-print__page { margin-top: 36px; padding-top: 16px; border-top: 1px solid #d9e2ee; }
+.pdf-export-print__page h2 { margin: 0 0 14px; font-size: 18px; }
+.pdf-export-print__original { margin: 0 0 22px; text-align: center; }
+.pdf-export-print__original img { display: block; max-width: 100%; max-height: 720px; margin: 0 auto; object-fit: contain; }
+.pdf-export-print__original figcaption { margin-top: 6px; color: #64748b; font-size: 12px; }
+.pdf-export-print__block { margin: 0 0 16px; break-inside: avoid; }
+.pdf-export-print__block p { margin: 0 0 4px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.pdf-export-print__block--heading { font-weight: 700; }
+.pdf-export-print__translation { color: #235ca9; }
+
+@media print {
+  @page { size: A4; margin: 15mm; }
+  html, body, #app, .pdf-shell { width: auto !important; height: auto !important; min-height: 0 !important; overflow: visible !important; margin: 0 !important; background: #fff !important; }
+  .pdf-shell { display: block !important; }
+  .pdf-shell > :not(.pdf-export-preview) { display: none !important; }
+  .pdf-export-preview { position: static !important; display: block !important; overflow: visible !important; background: #fff !important; }
+  .pdf-export-preview__toolbar { display: none !important; }
+  .pdf-export-print { width: auto; margin: 0; padding: 0; box-shadow: none; color: #111827; font-size: 11pt; }
+  .pdf-export-print__page { margin-top: 0; padding-top: 0; border: 0; }
+  .pdf-export-print__page:not(:first-of-type) { break-before: page; }
+  .pdf-export-print__original { break-inside: avoid; }
+  .pdf-export-print__original img { max-height: 190mm; }
+  .pdf-export-print__translation { color: #235ca9 !important; print-color-adjust: exact; }
+}

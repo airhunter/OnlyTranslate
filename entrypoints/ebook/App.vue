@@ -71,7 +71,7 @@
           </div>
           <div class="card-actions">
             <button class="primary-button primary-button--small" @click="openBook(item.record)">{{ t('ebook.continueReading') }}</button>
-            <button class="book-action-link" @click="exportBook(item.record)">{{ t('ebook.exportAction') }}</button>
+            <button class="book-action-link" @click="exportBook(item.record)">{{ t('ebook.exportOriginal') }}</button>
           </div>
         </div>
       </article>
@@ -143,6 +143,9 @@
         <button class="control-button" :title="t('ebook.exportOriginal')" @click="exportBook(activeBook)">
           {{ t('ebook.exportOriginal') }}
         </button>
+        <button class="control-button" :disabled="exportingTranslated" @click="exportTranslatedBook">
+          {{ t('ebook.exportTranslated') }}
+        </button>
         <button
           class="control-button"
           :title="t('ebook.displayMode')"
@@ -211,6 +214,16 @@
       </div>
     </header>
 
+    <section v-if="exportingTranslated" class="translated-export-overlay" role="dialog" aria-modal="true" :aria-label="t('ebook.exportTranslated')">
+      <div class="translated-export-card">
+        <strong>{{ exportProgress.phase === 'packaging'
+          ? t('ebook.exportPackaging')
+          : t('ebook.exportTranslating', exportProgress) }}</strong>
+        <p>{{ t('ebook.exportDurationHint') }}</p>
+        <button class="secondary-button" @click="cancelTranslatedExport">{{ t('ebook.cancelExport') }}</button>
+      </div>
+    </section>
+
     <div class="reader-layout">
       <aside class="reader-sidebar">
         <div class="sidebar-tabs">
@@ -276,6 +289,7 @@ import { isServiceConfigured } from '@/entrypoints/utils/option';
 import { resolveLocale } from '@/entrypoints/utils/i18n';
 import { EBOOK_BACKUP_EXTENSION, EbookBackupError } from './backup';
 import { downloadOriginalBook } from './export';
+import { createTranslatedEpub, TranslatedEpubExportError, type TranslatedEpubProgress } from './translatedExport';
 import { extractLibraryBookMetadata } from './importMetadata';
 import { EbookImportError, EbookRepository } from './repository';
 import { selectDroppedFile } from './dropImport';
@@ -326,6 +340,9 @@ const loadingLibrary = ref(true);
 const importing = ref(false);
 const backingUp = ref(false);
 const restoring = ref(false);
+const exportingTranslated = ref(false);
+const exportProgress = reactive<TranslatedEpubProgress>({ completed: 0, total: 0, phase: 'translating' });
+let translatedExportController: AbortController | undefined;
 const draggingFile = ref(false);
 const errorMessage = ref('');
 const noticeMessage = ref('');
@@ -407,6 +424,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  translatedExportController?.abort();
   saveProgressImmediately();
   coordinator.cancel();
   controller.close();
@@ -549,6 +567,7 @@ async function openBook(book: EbookRecord, temporary = false): Promise<void> {
 }
 
 async function closeBook(): Promise<void> {
+  if (exportingTranslated.value) return;
   saveProgressImmediately();
   await leaveReader();
 }
@@ -584,6 +603,53 @@ function exportBook(book: EbookRecord): void {
     downloadOriginalBook(book);
   } catch {
     window.alert(t('ebook.exportFailed'));
+  }
+}
+
+function cancelTranslatedExport(): void {
+  translatedExportController?.abort();
+}
+
+async function exportTranslatedBook(): Promise<void> {
+  const book = activeBook.value;
+  if (!book || exportingTranslated.value) return;
+  if (!config.value.on) {
+    translationNotice.value = t('ebook.translationDisabled');
+    return;
+  }
+  if (!isServiceConfigured(config.value.service, config.value)) {
+    translationNotice.value = t('ebook.serviceNotConfigured');
+    return;
+  }
+  if (!window.confirm(t('ebook.exportTranslatedConfirm'))) return;
+
+  const controller = new AbortController();
+  translatedExportController = controller;
+  exportingTranslated.value = true;
+  translationNotice.value = '';
+  coordinator.cancel();
+  try {
+    const blob = await createTranslatedEpub(book, {
+      signal: controller.signal,
+      onProgress: progress => Object.assign(exportProgress, progress),
+    });
+    if (controller.signal.aborted) return;
+    const filename = book.filename.replace(/\.epub$/i, '') || book.title;
+    downloadOriginalBook({ ...book, fileBlob: blob, filename: `${filename}-bilingual.epub` });
+    translationNotice.value = t('ebook.exportTranslatedReady');
+  } catch (error) {
+    const cancelled = error instanceof DOMException && error.name === 'AbortError';
+    if (!cancelled) console.error('[OnlyTranslate] Bilingual EPUB export failed', error);
+    translationNotice.value = cancelled
+      ? t('ebook.exportCancelled')
+      : error instanceof TranslatedEpubExportError && error.code === 'EPUB'
+        ? t('ebook.exportBookFailed')
+        : error instanceof TranslatedEpubExportError && error.code === 'PACKAGING'
+          ? t('ebook.exportPackagingFailed')
+          : t('ebook.exportTranslationFailed');
+  } finally {
+    translatedExportController = undefined;
+    exportingTranslated.value = false;
   }
 }
 

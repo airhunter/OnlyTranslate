@@ -96,6 +96,9 @@
             <button v-if="pageCount" :disabled="exportingOriginal" @click="exportOriginalPdf">
               {{ exportingOriginal ? t('common.processing') : t('ebook.exportOriginal') }}
             </button>
+            <button v-if="pageCount" :disabled="exportingTranslated" @click="exportTranslatedPdf">
+              {{ t('ebook.exportTranslated') }}
+            </button>
             <button @click="chooseLocalFile">{{ t('pdf.openLocal') }}</button>
           </div>
         </details>
@@ -107,6 +110,14 @@
       <span>{{ libraryNotice }}</span>
       <button :aria-label="t('pdf.dismissNotice')" @click="clearLibraryNotice">×</button>
     </div>
+
+    <section v-if="exportingTranslated" class="pdf-export-progress" role="dialog" aria-modal="true" :aria-label="t('ebook.exportTranslated')">
+      <div class="pdf-export-progress__card">
+        <strong>{{ t('pdf.exportTranslating', exportProgress) }}</strong>
+        <p>{{ t('ebook.exportDurationHint') }}</p>
+        <button @click="cancelTranslatedExport">{{ t('ebook.cancelExport') }}</button>
+      </div>
+    </section>
 
     <section v-if="!pageCount && !loadingDocument" class="pdf-empty">
       <div class="pdf-empty__icon">PDF</div>
@@ -303,6 +314,32 @@
       <div class="reader-progress__track"><span :style="{ width: `${readingProgressPercent}%` }" /></div>
       <span>{{ readingProgressPercent }}%</span>
     </footer>
+
+    <section v-if="exportPreviewOpen" class="pdf-export-preview" role="dialog" aria-modal="true" :aria-label="t('ebook.exportTranslated')">
+      <div class="pdf-export-preview__toolbar">
+        <strong>{{ t('pdf.exportReady') }}</strong>
+        <span>{{ t('pdf.exportPrintHint') }}</span>
+        <button @click="printTranslatedPdf">{{ t('pdf.exportSavePdf') }}</button>
+        <button @click="closeTranslatedPreview">{{ t('pdf.close') }}</button>
+      </div>
+      <div class="pdf-export-print">
+        <header class="pdf-export-print__heading">
+          <h1>{{ documentTitle }}</h1>
+          <p>{{ t('pdf.exportReadingEdition') }}</p>
+        </header>
+        <section v-for="page in exportPages" :key="page.number" class="pdf-export-print__page">
+          <h2>{{ t('pdf.pageContext', { page: page.number }) }}</h2>
+          <figure class="pdf-export-print__original">
+            <img :src="page.originalImage" :alt="t('pdf.exportOriginalPage', { page: page.number })" />
+            <figcaption>{{ t('pdf.exportOriginalPage', { page: page.number }) }}</figcaption>
+          </figure>
+          <div v-for="block in page.blocks" :key="block.id" class="pdf-export-print__block" :class="`pdf-export-print__block--${block.kind}`">
+            <p class="pdf-export-print__source">{{ block.original }}</p>
+            <p v-if="block.translation" class="pdf-export-print__translation">{{ block.translation }}</p>
+          </div>
+        </section>
+      </div>
+    </section>
   </main>
 </template>
 
@@ -331,6 +368,7 @@ import {
 import { downloadRemotePdf, PdfReaderController, PdfSourceError } from './readerController'
 import { addPdfToLibrary } from './library'
 import { PdfTranslationCoordinator, type PdfTranslationStatus } from './translationCoordinator'
+import { BilingualPdfExportError, collectBilingualPdfPages, type BilingualPdfPage, type BilingualPdfProgress } from './translatedExport'
 import { getRequestedPdfBookId, getRequestedPdfSource } from './url'
 import {
   shouldShowTranslationOnlySource,
@@ -366,6 +404,11 @@ const libraryBook = ref<EbookRecord>()
 const addingToLibrary = ref(false)
 const removingFromLibrary = ref(false)
 const exportingOriginal = ref(false)
+const exportingTranslated = ref(false)
+const exportPreviewOpen = ref(false)
+const exportPages = ref<BilingualPdfPage[]>([])
+const exportProgress = reactive<BilingualPdfProgress>({ completed: 0, total: 0 })
+let translatedExportController: AbortController | undefined
 const libraryNotice = ref('')
 let libraryNoticeTimer: number | undefined
 const documentTitle = computed(() => {
@@ -737,6 +780,60 @@ async function exportOriginalPdf(): Promise<void> {
   finally {
     exportingOriginal.value = false
   }
+}
+
+function cancelTranslatedExport(): void {
+  translatedExportController?.abort()
+}
+
+async function exportTranslatedPdf(): Promise<void> {
+  if (!pageCount.value || exportingTranslated.value) return
+  if (!config.value.on) {
+    translationNotice.value = t('pdf.translationDisabled')
+    return
+  }
+  if (!isServiceConfigured(config.value.service, config.value)) {
+    translationNotice.value = t('pdf.serviceNotConfigured')
+    return
+  }
+  if (!window.confirm(t('pdf.exportTranslatedConfirm'))) return
+
+  const abort = new AbortController()
+  translatedExportController = abort
+  exportingTranslated.value = true
+  exportPreviewOpen.value = false
+  exportPages.value = []
+  translationNotice.value = ''
+  coordinator.cancel()
+  try {
+    const pages = await collectBilingualPdfPages(controller, {
+      title: documentTitle.value,
+      sourceUrl: sourceUrl.value,
+      signal: abort.signal,
+      onProgress: progress => Object.assign(exportProgress, progress),
+    })
+    if (abort.signal.aborted) return
+    exportPages.value = pages
+    exportPreviewOpen.value = true
+  } catch (error) {
+    translationNotice.value = error instanceof DOMException && error.name === 'AbortError'
+      ? t('ebook.exportCancelled')
+      : error instanceof BilingualPdfExportError && error.code === 'NO_TEXT'
+        ? t('pdf.exportNoText')
+        : t('pdf.exportTranslationFailed')
+  } finally {
+    translatedExportController = undefined
+    exportingTranslated.value = false
+  }
+}
+
+function printTranslatedPdf(): void {
+  window.print()
+}
+
+function closeTranslatedPreview(): void {
+  exportPreviewOpen.value = false
+  exportPages.value = []
 }
 
 function openLibrary(): void {
@@ -1257,6 +1354,7 @@ function savePdfProgressImmediately(): void {
 }
 
 onBeforeUnmount(() => {
+  translatedExportController?.abort()
   renderGeneration += 1
   cancelOriginalZoomRender()
   clearLibraryNotice()

@@ -45,6 +45,9 @@ importers:
       franc-min:
         specifier: ^6.2.0
         version: 6.2.0
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       katex:
         specifier: ^0.18.5
         version: 0.18.5

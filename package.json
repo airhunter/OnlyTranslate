@@ -33,6 +33,7 @@
     "element-plus": "2.11.3",
     "epubjs": "0.3.93",
     "franc-min": "^6.2.0",
+    "jszip": "^3.10.1",
     "katex": "^0.18.5",
     "onnxruntime-web": "1.29.0",
     "paddleocr": "1.2.0",

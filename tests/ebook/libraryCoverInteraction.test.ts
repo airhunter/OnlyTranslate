@@ -17,7 +17,7 @@ describe('ebook library cover interaction', () => {
     expect(libraryStyles).toContain('.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));');
     expect(libraryStyles).toContain('.card-actions { display: grid; grid-template-columns: minmax(96px, 1fr) auto;');
     expect(libraryStyles).toContain('.card-actions > button { min-width: 0; white-space: nowrap; }');
-    expect(libraryTemplate).toContain("t('ebook.exportAction')");
+    expect(libraryTemplate).toContain("t('ebook.exportOriginal')");
   });
 
   it('places the remove action in the card top-right corner', () => {
