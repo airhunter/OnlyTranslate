@@ -75,6 +75,55 @@ describe('site profile registry', () => {
     expect(selectCompatFn['towardsdatascience.com']).toBeTypeOf('function')
     expect(selectCompatFn['stackoverflow.com']).toBeTypeOf('function')
     expect(selectCompatFn['news.ycombinator.com']).toBeTypeOf('function')
+    expect(selectCompatFn['microsoft.com']).toBeTypeOf('function')
+  })
+
+  it('limits Microsoft Partner Center form copy to Edge properties pages', () => {
+    const originalLocation = window.location
+    const profile = siteProfiles.find(item => item.id === 'microsoft-partner-center-edge-properties')!
+
+    document.body.innerHTML = `
+      <main>
+        <df-form><form>
+          <formly-field class="section-label"><h4 id="heading">Category</h4></formly-field>
+          <formly-field class="input-field">
+            <div class="section-title"><label id="label">Website</label></div>
+            <input id="input" placeholder="Enter a valid URL">
+          </formly-field>
+        </form></df-form>
+      </main>
+    `
+
+    try {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://partner.microsoft.com/en-us/dashboard/microsoftedge/item-id/properties'),
+        configurable: true
+      })
+
+      const heading = document.querySelector('#heading')!
+      const label = document.querySelector('#label')!
+      const input = document.querySelector('#input')!
+
+      expect(profile.select?.(heading, { mode: 'smart' })).toBe(heading)
+      expect(profile.select?.(label, { mode: 'full' })).toBe(label)
+      expect(profile.select?.(input, { mode: 'full' })).toBe(false)
+      expect(profile.allowTarget?.(heading, {
+        mode: 'smart',
+        scope: 'smart',
+        contentRoot: document.body
+      })).toMatchObject({ target: heading, role: 'title' })
+
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://partner.microsoft.com/en-us/dashboard/microsoftedge/item-id/privacy'),
+        configurable: true
+      })
+      expect(profile.select?.(heading, { mode: 'smart' })).toBe(false)
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        configurable: true
+      })
+    }
   })
 
   it('registers GitHub target expansion hooks', () => {

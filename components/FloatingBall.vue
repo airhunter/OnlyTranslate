@@ -571,7 +571,11 @@ defineExpose({
   display: grid;
   place-items: center;
   width: 28px;
+  min-width: 28px;
+  max-width: 28px;
   height: 28px;
+  box-sizing: border-box;
+  flex: 0 0 28px;
   margin: 0;
   padding: 0;
   border: 1px solid #d8e2ee;
@@ -611,7 +615,11 @@ defineExpose({
   display: grid;
   place-items: center;
   width: 42px;
+  min-width: 42px;
+  max-width: 42px;
   height: 42px;
+  box-sizing: border-box;
+  flex: 0 0 42px;
   margin: 0;
   padding: 0;
   border: 1px solid transparent;

@@ -1,0 +1,34 @@
+{
+  "name": "Microsoft Partner Center properties profile keeps static form copy in smart scope",
+  "url": "https://partner.microsoft.com/en-us/dashboard/microsoftedge/87c50666-1955-428b-b1f0-993ff97e2a7c/properties",
+  "scope": "smart",
+  "html": "microsoft-partner-center-properties.html",
+  "include": [
+    "page-title",
+    "category-heading",
+    "category-description",
+    "support-heading",
+    "website-label",
+    "support-contact-label",
+    "mature-heading",
+    "mature-description",
+    "mature-example",
+    "mature-checkbox-copy"
+  ],
+  "exclude": [
+    "save-button",
+    "category-learn-more",
+    "category-select",
+    "category-placeholder",
+    "website-input",
+    "support-contact-input",
+    "mature-learn-more",
+    "mature-checkbox"
+  ],
+  "textExcludes": [
+    "Save & Continue",
+    "Learn More about Category",
+    "Pick a category",
+    "Learn More about Mature Content"
+  ]
+}

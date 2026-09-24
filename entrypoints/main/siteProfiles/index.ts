@@ -15,6 +15,7 @@ import { jacobGoldProfile } from './jacobGold';
 import { mediumProfile } from './medium';
 import { maxwellForbesProfile } from './maxwellForbes';
 import { mempkoProfile } from './mempko';
+import { microsoftPartnerCenterProfile } from './microsoftPartnerCenter';
 import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
 import { productHuntProfile } from './productHunt';
@@ -89,6 +90,7 @@ export const siteProfiles: SiteProfile[] = [
     simonWillisonProfile,
     substackProfile,
     tucProfile,
+    microsoftPartnerCenterProfile,
     hackerNewsProfile,
     huggingFaceProfile,
     jacobGoldProfile,

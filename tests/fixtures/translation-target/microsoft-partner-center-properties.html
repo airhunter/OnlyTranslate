@@ -1,0 +1,96 @@
+<main>
+  <h1 id="page-title">Properties</h1>
+  <button id="save-button">Save &amp; Continue</button>
+
+  <df-form>
+    <form>
+      <formly-form>
+        <formly-field class="section-label">
+          <formly-field-customdivh4>
+            <div class="properties-sub-headings properties-sub-headings-required spacer-md-top">
+              <h4 id="category-heading">Category</h4>
+            </div>
+          </formly-field-customdivh4>
+        </formly-field>
+
+        <formly-field class="select-field">
+          <formly-field-customselect>
+            <div class="form-group">
+              <label>
+                <span id="category-description">Pick the category that best describes your extension</span>
+                <a id="category-learn-more" href="/category-help">Learn More about Category</a>
+              </label>
+              <select id="category-select">
+                <option id="category-placeholder">Pick a category</option>
+                <option>Productivity</option>
+              </select>
+            </div>
+          </formly-field-customselect>
+        </formly-field>
+
+        <formly-field class="section-label">
+          <formly-field-customdivh4>
+            <div class="properties-sub-headings spacer-ml-top">
+              <h4 id="support-heading">Support details</h4>
+            </div>
+          </formly-field-customdivh4>
+        </formly-field>
+
+        <formly-field class="input-field">
+          <url-wrapper>
+            <div class="section form-group">
+              <div class="spacer-ml-top spacer-xxs-bottom">
+                <div class="spacer-xxs-bottom section-title">
+                  <label id="website-label" for="Website">Website</label>
+                </div>
+                <input id="website-input" placeholder="Enter a valid URL">
+              </div>
+            </div>
+          </url-wrapper>
+        </formly-field>
+
+        <formly-field class="input-field">
+          <url-wrapper>
+            <div class="section form-group">
+              <div class="spacer-ml-top spacer-xxs-bottom">
+                <div class="spacer-xxs-bottom section-title">
+                  <label id="support-contact-label" for="Support contact detail">Support contact detail</label>
+                </div>
+                <input id="support-contact-input" placeholder="Enter a valid URL or email address">
+              </div>
+            </div>
+          </url-wrapper>
+        </formly-field>
+
+        <formly-field class="section-label">
+          <formly-field-customdivh4>
+            <div class="properties-sub-headings spacer-lg-top">
+              <h4 id="mature-heading">Mature content</h4>
+            </div>
+          </formly-field-customdivh4>
+        </formly-field>
+
+        <formly-field class="section-label">
+          <formly-field-customdivlabel>
+            <div class="mature-content spacer-xs-top">
+              <label id="mature-description" class="remove-bottom-margin">Select this checkbox if your extension includes mature content</label>
+              <a id="mature-learn-more" href="/mature-help">Learn More about Mature Content</a>
+              <span id="mature-example">Examples of mature content include sexual and suggestive content, strong language, violence or a focus on consumption or sale of alcohol, tobacco, or drugs</span>
+            </div>
+          </formly-field-customdivlabel>
+        </formly-field>
+
+        <formly-field class="checkbox-field checkbox">
+          <df-pix-checkbox>
+            <div class="checkbox">
+              <label>
+                <input id="mature-checkbox" type="checkbox">
+                <span id="mature-checkbox-copy" class="text-body">This item contains content that might not be suitable for all ages</span>
+              </label>
+            </div>
+          </df-pix-checkbox>
+        </formly-field>
+      </formly-form>
+    </form>
+  </df-form>
+</main>

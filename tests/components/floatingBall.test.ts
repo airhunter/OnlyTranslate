@@ -1,8 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import FloatingBall from '@/components/FloatingBall.vue'
 import { setLocale } from '@/entrypoints/utils/i18n'
+
+const floatingBallSource = readFileSync(resolve(process.cwd(), 'components/FloatingBall.vue'), 'utf8')
 
 const mockConfig = vi.hoisted(() => ({
   animations: false,
@@ -212,6 +216,39 @@ describe('FloatingBall', () => {
     expect(moreTrigger.find('.floating-ball-more-icon').exists()).toBe(true)
 
     wrapper.unmount()
+  })
+
+  it('keeps both floating entries circular when the host page gives buttons a minimum width', () => {
+    const fixedEntryStyles = ['floating-ball-more-trigger', 'floating-ball-trigger']
+      .map(className => floatingBallSource.match(new RegExp(`\\.${className} \\{[^}]+\\}`, 's'))?.[0] ?? '')
+      .join('\n')
+    const widgetStyles = document.createElement('style')
+    widgetStyles.textContent = fixedEntryStyles
+    document.head.appendChild(widgetStyles)
+
+    const hostStyles = document.createElement('style')
+    hostStyles.textContent = 'button { min-width: 120px; }'
+    document.head.appendChild(hostStyles)
+
+    const wrapper = mount(FloatingBall, {
+      attachTo: document.body
+    })
+
+    try {
+      const moreTriggerStyle = getComputedStyle(wrapper.get('[data-testid="floating-ball-more-trigger"]').element)
+      const primaryTriggerStyle = getComputedStyle(wrapper.get('[data-testid="floating-ball-trigger"]').element)
+
+      expect(moreTriggerStyle.width).toBe('28px')
+      expect(moreTriggerStyle.minWidth).toBe('28px')
+      expect(moreTriggerStyle.maxWidth).toBe('28px')
+      expect(primaryTriggerStyle.width).toBe('42px')
+      expect(primaryTriggerStyle.minWidth).toBe('42px')
+      expect(primaryTriggerStyle.maxWidth).toBe('42px')
+    } finally {
+      wrapper.unmount()
+      hostStyles.remove()
+      widgetStyles.remove()
+    }
   })
 
   it('persists side and vertical offset after dragging the recall entry', async () => {
