@@ -112,6 +112,7 @@ import {
 } from '@/entrypoints/utils/translationDiagnostics'
 import {
   describeBrowser,
+  getFeedbackDataCollectionPermissions,
   normalizeFeedbackEmail,
   sanitizeFeedbackPageUrl,
   selectFeedbackDiagnostics,
@@ -207,6 +208,20 @@ async function submit() {
   submitting.value = true
   statusMessage.value = ''
   try {
+    const permissionsApi = browser.permissions as unknown as undefined | {
+      getAll: () => Promise<{ data_collection?: string[] }>
+      request: (permissions: { data_collection: string[] }) => Promise<boolean>
+    }
+    const grantedPermissions = await permissionsApi?.getAll?.()
+    if (permissionsApi && grantedPermissions && Object.prototype.hasOwnProperty.call(grantedPermissions, 'data_collection')) {
+      const grantedData = grantedPermissions.data_collection ?? []
+      const missingData = getFeedbackDataCollectionPermissions(payload)
+        .filter(permission => !grantedData.includes(permission))
+      if (missingData.length && !await permissionsApi.request({ data_collection: missingData })) {
+        statusMessage.value = t('privateFeedback.permissionDenied')
+        return
+      }
+    }
     submittedId.value = await submitPrivateFeedback(payload)
     statusMessage.value = t('privateFeedback.success', { id: submittedId.value })
   }

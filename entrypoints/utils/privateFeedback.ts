@@ -4,6 +4,11 @@ export const PRIVATE_FEEDBACK_ENDPOINT = 'https://onlytranslate.top/api/feedback
 
 export type FeedbackDiagnosticRange = 'latest' | 'last3'
 export type FeedbackDiagnosticSession = Omit<TranslationDiagnosticSession, 'id' | 'pageUrl' | 'startedAt' | 'updatedAt'>
+export type FeedbackDataCollectionPermission =
+  | 'personalCommunications'
+  | 'personallyIdentifyingInfo'
+  | 'browsingActivity'
+  | 'technicalAndInteraction'
 
 export interface PrivateFeedbackPayload {
   type: 'extension_feedback'
@@ -23,6 +28,17 @@ export interface PrivateFeedbackPayload {
     browser: string
     sessions: FeedbackDiagnosticSession[]
   }
+}
+
+export function getFeedbackDataCollectionPermissions(
+  payload: PrivateFeedbackPayload,
+): FeedbackDataCollectionPermission[] {
+  return [
+    'personalCommunications',
+    ...(payload.contact ? ['personallyIdentifyingInfo' as const] : []),
+    ...(payload.pageUrl ? ['browsingActivity' as const] : []),
+    ...(payload.diagnostics ? ['technicalAndInteraction' as const] : []),
+  ]
 }
 
 export function normalizeFeedbackEmail(value: string): string | undefined {

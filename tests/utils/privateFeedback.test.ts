@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   describeBrowser,
+  getFeedbackDataCollectionPermissions,
   normalizeFeedbackEmail,
   sanitizeFeedbackPageUrl,
   selectFeedbackDiagnostics,
@@ -60,6 +61,21 @@ describe('private feedback data', () => {
   it('reports only browser family and major version', () => {
     expect(describeBrowser('Mozilla/5.0 Chrome/140.0.7339.1 Safari/537.36')).toBe('Chrome 140')
     expect(describeBrowser('Mozilla/5.0 Edg/141.0 Chrome/141.0')).toBe('Edge 141')
+  })
+
+  it('maps selected feedback fields to Firefox data collection permissions', () => {
+    expect(getFeedbackDataCollectionPermissions({
+      type: 'extension_feedback', schemaVersion: 1, source: 'extension', version: '1.11.2',
+      locale: 'zh-CN', category: 'failure', message: '翻译失败',
+      contact: { email: 'user@example.com', consent: true },
+      pageUrl: 'https://example.com/article',
+      diagnostics: { formatVersion: 1, browser: 'Firefox 143', sessions: [] },
+    })).toEqual([
+      'personalCommunications',
+      'personallyIdentifyingInfo',
+      'browsingActivity',
+      'technicalAndInteraction',
+    ])
   })
 
   it('returns the private feedback id from the API', async () => {
