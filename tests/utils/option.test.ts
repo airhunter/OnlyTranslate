@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Config } from '@/entrypoints/utils/model'
 import {
   defaultOption,
+  isChromeBuiltInTranslatorSupported,
   isServiceConfigured,
   options,
   services,
@@ -9,6 +10,12 @@ import {
 } from '@/entrypoints/utils/option'
 
 describe('service options', () => {
+  it('only enables Chrome built-in translation for Chrome builds', () => {
+    expect(isChromeBuiltInTranslatorSupported('chrome')).toBe(true)
+    expect(isChromeBuiltInTranslatorSupported('edge')).toBe(false)
+    expect(isChromeBuiltInTranslatorSupported('firefox')).toBe(false)
+  })
+
   it('uses Google as the default service for new configurations', () => {
     expect(defaultOption.service).toBe(services.google)
     expect(new Config().service).toBe(services.google)

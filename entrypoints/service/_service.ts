@@ -1,4 +1,4 @@
-import {services} from "../utils/option";
+import {services, supportsChromeBuiltInTranslator} from "../utils/option";
 import microsoft from "./microsoft";
 import deepl from "./deepl";
 import zhipu from "./zhipu";
@@ -18,7 +18,9 @@ export const _service: ServiceMap = {
     [services.microsoft]: microsoft,
     [services.deepL]: deepl,
     [services.google]: google,
-    [services.chromeTranslator]: chromeTranslator,
+    ...(supportsChromeBuiltInTranslator ? {
+        [services.chromeTranslator]: chromeTranslator,
+    } : {}),
 
     [services.zhipu]: zhipu,
     [services.gemini]: gemini,

@@ -5,10 +5,27 @@ import fs from 'fs';
 
 
 const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
+const edgeBinary = process.platform === 'win32'
+    ? [
+        process.env['ProgramFiles(x86)'],
+        process.env.ProgramFiles,
+        process.env.LOCALAPPDATA,
+    ]
+        .filter((basePath): basePath is string => Boolean(basePath))
+        .map(basePath => resolve(basePath, 'Microsoft', 'Edge', 'Application', 'msedge.exe'))
+        .find(candidate => fs.existsSync(candidate))
+    : undefined;
 
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
+    ...(edgeBinary ? {
+        webExt: {
+            binaries: {
+                edge: edgeBinary,
+            },
+        },
+    } : {}),
     modules: ['@wxt-dev/webextension-polyfill'],
     imports: {
         addons: {
@@ -30,10 +47,30 @@ export default defineConfig({
         description: '__MSG_extDescription__',
         homepage_url: 'https://onlytranslate.top/',
         default_locale: 'zh_CN',
+        ...(browser === 'firefox' ? {
+            browser_specific_settings: {
+                gecko: {
+                    id: 'onlytranslate@onlytranslate.top',
+                    strict_min_version: '140.0',
+                    data_collection_permissions: {
+                        required: ['websiteContent', 'authenticationInfo'],
+                        optional: [
+                            'personalCommunications',
+                            'personallyIdentifyingInfo',
+                            'browsingActivity',
+                            'technicalAndInteraction',
+                        ],
+                    },
+                },
+                gecko_android: {
+                    strict_min_version: '142.0',
+                },
+            },
+        } : {}),
         permissions: [
             'storage',
             'contextMenus',
-            'offscreen',
+            ...(browser === 'chrome' ? ['offscreen'] : []),
             'scripting',
             'alarms',
             'unlimitedStorage',

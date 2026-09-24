@@ -24,6 +24,12 @@ export const services = {
     chromeTranslator: "chromeTranslator",
 } as const;
 
+export function isChromeBuiltInTranslatorSupported(browser: string | undefined): boolean {
+    return browser === undefined || browser === 'chrome';
+}
+
+export const supportsChromeBuiltInTranslator = isChromeBuiltInTranslatorSupported(import.meta.env.BROWSER);
+
 export const servicesType = {
     machine: new Set<string>([
         services.microsoft,
@@ -175,7 +181,9 @@ export const options = {
         {value: "builtin", label: "内置服务", disabled: true},
         {value: services.microsoft, label: "微软翻译", hint: "免配置，支持双语与仅译文"},
         {value: services.google, label: "Google 翻译", hint: "免配置，支持双语与仅译文"},
-        {value: services.chromeTranslator, label: "Chrome 内置 AI 翻译", hint: "本地模型，无需 API Key"},
+        ...(supportsChromeBuiltInTranslator
+            ? [{value: services.chromeTranslator, label: "Chrome 内置 AI 翻译", hint: "本地模型，无需 API Key"}]
+            : []),
         {value: services.deepL, label: "DeepL", hint: "翻译质量稳定，需 API Key"},
         {value: services.openai, label: "OpenAI", hint: "通用性强，需 API Key"},
         {value: services.deepseek, label: "DeepSeek", hint: "性价比高，需 API Key"},

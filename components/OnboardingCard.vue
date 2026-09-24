@@ -21,7 +21,7 @@
           <span class="service-name">DeepSeek</span>
           <span class="service-desc">{{ t('onboarding.deepseekDesc') }}</span>
         </button>
-        <button class="onboarding-service-item" @click="selectService('chromeTranslator')">
+        <button v-if="supportsChromeBuiltInTranslator" class="onboarding-service-item" @click="selectService('chromeTranslator')">
           <span class="service-name">{{ t('onboarding.chromeTranslator') }}</span>
           <span class="service-desc">{{ t('onboarding.chromeTranslatorDesc') }}</span>
         </button>
@@ -37,7 +37,7 @@ import { storage } from '@wxt-dev/storage'
 import { useConfig } from '@/composables/useConfig'
 import { useI18n } from 'vue-i18n'
 import { ChatDotRound } from '@element-plus/icons-vue'
-import { isServiceConfigured, services } from '@/entrypoints/utils/option'
+import { isServiceConfigured, services, supportsChromeBuiltInTranslator } from '@/entrypoints/utils/option'
 
 const { config } = useConfig()
 const { t } = useI18n()
