@@ -1,0 +1,12 @@
+{
+  "name": "Quora answer includes question title and comment bodies without author controls",
+  "url": "https://www.quora.com/Does-corruption-exist-in-Japan/answer/Ken-Hower?qv_src=email",
+  "scope": "smart",
+  "html": "quora-answer-comments.html",
+  "contentRootContains": ["#answer-body"],
+  "contentRootExcludes": ["#question-title", "#comment-body"],
+  "include": ["question-title", "answer-body", "comment-body", "reply-body", "truncated-comment"],
+  "exclude": ["answer-author", "comment-author", "comment-date", "comment-reply", "reply-author", "related-question"],
+  "textIncludes": ["Does corruption exist in Japan?", "There is definitely corruption", "All Asian companies bribe", "On the contrary, most Japanese"],
+  "textExcludes": ["Joseph Adesanya", "Reply"]
+}

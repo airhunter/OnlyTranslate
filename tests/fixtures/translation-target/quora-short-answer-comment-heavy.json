@@ -1,0 +1,9 @@
+{
+  "name": "Quora short answer stays in smart translation when comments outweigh the answer",
+  "url": "https://www.quora.com/Why-is-Xi-Jinping-not-bad/answer/1LittleGranny64?qv_src=email",
+  "scope": "smart",
+  "html": "quora-short-answer-comment-heavy.html",
+  "include": ["question-title", "answer-intro", "answer-detail", "answer-caveat", "answer-conclusion", "comment-one", "comment-two", "comment-three", "comment-four"],
+  "exclude": ["answer-author", "answer-views", "comment-author", "comment-reply", "related-question"],
+  "textExcludes": ["90.9K views", "Reply", "Another answer"]
+}
