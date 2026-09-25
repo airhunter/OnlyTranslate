@@ -1,4 +1,5 @@
 import { asteriskProfile } from './asterisk';
+import { appleProfile } from './apple';
 import { arsTechnicaProfile } from './arsTechnica';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { claytonRamseyProfile } from './claytonRamsey';
@@ -97,6 +98,7 @@ export const siteProfiles: SiteProfile[] = [
     huggingFaceProfile,
     jacobGoldProfile,
     natureProfile,
+    appleProfile,
     asteriskProfile,
     arsTechnicaProfile,
     devToProfile,

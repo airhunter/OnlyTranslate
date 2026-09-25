@@ -109,6 +109,44 @@ describe('resolveAutoTranslateTarget behavior', () => {
     })
   })
 
+  it('uses the source text color for a bilingual translation of an Apple dark store card', async () => {
+    const url = new URL('https://www.apple.com/store')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = `
+      <div class="rf-ccard rf-ccard-darkbg">
+        <div id="dark-card-copy" class="rf-ccard-content-info" style="color: rgb(29, 29, 31)">
+          <h3>NEW</h3>
+          <div>iPhone 18 Pro</div>
+          <div class="rf-ccard-content-desc">
+            <span class="rf-ccard-content-desccontent" style="color: rgb(255, 255, 255)">The ultimate performance and camera of any iPhone.</span>
+          </div>
+        </div>
+      </div>
+      <div class="rf-ccard">
+        <div id="light-card-copy" class="rf-ccard-content-info" style="color: rgb(29, 29, 31)">
+          <span class="rf-ccard-content-desccontent">Hello, hello.</span>
+        </div>
+      </div>
+      <div class="rf-ccard rf-ccard-darkbg">
+        <span id="full-card-copy" class="rf-ccard-content-desccontent" style="color: rgb(255, 255, 255)">Another white description.</span>
+      </div>
+    `
+    vi.mocked(translateText).mockResolvedValue('这是商品卡片的译文。')
+
+    await handleBilingualTranslation(document.querySelector<HTMLElement>('#dark-card-copy')!, false)
+    await handleBilingualTranslation(document.querySelector<HTMLElement>('#light-card-copy')!, false)
+    mockConfig.translationScope = 'full'
+    await handleBilingualTranslation(document.querySelector<HTMLElement>('#full-card-copy')!, false)
+
+    expect(document.querySelector<HTMLElement>('#dark-card-copy .only-translate-bilingual-text')?.style.color)
+      .toBe('rgb(255, 255, 255)')
+    expect(document.querySelector<HTMLElement>('#light-card-copy .only-translate-bilingual-text')?.style.color)
+      .toBe('')
+    expect(document.querySelector<HTMLElement>('#full-card-copy .only-translate-bilingual-text')?.style.color)
+      .toBe('')
+  })
+
   it('translates Google AI Mode answers as complete paragraphs below their inline source text', async () => {
     const url = new URL('https://www.google.com/search?q=recent+book+in+uk&udm=50')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
