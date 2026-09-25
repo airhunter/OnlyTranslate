@@ -143,8 +143,8 @@
         <button class="control-button" :title="t('ebook.exportOriginal')" @click="exportBook(activeBook)">
           {{ t('ebook.exportOriginal') }}
         </button>
-        <button class="control-button" :disabled="exportingTranslated" @click="exportTranslatedBook">
-          {{ t('ebook.exportTranslated') }}
+        <button class="control-button" :disabled="exportingTranslated || preparingTranslatedExport" @click="exportTranslatedBook">
+          {{ exportCheckpoint && exportCheckpoint.completed < exportCheckpoint.total ? t('ebook.resumeExport') : t('ebook.exportTranslated') }}
         </button>
         <button
           class="control-button"
@@ -213,6 +213,11 @@
         >{{ currentBookmark ? '★' : '☆' }}</button>
       </div>
     </header>
+
+    <div v-if="exportCheckpoint && !exportingTranslated" class="export-checkpoint-notice" role="status">
+      <span>{{ t('ebook.exportSavedProgress', { completed: exportCheckpoint.completed, total: exportCheckpoint.total }) }}</span>
+      <button @click="discardExportProgress">{{ t('ebook.discardExportProgress') }}</button>
+    </div>
 
     <section v-if="exportingTranslated" class="translated-export-overlay" role="dialog" aria-modal="true" :aria-label="t('ebook.exportTranslated')">
       <div class="translated-export-card">
@@ -291,7 +296,8 @@ import { EBOOK_BACKUP_EXTENSION, EbookBackupError } from './backup';
 import { downloadOriginalBook } from './export';
 import { createTranslatedEpub, TranslatedEpubExportError, type TranslatedEpubProgress } from './translatedExport';
 import { extractLibraryBookMetadata } from './importMetadata';
-import { EbookImportError, EbookRepository } from './repository';
+import { EbookImportError, EbookRepository, type ExportCheckpoint } from './repository';
+import { createExportFingerprint } from './exportTranslation';
 import { selectDroppedFile } from './dropImport';
 import { getRequestedEbookId } from './url';
 import { getLibraryPdfReaderUrl } from '@/entrypoints/pdf/url';
@@ -341,6 +347,8 @@ const importing = ref(false);
 const backingUp = ref(false);
 const restoring = ref(false);
 const exportingTranslated = ref(false);
+const preparingTranslatedExport = ref(false);
+const exportCheckpoint = ref<ExportCheckpoint>();
 const exportProgress = reactive<TranslatedEpubProgress>({ completed: 0, total: 0, phase: 'translating' });
 let translatedExportController: AbortController | undefined;
 const draggingFile = ref(false);
@@ -564,6 +572,7 @@ async function openBook(book: EbookRecord, temporary = false): Promise<void> {
   toc.value = await controller.open(viewer.value, book, progress, readerSettings, actualTheme.value);
   bookmarks.value = temporary ? [] : await repository.listBookmarks(book.bookId);
   if (!temporary) await repository.markOpened(book.bookId);
+  exportCheckpoint.value = temporary ? undefined : await repository.getExportCheckpoint(book.bookId, 'epub').catch(() => undefined);
 }
 
 async function closeBook(): Promise<void> {
@@ -577,6 +586,7 @@ async function leaveReader(): Promise<void> {
   controller.close();
   activeBook.value = undefined;
   activeBookIsTemporary.value = false;
+  exportCheckpoint.value = undefined;
   toc.value = [];
   bookmarks.value = [];
   currentChapterHref.value = '';
@@ -610,9 +620,22 @@ function cancelTranslatedExport(): void {
   translatedExportController?.abort();
 }
 
+async function discardExportProgress(): Promise<void> {
+  const book = activeBook.value;
+  if (!book || !exportCheckpoint.value || exportingTranslated.value || preparingTranslatedExport.value) return;
+  if (!window.confirm(t('ebook.discardExportConfirm'))) return;
+  try {
+    await repository.clearExportCheckpoint(book.bookId, 'epub');
+    exportCheckpoint.value = undefined;
+  } catch (error) {
+    console.error('[OnlyTranslate] Could not discard EPUB export progress', error);
+    translationNotice.value = t('ebook.exportCheckpointFailed');
+  }
+}
+
 async function exportTranslatedBook(): Promise<void> {
   const book = activeBook.value;
-  if (!book || exportingTranslated.value) return;
+  if (!book || exportingTranslated.value || preparingTranslatedExport.value) return;
   if (!config.value.on) {
     translationNotice.value = t('ebook.translationDisabled');
     return;
@@ -621,7 +644,30 @@ async function exportTranslatedBook(): Promise<void> {
     translationNotice.value = t('ebook.serviceNotConfigured');
     return;
   }
-  if (!window.confirm(t('ebook.exportTranslatedConfirm'))) return;
+  preparingTranslatedExport.value = true;
+  let fingerprint: string;
+  try {
+    fingerprint = await createExportFingerprint('epub');
+    const saved = activeBookIsTemporary.value ? undefined : await repository.getExportCheckpoint(book.bookId, 'epub');
+    const prompt = saved
+      ? saved.fingerprint === fingerprint
+        ? saved.completed === saved.total
+          ? t('ebook.exportCompletedConfirm')
+          : t('ebook.exportResumeConfirm', { completed: saved.completed, total: saved.total })
+        : t('ebook.exportRestartConfirm')
+      : `${t('ebook.exportTranslatedConfirm')}${activeBookIsTemporary.value ? `\n${t('ebook.exportTemporaryHint')}` : ''}`;
+    if (!window.confirm(prompt)) return;
+    if (saved && saved.fingerprint !== fingerprint) {
+      await repository.clearExportCheckpoint(book.bookId, 'epub');
+      exportCheckpoint.value = undefined;
+    }
+  } catch (error) {
+    console.error('[OnlyTranslate] Could not prepare EPUB export', error);
+    translationNotice.value = t('ebook.exportCheckpointFailed');
+    return;
+  } finally {
+    preparingTranslatedExport.value = false;
+  }
 
   const controller = new AbortController();
   translatedExportController = controller;
@@ -632,6 +678,7 @@ async function exportTranslatedBook(): Promise<void> {
     const blob = await createTranslatedEpub(book, {
       signal: controller.signal,
       onProgress: progress => Object.assign(exportProgress, progress),
+      ...(!activeBookIsTemporary.value ? { checkpoint: { repository, bookId: book.bookId, fingerprint } } : {}),
     });
     if (controller.signal.aborted) return;
     const filename = book.filename.replace(/\.epub$/i, '') || book.title;
@@ -641,7 +688,13 @@ async function exportTranslatedBook(): Promise<void> {
     const cancelled = error instanceof DOMException && error.name === 'AbortError';
     if (!cancelled) console.error('[OnlyTranslate] Bilingual EPUB export failed', error);
     translationNotice.value = cancelled
-      ? t('ebook.exportCancelled')
+      ? t(activeBookIsTemporary.value ? 'ebook.exportCancelledTemporary' : 'ebook.exportCancelled')
+      : error instanceof TranslatedEpubExportError && error.code === 'RATE_LIMITED'
+        ? t('ebook.exportRateLimited')
+        : error instanceof TranslatedEpubExportError && error.code === 'SETTINGS_CHANGED'
+          ? t('ebook.exportSettingsChanged')
+          : error instanceof TranslatedEpubExportError && error.code === 'CHECKPOINT'
+            ? t('ebook.exportCheckpointFailed')
       : error instanceof TranslatedEpubExportError && error.code === 'EPUB'
         ? t('ebook.exportBookFailed')
         : error instanceof TranslatedEpubExportError && error.code === 'PACKAGING'
@@ -650,6 +703,9 @@ async function exportTranslatedBook(): Promise<void> {
   } finally {
     translatedExportController = undefined;
     exportingTranslated.value = false;
+    if (!activeBookIsTemporary.value) {
+      exportCheckpoint.value = await repository.getExportCheckpoint(book.bookId, 'epub').catch(() => undefined);
+    }
   }
 }
 

@@ -14,10 +14,44 @@ import {
 } from './backup';
 
 const DATABASE_NAME = 'onlytranslate-ebooks';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const BOOKS_STORE = 'books';
 const PROGRESS_STORE = 'readingStates';
 const BOOKMARKS_STORE = 'bookmarks';
+const EXPORTS_STORE = 'exportCheckpoints';
+const EXPORT_SEGMENTS_STORE = 'exportSegments';
+
+export type ExportFormat = 'epub' | 'pdf';
+
+export interface ExportCheckpoint {
+  id: string;
+  bookId: string;
+  format: ExportFormat;
+  fingerprint: string;
+  total: number;
+  completed: number;
+  updatedAt: number;
+}
+
+export interface ExportSegment<T> {
+  id: string;
+  bookId: string;
+  format: ExportFormat;
+  index: number;
+  sourceKey: string;
+  value: T;
+}
+
+export class ExportCheckpointMismatchError extends Error {
+  constructor() {
+    super('Export settings or document structure changed');
+    this.name = 'ExportCheckpointMismatchError';
+  }
+}
+
+function exportId(bookId: string, format: ExportFormat): string {
+  return `${bookId}:${format}`;
+}
 
 export class EbookImportError extends Error {
   constructor(
@@ -180,13 +214,18 @@ export class EbookRepository {
 
   async removeBook(bookId: string): Promise<void> {
     const database = await this.open();
-    const transaction = database.transaction([BOOKS_STORE, PROGRESS_STORE, BOOKMARKS_STORE], 'readwrite');
+    const transaction = database.transaction([BOOKS_STORE, PROGRESS_STORE, BOOKMARKS_STORE, EXPORTS_STORE, EXPORT_SEGMENTS_STORE], 'readwrite');
     const bookStore = transaction.objectStore(BOOKS_STORE);
     bookStore.delete(bookId);
     transaction.objectStore(PROGRESS_STORE).delete(bookId);
     const bookmarkStore = transaction.objectStore(BOOKMARKS_STORE);
     const bookmarkKeys = await requestResult(bookmarkStore.index('bookId').getAllKeys(bookId));
     bookmarkKeys.forEach(key => bookmarkStore.delete(key));
+    for (const storeName of [EXPORTS_STORE, EXPORT_SEGMENTS_STORE]) {
+      const store = transaction.objectStore(storeName);
+      const keys = await requestResult(store.index('bookId').getAllKeys(bookId));
+      keys.forEach(key => store.delete(key));
+    }
     const remainingBooks = await requestResult(bookStore.count());
     await transactionDone(transaction);
     if (remainingBooks === 0) await this.deleteDatabase(database);
@@ -205,6 +244,74 @@ export class EbookRepository {
     const progress = await requestResult(transaction.objectStore(PROGRESS_STORE).get(bookId)) as ReadingState | undefined;
     await transactionDone(transaction);
     return progress;
+  }
+
+  async getExportCheckpoint(bookId: string, format: ExportFormat): Promise<ExportCheckpoint | undefined> {
+    const database = await this.open();
+    const transaction = database.transaction([EXPORTS_STORE, EXPORT_SEGMENTS_STORE], 'readonly');
+    const checkpoint = await requestResult(transaction.objectStore(EXPORTS_STORE).get(exportId(bookId, format))) as ExportCheckpoint | undefined;
+    const completed = checkpoint
+      ? await requestResult(transaction.objectStore(EXPORT_SEGMENTS_STORE).index('bookFormat').count([bookId, format]))
+      : 0;
+    await transactionDone(transaction);
+    return checkpoint ? { ...checkpoint, completed } : undefined;
+  }
+
+  async startExportCheckpoint(bookId: string, format: ExportFormat, fingerprint: string, total: number): Promise<void> {
+    const database = await this.open();
+    const transaction = database.transaction([BOOKS_STORE, EXPORTS_STORE], 'readwrite');
+    const book = await requestResult(transaction.objectStore(BOOKS_STORE).get(bookId));
+    if (!book) {
+      transaction.abort();
+      throw new Error('The book must be saved before its export can be resumed');
+    }
+    const store = transaction.objectStore(EXPORTS_STORE);
+    const id = exportId(bookId, format);
+    const existing = await requestResult(store.get(id)) as ExportCheckpoint | undefined;
+    if (existing && (existing.fingerprint !== fingerprint || existing.total !== total)) {
+      transaction.abort();
+      throw new ExportCheckpointMismatchError();
+    }
+    if (!existing) {
+      store.put({ id, bookId, format, fingerprint, total, completed: 0, updatedAt: Date.now() } satisfies ExportCheckpoint);
+    }
+    await transactionDone(transaction);
+  }
+
+  async listExportSegments<T>(bookId: string, format: ExportFormat): Promise<Array<ExportSegment<T>>> {
+    const database = await this.open();
+    const transaction = database.transaction(EXPORT_SEGMENTS_STORE, 'readonly');
+    const segments = await requestResult(transaction.objectStore(EXPORT_SEGMENTS_STORE).index('bookFormat').getAll([bookId, format])) as Array<ExportSegment<T>>;
+    await transactionDone(transaction);
+    return segments;
+  }
+
+  async saveExportSegment<T>(bookId: string, format: ExportFormat, fingerprint: string, index: number, sourceKey: string, value: T): Promise<void> {
+    const database = await this.open();
+    const transaction = database.transaction([EXPORTS_STORE, EXPORT_SEGMENTS_STORE], 'readwrite');
+    const checkpoints = transaction.objectStore(EXPORTS_STORE);
+    const id = exportId(bookId, format);
+    const checkpoint = await requestResult(checkpoints.get(id)) as ExportCheckpoint | undefined;
+    if (!checkpoint || checkpoint.fingerprint !== fingerprint || index < 0 || index >= checkpoint.total) {
+      transaction.abort();
+      throw new ExportCheckpointMismatchError();
+    }
+    transaction.objectStore(EXPORT_SEGMENTS_STORE).put({
+      id: `${id}:${index}`, bookId, format, index, sourceKey, value,
+    } satisfies ExportSegment<T>);
+    checkpoints.put({ ...checkpoint, updatedAt: Date.now() });
+    await transactionDone(transaction);
+  }
+
+  async clearExportCheckpoint(bookId: string, format: ExportFormat): Promise<void> {
+    const database = await this.open();
+    const transaction = database.transaction([EXPORTS_STORE, EXPORT_SEGMENTS_STORE], 'readwrite');
+    const id = exportId(bookId, format);
+    transaction.objectStore(EXPORTS_STORE).delete(id);
+    const segments = transaction.objectStore(EXPORT_SEGMENTS_STORE);
+    const keys = await requestResult(segments.index('bookFormat').getAllKeys([bookId, format]));
+    keys.forEach(key => segments.delete(key));
+    await transactionDone(transaction);
   }
 
   async addBookmark(bookmark: Omit<Bookmark, 'id' | 'createdAt'>): Promise<{ bookmark: Bookmark; duplicate: boolean }> {
@@ -352,6 +459,15 @@ export class EbookRepository {
           const bookmarks = database.createObjectStore(BOOKMARKS_STORE, { keyPath: 'id' });
           bookmarks.createIndex('bookId', 'bookId');
           bookmarks.createIndex('bookIdCfi', ['bookId', 'cfi'], { unique: true });
+        }
+        if (!database.objectStoreNames.contains(EXPORTS_STORE)) {
+          const exports = database.createObjectStore(EXPORTS_STORE, { keyPath: 'id' });
+          exports.createIndex('bookId', 'bookId');
+        }
+        if (!database.objectStoreNames.contains(EXPORT_SEGMENTS_STORE)) {
+          const segments = database.createObjectStore(EXPORT_SEGMENTS_STORE, { keyPath: 'id' });
+          segments.createIndex('bookId', 'bookId');
+          segments.createIndex('bookFormat', ['bookId', 'format']);
         }
       };
       request.onsuccess = () => {

@@ -107,6 +107,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .pdf-library-notice span { min-width: 0; flex: 1; }
 .pdf-library-notice button { display: grid; width: 24px; height: 24px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: inherit; font-size: 17px; line-height: 1; }
 .pdf-library-notice button:hover { background: rgb(57 117 215 / 10%); }
+.pdf-library-notice + .pdf-export-checkpoint-notice { top: 118px; }
+.pdf-export-checkpoint-notice button { display: inline; width: auto; padding: 0 4px; font-size: 12px; text-decoration: underline; }
 .dark .pdf-library-notice { border-color: rgb(119 167 255 / 30%); background: rgb(29 33 40 / 97%); color: #9dbfff; }
 .pdf-workspace { min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 116px minmax(280px, var(--pdf-original-panel-width)) 8px minmax(0, 1fr); }
 .pdf-page-thumbnails { min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: scroll; display: flex; flex-direction: column; align-items: center; gap: 13px; padding: 0 10px 18px 12px; border-right: 1px solid #d9dde4; background: #f4f6f9; scrollbar-color: #b8c0cc transparent; scrollbar-width: thin; }

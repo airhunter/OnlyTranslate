@@ -1,7 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { Blob as NodeBlob } from 'node:buffer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EbookImportError, EbookRepository } from '../../entrypoints/ebook/repository';
+import { EbookImportError, EbookRepository, ExportCheckpointMismatchError } from '../../entrypoints/ebook/repository';
 
 const metadata = async () => ({
   title: 'Test Book',
@@ -82,6 +82,46 @@ describe('EbookRepository', () => {
     expect(await repository.getBook(book.bookId)).toBeUndefined();
     expect(await repository.getProgress(book.bookId)).toBeUndefined();
     expect(await repository.listBookmarks(book.bookId)).toEqual([]);
+  });
+
+  it('persists export segments, rejects changed settings, and removes segments with the book', async () => {
+    const book = (await repository.importBook(new File(['book'], 'book.epub'), metadata)).book;
+    await repository.startExportCheckpoint(book.bookId, 'epub', 'settings-one', 2);
+    await repository.saveExportSegment(book.bookId, 'epub', 'settings-one', 0, 'chapter1.xhtml', '<html>Translated</html>');
+    const reopened = new EbookRepository(indexedDb, storageManager);
+    expect(await reopened.getExportCheckpoint(book.bookId, 'epub')).toMatchObject({ total: 2, completed: 1 });
+    expect(await reopened.listExportSegments<string>(book.bookId, 'epub')).toMatchObject([
+      { index: 0, sourceKey: 'chapter1.xhtml', value: '<html>Translated</html>' },
+    ]);
+    await expect(reopened.startExportCheckpoint(book.bookId, 'epub', 'settings-two', 2))
+      .rejects.toBeInstanceOf(ExportCheckpointMismatchError);
+    await reopened.removeBook(book.bookId);
+    expect(await reopened.getExportCheckpoint(book.bookId, 'epub')).toBeUndefined();
+    expect(await reopened.listExportSegments(book.bookId, 'epub')).toEqual([]);
+    reopened.close();
+  });
+
+  it('upgrades an existing version-one library without losing books', async () => {
+    const legacy = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDb.open('onlytranslate-ebooks', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('books', { keyPath: 'bookId' });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = legacy.transaction('books', 'readwrite');
+    transaction.objectStore('books').put({
+      bookId: 'legacy-book', fileBlob: new Blob(['epub']), filename: 'legacy.epub',
+      fileSize: 4, title: 'Legacy', author: '', addedAt: 1, lastOpenedAt: 1,
+    });
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    legacy.close();
+
+    expect(await repository.getBook('legacy-book')).toMatchObject({ title: 'Legacy' });
+    await repository.startExportCheckpoint('legacy-book', 'epub', 'settings-one', 1);
+    expect(await repository.getExportCheckpoint('legacy-book', 'epub')).toMatchObject({ completed: 0, total: 1 });
   });
 
   it('deletes the ebook database only after the final book is removed', async () => {

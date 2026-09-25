@@ -6,10 +6,17 @@ vi.mock('../../entrypoints/utils/translateApi', () => ({
   isTranslationCancelledError: (error: unknown) => (error as { name?: string })?.name === 'TranslationCancelledError',
   translateText: vi.fn(),
 }));
+vi.mock('../../entrypoints/utils/config', () => ({
+  config: { service: 'microsoft', from: 'auto', to: 'zh', style: 0, model: {}, customModel: {}, customProviders: [] },
+}));
 import JSZip from 'jszip';
 import ePub from 'epubjs';
 import { translateText } from '../../entrypoints/utils/translateApi';
+import { config } from '../../entrypoints/utils/config';
 import { createTranslatedEpub } from '../../entrypoints/ebook/translatedExport';
+import { EbookRepository } from '../../entrypoints/ebook/repository';
+import { createExportFingerprint } from '../../entrypoints/ebook/exportTranslation';
+import { IDBFactory } from 'fake-indexeddb';
 import { createMinimalEpubBuffer } from '../fixtures/ebook/minimalEpub';
 
 let namespaceSpy: { mockRestore(): void };
@@ -79,6 +86,19 @@ describe('translated EPUB export', () => {
     })).rejects.toMatchObject({ code: 'TRANSLATION' });
   });
 
+  it('reports a Google 429 as a paused, rate-limited export', async () => {
+    const previous = config.service;
+    config.service = 'google';
+    try {
+      const translate = vi.fn(async () => { throw new Error('translation failed: 429'); });
+      await expect(createTranslatedEpub(fixtureBook(), { translate }))
+        .rejects.toMatchObject({ code: 'RATE_LIMITED' });
+      expect(translate).toHaveBeenCalledOnce();
+    } finally {
+      config.service = previous;
+    }
+  });
+
   it('keeps batch translation enabled while preserving cancellation', async () => {
     vi.mocked(translateText).mockResolvedValue('译文');
     const controller = new AbortController();
@@ -145,5 +165,36 @@ describe('translated EPUB export', () => {
         if (progress.completed === 1) controller.abort();
       },
     })).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('resumes a saved export without re-translating completed chapters', async () => {
+    const indexedDb = new IDBFactory();
+    const repository = new EbookRepository(indexedDb);
+    const original = fixtureBook();
+    const book = (await repository.importBook(new File([original.fileBlob], 'fixture.epub'), async () => ({
+      title: original.title, author: '',
+    }))).book;
+    const controller = new AbortController();
+    const checkpoint = { repository, bookId: book.bookId, fingerprint: await createExportFingerprint('epub') };
+    await expect(createTranslatedEpub(book, {
+      checkpoint,
+      signal: controller.signal,
+      translate: async source => `第一轮：${source}`,
+      onProgress: progress => { if (progress.completed === 1) controller.abort(); },
+    })).rejects.toMatchObject({ name: 'AbortError' });
+    expect(await repository.getExportCheckpoint(book.bookId, 'epub')).toMatchObject({ completed: 1, total: 2 });
+
+    const reopened = new EbookRepository(indexedDb);
+    const translate = vi.fn(async source => `第二轮：${source}`);
+    const resumed = await createTranslatedEpub(book, {
+      checkpoint: { ...checkpoint, repository: reopened },
+      translate,
+    });
+    const zip = await JSZip.loadAsync(await resumed.arrayBuffer());
+    expect(await zip.file('OEBPS/chapter1.xhtml')?.async('text')).toContain('第一轮：');
+    expect(await zip.file('OEBPS/chapter2.xhtml')?.async('text')).toContain('第二轮：');
+    expect(await reopened.getExportCheckpoint(book.bookId, 'epub')).toMatchObject({ completed: 2 });
+    repository.close();
+    reopened.close();
   });
 });

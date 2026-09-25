@@ -96,8 +96,8 @@
             <button v-if="pageCount" :disabled="exportingOriginal" @click="exportOriginalPdf">
               {{ exportingOriginal ? t('common.processing') : t('ebook.exportOriginal') }}
             </button>
-            <button v-if="pageCount" :disabled="exportingTranslated" @click="exportTranslatedPdf">
-              {{ t('ebook.exportTranslated') }}
+            <button v-if="pageCount" :disabled="exportingTranslated || preparingTranslatedExport" @click="exportTranslatedPdf">
+              {{ exportCheckpoint && exportCheckpoint.completed < exportCheckpoint.total ? t('ebook.resumeExport') : t('ebook.exportTranslated') }}
             </button>
             <button @click="chooseLocalFile">{{ t('pdf.openLocal') }}</button>
           </div>
@@ -109,6 +109,11 @@
     <div v-if="libraryNotice" class="pdf-library-notice" role="status">
       <span>{{ libraryNotice }}</span>
       <button :aria-label="t('pdf.dismissNotice')" @click="clearLibraryNotice">×</button>
+    </div>
+
+    <div v-if="exportCheckpoint && !exportingTranslated" class="pdf-library-notice pdf-export-checkpoint-notice" role="status">
+      <span>{{ t('pdf.exportSavedProgress', { completed: exportCheckpoint.completed, total: exportCheckpoint.total }) }}</span>
+      <button @click="discardExportProgress">{{ t('ebook.discardExportProgress') }}</button>
     </div>
 
     <section v-if="exportingTranslated" class="pdf-export-progress" role="dialog" aria-modal="true" :aria-label="t('ebook.exportTranslated')">
@@ -352,7 +357,8 @@ import { useConfig } from '@/composables/useConfig'
 import { useTheme } from '@/composables/useTheme'
 import { isServiceConfigured } from '@/entrypoints/utils/option'
 import { resolveLocale } from '@/entrypoints/utils/i18n'
-import { EbookRepository } from '@/entrypoints/ebook/repository'
+import { EbookRepository, type ExportCheckpoint } from '@/entrypoints/ebook/repository'
+import { createExportFingerprint } from '@/entrypoints/ebook/exportTranslation'
 import { getEbookPageUrl } from '@/entrypoints/ebook/url'
 import { downloadOriginalBook } from '@/entrypoints/ebook/export'
 import { loadReaderSettings, saveReaderSettings } from '@/entrypoints/ebook/settings'
@@ -405,6 +411,8 @@ const addingToLibrary = ref(false)
 const removingFromLibrary = ref(false)
 const exportingOriginal = ref(false)
 const exportingTranslated = ref(false)
+const preparingTranslatedExport = ref(false)
+const exportCheckpoint = ref<ExportCheckpoint>()
 const exportPreviewOpen = ref(false)
 const exportPages = ref<BilingualPdfPage[]>([])
 const exportProgress = reactive<BilingualPdfProgress>({ completed: 0, total: 0 })
@@ -786,8 +794,21 @@ function cancelTranslatedExport(): void {
   translatedExportController?.abort()
 }
 
+async function discardExportProgress(): Promise<void> {
+  const book = libraryBook.value
+  if (!book || !exportCheckpoint.value || exportingTranslated.value || preparingTranslatedExport.value) return
+  if (!window.confirm(t('ebook.discardExportConfirm'))) return
+  try {
+    await repository.clearExportCheckpoint(book.bookId, 'pdf')
+    exportCheckpoint.value = undefined
+  } catch (error) {
+    console.error('[OnlyTranslate] Could not discard PDF export progress', error)
+    translationNotice.value = t('ebook.exportCheckpointFailed')
+  }
+}
+
 async function exportTranslatedPdf(): Promise<void> {
-  if (!pageCount.value || exportingTranslated.value) return
+  if (!pageCount.value || exportingTranslated.value || preparingTranslatedExport.value) return
   if (!config.value.on) {
     translationNotice.value = t('pdf.translationDisabled')
     return
@@ -796,7 +817,32 @@ async function exportTranslatedPdf(): Promise<void> {
     translationNotice.value = t('pdf.serviceNotConfigured')
     return
   }
-  if (!window.confirm(t('pdf.exportTranslatedConfirm'))) return
+  preparingTranslatedExport.value = true
+  let fingerprint: string
+  try {
+    fingerprint = await createExportFingerprint('pdf')
+    const saved = libraryBook.value
+      ? await repository.getExportCheckpoint(libraryBook.value.bookId, 'pdf')
+      : undefined
+    const prompt = saved
+      ? saved.fingerprint === fingerprint
+        ? saved.completed === saved.total
+          ? t('ebook.exportCompletedConfirm')
+          : t('pdf.exportResumeConfirm', { completed: saved.completed, total: saved.total })
+        : t('ebook.exportRestartConfirm')
+      : `${t('pdf.exportTranslatedConfirm')}${libraryBook.value ? '' : `\n${t('ebook.exportTemporaryHint')}`}`
+    if (!window.confirm(prompt)) return
+    if (saved && saved.fingerprint !== fingerprint && libraryBook.value) {
+      await repository.clearExportCheckpoint(libraryBook.value.bookId, 'pdf')
+      exportCheckpoint.value = undefined
+    }
+  } catch (error) {
+    console.error('[OnlyTranslate] Could not prepare PDF export', error)
+    translationNotice.value = t('ebook.exportCheckpointFailed')
+    return
+  } finally {
+    preparingTranslatedExport.value = false
+  }
 
   const abort = new AbortController()
   translatedExportController = abort
@@ -811,19 +857,27 @@ async function exportTranslatedPdf(): Promise<void> {
       sourceUrl: sourceUrl.value,
       signal: abort.signal,
       onProgress: progress => Object.assign(exportProgress, progress),
+      ...(libraryBook.value ? { checkpoint: { repository, bookId: libraryBook.value.bookId, fingerprint } } : {}),
     })
     if (abort.signal.aborted) return
     exportPages.value = pages
     exportPreviewOpen.value = true
   } catch (error) {
     translationNotice.value = error instanceof DOMException && error.name === 'AbortError'
-      ? t('ebook.exportCancelled')
-      : error instanceof BilingualPdfExportError && error.code === 'NO_TEXT'
-        ? t('pdf.exportNoText')
-        : t('pdf.exportTranslationFailed')
+      ? t(libraryBook.value ? 'ebook.exportCancelled' : 'ebook.exportCancelledTemporary')
+      : error instanceof BilingualPdfExportError && error.code === 'RATE_LIMITED'
+        ? t('ebook.exportRateLimited')
+        : error instanceof BilingualPdfExportError && error.code === 'SETTINGS_CHANGED'
+          ? t('ebook.exportSettingsChanged')
+          : error instanceof BilingualPdfExportError && error.code === 'NO_TEXT'
+            ? t('pdf.exportNoText')
+            : t('pdf.exportTranslationFailed')
   } finally {
     translatedExportController = undefined
     exportingTranslated.value = false
+    if (libraryBook.value) {
+      exportCheckpoint.value = await repository.getExportCheckpoint(libraryBook.value.bookId, 'pdf').catch(() => undefined)
+    }
   }
 }
 
@@ -1333,6 +1387,13 @@ onMounted(async () => {
   else if (sourceUrl.value) await openRemote(sourceUrl.value)
   window.addEventListener('keydown', handleReaderKeyDown)
   window.addEventListener('pagehide', savePdfProgressImmediately)
+})
+
+watch(libraryBook, async book => {
+  exportCheckpoint.value = undefined
+  if (!book) return
+  const checkpoint = await repository.getExportCheckpoint(book.bookId, 'pdf').catch(() => undefined)
+  if (libraryBook.value?.bookId === book.bookId) exportCheckpoint.value = checkpoint
 })
 
 watch(displayMode, (nextMode, previousMode) => {

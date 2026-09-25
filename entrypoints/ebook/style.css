@@ -105,6 +105,9 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.035em; }
 .translation-status--warning { color: #a46a12; }
 .translation-status .text-button { margin-left: 8px; color: inherit; text-decoration: underline; }
 .toolbar-controls { display: flex; align-items: center; gap: 12px; }
+.export-checkpoint-notice { position: fixed; z-index: 9; top: 72px; right: 18px; display: flex; align-items: center; gap: 10px; max-width: 420px; padding: 9px 12px; border: 1px solid rgb(57 117 215 / 28%); border-radius: 10px; background: rgb(247 250 255 / 96%); color: #315f9f; box-shadow: 0 8px 24px rgb(30 42 65 / 12%); font-size: 12px; }
+.export-checkpoint-notice button { flex: none; border: 0; background: transparent; color: inherit; text-decoration: underline; }
+.dark .export-checkpoint-notice { border-color: rgb(119 167 255 / 30%); background: rgb(29 33 40 / 97%); color: #9dbfff; }
 .control-button { height: 34px; padding: 0 10px; border: 1px solid #d9d7d1; border-radius: 8px; background: transparent; color: inherit; font-size: 12px; }
 .control-button:disabled { opacity: .45; cursor: not-allowed; }
 .retranslate-button { display: inline-flex; align-items: center; gap: 5px; }

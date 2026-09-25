@@ -1,6 +1,8 @@
 import JSZip from 'jszip';
 import { translateText } from '@/entrypoints/utils/translateApi';
 import { EbookTranslationCoordinator, type EbookTranslationStatus } from './translationCoordinator';
+import { ExportCheckpointMismatchError, type EbookRepository } from './repository';
+import { createExportFingerprint, createExportTranslator, ExportRateLimitError, ExportSettingsChangedError } from './exportTranslation';
 import type { EbookRecord } from './types';
 
 const EPUB_MIME_TYPE = 'application/epub+zip';
@@ -15,11 +17,12 @@ export interface TranslatedEpubOptions {
   signal?: AbortSignal;
   onProgress?: (progress: TranslatedEpubProgress) => void;
   translate?: (source: string) => Promise<string>;
+  checkpoint?: { repository: EbookRepository; bookId: string; fingerprint: string };
 }
 
 export class TranslatedEpubExportError extends Error {
   constructor(
-    public readonly code: 'EPUB' | 'TRANSLATION' | 'PACKAGING',
+    public readonly code: 'EPUB' | 'TRANSLATION' | 'PACKAGING' | 'CHECKPOINT' | 'RATE_LIMITED' | 'SETTINGS_CHANGED',
     cause: unknown,
   ) {
     super(`Bilingual EPUB export failed during ${code.toLowerCase()}`, { cause });
@@ -130,21 +133,37 @@ export async function createTranslatedEpub(
       throw new Error('Encrypted or signed EPUB files cannot be exported with translations');
     }
     const { chapters, packagePath, packageXml } = await findSpineDocuments(zip);
+    const checkpoint = options.checkpoint;
+    const savedChapters = new Map<number, string>();
+    if (checkpoint) {
+      if (await createExportFingerprint('epub') !== checkpoint.fingerprint) throw new ExportSettingsChangedError();
+      phase = 'CHECKPOINT';
+      await checkpoint.repository.startExportCheckpoint(checkpoint.bookId, 'epub', checkpoint.fingerprint, chapters.length);
+      const segments = await checkpoint.repository.listExportSegments<string>(checkpoint.bookId, 'epub');
+      for (const segment of segments) {
+        if (segment.index < 0 || segment.index >= chapters.length || segment.sourceKey !== chapters[segment.index]) continue;
+        try {
+          parseXml(segment.value, 'html', 'application/xhtml+xml');
+          savedChapters.set(segment.index, segment.value);
+        } catch {
+          // 损坏的断点重新翻译，不写入最终 EPUB。
+        }
+      }
+    }
     let status: EbookTranslationStatus = { total: 0, completed: 0, failed: 0, running: false };
     let firstTranslationError: unknown;
+    const exportTranslate = createExportTranslator(options.signal,
+      options.translate ? async source => options.translate!(source) : translateText);
     const coordinator = new EbookTranslationCoordinator({
       translate: async (source, context, translateOptions) => {
         try {
-          const request = options.translate
-            ? options.translate(source)
-            : translateText(source, context, { ...translateOptions, priority: 'background' });
-          // translateText disables batching when given a signal. Keep batching
-          // for long books while making each request cancellable at this boundary.
-          const result = await withAbortSignal(request, options.signal);
+          // 其他翻译服务继续沿用原有批量请求行为。
+          const result = await withAbortSignal(exportTranslate(source, context, translateOptions), options.signal);
           if (!result.trim()) throw new Error('EPUB translation is empty');
           return result;
         } catch (error) {
-          firstTranslationError ??= error;
+          if (error instanceof ExportRateLimitError || error instanceof ExportSettingsChangedError) firstTranslationError = error;
+          else firstTranslationError ??= error;
           throw error;
         }
       },
@@ -153,10 +172,16 @@ export async function createTranslatedEpub(
     const cancel = () => coordinator.cancel();
     options.signal?.addEventListener('abort', cancel, { once: true });
     try {
-      options.onProgress?.({ completed: 0, total: chapters.length, phase: 'translating' });
+      let completed = savedChapters.size;
+      options.onProgress?.({ completed, total: chapters.length, phase: 'translating' });
       for (const [index, path] of chapters.entries()) {
         phase = 'EPUB';
         ensureActive(options.signal);
+        const saved = savedChapters.get(index);
+        if (saved) {
+          zip.file(path, saved);
+          continue;
+        }
         const entry = zip.file(path);
         if (!entry) throw new Error(`EPUB chapter is missing: ${path}`);
         const source = await entry.async('text');
@@ -178,8 +203,13 @@ export async function createTranslatedEpub(
         if (style) style.textContent = '.onlytranslate-ebook-translation { color: #3975d7; margin-block: .35em .7em; }';
         const translatedXml = normalizeXhtmlEntities(new XMLSerializer().serializeToString(document), document);
         parseXml(translatedXml, 'html', 'application/xhtml+xml');
+        if (checkpoint) {
+          phase = 'CHECKPOINT';
+          await checkpoint.repository.saveExportSegment(checkpoint.bookId, 'epub', checkpoint.fingerprint, index, path, translatedXml);
+        }
         zip.file(path, translatedXml);
-        options.onProgress?.({ completed: index + 1, total: chapters.length, phase: 'translating' });
+        completed += 1;
+        options.onProgress?.({ completed, total: chapters.length, phase: 'translating' });
       }
 
       ensureActive(options.signal);
@@ -211,6 +241,13 @@ export async function createTranslatedEpub(
     }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    const cause = error instanceof Error ? error.cause : undefined;
+    if (error instanceof ExportRateLimitError || cause instanceof ExportRateLimitError) {
+      throw new TranslatedEpubExportError('RATE_LIMITED', error);
+    }
+    if (error instanceof ExportSettingsChangedError || cause instanceof ExportSettingsChangedError || error instanceof ExportCheckpointMismatchError) {
+      throw new TranslatedEpubExportError('SETTINGS_CHANGED', error);
+    }
     throw new TranslatedEpubExportError(phase, error);
   }
 }

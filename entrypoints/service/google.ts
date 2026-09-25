@@ -28,8 +28,9 @@ async function google(message: TranslationServiceMessage): Promise<TranslationSe
         });
         return sentence;
     } else {
-        console.log(resp);
-        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail: ` body: ${await resp.text()}` }));
+        // Google 的 429 响应可能包含完整的反自动化 HTML 页面；仅保留状态码供上层识别。
+        const detail = resp.status === 429 ? '' : ` body: ${(await resp.text()).slice(0, 500)}`;
+        throw new Error(t('runtime.translateFailedStatus', { status: resp.status, statusText: resp.statusText, detail }));
     }
 }
 
