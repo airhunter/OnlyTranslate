@@ -4,10 +4,12 @@
 
 [中文](./README.md) | English | [Official website](https://onlytranslate.top/)
 
-OnlyTranslate is an open-source browser extension for bilingual reading. It translates web content, video subtitles, local EPUB ebooks, and local or online PDFs while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
+OnlyTranslate is an open-source bilingual reading extension for Chrome, Edge, and Firefox. It translates web content, video subtitles, local EPUB ebooks, and local or online PDFs while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+[![Microsoft Edge Add-ons](https://img.shields.io/badge/Edge-Add--ons-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox-Add--ons-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/onlytranslate/)
 
 <p align="center">
   <img src="./store-assets/chrome-web-store/global/01-web-translation.png" alt="OnlyTranslate Smart web translation" width="48%" />
@@ -22,7 +24,7 @@ OnlyTranslate is an open-source browser extension for bilingual reading. It tran
 
 ## Quick Start
 
-1. Install OnlyTranslate from the [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608), then open a regular webpage you want to translate.
+1. Install OnlyTranslate from your browser's store: [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608), [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc), or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/onlytranslate/). Then open a regular webpage you want to translate.
 2. Select the OnlyTranslate icon in the browser toolbar and choose an available translation service. No-setup services such as Microsoft Translator and Google Translate can be used immediately; AI services require their corresponding API keys.
 3. For your first translation, try **Bilingual + Smart**, then select **Translate current page**. Select **Restore original** whenever you want to undo the translation.
 
@@ -100,16 +102,18 @@ Subtitle translation requires a readable source subtitle track provided by the v
 
 ## Installation
 
-### Chrome Web Store
+### Browser Extension Stores
 
-[OnlyTranslate - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+- [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc)
+- [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/onlytranslate/)
 
-### Manual Installation
+### Manual Installation from GitHub Releases
 
-1. Download the latest `.zip` package from [Releases](https://github.com/airhunter/OnlyTranslate/releases) and unzip it.
-2. Open Chrome and go to `chrome://extensions/`.
-3. Enable **Developer mode** in the top-right corner.
-4. Select **Load unpacked** and choose the unzipped extension directory.
+On [Releases](https://github.com/airhunter/OnlyTranslate/releases), choose the package for your browser: `OnlyTranslate-v<version>-chrome.zip`, `OnlyTranslate-v<version>-edge.zip`, or `OnlyTranslate-v<version>-firefox.zip`. Older releases may not include all three packages.
+
+- **Chrome / Edge**: Unzip the matching package, open `chrome://extensions/` or `edge://extensions/`, enable **Developer mode**, and select **Load unpacked**. Choose the extracted directory containing `manifest.json`.
+- **Firefox development testing**: For regular use, install from Firefox Add-ons above. The Firefox ZIP from GitHub Releases can be loaded through **Load Temporary Add-on** at `about:debugging#/runtime/this-firefox`; it must be loaded again after restarting Firefox. See [Mozilla's temporary installation guide](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/).
 
 ## Development
 
@@ -123,9 +127,9 @@ corepack pnpm dev
 # Type checking and the full test suite
 corepack pnpm verify
 
-# Build and package
+# Build and package all three browser versions
 corepack pnpm build
-corepack pnpm zip
+corepack pnpm zip:all
 ```
 
 The project declares its pnpm version in `package.json`. Prefer `corepack pnpm ...` so scripts use the package manager version and local dependencies expected by the project.

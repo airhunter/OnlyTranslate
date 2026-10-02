@@ -8,14 +8,16 @@
     "release": true,
     "releaseName": "v${version}",
     "assets": [
-      ".output/OnlyTranslate-v${version}-chrome.zip"
+      ".output/OnlyTranslate-v${version}-chrome.zip",
+      ".output/OnlyTranslate-v${version}-edge.zip",
+      ".output/OnlyTranslate-v${version}-firefox.zip"
     ]
   },
   "npm": {
     "publish": false
   },
   "hooks": {
-    "before:github:release": "pnpm zip"
+    "before:github:release": "pnpm zip:all && pnpm release:check ${version} --check-zip"
   },
   "plugins": {
     "@release-it/conventional-changelog": {

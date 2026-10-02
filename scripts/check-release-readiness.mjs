@@ -5,6 +5,7 @@ import path from 'node:path';
 import ts from 'typescript';
 
 const requiredReleaseNoteLocales = ['zh-CN', 'en-US', 'zh-TW', 'ja-JP'];
+const releaseBrowsers = ['chrome', 'edge', 'firefox'];
 const releaseZipWarningBytes = 1_500_000;
 const contentScriptReviewBytes = 800 * 1024;
 const releaseGrowthReviewRatio = 0.15;
@@ -75,9 +76,11 @@ if (releaseIt.github?.release !== true) {
   fail('.release-it.json 需要开启 github.release');
 }
 
-const expectedAssetPattern = '.output/OnlyTranslate-v${version}-chrome.zip';
-if (!Array.isArray(releaseIt.github.assets) || !releaseIt.github.assets.includes(expectedAssetPattern)) {
-  fail(`.release-it.json 需要上传 ${expectedAssetPattern}`);
+for (const browser of releaseBrowsers) {
+  const expectedAssetPattern = `.output/OnlyTranslate-v\${version}-${browser}.zip`;
+  if (!Array.isArray(releaseIt.github.assets) || !releaseIt.github.assets.includes(expectedAssetPattern)) {
+    fail(`.release-it.json 需要上传 ${expectedAssetPattern}`);
+  }
 }
 
 const changelogPaths = releaseIt.plugins?.['@release-it/conventional-changelog']?.gitRawCommitsOpts?.path;
@@ -89,8 +92,12 @@ if (
   fail('.release-it.json 需要通过 gitRawCommitsOpts.path 覆盖扩展仓库根目录');
 }
 
-if (releaseIt.hooks?.['before:github:release'] !== 'pnpm zip') {
-  fail('.release-it.json 需要在 before:github:release 执行 pnpm zip');
+if (packageJson.scripts?.['zip:all'] !== 'pnpm zip && pnpm zip:edge && pnpm zip:firefox') {
+  fail('package.json 需要通过 zip:all 打包 Chrome、Edge 和 Firefox');
+}
+
+if (releaseIt.hooks?.['before:github:release'] !== 'pnpm zip:all && pnpm release:check ${version} --check-zip') {
+  fail('.release-it.json 需要在 before:github:release 打包并校验三个浏览器 ZIP');
 }
 
 const wxtConfig = readText('wxt.config.ts');
@@ -99,12 +106,14 @@ if (!wxtConfig.includes("name: 'OnlyTranslate'") || !wxtConfig.includes("artifac
 }
 
 if (checkZip) {
-  const expectedZip = path.join(root, `.output/OnlyTranslate-v${version}-chrome.zip`);
-  if (!fs.existsSync(expectedZip)) {
-    fail(`缺少打包产物: ${path.relative(root, expectedZip)}，请先运行 pnpm zip`);
-  }
+  for (const browser of releaseBrowsers) {
+    const expectedZip = path.join(root, `.output/OnlyTranslate-v${version}-${browser}.zip`);
+    if (!fs.existsSync(expectedZip)) {
+      fail(`缺少打包产物: ${path.relative(root, expectedZip)}，请先运行 pnpm zip:all`);
+    }
 
-  checkArtifactSize(expectedZip, releaseNotes[1]?.version);
+    checkArtifactSize(expectedZip, releaseNotes[1]?.version, browser);
+  }
 }
 
 console.log(`release readiness check passed for v${version}`);
@@ -117,11 +126,11 @@ function readText(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-function checkArtifactSize(zipPath, previousVersion) {
+function checkArtifactSize(zipPath, previousVersion, browser) {
   const zipBytes = fs.statSync(zipPath).size;
   const zipSize = formatMb(zipBytes);
 
-  console.log(`artifact size: ZIP ${zipSize} MB / 1.50 MB`);
+  console.log(`artifact size (${browser}): ZIP ${zipSize} MB / 1.50 MB`);
   if (zipBytes > releaseZipWarningBytes) {
     warn(`发布 ZIP 为 ${zipSize} MB，超过 1.50 MB，请检查构建内容`);
   }
@@ -147,7 +156,7 @@ function checkArtifactSize(zipPath, previousVersion) {
     return;
   }
 
-  const previousZip = path.join(root, `.output/OnlyTranslate-v${previousVersion}-chrome.zip`);
+  const previousZip = path.join(root, `.output/OnlyTranslate-v${previousVersion}-${browser}.zip`);
   if (!fs.existsSync(previousZip)) {
     warn(`缺少上一版本产物 ${path.relative(root, previousZip)}，无法检查单版本增长`);
     return;

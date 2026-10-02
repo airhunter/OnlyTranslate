@@ -4,10 +4,12 @@
 
 [English](./README_EN.md) | 中文 | [官方网站](https://onlytranslate.top/)
 
-只译是一款开源双语阅读浏览器扩展：支持网页正文、视频字幕、本地 EPUB 电子书，以及本地和在线 PDF 文档的翻译，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
+只译是一款支持 Chrome、Edge 和 Firefox 的开源双语阅读浏览器扩展：支持网页正文、视频字幕、本地 EPUB 电子书，以及本地和在线 PDF 文档的翻译，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+[![Microsoft Edge Add-ons](https://img.shields.io/badge/Edge-Add--ons-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox-Add--ons-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/zh-CN/firefox/addon/onlytranslate/)
 
 <p align="center">
   <img src="./store-assets/chrome-web-store/zh-CN/01-web-translation.png" alt="只译的真实网页识文翻译效果" width="48%" />
@@ -22,7 +24,7 @@
 
 ## 快速开始
 
-1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608) 安装只译，打开需要翻译的普通网页。
+1. 从对应商店安装只译：[Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)、[Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc) 或 [Firefox Add-ons](https://addons.mozilla.org/zh-CN/firefox/addon/onlytranslate/)。安装后打开需要翻译的普通网页。
 2. 点击浏览器工具栏中的只译图标，选择一个可用的翻译服务。微软翻译、Google 翻译等免配置服务可以直接使用；AI 服务需要先填写对应的 API Key。
 3. 初次使用建议选择「双语对照 + 识文」，然后点击「翻译当前页面」。需要恢复时，再次点击「还原原文」。
 
@@ -100,16 +102,18 @@ Popup 右上角的「更多」菜单提供清除缓存和帮助入口。帮助�
 
 ## 安装
 
-### Chrome 扩展商店
+### 浏览器扩展商店
 
-[只译 - Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/%E5%8F%AA%E8%AF%91/hiajidipndfdngigicngbkhbjolggifi?utm_source=github&utm_medium=referral&utm_campaign=readme_202608)
+- [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/onlytranslate/alhgdpecglfndjbombednkkdgpagllbc)
+- [Firefox Add-ons](https://addons.mozilla.org/zh-CN/firefox/addon/onlytranslate/)
 
-### 手动安装
+### GitHub Releases 手动安装
 
-1. 前往 [Releases](https://github.com/airhunter/OnlyTranslate/releases) 下载最新 `.zip` 包并解压。
-2. 打开 Chrome，进入 `chrome://extensions/`。
-3. 开启右上角的「开发者模式」。
-4. 点击「加载已解压的扩展程序」，选择解压后的目录。
+前往 [Releases](https://github.com/airhunter/OnlyTranslate/releases)，按浏览器选择 `OnlyTranslate-v<version>-chrome.zip`、`OnlyTranslate-v<version>-edge.zip` 或 `OnlyTranslate-v<version>-firefox.zip`。旧版本的附件可能尚未包含全部浏览器包。
+
+- **Chrome / Edge**：解压对应的 ZIP，分别打开 `chrome://extensions/` 或 `edge://extensions/`，开启「开发者模式」，点击「加载已解压的扩展程序」，选择含有 `manifest.json` 的解压目录。
+- **Firefox 开发测试**：正式使用请从上方的 Firefox Add-ons 安装。GitHub Release 中的 Firefox ZIP 可在 `about:debugging#/runtime/this-firefox` 通过「临时载入附加组件」加载；重启 Firefox 后需要重新载入。参见 [Mozilla 的临时安装说明](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)。
 
 ## 开发
 
@@ -123,9 +127,9 @@ corepack pnpm dev
 # 类型检查与完整测试
 corepack pnpm verify
 
-# 构建与打包
+# 构建与打包三个浏览器版本
 corepack pnpm build
-corepack pnpm zip
+corepack pnpm zip:all
 ```
 
 项目在 `package.json` 中声明了 pnpm 版本。建议使用 `corepack pnpm ...`，确保脚本使用项目声明的包管理器版本和本地依赖。
