@@ -25,38 +25,46 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
-    version: '1.11.2',
+    version: '1.12.0',
     notes: {
       'zh-CN': {
-        title: '只译 1.11.2：网页与电子书翻译修复',
+        title: '只译 1.12：更多目标语言与翻译修复',
         items: [
+          '新增繁體中文、西班牙语、德语、葡萄牙语和意大利语作为目标语言。',
           '修复 Firefox 阅读 EPUB 时部分章节正文空白的问题。',
           '修复 Google AI 模式回答漏译和双语混排的问题，译文会另起一行。',
-          '改进简短讨论页及语义标题页面的智能识文覆盖。'
+          '改进 Quora、简短讨论页及语义标题页面的智能识文覆盖。',
+          '提交私下反馈时，按实际附带的内容请求相应的数据收集权限。'
         ]
       },
       'en-US': {
-        title: 'OnlyTranslate 1.11.2: Web and Ebook Translation Fixes',
+        title: 'OnlyTranslate 1.12: More Target Languages and Translation Fixes',
         items: [
+          'Added Traditional Chinese, Spanish, German, Portuguese, and Italian as target languages.',
           'Fixed blank chapter content in some EPUB books on Firefox.',
           'Fixed missed text and mixed inline translations in Google AI Mode answers; translations now start on a separate line.',
-          'Improved Smart translation coverage on short discussion pages and pages with semantic headings.'
+          'Improved Smart translation coverage on Quora, short discussion pages, and pages with semantic headings.',
+          'Private feedback now requests data collection permissions according to the details you choose to include.'
         ]
       },
       'zh-TW': {
-        title: '只譯 1.11.2：網頁與電子書翻譯修復',
+        title: '只譯 1.12：更多目標語言與翻譯修復',
         items: [
+          '新增繁體中文、西班牙語、德語、葡萄牙語和義大利語作為目標語言。',
           '修復 Firefox 閱讀 EPUB 時部分章節正文空白的問題。',
           '修復 Google AI 模式回答漏譯與雙語混排的問題，譯文會另起一行。',
-          '改善簡短討論頁及語意標題頁面的智慧識文涵蓋範圍。'
+          '改善 Quora、簡短討論頁及語意標題頁面的智慧識文涵蓋範圍。',
+          '提交私下回饋時，會依實際附帶的內容請求相應的資料蒐集權限。'
         ]
       },
       'ja-JP': {
-        title: 'OnlyTranslate 1.11.2：Web と電子書の翻訳を修正',
+        title: 'OnlyTranslate 1.12：翻訳先言語を追加し、翻訳の問題を修正',
         items: [
+          '翻訳先言語に繁体字中国語、スペイン語、ドイツ語、ポルトガル語、イタリア語を追加しました。',
           'Firefox で一部の EPUB の章が空白になる問題を修正しました。',
           'Google AI モードの回答で翻訳が抜けたり原文と混在したりする問題を修正し、訳文を改行して表示します。',
-          '短いディスカッションページや意味的な見出しを持つページで、スマート翻訳の対象範囲を改善しました。'
+          'Quora、短いディスカッションページ、意味的な見出しを持つページで、スマート翻訳の対象範囲を改善しました。',
+          '非公開フィードバックの送信時に、添付する内容に応じたデータ収集権限を要求するようにしました。'
         ]
       }
     }
