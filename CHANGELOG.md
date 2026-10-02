@@ -1,5 +1,26 @@
 # Changelog
 
+# [1.12.0](https://github.com/airhunter/OnlyTranslate/compare/v1.11.1...v1.12.0) (2026-10-02)
+
+
+### Bug Fixes
+
+* **build:** 完善跨浏览器构建与服务适配 ([f66a4a4](https://github.com/airhunter/OnlyTranslate/commit/f66a4a43983cd08a4a96448bf8847caecafc7c6b))
+* **content:** 修复 Google AI 模式回答漏译与译文混排 ([534e17c](https://github.com/airhunter/OnlyTranslate/commit/534e17c745924e93a8a979d6338bb200f0c6f714))
+* **content:** 修复 Quora 标题正文和评论漏译 ([1db3f2e](https://github.com/airhunter/OnlyTranslate/commit/1db3f2ee14c7acf7639a7e81d56e96a92dcc858b))
+* **content:** 修复苹果商店识文译文字色 ([e7e8915](https://github.com/airhunter/OnlyTranslate/commit/e7e8915728e0dcbaf15597318da0b941017cc2c5))
+* **content:** 修复语义标题讨论页的智能翻译范围 ([0fe6d62](https://github.com/airhunter/OnlyTranslate/commit/0fe6d6251b3a42f89996f60d8b61e9d077c0dffb))
+* **content:** 以通用规则覆盖简短讨论页并移除站点特例 ([5b69a94](https://github.com/airhunter/OnlyTranslate/commit/5b69a9404a7e6ee5e5e787a294bc4af01ba16da5))
+* **ebook:** 修复 Firefox 中 EPUB 章节空白 ([288174b](https://github.com/airhunter/OnlyTranslate/commit/288174b4499c2341bf6feb178f4ef6b6b11a2a89))
+* **ui:** 修复微软后台翻译与悬浮球变形 ([843d64c](https://github.com/airhunter/OnlyTranslate/commit/843d64c7b08cb12c03108d708d1f3e5980a719d2))
+
+
+### Features
+
+* **feedback:** 按反馈内容申请数据收集权限 ([5af8034](https://github.com/airhunter/OnlyTranslate/commit/5af803468c3e6d2461717dabf20c201cd75b9759))
+* **options:** 增加常用目标语言 ([2d72e0c](https://github.com/airhunter/OnlyTranslate/commit/2d72e0c6fd893fabd9358c22c82a32fd56ecdb6a))
+* **release:** 支持三浏览器发布包并更新安装说明 ([3a628be](https://github.com/airhunter/OnlyTranslate/commit/3a628be7a6e3b6de9cf1ee0a746490bd7e30bb8b))
+
 ## [1.11.1](https://github.com/airhunter/OnlyTranslate/compare/v1.11.0...v1.11.1) (2026-09-18)
 
 
