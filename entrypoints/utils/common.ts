@@ -31,6 +31,16 @@ export function detectlang(origin: string): string {
             return "fr";
         case "rus":
             return "ru";
+        case "spa":
+            return "es";
+        case "deu":
+            return "de";
+        case "por":
+            return "pt";
+        case "ita":
+            return "it";
+        case "ind":
+            return "id";
         default:
             return find; // 返回其他语言的识别结果
     }

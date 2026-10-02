@@ -6,7 +6,8 @@ import type { TranslationServiceMessage, TranslationServiceResult } from "./type
 
 async function google(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     assertSingleTranslationMessage(message);
-    const targetLang = message.targetLang || config.to;
+    const requestedTargetLang = message.targetLang || config.to;
+    const targetLang = requestedTargetLang === 'zh-Hant' ? 'zh-TW' : requestedTargetLang;
     const params: Record<string, string | number> = {
         client: 'gtx', sl: config.from, tl: targetLang, dt: 't', strip: 1, nonced: 1,
         'q': encodeURIComponent(message.origin),

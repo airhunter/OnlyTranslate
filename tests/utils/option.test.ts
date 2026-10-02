@@ -43,6 +43,16 @@ describe('service options', () => {
     expect(options.inputBoxTranslationTarget).toContainEqual({ value: 'id', label: 'Bahasa Indonesia' })
   })
 
+  it('offers the additional common page translation targets', () => {
+    expect(options.to).toEqual(expect.arrayContaining([
+      { value: 'zh-Hant', label: '繁體中文' },
+      { value: 'es', label: 'Español' },
+      { value: 'de', label: 'Deutsch' },
+      { value: 'pt', label: 'Português' },
+      { value: 'it', label: 'Italiano' },
+    ]))
+  })
+
   it('does not expose the retired fixed custom service in the popup list', () => {
     expect(options.services.some(item => item.value === services.custom)).toBe(false)
   })

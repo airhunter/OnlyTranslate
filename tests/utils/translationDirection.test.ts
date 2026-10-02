@@ -86,4 +86,28 @@ describe('resolveTranslationDirection', () => {
       shouldTranslate: false
     })
   })
+
+  it.each(['es', 'de', 'pt', 'it'])('switches %s content to the other bidirectional language', language => {
+    mockConfig.to = language
+    mockConfig.bidirectionalTranslation = true
+    vi.mocked(detectlang).mockReturnValue(language)
+
+    expect(resolveTranslationDirection('source text')).toEqual({
+      sourceLang: language,
+      targetLang: 'en',
+      shouldTranslate: true
+    })
+  })
+
+  it('keeps Traditional Chinese as the target when the detector only identifies Chinese', () => {
+    mockConfig.to = 'zh-Hant'
+    mockConfig.bidirectionalTranslation = true
+    vi.mocked(detectlang).mockReturnValue('zh-Hans')
+
+    expect(resolveTranslationDirection('繁體中文')).toEqual({
+      sourceLang: 'zh-Hans',
+      targetLang: 'zh-Hant',
+      shouldTranslate: true
+    })
+  })
 })
