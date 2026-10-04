@@ -410,6 +410,11 @@ export function grabAllNode(rootNode: Node, options: GrabAllNodeOptions = {}): E
     // 先快照再调用 grabNode：direct-text 包装会移动 DOM 节点，
     // 边使用 live TreeWalker 边 mutate DOM 会让游标语义变脆弱。
     for (const candidate of candidates) {
+        const newlineTargets = collectPreservedNewlineTextTargets(candidate, options);
+        if (newlineTargets) {
+            result.push(...newlineTargets);
+            continue;
+        }
         const translateNode = grabNode(candidate as Element | Text, options);
         if (translateNode) {
             result.push(translateNode);
@@ -459,6 +464,106 @@ function getNodeDepth(node: Element): number {
 
 // 返回最终应该翻译的父节点或 false
 const directTextTargetSelector = `[${DIRECT_TEXT_TARGET_ATTR}="true"]`;
+
+interface SplitTextGroup {
+    host: Element;
+    pieces: Node[];
+    canMerge: boolean;
+}
+
+const splitTextGroups = new WeakMap<Element, SplitTextGroup>();
+const preservedNewlineHostTags = new Set(['p', 'li', 'dd', 'blockquote', 'figcaption', 'div']);
+const preservedNewlineExcludedSelector = [
+    legacyInlineFlowBlockedAncestorSelector,
+    'pre', 'code', 'textarea', 'input', 'select', 'dialog',
+    '[role="button"]', '[role="dialog"]', '[role="tab"]', '[role="tablist"]',
+    '[hidden]', '[aria-hidden="true"]', '[contenteditable]:not([contenteditable="false"])',
+    '.notranslate', '[translate="no"]',
+    `.${translationContentClass}`, `[${translatedAttr}="true"]`, directTextTargetSelector
+].join(', ');
+
+export function collectPreservedNewlineTextTargets(node: Node, options: GrabAllNodeOptions): Element[] | null {
+    if (options.enableDirectTextRunWrapper === false) return null;
+    const host = node instanceof Text ? node.parentElement : node instanceof Element ? node : null;
+    if (!host || !preservedNewlineHostTags.has(host.tagName.toLowerCase())) return null;
+    if (host.childNodes.length !== 1 || !(host.firstChild instanceof Text)) return null;
+    const source = host.firstChild;
+    const text = source.data;
+    if (text.length <= 3072 || !text.includes('\n')) return null;
+    if (host.closest(preservedNewlineExcludedSelector) || shouldSkipDirectTextHost(host, host.tagName.toLowerCase())) return null;
+    if (hasContentFilterSkip(host, options) || hasContentFilterSkipSelfAncestor(host, options)) return null;
+    if (isJSONContent(host) || isMainlyNumericContent(host) || getProseEvidence(host).strength === 'none') return null;
+    try {
+        const style = window.getComputedStyle(host);
+        if (!['pre-wrap', 'pre-line'].includes(style.whiteSpace) || style.visibility === 'hidden' || style.visibility === 'collapse') return null;
+    } catch (_) {
+        return null;
+    }
+
+    // 保留空行作为独立文本节点，段内单换行仍属于同一个翻译目标。
+    const parts = text.split(/(\r?\n[\t ]*\r?\n(?:[\t ]*\r?\n)*)/)
+        .flatMap(part => part.trim() ? splitOversizedTextParagraph(part) : [part])
+        .filter(Boolean);
+    const group: SplitTextGroup = { host, pieces: [], canMerge: true };
+    const targets: Element[] = [];
+    let remaining = source;
+    for (let index = 0; index < parts.length; index++) {
+        const part = parts[index];
+        const piece = remaining;
+        if (index < parts.length - 1) remaining = piece.splitText(part.length);
+        if (part.trim().length < 3) {
+            group.pieces.push(piece);
+            continue;
+        }
+        const wrapper = host.ownerDocument.createElement('span');
+        wrapper.setAttribute(DIRECT_TEXT_TARGET_ATTR, 'true');
+        host.insertBefore(wrapper, piece);
+        wrapper.appendChild(piece);
+        group.pieces.push(wrapper);
+        splitTextGroups.set(wrapper, group);
+        options.directTextRunWrapperCollector?.add(wrapper);
+        targets.push(wrapper);
+    }
+    return targets;
+}
+
+function splitOversizedTextParagraph(text: string): string[] {
+    const parts: string[] = [];
+    while (text) {
+        let limit = 0;
+        let markupLength = 0;
+        // 同时遵守文本和序列化 HTML 上限，避免转义字符使 wrapper 再次被丢弃。
+        for (const character of text) {
+            const cost = character === '&' ? 5 : character === '<' || character === '>' ? 4 : character.length;
+            if (limit + character.length > 3072 || markupLength + cost > 4000) break;
+            limit += character.length;
+            markupLength += cost;
+        }
+        if (limit === text.length) {
+            parts.push(text);
+            break;
+        }
+        const prefix = text.slice(0, limit);
+        const newline = prefix.lastIndexOf('\n');
+        if (newline >= limit / 2) {
+            const boundary = newline > 0 && text[newline - 1] === '\r' ? newline - 1 : newline;
+            parts.push(text.slice(0, boundary), text.slice(boundary, newline + 1));
+            text = text.slice(newline + 1);
+            continue;
+        }
+        const whitespace = /\s+\S*$/.exec(prefix);
+        if (whitespace && whitespace.index >= limit / 2) {
+            const boundary = whitespace.index;
+            const separator = /^\s+/.exec(text.slice(boundary))![0];
+            parts.push(text.slice(0, boundary), separator);
+            text = text.slice(boundary + separator.length);
+        } else {
+            parts.push(prefix);
+            text = text.slice(limit);
+        }
+    }
+    return parts;
+}
 
 type DirectTextRunKind = 'hard-break-flow' | 'mixed-block' | 'legacy-inline-flow';
 
@@ -1004,15 +1109,31 @@ export function cleanupDirectTextTargets(wrappers: Iterable<Element>, keep: Iter
 
 export function unwrapDirectTextTarget(wrapper: Element): void {
     const parent = wrapper.parentNode;
+    const group = splitTextGroups.get(wrapper);
+    splitTextGroups.delete(wrapper);
     if (!parent) {
         wrapper.remove();
         return;
     }
 
+    const children = Array.from(wrapper.childNodes);
     while (wrapper.firstChild) {
         parent.insertBefore(wrapper.firstChild, wrapper);
     }
     wrapper.remove();
+    if (group) {
+        const index = group.pieces.indexOf(wrapper);
+        group.pieces.splice(index, 1, ...children);
+        if (children.length !== 1 || !(children[0] instanceof Text)) group.canMerge = false;
+        // 只合并本次切分的相邻文本，不触碰网站后来插入或修改的其他节点。
+        if (group.canMerge && group.pieces.length > 0 && group.pieces.every(piece => piece instanceof Text && piece.parentNode === group.host)
+            && group.pieces.every((piece, position) => position === 0 || group.pieces[position - 1].nextSibling === piece)) {
+            const first = group.pieces[0] as Text;
+            first.data = group.pieces.map(piece => piece.textContent).join('');
+            group.pieces.slice(1).forEach(piece => piece.parentNode?.removeChild(piece));
+            group.pieces = [first];
+        }
+    }
 }
 
 function shouldKeepDirectTextTarget(wrapper: Element, keepers: Element[]): boolean {

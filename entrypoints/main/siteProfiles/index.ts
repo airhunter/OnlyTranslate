@@ -13,6 +13,7 @@ import { googleAiModeProfile } from './googleAiMode';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
+import { liepinProfile } from './liepin';
 import { mediumProfile } from './medium';
 import { maxwellForbesProfile } from './maxwellForbes';
 import { mempkoProfile } from './mempko';
@@ -97,6 +98,7 @@ export const siteProfiles: SiteProfile[] = [
     hackerNewsProfile,
     huggingFaceProfile,
     jacobGoldProfile,
+    liepinProfile,
     natureProfile,
     appleProfile,
     asteriskProfile,

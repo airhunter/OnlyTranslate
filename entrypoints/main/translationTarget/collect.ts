@@ -1,6 +1,6 @@
 import { selectCompatFn, supplementalCompatFn } from '@/entrypoints/main/compat';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
-import { cleanupDirectTextTargets, grabAllNode, hasExcludedTranslatableTextBoundary, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
+import { cleanupDirectTextTargets, collectPreservedNewlineTextTargets, grabAllNode, hasExcludedTranslatableTextBoundary, type GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier';
@@ -846,6 +846,8 @@ function getCurrentSiteProfile() {
 }
 
 function expandSupplementalReadingUnit(unit: Element, context: TranslationTargetContext): Element[] {
+    const newlineTargets = collectPreservedNewlineTextTargets(unit, context.grabOptions ?? {});
+    if (newlineTargets) return newlineTargets;
     if (isExpandableReadingContainer(unit) && !isOpenExpandableReadingContainer(unit)) return [];
     if (looksLikeSupplementalWrapper(unit) || looksLikeMultiBlockReadingWrapper(unit, context)) {
         const directTextChildren = getDirectReadableTextChildren(unit, context);

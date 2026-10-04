@@ -1,0 +1,23 @@
+{
+  "name": "Liepin single-text-node JD is completely collected in smart mode",
+  "url": "https://www.liepin.com/job/1985555579.shtml",
+  "scope": "smart",
+  "html": "liepin-preserved-newline-jd.html",
+  "exclude": [
+    "navigation",
+    "code-sample"
+  ],
+  "textIncludes": [
+    "INTRODUCTORY PARAGRAPH",
+    "WHAT THE ROLE INVOLVES",
+    "SKILLS AND CAPABILITIES NEEDED",
+    "Why Evinova (AstraZeneca)?",
+    "Learn more about Evinova"
+  ],
+  "textExcludes": [
+    "Navigation content should stay excluded.",
+    "do not translate code"
+  ],
+  "nodesEveryElement": true,
+  "contentRoot": ".company-intro-container"
+}

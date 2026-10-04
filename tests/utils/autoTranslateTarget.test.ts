@@ -1430,6 +1430,75 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(lyrics.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"], .${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
   })
 
+  it.each([
+    { scope: 'full', display: 1, service: 'microsoft', pending: false },
+    { scope: 'full', display: 0, service: 'microsoft', pending: false },
+    { scope: 'full', display: 0, service: 'google', pending: false },
+    { scope: 'full', display: 1, service: 'microsoft', pending: true },
+    { scope: 'full', display: 0, service: 'google', pending: true },
+    { scope: 'smart', display: 1, service: 'microsoft', pending: false },
+    { scope: 'smart', display: 0, service: 'google', pending: false }
+  ])('translates and restores the complete newline JD in $scope with $service display $display pending $pending', async ({ scope, display, service, pending }) => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    mockConfig.display = display
+    mockConfig.service = service
+    let finishPending!: (text: string) => void
+    if (pending) {
+      vi.mocked(translateText).mockReturnValue(new Promise(resolve => { finishPending = resolve }))
+    } else {
+      vi.mocked(translateText).mockResolvedValue('这一段的中文译文。')
+    }
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/liepin-preserved-newline-jd.html', 'utf8')
+    const host = document.querySelector<HTMLElement>('#job-description')!
+    if (scope === 'full') {
+      document.body.replaceChildren(host)
+    } else {
+      Object.defineProperty(window, 'location', { value: new URL('https://www.liepin.com/job/1985555579.shtml'), configurable: true })
+    }
+    const originalText = host.textContent
+    const originalHTML = host.innerHTML
+    const originalNode = host.firstChild
+    try {
+      autoTranslateEnglishPage(scope)
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const wrappers = Array.from(host.querySelectorAll<HTMLElement>(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`))
+      expect(wrappers).toHaveLength(11)
+      if (scope === 'full') expect(translateText).toHaveBeenCalledTimes(11)
+      if (!pending) {
+        expect(wrappers.every(wrapper => wrapper.textContent!.includes('这一段的中文译文。'))).toBe(true)
+        if (display === 1) expect(host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(11)
+      }
+      restoreOriginalContent()
+      if (pending) {
+        finishPending('取消后迟到的译文。')
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+      expect(host.textContent).toBe(originalText)
+      expect(host.innerHTML).toBe(originalHTML)
+      expect(host.childNodes).toHaveLength(1)
+      if (display === 1 || service === 'google') expect(host.firstChild).toBe(originalNode)
+      expect(host.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"], .${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}]`)).toBeNull()
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('reuses hard-break line wrappers during dynamic rescans', () => {
     document.body.innerHTML = `
       <article id="story">
