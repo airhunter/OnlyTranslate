@@ -150,6 +150,8 @@ The design and implementation of OnlyTranslate's EPUB reader drew inspiration fr
 
 PDF semantic layout analysis uses PaddleOCR's PP-DocLayout-M model and ONNX Runtime Web. The model is an optional, user-initiated download. See [THIRD_PARTY_NOTICES.md](./public/THIRD_PARTY_NOTICES.md) for its source, checksum, and licensing information.
 
+Thanks to the [LINUX DO](https://linux.do/) community for providing a space for open-source exchange and collaboration.
+
 ## License
 
 This project is open sourced under the [GNU GPL v3.0](./LICENSE) license.

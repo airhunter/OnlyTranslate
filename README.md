@@ -150,6 +150,8 @@ OnlyTranslate 的 EPUB 阅读功能在设计与实现过程中参考了 [taylorr
 
 PDF 语义版面分析使用 PaddleOCR 的 PP-DocLayout-M 模型和 ONNX Runtime Web。模型为用户主动下载的可选资源，详细来源、校验值和授权信息见 [THIRD_PARTY_NOTICES.md](./public/THIRD_PARTY_NOTICES.md)。
 
+感谢 [LINUX DO](https://linux.do/) 社区为开源项目交流与共建提供空间。
+
 ## 开源协议
 
 本项目遵循 [GNU GPL v3.0](./LICENSE) 协议开源。
