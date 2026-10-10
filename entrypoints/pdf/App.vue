@@ -1,5 +1,5 @@
 <template>
-  <main class="pdf-shell" :data-display="displayMode" :data-preview="previewOpen" :style="readerStyle">
+  <main class="pdf-shell" :data-display="displayMode" :data-preview="previewOpen" :data-navigation-open="navigationOpen" :style="readerStyle">
     <header class="reader-toolbar pdf-reader-toolbar">
       <button class="icon-button" :aria-label="t('ebook.backToLibrary')" @click="openLibrary">←</button>
       <div class="pdf-file-mark" aria-hidden="true">PDF</div>
@@ -16,6 +16,9 @@
       </div>
 
       <div class="toolbar-controls pdf-toolbar-controls">
+        <button v-if="pageCount" class="control-button pdf-navigation-toggle" :aria-expanded="navigationOpen" aria-controls="pdf-navigation" @click="navigationOpen = !navigationOpen">
+          {{ t('pdf.pageNavigation') }}
+        </button>
         <button
           v-if="pageCount && !libraryBook"
           class="library-button library-button--add"
@@ -122,9 +125,12 @@
     </section>
 
     <section v-else class="pdf-workspace" aria-keyshortcuts="ArrowLeft ArrowRight">
-      <aside ref="thumbnailPanel" class="pdf-page-thumbnails" :aria-label="t('pdf.thumbnailPages')">
-        <div class="pdf-page-thumbnails__header">
-          <strong>{{ t('pdf.thumbnailPages') }}</strong>
+      <aside id="pdf-navigation" ref="navigationPanel" class="pdf-navigation" :aria-label="t('pdf.pageNavigation')">
+        <div class="pdf-navigation__header">
+          <div class="pdf-navigation__switch">
+            <button type="button" :aria-pressed="navigationTab === 'outline'" @click="selectNavigationTab('outline')">{{ t('ebook.toc') }}</button>
+            <button type="button" :aria-pressed="navigationTab === 'pages'" @click="selectNavigationTab('pages')">{{ t('pdf.thumbnailPages') }}</button>
+          </div>
           <button
             v-if="usesSemanticLayout"
             type="button"
@@ -142,21 +148,30 @@
             </svg>
           </button>
         </div>
-        <button
-          v-for="thumbnailPage in thumbnailPages"
-          :key="thumbnailPage"
-          :ref="element => registerThumbnailElement(thumbnailPage, element)"
-          :data-thumbnail-page="thumbnailPage"
-          :class="{ 'pdf-page-thumbnail--active': thumbnailPage === pageNumber }"
-          :aria-current="thumbnailPage === pageNumber ? 'page' : undefined"
-          :aria-label="t('pdf.pageContext', { page: thumbnailPage })"
-          @click="goToPage(thumbnailPage)"
-          @dblclick.prevent="toggleOriginalPreview(thumbnailPage)"
-        >
-          <span class="pdf-page-thumbnail__number">{{ thumbnailPage }}</span>
-          <img v-if="thumbnailUrls.get(thumbnailPage)" :src="thumbnailUrls.get(thumbnailPage)" alt="" />
-          <span v-else class="pdf-page-thumbnail__placeholder" aria-hidden="true" />
-        </button>
+        <div v-show="navigationTab === 'outline'" class="pdf-outline-panel">
+          <p v-if="loadingOutline" class="pdf-navigation__notice" role="status">{{ t('pdf.loadingOutline') }}</p>
+          <p v-else-if="outlineError" class="pdf-navigation__notice" role="status">{{ outlineError }}</p>
+          <p v-else-if="!outlineItems.length" class="pdf-navigation__notice">{{ t('pdf.noOutline') }}</p>
+          <PdfOutline v-else :items="outlineItems" :active-id="activeOutlineId" @select="navigateToOutline" />
+          <p v-if="outlineNavigationError" class="pdf-navigation__notice" role="status">{{ outlineNavigationError }}</p>
+        </div>
+        <div v-show="navigationTab === 'pages'" ref="thumbnailPanel" class="pdf-page-thumbnails" :aria-label="t('pdf.thumbnailPages')">
+          <button
+            v-for="thumbnailPage in thumbnailPages"
+            :key="thumbnailPage"
+            :ref="element => registerThumbnailElement(thumbnailPage, element)"
+            :data-thumbnail-page="thumbnailPage"
+            :class="{ 'pdf-page-thumbnail--active': thumbnailPage === pageNumber }"
+            :aria-current="thumbnailPage === pageNumber ? 'page' : undefined"
+            :aria-label="t('pdf.pageContext', { page: thumbnailPage })"
+            @click="goToPage(thumbnailPage)"
+            @dblclick.prevent="toggleOriginalPreview(thumbnailPage)"
+          >
+            <span class="pdf-page-thumbnail__number">{{ thumbnailPage }}</span>
+            <img v-if="thumbnailUrls.get(thumbnailPage)" :src="thumbnailUrls.get(thumbnailPage)" alt="" />
+            <span v-else class="pdf-page-thumbnail__placeholder" aria-hidden="true" />
+          </button>
+        </div>
       </aside>
       <div ref="originalPanel" class="pdf-original-panel" @wheel="handleOriginalWheel">
         <span v-if="originalZoom !== 1" class="pdf-original-zoom-indicator" aria-live="polite">
@@ -227,6 +242,7 @@
             <figure
               v-if="block.kind === 'visual'"
               class="pdf-block pdf-block--visual"
+              :data-reading-block-id="block.id"
               :class="{ 'pdf-block--active': highlightedBlockId === block.id }"
               @click="focusBlock(block)"
             >
@@ -243,6 +259,7 @@
             <section
               v-else
               class="pdf-block"
+              :data-reading-block-id="block.id"
               :class="[`pdf-block--${block.kind}`, { 'pdf-block--active': highlightedBlockId === block.id }]"
               @mouseenter="highlightedBlockId = block.id"
               @mouseleave="highlightedBlockId = ''"
@@ -340,6 +357,8 @@ import {
 } from './display'
 import { PDF_LAYOUT_MODEL, pdfLayoutModelStore } from './layoutModelStore'
 import { normalizedPdfPageAnchor, resolvePdfWheelZoom } from './zoom'
+import PdfOutline from './PdfOutline.vue'
+import { findPdfOutlineBlock, type PdfOutlineItem, type PdfOutlineTarget } from './outline'
 
 interface PdfBlockView extends PdfContinuousBlock {
   translation?: string
@@ -355,6 +374,7 @@ const originalPanel = ref<HTMLElement>()
 const translationPanel = ref<HTMLElement>()
 const overlayLayer = ref<HTMLElement>()
 const thumbnailPanel = ref<HTMLElement>()
+const navigationPanel = ref<HTMLElement>()
 const fileInput = ref<HTMLInputElement>()
 const layoutModelControl = ref<HTMLDetailsElement>()
 const sourceUrl = ref(getRequestedPdfSource(location.search))
@@ -390,6 +410,18 @@ const loadingPage = ref(false)
 const errorMessage = ref('')
 const pageNumber = ref(1)
 const pageCount = ref(0)
+const navigationTab = ref<'outline' | 'pages'>('pages')
+const navigationOpen = ref(false)
+const outlineItems = ref<PdfOutlineItem[]>([])
+const loadingOutline = ref(false)
+const outlineError = ref('')
+const outlineNavigationError = ref('')
+const activeOutlineId = ref('')
+let outlineDocumentGeneration = 0
+let outlineNavigationGeneration = 0
+let navigationTabChosen = false
+let currentOutlineTarget: PdfOutlineTarget | undefined
+let currentPageRender: Promise<boolean> = Promise.resolve(true)
 const thumbnailUrls = reactive(new Map<number, string>())
 const originalPaneWidth = ref<number>()
 const originalZoom = ref(1)
@@ -450,6 +482,7 @@ const readerStyle = computed(() => ({
   '--reader-font-scale': String(readerSettings.fontScale / 100),
   '--reader-line-height': String(readerSettings.lineHeight),
   '--pdf-original-panel-width': originalPaneWidth.value ? `${originalPaneWidth.value}px` : '40%',
+  '--pdf-navigation-width': '280px',
 }))
 const readingProgressPercent = computed(() => pageCount.value
   ? Math.round(pageNumber.value / pageCount.value * 100)
@@ -515,6 +548,46 @@ function resetThumbnails(): void {
   thumbnailElements.clear()
   loadingThumbnails.clear()
   thumbnailUrls.clear()
+  resetOutline()
+}
+
+function resetOutline(): void {
+  renderGeneration += 1
+  coordinator.cancel()
+  outlineDocumentGeneration += 1
+  outlineNavigationGeneration += 1
+  outlineItems.value = []
+  activeOutlineId.value = ''
+  currentOutlineTarget = undefined
+  loadingOutline.value = false
+  outlineError.value = ''
+  outlineNavigationError.value = ''
+  navigationTab.value = 'pages'
+  navigationTabChosen = false
+  navigationOpen.value = false
+}
+
+function selectNavigationTab(tab: 'outline' | 'pages'): void {
+  navigationTabChosen = true
+  navigationTab.value = tab
+}
+
+async function loadOutline(): Promise<void> {
+  const generation = outlineDocumentGeneration
+  loadingOutline.value = true
+  try {
+    const items = await controller.getOutline()
+    if (generation !== outlineDocumentGeneration) return
+    outlineItems.value = items
+    // Do not replace a navigation choice made while the outline was loading.
+    if (items.length && !navigationTabChosen) navigationTab.value = 'outline'
+  }
+  catch {
+    if (generation === outlineDocumentGeneration) outlineError.value = t('pdf.outlineLoadFailed')
+  }
+  finally {
+    if (generation === outlineDocumentGeneration) loadingOutline.value = false
+  }
 }
 
 function cancelOriginalZoomRender(): void {
@@ -594,6 +667,7 @@ async function openRemote(source: string): Promise<void> {
     }
     pageCount.value = await controller.openRemote(source)
     pageNumber.value = 1
+    void loadOutline()
     loadingDocument.value = false
     await nextTick()
     await renderCurrentPage()
@@ -625,6 +699,7 @@ async function openLocalFile(event: Event): Promise<void> {
   try {
     pageCount.value = await controller.openFile(file)
     pageNumber.value = 1
+    void loadOutline()
     loadingDocument.value = false
     await nextTick()
     await renderCurrentPage()
@@ -655,6 +730,7 @@ async function openStoredBook(book: EbookRecord): Promise<void> {
   currentFile.value = new File([book.fileBlob], book.filename, { type: book.fileBlob.type || 'application/pdf' })
   try {
     pageCount.value = await controller.openFile(currentFile.value)
+    void loadOutline()
     const progress = await repository.getProgress(book.bookId)
     pageNumber.value = Math.min(pageCount.value, Math.max(1, progress?.pageNumber ?? 1))
     await repository.markOpened(book.bookId)
@@ -753,11 +829,16 @@ async function savePdfProgress(): Promise<void> {
   })
 }
 
-async function renderCurrentPage(): Promise<void> {
+function renderCurrentPage(): Promise<boolean> {
+  currentPageRender = renderPageContent()
+  return currentPageRender
+}
+
+async function renderPageContent(): Promise<boolean> {
   cancelOriginalZoomRender()
   const generation = ++renderGeneration
   await nextTick()
-  if (!canvas.value || !originalPanel.value) return
+  if (generation !== renderGeneration || !canvas.value || !originalPanel.value) return false
   loadingPage.value = true
   translationNotice.value = ''
   coordinator.cancel()
@@ -769,7 +850,7 @@ async function renderCurrentPage(): Promise<void> {
     const rendered = await controller.renderPage(pageNumber.value, canvas.value, availableWidth, {
       semanticLayout: usesInstalledSemanticLayout.value,
     })
-    if (generation !== renderGeneration) return
+    if (generation !== renderGeneration) return false
     const [previousPage, nextPage] = await Promise.all([
       rendered.pageNumber > 1
         ? controller.extractPage(rendered.pageNumber - 1).catch(() => undefined)
@@ -778,7 +859,7 @@ async function renderCurrentPage(): Promise<void> {
         ? controller.extractPage(rendered.pageNumber + 1).catch(() => undefined)
         : undefined,
     ])
-    if (generation !== renderGeneration) return
+    if (generation !== renderGeneration) return false
     const continuousBlocks = addCrossPageContext(rendered.blocks, previousPage?.blocks, nextPage?.blocks)
     pageNumber.value = rendered.pageNumber
     pageCount.value = rendered.pageCount
@@ -796,10 +877,12 @@ async function renderCurrentPage(): Promise<void> {
     refreshThumbnailNavigation()
     void savePdfProgress()
     if (shouldTranslatePdfMode(displayMode.value)) void startTranslation()
+    return true
   }
   catch (error) {
-    if (generation !== renderGeneration) return
+    if (generation !== renderGeneration) return false
     errorMessage.value = formatSourceError(error)
+    return false
   }
   finally {
     if (generation === renderGeneration) loadingPage.value = false
@@ -919,8 +1002,66 @@ function fitOverlayText(): void {
 function goToPage(value: number): void {
   const nextPage = Math.min(pageCount.value, Math.max(1, Math.trunc(value || 1)))
   if (nextPage === pageNumber.value || loadingPage.value) return
+  outlineNavigationGeneration += 1
+  activeOutlineId.value = ''
+  currentOutlineTarget = undefined
+  outlineNavigationError.value = ''
   pageNumber.value = nextPage
-  void renderCurrentPage().then(resetReaderScroll)
+  const generation = outlineNavigationGeneration
+  void renderCurrentPage().then(rendered => {
+    if (rendered && generation === outlineNavigationGeneration) resetReaderScroll()
+  })
+}
+
+async function navigateToOutline(item: PdfOutlineItem): Promise<void> {
+  const generation = ++outlineNavigationGeneration
+  outlineNavigationError.value = ''
+  try {
+    const target = await controller.resolveOutlineTarget(item)
+    if (generation !== outlineNavigationGeneration) return
+    if (!target) {
+      outlineNavigationError.value = t('pdf.outlineTargetMissing')
+      return
+    }
+    // Wait for the shared canvas to finish before rendering another page.
+    // Newer selections supersede both destination lookups and in-flight renders.
+    await currentPageRender
+    if (generation !== outlineNavigationGeneration) return
+    if (target.pageNumber !== pageNumber.value || !blocks.value.length) {
+      pageNumber.value = target.pageNumber
+      const rendered = await renderCurrentPage()
+      if (generation !== outlineNavigationGeneration) return
+      if (!rendered) throw new Error('PDF outline page could not be rendered')
+    }
+    activeOutlineId.value = item.id
+    currentOutlineTarget = target
+    await nextTick()
+    if (generation !== outlineNavigationGeneration) return
+    scrollToOutlineTarget(target)
+    navigationOpen.value = false
+  }
+  catch {
+    if (generation === outlineNavigationGeneration) outlineNavigationError.value = t('pdf.outlineTargetMissing')
+  }
+}
+
+function scrollToOutlineTarget(target: PdfOutlineTarget): void {
+  resetReaderScroll()
+  const panel = originalPanel.value
+  const page = panel?.querySelector<HTMLElement>('.pdf-page')
+  if (panel && page) {
+    const panelRect = panel.getBoundingClientRect()
+    const pageRect = page.getBoundingClientRect()
+    panel.scrollTop += pageRect.top - panelRect.top + target.y * renderedHeight.value
+    panel.scrollLeft += pageRect.left - panelRect.left + target.x * renderedWidth.value
+  }
+  const block = findPdfOutlineBlock(readingBlocks.value, target, blockCoordinateWidth.value, blockCoordinateHeight.value)
+  highlightedBlockId.value = block?.id ?? ''
+  if (block) {
+    translationPanel.value
+      ?.querySelector<HTMLElement>(`[data-reading-block-id="${CSS.escape(block.id)}"]`)
+      ?.scrollIntoView({ block: 'start' })
+  }
 }
 
 function toggleOriginalPreview(targetPage?: number): void {
@@ -931,7 +1072,7 @@ function toggleOriginalPreview(targetPage?: number): void {
 function paneWidthBounds(): { min: number; max: number } {
   const workspace = originalPanel.value?.closest<HTMLElement>('.pdf-workspace')
   const availableWidth = workspace?.clientWidth ?? window.innerWidth
-  const sidebarWidth = thumbnailPanel.value?.offsetWidth ?? 116
+  const sidebarWidth = navigationPanel.value?.offsetWidth ?? 280
   const min = 280
   return { min, max: Math.max(min, availableWidth - sidebarWidth - 368) }
 }
@@ -1238,10 +1379,17 @@ onMounted(async () => {
   window.addEventListener('pagehide', savePdfProgressImmediately)
 })
 
-watch(displayMode, (nextMode, previousMode) => {
+watch(displayMode, async (nextMode, previousMode) => {
   if (!pageCount.value || loadingPage.value) return
   const semanticBoundaryChanged = isSemanticMode(nextMode) !== isSemanticMode(previousMode)
-  if (semanticBoundaryChanged) void renderCurrentPage()
+  const generation = outlineNavigationGeneration
+  if (semanticBoundaryChanged && !await renderCurrentPage()) return
+  await nextTick()
+  if (generation === outlineNavigationGeneration && currentOutlineTarget?.pageNumber === pageNumber.value) scrollToOutlineTarget(currentOutlineTarget)
+})
+
+watch(navigationTab, tab => {
+  if (tab === 'pages') refreshThumbnailNavigation()
 })
 
 watch(previewOpen, open => {
@@ -1257,6 +1405,7 @@ function savePdfProgressImmediately(): void {
 }
 
 onBeforeUnmount(() => {
+  resetOutline()
   renderGeneration += 1
   cancelOriginalZoomRender()
   clearLibraryNotice()

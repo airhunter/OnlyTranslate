@@ -12,6 +12,7 @@ import { buildPdfTextBlocks, type PdfTextBlock, type PdfTextSpan } from './layou
 import { PdfLayoutModelClient } from './layoutModelClient'
 import { buildSemanticPdfBlocks } from './semanticLayout'
 import { refineFormulaCropBounds } from './formulaCrop'
+import { PdfOutlineController, type PdfOutlineItem, type PdfOutlineTarget } from './outline'
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
@@ -188,6 +189,7 @@ async function attachVisualCrops(
 
 export class PdfReaderController {
   private document?: PDFDocumentProxy
+  private outline?: PdfOutlineController
   private loadingTask?: PDFDocumentLoadingTask
   private renderTask?: RenderTask
   private readonly layoutModel = new PdfLayoutModelClient()
@@ -195,6 +197,14 @@ export class PdfReaderController {
 
   get pageCount(): number {
     return this.document?.numPages ?? 0
+  }
+
+  getOutline(): Promise<PdfOutlineItem[]> {
+    return this.outline?.getItems() ?? Promise.resolve([])
+  }
+
+  resolveOutlineTarget(item: PdfOutlineItem): Promise<PdfOutlineTarget | undefined> {
+    return this.outline?.resolveTarget(item) ?? Promise.resolve(undefined)
   }
 
   async openRemote(sourceUrl: string): Promise<number> {
@@ -331,7 +341,7 @@ export class PdfReaderController {
     return { width: viewport.width, height: viewport.height }
   }
 
-  async renderThumbnail(pageNumber: number, width = 82): Promise<string> {
+  async renderThumbnail(pageNumber: number, width = 228): Promise<string> {
     const pdfDocument = this.document
     if (!pdfDocument) throw new PdfSourceError('LOAD_FAILED', 'No PDF is open')
     const safePageNumber = Math.min(pdfDocument.numPages, Math.max(1, Math.trunc(pageNumber)))
@@ -386,6 +396,7 @@ export class PdfReaderController {
     this.loadingTask = undefined
     void this.document?.destroy()
     this.document = undefined
+    this.outline = undefined
     this.layoutModel.destroy()
     this.textLayoutCache.clear()
   }
@@ -407,6 +418,7 @@ export class PdfReaderController {
     }
     try {
       this.document = await task.promise
+      this.outline = new PdfOutlineController(this.document)
       return this.document.numPages
     }
     catch (error) {

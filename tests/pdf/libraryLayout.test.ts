@@ -86,7 +86,7 @@ describe('PDF library layout', () => {
     expect(pdfTemplate).toContain('@dblclick.prevent="toggleOriginalPreview(thumbnailPage)"');
     expect(pdfTemplate).toContain('class="pdf-pane-resizer"');
     expect(pdfTemplate).toContain('@pointerdown="startPaneResize"');
-    expect(pdfStyles).toContain('grid-template-columns: 116px minmax(280px, var(--pdf-original-panel-width)) 8px minmax(0, 1fr);');
+    expect(pdfStyles).toContain('grid-template-columns: var(--pdf-navigation-width, 280px) minmax(280px, var(--pdf-original-panel-width)) 8px minmax(0, 1fr);');
     expect(pdfStyles).toContain('overflow-y: scroll;');
   });
 

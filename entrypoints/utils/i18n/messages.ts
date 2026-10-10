@@ -141,6 +141,13 @@ export const messages = {
       bookFinished: '本书已读完'
     },
     pdf: {
+      loadingOutline: '正在读取目录…',
+      noOutline: '此 PDF 没有内嵌目录，可使用页面缩略图导航。',
+      outlineLoadFailed: '无法读取目录，仍可使用页面缩略图导航。',
+      outlineTargetMissing: '无法定位此目录条目，请选择其他条目或使用页面缩略图。',
+      untitledOutline: '未命名章节',
+      expandOutline: '展开 {title}',
+      collapseOutline: '折叠 {title}',
       title: 'PDF 阅读器',
       openCurrent: '用只译阅读此 PDF',
       openLink: '使用只译打开 PDF 链接',
@@ -805,6 +812,13 @@ export const messages = {
       bookFinished: 'You finished this book'
     },
     pdf: {
+      loadingOutline: 'Loading contents…',
+      noOutline: 'This PDF has no embedded contents. Use page thumbnails to navigate.',
+      outlineLoadFailed: 'Contents could not be loaded. Page thumbnails are still available.',
+      outlineTargetMissing: 'This entry could not be located. Choose another entry or use page thumbnails.',
+      untitledOutline: 'Untitled section',
+      expandOutline: 'Expand {title}',
+      collapseOutline: 'Collapse {title}',
       title: 'PDF reader',
       openCurrent: 'Read this PDF with OnlyTranslate',
       openLink: 'Open PDF link with OnlyTranslate',
@@ -1469,6 +1483,13 @@ export const messages = {
       bookFinished: '本書已讀完'
     },
     pdf: {
+      loadingOutline: '正在讀取目錄…',
+      noOutline: '此 PDF 沒有內嵌目錄，可使用頁面縮圖導覽。',
+      outlineLoadFailed: '無法讀取目錄，仍可使用頁面縮圖導覽。',
+      outlineTargetMissing: '無法定位此目錄項目，請選擇其他項目或使用頁面縮圖。',
+      untitledOutline: '未命名章節',
+      expandOutline: '展開 {title}',
+      collapseOutline: '摺疊 {title}',
       title: 'PDF 閱讀器',
       openCurrent: '使用只譯閱讀此 PDF',
       openLink: '使用只譯開啟 PDF 連結',
@@ -2133,6 +2154,13 @@ export const messages = {
       bookFinished: 'この本を読み終えました'
     },
     pdf: {
+      loadingOutline: '目次を読み込み中…',
+      noOutline: 'この PDF には埋め込みの目次がありません。ページのサムネイルで移動できます。',
+      outlineLoadFailed: '目次を読み込めませんでした。ページのサムネイルは引き続き利用できます。',
+      outlineTargetMissing: 'この項目の移動先が見つかりません。別の項目またはページのサムネイルを選択してください。',
+      untitledOutline: '無題の章',
+      expandOutline: '{title} を展開',
+      collapseOutline: '{title} を折りたたむ',
       title: 'PDF リーダー',
       openCurrent: 'OnlyTranslate でこの PDF を読む',
       openLink: 'PDF リンクを OnlyTranslate で開く',

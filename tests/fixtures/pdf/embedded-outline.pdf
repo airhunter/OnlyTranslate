@@ -1,0 +1,74 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 10 0 R /Dests << /chapter2 [5 0 R /FitH 620] >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [10 20 610 820] /Resources << /Font << /F1 9 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [10 20 610 820] /Resources << /Font << /F1 9 0 R >> >> /Contents 7 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [10 20 610 820] /Rotate 90 /Resources << /Font << /F1 9 0 R >> >> /Contents 8 0 R >>
+endobj
+6 0 obj
+<< /Length 36 >>
+stream
+BT /F1 24 Tf 70 740 Td (Cover) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Length 65 >>
+stream
+BT /F1 18 Tf 70 620 Td (Section A) Tj 0 -320 Td (Section B) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Length 42 >>
+stream
+BT /F1 18 Tf 70 620 Td (Chapter Two) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+10 0 obj
+<< /Type /Outlines /First 11 0 R /Last 14 0 R /Count 4 >>
+endobj
+11 0 obj
+<< /Title (Part One) /Parent 10 0 R /Next 14 0 R /First 12 0 R /Last 13 0 R /Count 2 >>
+endobj
+12 0 obj
+<< /Title (Section A) /Parent 11 0 R /Next 13 0 R /Dest [4 0 R /XYZ 70 620 null] >>
+endobj
+13 0 obj
+<< /Title (Section B) /Parent 11 0 R /Prev 12 0 R /Dest [4 0 R /XYZ 70 300 null] >>
+endobj
+14 0 obj
+<< /Title (Chapter Two) /Parent 10 0 R /Prev 11 0 R /Dest /chapter2 >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000116 00000 n 
+0000000185 00000 n 
+0000000313 00000 n 
+0000000441 00000 n 
+0000000580 00000 n 
+0000000666 00000 n 
+0000000781 00000 n 
+0000000873 00000 n 
+0000000943 00000 n 
+0000001017 00000 n 
+0000001121 00000 n 
+0000001221 00000 n 
+0000001321 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+1408
+%%EOF
