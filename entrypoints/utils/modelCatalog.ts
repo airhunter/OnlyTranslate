@@ -4,6 +4,7 @@ import { customModelString, models, services } from './option'
 import { t } from './i18n'
 import type { CustomProviderProtocol } from './model'
 import { resolveProviderEndpoint } from './providerEndpoint'
+import { fetchWithCustomProviderCompatibility } from './providerCompatibility'
 
 interface FetchModelOptions {
   token?: string
@@ -57,7 +58,8 @@ export async function fetchProviderModels(service: string, options: FetchModelOp
   }
 
   const request = buildModelListRequest(service, options)
-  const response = await fetch(request.url, {
+  const customProvider = service.startsWith('custom_') ? { protocol: options.protocol } : undefined
+  const response = await fetchWithCustomProviderCompatibility(customProvider, request.url, {
     method: 'GET',
     headers: request.headers,
     signal: options.signal

@@ -1,5 +1,6 @@
 import { services, servicesType } from "./option";
 import { urls } from "./constant";
+import { fetchWithCustomProviderCompatibility } from './providerCompatibility';
 import type { CustomProvider, CustomProviderProtocol } from "./model";
 import {
   getCustomProviderProtocol,
@@ -127,6 +128,9 @@ async function testAI(
     let url = config.proxy[service] || urls[service];
     let currentModel = "gpt-3.5-turbo"; // 默认兜底
     let protocol: CustomProviderProtocol = service === services.claude ? "anthropic" : "openai";
+    const customProvider = service.startsWith('custom_')
+        ? config.customProviders?.find(p => p.id === service)
+        : undefined;
     
     if (config.model && config.model[service]) {
         currentModel = config.model[service];
@@ -135,14 +139,11 @@ async function testAI(
         }
     }
 
-    if (service.startsWith('custom_')) {
-        const provider = config.customProviders?.find(p => p.id === service);
-        if (provider) {
-            token = provider.token || "";
-            url = resolveCustomProviderEndpoint(provider);
-            currentModel = provider.model === "自定义模型" ? provider.customModel : provider.model;
-            protocol = getCustomProviderProtocol(provider);
-        }
+    if (customProvider) {
+        token = customProvider.token || "";
+        url = resolveCustomProviderEndpoint(customProvider);
+        currentModel = customProvider.model === "自定义模型" ? customProvider.customModel : customProvider.model;
+        protocol = getCustomProviderProtocol(customProvider);
     }
 
     // 除了 custom 以外，一般需要 token
@@ -188,7 +189,7 @@ async function testAI(
           max_tokens: 100,
         };
 
-    const resp = await fetch(url, {
+    const resp = await fetchWithCustomProviderCompatibility(customProvider, url, {
       method: "POST",
       headers,
       body: JSON.stringify(body),

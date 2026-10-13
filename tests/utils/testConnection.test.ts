@@ -194,4 +194,47 @@ describe('testConnection result codes', () => {
       messages: [{ role: 'user', content: 'hello' }],
     })
   })
+
+  it('does not initialize Custom Provider compatibility for a built-in OpenAI connection test', async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '你好' } }] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    const config = baseConfig()
+    config.token.openai = 'test-token'
+    config.proxy.openai = 'https://index-translate.bilibili.com/v1/chat/completions'
+    await expect(testConnection('openai', config)).resolves.toMatchObject({ success: true })
+    expect(updateSessionRules).not.toHaveBeenCalled()
+  })
+
+  it('prepares Index-Translate compatibility before testing a keyless custom OpenAI service', async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '你好' } }] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    const config = baseConfig()
+    config.customProviders.push({
+      id: 'custom_index', name: 'Translation', protocol: 'openai',
+      url: 'https://index-translate.bilibili.com/v1', token: '',
+      model: 'index-mt-9b', customModel: '',
+    })
+    await expect(testConnection('custom_index', config)).resolves.toMatchObject({ success: true, translatedText: '你好' })
+    expect(updateSessionRules.mock.invocationCallOrder[0]).toBeLessThan(fetchMock.mock.invocationCallOrder[0])
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://index-translate.bilibili.com/v1/chat/completions')
+    expect(init.headers).not.toHaveProperty('Authorization')
+    expect(JSON.parse(String(init.body)).model).toBe('index-mt-9b')
+  })
 })

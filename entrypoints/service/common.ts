@@ -11,20 +11,21 @@ import {
     parseSubtitleTranslationContent,
 } from './subtitle'
 import { resolveCustomProviderEndpoint } from '@/entrypoints/utils/providerEndpoint'
+import { fetchWithCustomProviderCompatibility } from '@/entrypoints/utils/providerCompatibility'
 
 async function common(message: TranslationServiceMessage): Promise<TranslationServiceResult> {
     try {
 
         let token = config.token[config.service] || "";
         let url = config.proxy[config.service] || urls[config.service];
+        const customProvider = config.service.startsWith('custom_')
+            ? config.customProviders?.find(p => p.id === config.service)
+            : undefined;
         
         // 从 customProviders 动态获取
-        if (config.service.startsWith('custom_')) {
-            const provider = config.customProviders?.find(p => p.id === config.service);
-            if (provider) {
-                token = provider.token || "";
-                url = resolveCustomProviderEndpoint(provider);
-            }
+        if (customProvider) {
+            token = customProvider.token || "";
+            url = resolveCustomProviderEndpoint(customProvider);
         }
 
         const headers = new Headers({
@@ -51,7 +52,7 @@ async function common(message: TranslationServiceMessage): Promise<TranslationSe
             logBatchTranslationRequest(config.service, message.origins);
         }
 
-        const resp = await fetch(url, {
+        const resp = await fetchWithCustomProviderCompatibility(customProvider, url, {
             method: method.POST,
             headers,
             body: isSubtitleBatch

@@ -72,6 +72,7 @@ export default defineConfig({
             'contextMenus',
             ...(browser === 'chrome' ? ['offscreen'] : []),
             'scripting',
+            'declarativeNetRequestWithHostAccess',
             'alarms',
             'unlimitedStorage',
             ...(browser === 'firefox' ? [] : ['tts']),

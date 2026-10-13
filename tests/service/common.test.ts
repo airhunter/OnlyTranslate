@@ -339,4 +339,54 @@ describe('common OpenAI-compatible service adapter', () => {
       consoleError.mockRestore()
     }
   })
+
+  it('does not initialize Custom Provider compatibility for a built-in OpenAI proxy', async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    mockConfig.proxy.openai = 'https://index-translate.bilibili.com/v1/chat/completions'
+    await common({ origin: 'Hello', targetLang: 'zh-Hans' })
+    expect(updateSessionRules).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('prepares keyless Index-Translate requests for single, batch and subtitle translation', async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    mockConfig.service = 'custom_index'
+    mockConfig.customProviders = [{
+      id: 'custom_index', protocol: 'openai', token: '',
+      url: 'https://index-translate.bilibili.com/v1',
+    }]
+
+    await expect(common({ origin: 'Hello', targetLang: 'zh-Hans' })).resolves.toBe('clean:translated content')
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '["你好","世界"]' } }] }),
+    })
+    await expect(common({
+      type: 'BATCH_TRANSLATION', origins: ['Hello', 'World'], targetLang: 'zh-Hans',
+    })).resolves.toEqual(['你好', '世界'])
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '[{"id":"segment-1","translation":"准备好了"},{"id":"segment-2","translation":"取回来了"}]' } }] }),
+    })
+    await expect(common({ type: 'SUBTITLE_BATCH_TRANSLATION', job: subtitleJob, fastMode: true })).resolves.toEqual([
+      { id: 'segment-1', translatedText: '准备好了' },
+      { id: 'segment-2', translatedText: '取回来了' },
+    ])
+
+    expect(updateSessionRules).toHaveBeenCalledOnce()
+    expect(updateSessionRules.mock.invocationCallOrder[0]).toBeLessThan(fetchMock.mock.invocationCallOrder[0])
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    for (const [url, init] of fetchMock.mock.calls as Array<[string, RequestInit]>) {
+      expect(url).toBe('https://index-translate.bilibili.com/v1/chat/completions')
+      expect((init.headers as Headers).has('Authorization')).toBe(false)
+    }
+  })
 })

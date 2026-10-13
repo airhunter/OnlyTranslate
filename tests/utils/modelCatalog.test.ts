@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { customModelString, services } from '@/entrypoints/utils/option'
 import {
   appendCustomModelOption,
@@ -9,6 +9,43 @@ import {
 } from '@/entrypoints/utils/modelCatalog'
 
 describe('modelCatalog', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it.each([
+    [services.openai, undefined],
+    ['custom_anthropic', 'anthropic'],
+  ] as const)('does not initialize compatibility for %s model requests', async (service, protocol) => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, json: async () => ({ data: [{ id: 'test-model' }] }),
+    }))
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    await expect(fetchProviderModels(service, {
+      protocol, token: 'test-token', url: 'https://index-translate.bilibili.com/v1',
+    })).resolves.toEqual(['test-model', customModelString])
+    expect(updateSessionRules).not.toHaveBeenCalled()
+  })
+
+  it('prepares Index-Translate compatibility before fetching a keyless custom model catalog', async () => {
+    const updateSessionRules = vi.fn().mockResolvedValue(undefined)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: 'Index-Translate-35B-A3B' }] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('browser', {
+      runtime: { getURL: () => 'chrome-extension://test-extension/' },
+      declarativeNetRequest: { updateSessionRules },
+    })
+    await expect(fetchProviderModels('custom_index', {
+      protocol: 'openai', url: 'https://index-translate.bilibili.com/v1',
+    })).resolves.toEqual(['Index-Translate-35B-A3B', customModelString])
+    expect(updateSessionRules.mock.invocationCallOrder[0]).toBeLessThan(fetchMock.mock.invocationCallOrder[0])
+    expect(fetchMock).toHaveBeenCalledWith('https://index-translate.bilibili.com/v1/models', expect.objectContaining({ headers: {} }))
+  })
   it('builds model list endpoint from OpenAI-compatible chat URL', () => {
     expect(buildModelsEndpoint('https://api.openai.com/v1/chat/completions')).toBe('https://api.openai.com/v1/models')
     expect(buildModelsEndpoint('https://openrouter.ai/api/v1/chat/completions')).toBe('https://openrouter.ai/api/v1/models')
