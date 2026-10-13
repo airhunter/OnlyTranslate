@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.13.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.13：PDF 目录导航与接口兼容改进',
+        items: [
+          '支持读取 PDF 内嵌目录与书签，展开多级目录并跳转到页面中的对应位置。',
+          '统一 PDF 目录与页面侧栏宽度，放大页面缩略图并提升清晰度。',
+          '改善 Custom Provider 中 OpenAI 兼容服务对 B 站 Index-Translate 接口的兼容性，无需额外开关。',
+          '修复猎聘页面超长职位描述在识文模式下漏译的问题。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.13: PDF Bookmark Navigation and API Compatibility',
+        items: [
+          'Added navigation for embedded PDF outlines and bookmarks, including nested entries and jumps to locations within a page.',
+          'Kept the PDF Contents and Pages sidebars at the same width, with larger and sharper page thumbnails.',
+          'Improved compatibility with the Bilibili Index-Translate API for OpenAI-compatible Custom Providers, without adding a settings toggle.',
+          'Fixed long job descriptions being missed by Smart translation on Liepin.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.13：PDF 目錄導覽與介面相容性改善',
+        items: [
+          '支援讀取 PDF 內嵌目錄與書籤，展開多層目錄並跳至頁面中的對應位置。',
+          '統一 PDF 目錄與頁面側欄寬度，放大頁面縮圖並提升清晰度。',
+          '改善 Custom Provider 中 OpenAI 相容服務對 B 站 Index-Translate 介面的相容性，無需額外開關。',
+          '修復獵聘頁面超長職位描述在智慧翻譯模式下漏譯的問題。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.13：PDF の目次ナビゲーションと API 互換性を改善',
+        items: [
+          'PDF に埋め込まれた目次とブックマークに対応し、階層を展開してページ内の該当位置へ移動できるようになりました。',
+          'PDF の目次とページ一覧のサイドバー幅を統一し、ページサムネイルを大きく鮮明に表示するようにしました。',
+          'OpenAI 互換の Custom Provider で Bilibili Index-Translate API との互換性を改善しました。追加の設定スイッチは不要です。',
+          'Liepin の長い求人説明がスマート翻訳の対象から漏れる問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.12.0',
     notes: {
       'zh-CN': {

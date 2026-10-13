@@ -1,5 +1,18 @@
 # Changelog
 
+# [1.13.0](https://github.com/airhunter/OnlyTranslate/compare/v1.12.0...v1.13.0) (2026-10-13)
+
+
+### Bug Fixes
+
+* **content:** 修复猎聘识文模式漏翻超长职位描述 ([e2e13ff](https://github.com/airhunter/OnlyTranslate/commit/e2e13ffd2bc8d5d7bfb26df31463813d8ee3b2dd))
+
+
+### Features
+
+* **pdf:** 支持内嵌目录导航并优化侧栏缩略图 ([1186b10](https://github.com/airhunter/OnlyTranslate/commit/1186b108b5cb0871d8c19e4b2f3e9e916146ead3))
+* **service:** 自动适配自定义服务中的 B 站翻译接口 ([162130f](https://github.com/airhunter/OnlyTranslate/commit/162130f54d1519ad5e5749cc566e4ac3ae2fc2ca))
+
 # [1.12.0](https://github.com/airhunter/OnlyTranslate/compare/v1.11.1...v1.12.0) (2026-10-02)
 
 
