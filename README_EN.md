@@ -138,6 +138,8 @@ For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode. Fo
 
 Tech stack: [WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript, Manifest V3.
 
+See the [product roadmap (Chinese)](./ROADMAP.md) for proposed improvements and their status, and the [changelog](./CHANGELOG.md) for released features.
+
 ## Feedback
 
 If translation does not start, a page is only partially translated, or subtitles do not appear, check the built-in guide first. If the issue persists, report it through [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues).

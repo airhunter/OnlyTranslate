@@ -138,6 +138,8 @@ corepack pnpm zip:all
 
 技术栈：[WXT](https://wxt.dev/) + [Vue 3](https://vuejs.org/) + TypeScript，Manifest V3。
 
+产品改进方向与实施状态见 [产品路线图](./ROADMAP.md)；已发布功能见 [更新日志](./CHANGELOG.md)。
+
 ## 反馈问题
 
 如果遇到无法翻译、页面漏翻或字幕异常，请先查看扩展内帮助；仍未解决时，可以前往 [GitHub Issues](https://github.com/airhunter/OnlyTranslate/issues) 反馈。
