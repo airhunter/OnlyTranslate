@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppI18n } from '@/entrypoints/utils/i18n';
+import type { CustomProvider } from '@/entrypoints/utils/model';
 
 const mocks = vi.hoisted(() => ({
   listRecentBooks: vi.fn(),
@@ -12,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   extractEpubMetadata: vi.fn(),
   closeRepository: vi.fn(),
   createTab: vi.fn(),
+  openOptionsPage: vi.fn(),
+  openOptionsPanel: vi.fn(),
 }));
 
 vi.mock('@/entrypoints/ebook/repository', () => ({
@@ -33,7 +34,7 @@ vi.mock('webextension-polyfill', () => ({
     runtime: {
       getManifest: () => ({ version: '1.1.1' }),
       getURL: (path: string) => `chrome-extension://onlytranslate${path}`,
-      openOptionsPage: vi.fn(),
+      openOptionsPage: mocks.openOptionsPage,
       sendMessage: vi.fn(async () => ({ success: true })),
     },
     tabs: {
@@ -53,9 +54,9 @@ const config = ref({
   translationScope: 'smart',
   theme: 'light',
   uiLocale: 'zh-CN',
-  token: {},
+  token: {} as Record<string, string>,
   model: {},
-  customProviders: [],
+  customProviders: [] as CustomProvider[],
   disableFloatingBall: false,
   floatingBallHotkey: 'Alt+T',
   hotkey: 'Control',
@@ -78,14 +79,7 @@ vi.mock('@/composables/useReleaseNotes', () => ({
   }),
 }));
 
-vi.mock('@/entrypoints/utils/option', () => ({
-  defaultOption: { service: 'google' },
-  options: { display: [], services: [] },
-  isServiceConfigured: () => true,
-  supportsTranslationOnlyMode: () => true,
-}));
-
-vi.mock('@/entrypoints/utils/help', () => ({ openOptionsPanel: vi.fn() }));
+vi.mock('@/entrypoints/utils/help', () => ({ openOptionsPanel: mocks.openOptionsPanel }));
 vi.mock('@/entrypoints/utils/cache', () => ({ cache: { clean: vi.fn() } }));
 vi.mock('@/entrypoints/utils/modelMigration', () => ({
   consumeClaudeModelMigrationNotice: vi.fn(async () => null),
@@ -96,13 +90,14 @@ vi.mock('@/entrypoints/utils/displayModeMigration', () => ({
 
 import Main from '@/components/Main.vue';
 
-const popupStyles = readFileSync(resolve(process.cwd(), 'entrypoints/popup/style.css'), 'utf8');
-
 describe('Popup ebook shelf', () => {
   let wrapper: ReturnType<typeof mount> | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    config.value.service = 'microsoft';
+    config.value.token = {};
+    config.value.customProviders = [];
     mocks.listRecentBooks.mockResolvedValue([{
       bookId: 'book-one',
       fileBlob: new Blob(['epub']),
@@ -129,10 +124,17 @@ describe('Popup ebook shelf', () => {
     });
   });
 
-  afterEach(() => wrapper?.unmount());
+  afterEach(() => {
+    const element = wrapper?.element;
+    wrapper?.unmount();
+    element?.remove();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
-  it('keeps the translation service menu within the popup viewport', async () => {
-    wrapper = mount(Main, {
+  function mountServicePopup() {
+    return mount(Main, {
+      attachTo: document.body,
       global: {
         plugins: [createAppI18n()],
         stubs: {
@@ -145,13 +147,119 @@ describe('Popup ebook shelf', () => {
         },
       },
     });
+  }
+
+  it('groups DeepSeek and Bailian together and excludes incomplete services', async () => {
+    config.value.token = { deepseek: 'test-key', moonshot: 'test-key' };
+    config.value.customProviders = [
+      { id: 'custom_bailian', name: '百炼', url: 'https://example.com/v1', token: '', model: '', customModel: '' },
+      { id: 'custom_incomplete', name: '未配置接口', url: '', token: '', model: '', customModel: '' },
+    ];
+    wrapper = mountServicePopup();
+    await flushPromises();
+    await wrapper.find('.service-select').trigger('click');
     await flushPromises();
 
-    expect(wrapper.find('.service-select').attributes('popper-class')).toBe('popup-service-select-popper');
+    const menu = wrapper.find('.service-panel');
+    const values = menu.findAll('[data-value]').map(item => item.attributes('data-value'));
+    expect(values).toEqual([
+      '__keyless_header__', 'microsoft', 'google', 'chromeTranslator',
+      '__configured_header__', 'deepseek', 'moonshot', 'custom_bailian',
+    ]);
+    expect(menu.find('[data-value="__keyless_header__"]').text()).toBe('免 API Key 服务');
+    expect(menu.find('[data-value="__configured_header__"]').text()).toBe('已配置服务');
+    expect(menu.text()).not.toMatch(/内置服务|更多 AI 服务|自定义接口/);
+  });
 
-    const rule = popupStyles.match(/\.popup-service-select-popper\s+\.el-select-dropdown__wrap\s*\{([^}]*)\}/);
-    expect(rule).not.toBeNull();
-    expect(rule?.[1]).toContain('max-height: 180px');
+  it('omits the configured group when empty and uses the footer settings for management', async () => {
+    wrapper = mountServicePopup();
+    await flushPromises();
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-value="__configured_header__"]').exists()).toBe(false);
+    expect(wrapper.find('.service-panel-list').text()).not.toContain('管理服务');
+    expect(wrapper.find('.popup-footer').attributes()).not.toHaveProperty('inert');
+    await wrapper.findAll('.popup-nav-button')[2].trigger('click');
+    expect(config.value.service).toBe('microsoft');
+    expect(mocks.openOptionsPage).toHaveBeenCalledOnce();
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+  });
+
+  it('keeps a separate management shortcut that opens service settings without switching service', async () => {
+    wrapper = mountServicePopup();
+    await flushPromises();
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.service-panel-actions .service-panel-manage').text()).toBe('管理服务');
+    expect(wrapper.find('.service-panel-list .service-panel-manage').exists()).toBe(false);
+    await wrapper.find('.service-panel-manage').trigger('click');
+    await flushPromises();
+    expect(mocks.openOptionsPanel).toHaveBeenCalledWith('service');
+    expect(config.value.service).toBe('microsoft');
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+  });
+
+  it('opens an overlay in the existing body, focuses the current service and restores focus on Escape', async () => {
+    wrapper = mountServicePopup();
+    await flushPromises();
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.popup-body .service-panel').exists()).toBe(true);
+    expect(document.activeElement).toBe(wrapper.find('[data-value="microsoft"]').element);
+    expect(wrapper.find('.popup-header').attributes()).not.toHaveProperty('inert');
+    expect(wrapper.find('.popup-footer').attributes()).not.toHaveProperty('inert');
+    await wrapper.find('.service-panel').trigger('keydown', { key: 'Escape' });
+    await flushPromises();
+    expect(config.value.service).toBe('microsoft');
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+    expect(document.activeElement).toBe(wrapper.find('.service-select').element);
+    expect(wrapper.find('.popup-header').attributes()).not.toHaveProperty('inert');
+  });
+
+  it('supports two-column arrow navigation, selection, collapse button and dismissal outside the panel', async () => {
+    wrapper = mountServicePopup();
+    await flushPromises();
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    for (const [index, option] of wrapper.findAll('.service-panel-option').entries()) {
+      vi.spyOn(option.element, 'getBoundingClientRect').mockReturnValue({ top: Math.floor(index / 2) * 38, left: (index % 2) * 164 } as DOMRect);
+    }
+    await wrapper.find('[data-value="microsoft"]').trigger('keydown', { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(wrapper.find('[data-value="google"]').element);
+    await wrapper.find('[data-value="google"]').trigger('keydown', { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(wrapper.find('[data-value="chromeTranslator"]').element);
+    await wrapper.find('[data-value="google"]').trigger('click');
+    await flushPromises();
+    expect(config.value.service).toBe('google');
+    expect(wrapper.find('.service-select').text()).toBe('Google 翻译');
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+    await wrapper.find('.service-select').trigger('click');
+    expect(wrapper.find('.service-panel-collapse').text()).toBe('收起');
+    await wrapper.find('.service-panel-collapse').trigger('click');
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await flushPromises();
+    expect(wrapper.find('.service-panel').exists()).toBe(false);
+  });
+
+  it('allows Tab to reach footer navigation and constrains its height to a smaller viewport', async () => {
+    vi.stubGlobal('innerHeight', 350);
+    wrapper = mountServicePopup();
+    await flushPromises();
+    vi.spyOn(wrapper.find('.popup-body').element, 'getBoundingClientRect').mockReturnValue({ top: 56 } as DOMRect);
+    await wrapper.find('.service-select').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.service-panel').attributes('style')).toContain('max-height: 286px');
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    wrapper.find('[data-value="microsoft"]').element.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(false);
+    expect(wrapper.find('.popup-footer').attributes()).not.toHaveProperty('inert');
+    vi.stubGlobal('innerHeight', 300);
+    window.dispatchEvent(new Event('resize'));
+    await flushPromises();
+    expect(wrapper.find('.service-panel').attributes('style')).toContain('max-height: 236px');
   });
 
   it('switches to the inline shelf without opening a tab, then deep-links the selected book', async () => {

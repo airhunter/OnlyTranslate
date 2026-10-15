@@ -92,6 +92,7 @@
 
   <!-- ===== Body ===== -->
   <div
+    ref="popupBody"
     class="popup-body"
     :class="{ 'popup-body--shelf': activePopupView === 'ebooks' }"
   >
@@ -102,7 +103,7 @@
       <el-empty :description="t('popup.disabledDescription')" :image-size="60" />
     </div>
 
-    <div v-show="config.on">
+    <div v-show="config.on" :inert="servicePanelVisible">
 
       <!-- 翻译当前页面按钮 -->
       <button class="translate-page-btn" :class="{ 'restore-btn': isTranslated }" :disabled="translating" @click="handleTranslateClick">
@@ -138,17 +139,19 @@
           </el-tooltip>
         </span>
         <div class="setting-control">
-          <el-select
-            v-model="config.service"
-            :placeholder="t('popup.servicePlaceholder')"
+          <button
+            ref="serviceTrigger"
+            type="button"
             class="service-select"
-            popper-class="popup-service-select-popper"
-            @change="handleServiceChange"
+            aria-haspopup="dialog"
+            aria-controls="popup-service-panel"
+            :aria-expanded="servicePanelVisible"
+            :aria-label="`${t('popup.service')}: ${currentServiceLabel}`"
+            @click="openServicePanel"
           >
-            <el-option class="select-left" v-for="item in availableServices" :key="item.value"
-              :label="item.label" :value="item.value" :disabled="item.disabled"
-              :class="{ 'select-divider': item.disabled, 'select-action': item.isAction }" />
-          </el-select>
+            <span>{{ currentServiceLabel }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
         </div>
       </div>
 
@@ -264,6 +267,54 @@
         {{ popupImporting ? t('common.processing') : t('ebook.importBook') }}
       </button>
     </section>
+
+    <section
+      v-if="servicePanelVisible"
+      id="popup-service-panel"
+      ref="servicePanel"
+      class="service-panel"
+      role="dialog"
+      :aria-label="t('popup.selectService')"
+      :style="{ maxHeight: `${servicePanelHeight}px` }"
+      @keydown="handleServicePanelKeydown"
+    >
+      <div class="service-panel-heading">
+        <h2>{{ t('popup.selectService') }}</h2>
+        <button type="button" class="service-panel-collapse" :aria-label="t('popup.closeServicePicker')" @click="closeServicePanel">
+          <span>{{ t('popup.collapse') }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+        </button>
+      </div>
+      <div class="service-panel-list" role="listbox" :aria-label="t('popup.service')">
+        <template v-for="item in availableServices" :key="item.value">
+          <div v-if="item.disabled" class="service-panel-group" :data-value="item.value">{{ item.label }}</div>
+          <button
+            v-else
+            type="button"
+            role="option"
+            class="service-panel-option"
+            :class="{ 'is-selected': config.service === item.value }"
+            :data-value="item.value"
+            :title="item.label"
+            :aria-selected="config.service === item.value"
+            :tabindex="focusedService === item.value ? 0 : -1"
+            @focus="focusedService = item.value"
+            @click="handleServiceChange(item.value)"
+          >
+            <span class="service-panel-mark" aria-hidden="true">{{ serviceInitials(item.label) }}</span>
+            <span class="service-panel-name">{{ item.value === services.chromeTranslator ? t('popup.chromeLocalService') : item.label }}</span>
+            <svg v-if="config.service === item.value" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>
+          </button>
+        </template>
+      </div>
+      <div class="service-panel-actions">
+        <button type="button" class="service-panel-manage" @click="manageServices">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6M16 14v6" /></svg>
+          <span>{{ t('popup.manageServices') }}</span>
+          <svg class="service-panel-external" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10" /></svg>
+        </button>
+      </div>
+    </section>
   </div>
 
   <!-- ===== Footer ===== -->
@@ -274,7 +325,7 @@
         class="popup-nav-button"
         :class="{ 'popup-nav-button--active': activePopupView === 'translate' }"
         :aria-current="activePopupView === 'translate' ? 'page' : undefined"
-        @click="activePopupView = 'translate'"
+        @click="activePopupView = 'translate'; closeServicePanel()"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3 5h11M8 2v3M5 8c1.4 2.5 3.4 4.5 6 6M11 8c-1.2 2.7-3.5 5-7 7M13 21l4-10 4 10M14.5 17.5h5" />
@@ -309,9 +360,9 @@
 
 <script lang="ts" setup>
 
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { defaultOption, options, isServiceConfigured, supportsTranslationOnlyMode } from "../entrypoints/utils/option";
+import { defaultOption, options, services, isServiceConfigured, supportsTranslationOnlyMode } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
 import { useReleaseNotes } from '@/composables/useReleaseNotes'
 import { Bell, ChatDotRound } from '@element-plus/icons-vue'
@@ -364,10 +415,85 @@ type OptionLike = { label: string; labelKey?: string }
 const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : item.label
 
 // 翻译状态相关变量
-const previousService = ref<string>('');
 const translating = ref(false);
 const isTranslated = ref(false);
 const activePdfSource = ref('');
+const popupBody = ref<HTMLElement>();
+const serviceTrigger = ref<HTMLButtonElement>();
+const servicePanel = ref<HTMLElement>();
+const servicePanelVisible = ref(false);
+const servicePanelHeight = ref(0);
+const focusedService = ref('');
+
+function updateServicePanelHeight() {
+  if (servicePanelVisible.value && popupBody.value) {
+    servicePanelHeight.value = Math.max(0, window.innerHeight - popupBody.value.getBoundingClientRect().top - 8);
+  }
+}
+
+async function openServicePanel() {
+  utilityMenuVisible.value = false;
+  releaseNotesVisible.value = false;
+  servicePanelVisible.value = true;
+  focusedService.value = config.value.service;
+  updateServicePanelHeight();
+  await nextTick();
+  if (!servicePanelVisible.value) return;
+  const selected = servicePanel.value?.querySelector<HTMLButtonElement>('[aria-selected="true"]')
+    || servicePanel.value?.querySelector<HTMLButtonElement>('.service-panel-option');
+  selected?.focus({ preventScroll: true });
+  selected?.scrollIntoView?.({ block: 'nearest' });
+}
+
+async function closeServicePanel() {
+  servicePanelVisible.value = false;
+  await nextTick();
+  if (!servicePanelVisible.value) serviceTrigger.value?.focus({ preventScroll: true });
+}
+
+function handleServicePanelOutsideClick(event: PointerEvent) {
+  if (servicePanelVisible.value && event.target instanceof Node && !servicePanel.value?.contains(event.target)) {
+    void closeServicePanel();
+  }
+}
+
+function handleServicePanelKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    void closeServicePanel();
+    return;
+  }
+  const panel = servicePanel.value;
+  if (!panel) return;
+  const options = [...panel.querySelectorAll<HTMLButtonElement>('.service-panel-option')];
+  const index = options.indexOf(event.target as HTMLButtonElement);
+  if (index < 0 || !['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const current = options[index].getBoundingClientRect();
+  let next = options[index];
+  if (event.key === 'Home' || event.key === 'End') {
+    next = options[event.key === 'Home' ? 0 : options.length - 1];
+  } else {
+    const vertical = event.key === 'ArrowUp' || event.key === 'ArrowDown';
+    const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+    const candidates = options.map(button => ({ button, rect: button.getBoundingClientRect() }))
+      .filter(({ rect }) => vertical
+        ? (forward ? rect.top > current.top : rect.top < current.top)
+        : rect.top === current.top && (forward ? rect.left > current.left : rect.left < current.left))
+      .sort((a, b) => vertical
+        ? Math.abs(a.rect.top - current.top) - Math.abs(b.rect.top - current.top)
+          || Math.abs(a.rect.left - current.left) - Math.abs(b.rect.left - current.left)
+        : Math.abs(a.rect.left - current.left) - Math.abs(b.rect.left - current.left));
+    next = candidates[0]?.button || next;
+  }
+  next.focus({ preventScroll: true });
+  next.scrollIntoView?.({ block: 'nearest' });
+}
+
+watch([activePopupView, () => config.value.on], () => {
+  if (servicePanelVisible.value) void closeServicePanel();
+});
 
 const translateButtonLabel = computed(() => {
   if (translating.value) return t('common.processing')
@@ -494,12 +620,9 @@ async function detectActivePdfSource() {
 loadConfig().then(async () => {
   updateTheme(config.value.theme || 'auto')
   locale.value = resolveLocale(config.value.uiLocale || 'auto')
-  // 初始化 previousService
-  previousService.value = config.value.service || ''
   // 检查当前服务是否已配置，未配置则回退到默认服务
   if (!isServiceConfigured(config.value.service, config.value)) {
     config.value.service = defaultOption.service
-    previousService.value = defaultOption.service
   }
   await detectActivePdfSource()
   // 查询当前页面翻译状态
@@ -523,65 +646,54 @@ loadReleaseNotesState().catch((error) => {
 })
 
 const availableServices = computed(() => {
-  type ServiceOption = { value: string; label: string; disabled?: boolean; isAction?: boolean };
+  type ServiceOption = { value: string; label: string; disabled?: boolean };
   const result: ServiceOption[] = [];
-  let currentGroupHeader: ServiceOption | null = null;
-  let currentGroupItems: ServiceOption[] = [];
+  const keylessItems: ServiceOption[] = [];
+  const configuredItems: ServiceOption[] = [];
+  const keylessServices = new Set<string>([services.microsoft, services.google, services.chromeTranslator]);
+  const isAvailable = (service: string) => isServiceConfigured(service, config.value)
+    && (config.value.display !== 0 || supportsTranslationOnlyMode(service));
 
   for (const item of options.services) {
-    if (item.disabled) {
-      // This is a group header - save it and reset the group items
-      if (currentGroupHeader && currentGroupItems.length > 0) {
-        result.push(currentGroupHeader);
-        result.push(...currentGroupItems);
-      }
-      currentGroupHeader = item;
-      currentGroupItems = [];
-    } else {
-      // This is a regular service - check if it's configured and compatible with the display mode
-      const isDisplayModeIncompatible = config.value.display === 0
-        && !supportsTranslationOnlyMode(item.value);
-      if (!isDisplayModeIncompatible && isServiceConfigured(item.value, config.value)) {
-        currentGroupItems.push(item);
-      }
-    }
+    if (item.disabled || !isAvailable(item.value)) continue;
+    (keylessServices.has(item.value) ? keylessItems : configuredItems).push(item);
   }
 
-  // Add the last group if it has items
-  if (currentGroupHeader && currentGroupItems.length > 0) {
-    result.push(currentGroupHeader);
-    result.push(...currentGroupItems);
-  }
-
-  // Add custom providers
-  if (config.value.customProviders && config.value.customProviders.length > 0) {
-    result.push({ value: '__custom_header__', label: t('popup.customProviderGroup'), disabled: true });
-    for (const provider of config.value.customProviders) {
-      result.push({
+  for (const provider of config.value.customProviders || []) {
+    if (isAvailable(provider.id)) {
+      configuredItems.push({
         value: provider.id,
         label: provider.name || provider.id
       });
     }
   }
 
-  // Add "添加更多服务..." option at the end
-  result.push({ value: '__add_more__', label: t('popup.manageCustomServices'), isAction: true });
+  if (keylessItems.length > 0) {
+    result.push({ value: '__keyless_header__', label: t('popup.keylessServiceGroup'), disabled: true }, ...keylessItems);
+  }
+  if (configuredItems.length > 0) {
+    result.push({ value: '__configured_header__', label: t('popup.configuredServiceGroup'), disabled: true }, ...configuredItems);
+  }
 
   return result;
 });
 
+const currentServiceLabel = computed(() => availableServices.value.find(item => item.value === config.value.service)?.label || config.value.service);
+
+function serviceInitials(label: string): string {
+  return label.trim().split(/\s+/)[0]?.match(/[A-Z]/g)?.slice(0, 2).join('') || Array.from(label.trim())[0] || '·';
+}
+
 // 处理翻译服务选择变化
 const handleServiceChange = (value: string) => {
-  if (value === '__add_more__') {
-    // 恢复原来的服务选择
-    config.value.service = previousService.value;
-    // 跳转设置页
-    openSettingsPage();
-  } else {
-    // 记录当前选择的服务
-    previousService.value = value;
-  }
+  config.value.service = value;
+  void closeServicePanel();
 };
+
+function manageServices() {
+  void closeServicePanel();
+  void openOptionsPanel('service');
+}
 
 // 处理插件状态变化
 const handlePluginStateChange = (val: boolean) => {
@@ -679,6 +791,7 @@ async function clearCache() {
 
 // ===== Footer: 打开设置页 =====
 function openSettingsPage() {
+  if (servicePanelVisible.value) void closeServicePanel();
   utilityMenuVisible.value = false;
   browser.runtime.openOptionsPage()
 }
@@ -777,9 +890,16 @@ function handlePopupFocus() {
   if (activePopupView.value === 'ebooks') void refreshEbookShelf();
 }
 
-onMounted(() => window.addEventListener('focus', handlePopupFocus));
+onMounted(() => {
+  window.addEventListener('focus', handlePopupFocus);
+  window.addEventListener('resize', updateServicePanelHeight);
+  document.addEventListener('pointerdown', handleServicePanelOutsideClick);
+});
 
 onBeforeUnmount(() => {
+  servicePanelVisible.value = false;
+  window.removeEventListener('resize', updateServicePanelHeight);
+  document.removeEventListener('pointerdown', handleServicePanelOutsideClick);
   window.removeEventListener('focus', handlePopupFocus);
   clearEbookCoverUrls();
   ebookRepository.close();
@@ -1072,6 +1192,7 @@ onBeforeUnmount(() => {
 
 /* ===== Body ===== */
 .popup-body {
+  position: relative;
   padding: 12px 16px;
   overflow: visible;
   background: var(--fr-bg-color);
@@ -1400,7 +1521,208 @@ onBeforeUnmount(() => {
 }
 
 .service-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 176px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--fr-border-color);
+  border-radius: 4px;
+  background: var(--fr-bg-color);
+  color: var(--fr-text-color-regular);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.service-select span,
+.service-panel-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-select svg,
+.service-panel svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.service-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  background: var(--fr-bg-color);
+}
+
+.service-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.service-panel-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fr-text-color-primary);
+}
+
+.service-panel-collapse {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-regular);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.service-panel-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 3px 8px;
   flex: 1;
+  min-height: 0;
+  padding: 2px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.service-panel-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding: 4px 6px 1px;
+  color: var(--fr-text-color-regular);
+  font-size: 11px;
+}
+
+.service-panel-group::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--fr-border-color-lighter);
+}
+
+.service-panel-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fr-text-color-primary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.service-panel-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-regular);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.service-panel-option .service-panel-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  line-height: 14px;
+}
+
+.service-panel-option > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.service-panel-option.is-selected {
+  background: var(--el-color-primary-light-9);
+  color: var(--fr-accent-color);
+  font-weight: 600;
+}
+
+.service-panel-option.is-selected .service-panel-mark {
+  background: var(--fr-bg-color);
+  color: var(--fr-accent-color);
+}
+
+.service-panel-collapse:hover,
+.service-panel-manage:hover {
+  background: var(--fr-hover-color);
+}
+
+.service-panel-option:not(.is-selected):hover,
+.service-panel-option:not(.is-selected):focus-visible {
+  background: var(--fr-hover-color);
+}
+
+.service-panel-actions {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.service-panel-manage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--fr-hover-color);
+  color: var(--fr-accent-color);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.service-panel-manage span {
+  flex: 1;
+}
+
+.service-panel-external {
+  opacity: .65;
+}
+
+.service-select:focus-visible,
+.service-panel button:focus-visible {
+  outline: 2px solid var(--fr-accent-color);
+  outline-offset: -2px;
 }
 
 /* ===== Footer ===== */
@@ -1472,41 +1794,6 @@ onBeforeUnmount(() => {
 /* ===== Select & Input ===== */
 .select-left {
   text-align: left;
-}
-
-/* ===== Select Divider ===== */
-.select-divider {
-  font-size: 11px;
-  color: var(--fr-text-color-regular);
-  padding: 6px 12px 4px;
-  cursor: default;
-  font-weight: 500;
-  pointer-events: none;
-  opacity: 0.7;
-  background: transparent;
-  border-bottom: none;
-  margin: 0;
-}
-
-/* ===== Select Action Item ===== */
-.select-action {
-  font-size: 12px;
-  color: var(--fr-accent-color);
-  padding: 8px 12px;
-  cursor: pointer;
-  font-weight: 500;
-  background: transparent;
-  border-top: 1px solid var(--fr-border-color-lighter);
-  margin-top: 4px;
-}
-
-.select-action:hover {
-  background: var(--fr-hover-color);
-  color: var(--fr-accent-color);
-}
-
-.dark .select-action {
-  color: var(--fr-accent-color);
 }
 
 /* ===== Scope Toggle ===== */
