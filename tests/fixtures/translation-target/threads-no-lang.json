@@ -1,0 +1,9 @@
+{
+  "name": "Threads smart mode includes posts and replies without lang and excludes all page chrome",
+  "url": "https://www.threads.com/",
+  "scope": "smart",
+  "html": "threads-no-lang.html",
+  "include": ["korean-text", "location-text", "reply-text"],
+  "exclude": ["navigation-copy", "composer", "korean-post", "author", "topic", "post-time", "native-translate", "like", "reply-button", "media-author", "no-lang-reply", "unrecognized-card", "unknown-copy", "suggested-heading", "outside-copy", "footer-copy"],
+  "textExcludes": ["example_author", "Travel Threads", "23h", "Translate", "Like 11.8K", "embedded_author", "Suggested profiles", "Discover more people", "Threads Terms", "unrelated readable paragraph"]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Threads full translation keeps individual post and reply paragraphs",
+  "url": "https://www.threads.com/@example/post/sample",
+  "scope": "full",
+  "html": "threads-feed.html",
+  "include": ["first-paragraph", "second-paragraph", "reply-text"],
+  "exclude": ["post", "post-body", "author", "time", "more", "native-translate", "thread-counter", "media", "like", "reply-button", "reply", "reply-author", "reply-like", "empty-card"],
+  "textExcludes": ["example_author", "23 hours ago", "Translate", "Like 168", "reader_name"]
+}

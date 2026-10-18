@@ -708,6 +708,144 @@ describe('resolveAutoTranslateTarget behavior', () => {
       .toBe('Readable article text.02Different inline explanation.')
   })
 
+  it.each(['smart', 'full'])('does not translate unrelated Threads content when no post body is found (%s)', scope => {
+    Object.defineProperty(window, 'location', { value: new URL('https://www.threads.com/'), configurable: true })
+    document.body.innerHTML = '<article><p id="fallback-copy">This readable paragraph represents content outside the recognized Threads post layout.</p></article>'
+
+    expect(resolveAutoTranslateTarget(scope).nodes).toEqual([])
+  })
+
+  it('collects new Threads cards and paragraph fragments outside the initial content root', () => {
+    const url = new URL('https://www.threads.com/')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/threads-feed.html', 'utf8')
+    const initial = resolveAutoTranslateTarget('smart')
+    const firstCard = document.querySelector('#post')!
+    const nextCard = document.createElement('div')
+    nextCard.setAttribute('data-pressable-container', 'true')
+    nextCard.innerHTML = `
+      <a href="/@next"><span translate="no">next_author</span></a>
+      <div class="x1a6qonq"><div><span dir="auto"><span id="new-post-text">A new post appears after scrolling through the feed.</span></span></div></div>
+      <div role="button">Reply</div>
+    `
+    document.body.appendChild(nextCard)
+    const text = document.querySelector('#new-post-text')!
+    const options = initial.grabOptions
+
+    expect(collectDynamicTranslationNodes(nextCard, firstCard, 'smart', options)).toEqual([text])
+    expect(collectDynamicTranslationNodes(text, firstCard, 'smart', options)).toEqual([text])
+    text.setAttribute(TRANSLATED_ATTR, 'true')
+    expect(collectDynamicTranslationNodes(nextCard, firstCard, 'smart', options)).toEqual([])
+  })
+
+  it('inserts and restores Threads translations without rebuilding native controls or inline links', async () => {
+    const url = new URL('https://www.threads.com/@example/post/sample')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/threads-feed.html', 'utf8')
+    const source = document.querySelector<HTMLElement>('#first-paragraph')!
+    source.innerHTML = 'Read <a href="https://example.com/">the original story</a> while exploring the city.'
+    const link = source.querySelector('a')!
+    const nativeButton = document.querySelector('#native-translate')!
+    const counter = document.querySelector('#thread-counter')!
+    const originalText = source.textContent
+    vi.mocked(translateText).mockResolvedValue('在城市漫步时阅读原文。')
+
+    await handleBilingualTranslation(source, false)
+
+    const insertion = source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!
+    expect(insertion.querySelector('br')).not.toBeNull()
+    expect(insertion.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('在城市漫步时阅读原文。')
+    expect(vi.mocked(translateText).mock.calls[0]?.[0]).not.toMatch(/Translate|Like|example_author/)
+    expect(document.querySelector('#native-translate')).toBe(nativeButton)
+    expect(document.querySelector('#thread-counter')).toBe(counter)
+
+    restoreOriginalContent()
+    expect(source.textContent).toBe(originalText)
+    expect(source.querySelector('a')).toBe(link)
+    expect(document.querySelector('#native-translate')).toBe(nativeButton)
+    expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('translates newly mounted Threads replies and refreshes expanded or reused source spans once', async () => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    const url = new URL('https://www.threads.com/')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/threads-feed.html', 'utf8')
+    vi.mocked(translateText).mockImplementation(origin => Promise.resolve(
+      origin.includes('THREADS-EXPANDED') ? '展开后全文译文' : 'Threads 正文译文'
+    ))
+
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(3)
+      const bodyObserver = CapturingMutationObserver.instances.find(observer => observer.observedTargets.includes(document.body))!
+      const notify = (records: Partial<MutationRecord>[]) => bodyObserver.callback(records as MutationRecord[], bodyObserver as unknown as MutationObserver)
+      const source = document.querySelector<HTMLElement>('#first-paragraph')!
+      const textNode = source.firstChild!
+      // React can update the same source text node after expansion or card reuse.
+      textNode.textContent = 'THREADS-EXPANDED: The complete source replaces the previous preview in this same paragraph.'
+      notify([{ type: 'characterData', target: textNode }])
+      await vi.runAllTimersAsync()
+      expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('展开后全文译文')
+      expect(translateText).toHaveBeenCalledTimes(4)
+
+      const reply = document.querySelector('#reply')!.cloneNode(true) as HTMLElement
+      reply.id = 'late-reply'
+      const replyBody = reply.querySelector('[lang]')!
+      replyBody.removeAttribute('lang')
+      replyBody.classList.add('x1a6qonq')
+      const replySource = reply.querySelector<HTMLElement>('#reply-text')!
+      replySource.id = 'late-reply-text'
+      replySource.removeAttribute(TRANSLATED_ATTR)
+      replySource.removeAttribute(TRANSLATED_ID_ATTR)
+      replySource.className = ''
+      replySource.textContent = 'THREADS-NEW: A reply is loaded after the first translation pass.'
+      document.body.appendChild(reply)
+      notify([{ type: 'childList', target: document.body, addedNodes: [reply] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
+      await vi.runAllTimersAsync()
+      expect(replySource.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(translateText).toHaveBeenCalledTimes(5)
+
+      notify([{ type: 'attributes', target: reply, attributeName: 'class' }])
+      notify([{ type: 'childList', target: source, addedNodes: [source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(5)
+      expect(document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(4)
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+    expect(document.querySelector('#first-paragraph')?.textContent).toContain('THREADS-EXPANDED')
+    expect(document.querySelector('#native-translate')?.textContent).toBe('Translate')
+    expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
   it('keeps Reddit multimedia text leaves when player markup exceeds the target size limit', () => {
     const redditUrl = new URL('https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/multimedia-post/')
     Object.defineProperty(window, 'location', {

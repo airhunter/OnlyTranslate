@@ -1,0 +1,9 @@
+{
+  "name": "Threads feed and replies select source text without native controls or metadata",
+  "url": "https://www.threads.com/",
+  "scope": "smart",
+  "html": "threads-feed.html",
+  "include": ["first-paragraph", "second-paragraph", "reply-text"],
+  "exclude": ["navigation", "composer", "post", "post-body", "author", "time", "more", "native-translate", "thread-counter", "media", "like", "reply-button", "reply", "reply-author", "reply-like", "empty-card", "footer"],
+  "textExcludes": ["example_author", "23 hours ago", "Translate", "Like 168", "reader_name", "Photo description"]
+}
