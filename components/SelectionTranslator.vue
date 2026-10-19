@@ -259,6 +259,7 @@
         </button>
       </footer>
     </section>
+    <p v-if="speechError" class="fr-speech-error" role="alert">{{ speechError }}</p>
   </div>
 </template>
 
@@ -310,6 +311,7 @@ const error = ref('')
 const copiedTarget = ref<CopyTarget | null>(null)
 const isPlaying = ref(false)
 const currentPlayingText = ref('')
+const speechError = ref('')
 const isSelecting = ref(false)
 const isInteractingWithSelectionUi = ref(false)
 const isDraggingPanel = ref(false)
@@ -563,6 +565,7 @@ const stopAudio = () => {
   stopTts()
   isPlaying.value = false
   currentPlayingText.value = ''
+  speechError.value = ''
 }
 
 const closeAll = () => {
@@ -843,15 +846,19 @@ const toggleAudio = async (text: string, event?: Event) => {
 
   stopAudio()
   const playbackId = ++activePlaybackId
+  const engine = config.ttsEngine
   isPlaying.value = true
   currentPlayingText.value = text
   try {
     await speakText(text, {
-      engine: config.ttsEngine,
+      engine,
       gender: config.ttsVoiceGender,
     })
   } catch (cause) {
-    console.error('Text to speech failed:', cause)
+    if (playbackId === activePlaybackId) {
+      speechError.value = t(engine === 'edge' ? 'selection.edgeSpeechFailed' : 'selection.speechFailed')
+      console.error('Text to speech failed:', cause)
+    }
   } finally {
     if (playbackId === activePlaybackId) {
       isPlaying.value = false

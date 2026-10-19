@@ -24,6 +24,7 @@ describe('Config', () => {
   })
 
   it('should let Edge TTS choose voice gender automatically by default', () => {
+    expect(new Config().ttsEngine).toBe('edge')
     expect(new Config().ttsVoiceGender).toBe('auto')
   })
 })

@@ -216,14 +216,19 @@ function chooseVoice(
     const voiceLang = voice.lang.toLowerCase()
     return voiceLang === normalized || voiceLang.startsWith(`${base}-`)
   })
-  const genderMatches = gender === 'auto'
-    ? languageMatches
-    : languageMatches.filter(voice => voice.gender?.toLowerCase() === gender)
-  const matches = genderMatches.length > 0 ? genderMatches : languageMatches
-  return matches.find(voice => /multilingual/i.test(voice.id))
-    ?? matches.find(voice => /xiaoxiao|andrew|ava/i.test(voice.id))
-    ?? matches[0]
-    ?? voices[0]
+  const chooseFrom = (candidates: TtsVoiceOption[]): TtsVoiceOption | undefined => {
+    const genderMatches = gender === 'auto'
+      ? candidates
+      : candidates.filter(voice => voice.gender?.toLowerCase() === gender)
+    const matches = genderMatches.length > 0 ? genderMatches : candidates
+    return matches.find(voice => /multilingual/i.test(voice.id))
+      ?? matches.find(voice => /xiaoxiao|andrew|ava/i.test(voice.id))
+      ?? matches[0]
+  }
+
+  // Locale takes priority over gender and voice type; never use an unrelated language.
+  return chooseFrom(languageMatches.filter(voice => voice.lang.toLowerCase() === normalized))
+    ?? chooseFrom(languageMatches)
 }
 
 async function synthesizeChunk(text: string, voice: string): Promise<Uint8Array> {

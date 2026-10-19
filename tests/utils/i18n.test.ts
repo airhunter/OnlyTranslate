@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { resolveLocale, setLocale, t } from '@/entrypoints/utils/i18n'
+import { t as contentT } from '@/entrypoints/utils/i18n/content'
 
 describe('i18n', () => {
   it('resolves supported and browser-like locale codes', () => {
@@ -71,6 +72,10 @@ describe('i18n', () => {
       const notice = t('options.interaction.edgeVoicePrivacyNotice')
       expect(notice, locale).not.toBe('options.interaction.edgeVoicePrivacyNotice')
       expect(notice, locale).toContain('Microsoft')
+      expect(contentT('selection.edgeSpeechFailed'), locale).toContain('Edge')
+      expect(contentT('selection.speechFailed'), locale).not.toBe('selection.speechFailed')
+      expect(t('options.interaction.systemVoice'), locale).not.toBe('options.interaction.systemVoice')
+      expect(t('options.interaction.edgeOnlineVoice'), locale).toContain('Edge')
     }
   })
 })

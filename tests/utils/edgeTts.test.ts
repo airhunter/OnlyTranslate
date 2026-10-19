@@ -30,4 +30,34 @@ describe('edgeTts', () => {
     expect(edgeTtsInternals.chooseVoice(voices, 'zh-CN', 'male')?.id).toBe('zh-CN-YunxiNeural')
     expect(edgeTtsInternals.chooseVoice(voices, 'ja-JP', 'male')?.id).toBe('ja-JP-NanamiNeural')
   })
+
+  it('prioritizes an exact locale over a different locale with a preferred voice type or gender', () => {
+    const voices = [
+      { id: 'en-AU-WilliamMultilingualNeural', name: 'William', lang: 'en-AU', gender: 'Male' },
+      { id: 'en-US-JennyNeural', name: 'Jenny', lang: 'en-US', gender: 'Female' },
+    ]
+
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-US')?.id).toBe('en-US-JennyNeural')
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-US', 'male')?.id).toBe('en-US-JennyNeural')
+    expect(edgeTtsInternals.chooseVoice([...voices].reverse(), 'EN-us')?.id).toBe('en-US-JennyNeural')
+  })
+
+  it('applies gender and voice preferences within the exact locale', () => {
+    const voices = [
+      { id: 'en-AU-WilliamMultilingualNeural', name: 'William', lang: 'en-AU', gender: 'Male' },
+      { id: 'en-US-GuyNeural', name: 'Guy', lang: 'en-US', gender: 'Male' },
+      { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew', lang: 'en-US', gender: 'Male' },
+      { id: 'en-US-JennyNeural', name: 'Jenny', lang: 'en-US', gender: 'Female' },
+    ]
+
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-US')?.id).toBe('en-US-AndrewMultilingualNeural')
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-US', 'female')?.id).toBe('en-US-JennyNeural')
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-GB', 'female')?.id).toBe('en-US-JennyNeural')
+  })
+
+  it('does not select an unrelated language when no matching voice is available', () => {
+    const voices = [{ id: 'ja-JP-NanamiNeural', name: 'Nanami', lang: 'ja-JP', gender: 'Female' }]
+    expect(edgeTtsInternals.chooseVoice(voices, 'en-US')).toBeUndefined()
+    expect(edgeTtsInternals.chooseVoice([], 'en-US')).toBeUndefined()
+  })
 })

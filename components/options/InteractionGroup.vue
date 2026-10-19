@@ -48,8 +48,8 @@
           <span class="setting-label">{{ t('options.interaction.voiceEngine') }}</span>
           <div class="setting-control voice-setting-control voice-engine-control">
             <el-select v-model="config.ttsEngine">
-              <el-option :label="t('options.interaction.systemVoiceRecommended')" value="system" />
               <el-option :label="t('options.interaction.edgeOnlineVoice')" value="edge" />
+              <el-option :label="t('options.interaction.systemVoice')" value="system" />
             </el-select>
           </div>
         </div>

@@ -143,10 +143,9 @@ export async function speakText(
       if (generation !== playbackGeneration) return { engine: 'edge', fallback: false }
       await playAudioResponse(response, generation)
       return { engine: 'edge', fallback: false }
-    } catch {
+    } catch (error) {
       if (generation !== playbackGeneration) return { engine: 'edge', fallback: false }
-      await speakWithSystem(cleanText, language, generation)
-      return { engine: 'system', fallback: true }
+      throw error
     }
   }
 

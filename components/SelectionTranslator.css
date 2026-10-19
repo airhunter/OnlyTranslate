@@ -439,6 +439,18 @@ select {
 .fr-loading-dot:nth-child(2) { animation-delay: 120ms; }
 .fr-loading-dot:nth-child(3) { animation-delay: 240ms; }
 
+.fr-speech-error {
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--fr-border);
+  border-radius: 8px;
+  background: var(--fr-surface);
+  color: var(--fr-text);
+  overflow-wrap: anywhere;
+}
+
 .fr-error-state {
   display: flex;
   align-items: center;

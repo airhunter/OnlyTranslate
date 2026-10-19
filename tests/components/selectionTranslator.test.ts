@@ -7,6 +7,7 @@ const mockTranslateText = vi.hoisted(() => vi.fn())
 const mockCacheTranslationResult = vi.hoisted(() => vi.fn())
 const mockRemoveCachedTranslationResult = vi.hoisted(() => vi.fn())
 const mockAnalyzeSelectionText = vi.hoisted(() => vi.fn())
+const mockSpeakText = vi.hoisted(() => vi.fn())
 const mockComputePosition = vi.hoisted(() => vi.fn().mockResolvedValue({
   x: 12,
   y: 24,
@@ -42,7 +43,7 @@ vi.mock('@wxt-dev/storage', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/ttsClient', () => ({
-  speakText: vi.fn().mockResolvedValue({ engine: 'system', fallback: false }),
+  speakText: mockSpeakText,
   stopTts: vi.fn()
 }))
 
@@ -129,6 +130,8 @@ describe('SelectionTranslator', () => {
     currentSelection = null
     pendingTranslations = []
     mockConfig.service = 'google'
+    mockConfig.ttsEngine = 'edge'
+    mockSpeakText.mockReset().mockResolvedValue({ engine: 'edge', fallback: false })
     mockConfig.to = 'zh-Hans'
     mockConfig.bidirectionalTranslation = false
     mockConfig.bidirectionalTarget = 'en'
@@ -192,9 +195,72 @@ describe('SelectionTranslator', () => {
     wrapper?.unmount()
     wrapper = null
     getSelectionSpy.mockRestore()
+    vi.restoreAllMocks()
     vi.clearAllTimers()
     vi.useRealTimers()
     document.body.innerHTML = ''
+  })
+
+  it('shows Edge speech errors beside the toolbar and clears them on retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockSpeakText.mockRejectedValueOnce(new Error('offline'))
+    await setSelection('delocalise')
+    await wrapper!.get('button[title="selection.speak"]').trigger('click')
+    await flushPromises()
+
+    expect(mockSpeakText).toHaveBeenCalledWith('delocalise', { engine: 'edge', gender: 'auto' })
+    expect(wrapper!.get('[role="alert"]').text()).toBe('selection.edgeSpeechFailed')
+    expect(wrapper!.get('button[title="selection.speak"]').classes()).not.toContain('is-active')
+    expect(mockTranslateText).not.toHaveBeenCalled()
+
+    await wrapper!.get('button[title="selection.speak"]').trigger('click')
+    await flushPromises()
+    expect(wrapper!.find('[role="alert"]').exists()).toBe(false)
+    expect(mockSpeakText).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps translated text visible when translation read-aloud fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await setSelection('delocalise')
+    await openTooltip()
+    pendingTranslations[0].resolve('使离域')
+    await flushPromises()
+    mockSpeakText.mockRejectedValueOnce(new Error('playback failed'))
+
+    await wrapper!.get('button[title="selection.playTranslation"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper!.get('[role="alert"]').text()).toBe('selection.edgeSpeechFailed')
+    expect(wrapper!.get('.fr-translation-text').text()).toBe('使离域')
+    expect(wrapper!.find('.fr-error-state').exists()).toBe(false)
+    await setSelection('next selection')
+    expect(wrapper!.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it.each(['stop', 'selection', 'close'])('ignores a late speech failure after %s', async action => {
+    let rejectSpeech!: (error: Error) => void
+    mockSpeakText.mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectSpeech = reject }))
+    await setSelection('delocalise')
+    await wrapper!.get('button[title="selection.speak"]').trigger('click')
+
+    if (action === 'stop') await wrapper!.get('button[title="selection.speak"]').trigger('click')
+    if (action === 'selection') await setSelection('another selection')
+    if (action === 'close') await wrapper!.get('button[title="selection.close"]').trigger('click')
+    rejectSpeech(new Error('obsolete failure'))
+    await flushPromises()
+
+    expect(wrapper!.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('reports an explicitly selected system speech failure', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockConfig.ttsEngine = 'system'
+    mockSpeakText.mockRejectedValueOnce(new Error('system unavailable'))
+    await setSelection('delocalise')
+    await wrapper!.get('button[title="selection.speak"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper!.get('[role="alert"]').text()).toBe('selection.speechFailed')
   })
 
   it('aborts the previous selection and ignores its late result', async () => {

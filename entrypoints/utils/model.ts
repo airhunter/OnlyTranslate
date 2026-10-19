@@ -140,7 +140,7 @@ export class Config {
         this.customProviders = []; // 默认没有自定义节点
         this.activeBuiltinProviders = []; // 默认空的启用列表，加载时会进行迁移
         this.translationScope = 'smart'; // 默认智能识别主内容
-        this.ttsEngine = 'system'; // 默认优先使用浏览器提供的系统语音
+        this.ttsEngine = 'edge'; // 默认使用 Edge 在线语音，已保存的引擎选择仍由配置覆盖
         this.ttsVoice = {}; // 默认按文本语言自动匹配音色
         this.ttsVoiceGender = 'auto'; // Edge 默认自动选择合适的男声或女声
     }
