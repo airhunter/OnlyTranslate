@@ -1,0 +1,26 @@
+[
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  },
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  },
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  },
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  },
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  },
+  {
+    "status": 200,
+    "endpoint": "/translate/translatetext"
+  }
+]

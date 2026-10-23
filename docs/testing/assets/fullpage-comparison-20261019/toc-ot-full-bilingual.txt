@@ -1,0 +1,72 @@
+- main:
+  - article:
+    - heading "Scaling Laws for Language Models 语言模型的尺度定律" [level=1]:
+      - text: Scaling Laws for Language Models
+      - generic: 语言模型的尺度定律
+    - generic: "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng"
+    - generic "Table of Contents" [active]
+    - list:
+      - 'link "Early days: ML loss predictability"':
+        - /url: "#early"
+      - generic: 早期阶段：机器学习损失的可预测性
+      - link "Scaling Laws in Data-Infinite Region":
+        - /url: "#infinite"
+      - generic: 数据无限区域的缩放律
+      - list:
+        - link "Kaplan et al.'s Scaling Laws":
+          - /url: "#kaplan"
+        - generic: Kaplan等人提出的标量定律
+        - link "Chinchilla Scaling Laws":
+          - /url: "#chinchilla"
+        - generic: 龙猫的尺度法规
+        - list:
+          - 'link "Method 1: Fix model sizes, vary the token budget"':
+            - /url: "#method-1"
+          - generic: 方法一：固定模型大小，调整代币预算
+          - 'link "Method 2: IsoFLOP profiles"':
+            - /url: "#method-2"
+          - generic: 方法二：IsoFLOP 配置文件
+          - 'link "Method 3: Parametric fit"':
+            - /url: "#method-3"
+          - generic: 方法三：参数拟合
+        - link "Reconciling Kaplan and Chinchilla":
+          - /url: "#reconcile"
+        - generic: 卡普兰与金猫的和解
+        - link "Why power law?":
+          - /url: "#why-power"
+        - generic: 为什么选择幂律？
+      - link "Scaling Laws in Data-Limited Region":
+        - /url: "#limited"
+      - generic: 数据有限区域的尺度定律
+      - link "Trickiness of Fitting Scaling Laws in Reality":
+        - /url: "#tricky"
+      - generic: 现实中拟合缩放定律的棘手性
+      - list:
+        - link "Toy simulation":
+          - /url: "#toy"
+        - generic: 玩具模拟
+      - link "Citation":
+        - /url: "#citation"
+      - generic: 引用
+      - link "References":
+        - /url: "#references"
+      - generic: 参考文献
+    - paragraph:
+      - text: This article surveys scaling laws for language models with enough natural language prose to make the article shell the main content. The discussion compares empirical predictability, data constraints, and practical fitting challenges across many paragraphs in a normal technical blog post.
+      - generic: 本文探讨了具有足够自然语言的语言模型的尺度律 散文使文章成为主要内容。讨论与实证比较 可预测性、数据限制以及在许多领域的实际拟合挑战 普通技术博客文章中的段落。
+    - paragraph:
+      - text: Additional readable prose keeps this sample representative of a long-form article rather than a standalone navigation widget. It gives the content detector enough evidence to use smart mode while preserving the nested table of contents near the top of the article.
+      - generic: 额外的易读散文使该样本保持长篇文章的代表性 而不是一个独立的导航小部件。它给内容检测器足够的信息 在保持嵌套目录的同时，使用智能模式的证据 文章顶部。
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"

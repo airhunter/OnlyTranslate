@@ -13,22 +13,20 @@
     "mature-heading",
     "mature-description",
     "mature-example",
-    "mature-checkbox-copy"
-  ],
-  "exclude": [
+    "mature-checkbox-copy",
     "save-button",
     "category-learn-more",
+    "mature-learn-more"
+  ],
+  "exclude": [
     "category-select",
     "category-placeholder",
     "website-input",
     "support-contact-input",
-    "mature-learn-more",
     "mature-checkbox"
   ],
   "textExcludes": [
-    "Save & Continue",
-    "Learn More about Category",
-    "Pick a category",
-    "Learn More about Mature Content"
-  ]
+    "Pick a category"
+  ],
+  "textIncludes": ["Save & Continue", "Learn More about Category", "Learn More about Mature Content"]
 }

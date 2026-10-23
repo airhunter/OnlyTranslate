@@ -1,11 +1,9 @@
 import { checkConfig, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
-import { options, services, servicesType } from "../utils/option";
+import { options } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner, showExtensionReloadedTip } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import {
-    beautyHTML,
-    getTranslatableHTML,
     getTranslatableText,
     getTranslatableTextWithProtectedInline,
     hasExcludedTranslatableTextBoundary,
@@ -13,14 +11,12 @@ import {
     grabNode,
     renderTextWithProtectedInline,
     type GrabAllNodeOptions,
-    LLMStandardHTML,
-    smashTruncationStyle,
     DIRECT_TEXT_TARGET_ATTR,
     cleanupDirectTextTargets,
     unwrapDirectTextTarget
 } from "@/entrypoints/main/dom";
 import { throttle } from "@/entrypoints/utils/common";
-import { afterBilingualAppendCompatFn, replaceCompatFn } from "@/entrypoints/main/compat";
+import { afterBilingualAppendCompatFn } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import { config } from "@/entrypoints/utils/config";
 import { getBackgroundTranslationSlotLimit } from "@/entrypoints/utils/translateQueue";
@@ -31,20 +27,28 @@ import {
     cancelAllTranslations,
     type TranslateOptions
 } from '@/entrypoints/utils/translateApi';
-import { shouldTranslateText } from "@/entrypoints/utils/translationDirection";
+import { resolveTranslationDirection, shouldTranslateText } from "@/entrypoints/utils/translationDirection";
 import { createTranslationDiagnosticId } from '@/entrypoints/utils/translationDiagnostics';
 import { t } from '@/entrypoints/utils/i18n/page';
 import { type TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,
-    hideOriginalForTranslationOnly,
+    hasTranslationOnlySourceChanged,
+    isPreparedTranslationOnlyCurrent,
+    applyTranslationOnly,
     prepareTranslationOnly,
+    withTranslationOnlyLineSeparators,
     restoreAllTranslationOnly,
     restoreTranslationOnly,
-    type PreparedTranslationOnly,
 } from '@/entrypoints/main/translationOnly';
+import {
+    isCompactTranslationTarget, prepareCompactBilingualTarget, prepareBilingualClipping, setTranslationStyle,
+    restoreAllBilingualLayouts, restoreBilingualLayout, isOriginalWrappingMutation, BILINGUAL_ORIGINAL_CLASS,
+    BILINGUAL_LABEL_ATTR,
+} from '@/entrypoints/main/translationLayout';
 import { resolveAutoTranslationTarget, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
+import { isFullPageExcludedText } from '@/entrypoints/main/translationTarget/fullPage';
 import {
     collectDynamicTranslationNodes as collectDynamicTargetNodes,
     getDynamicTranslationScanRoot,
@@ -70,7 +74,7 @@ import shadowTranslationStyles from '@/entrypoints/style.css?inline';
 
 // style 只进入合并后的动态队列，用于捕获组件直接通过内联样式切换正文显隐的情况；
 // 回调本身不读取布局，避免把动画 mutation 的成本放在 Observer 回调中。
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded'];
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded', 'open', 'translate', 'contenteditable', 'role'];
 const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
 const BACKGROUND_TRANSLATION_START_DELAY = 1000;
 const BACKGROUND_TRANSLATION_INTERVAL = 250;
@@ -81,6 +85,7 @@ const translationState = {
     htmlSet: new Set<string>(),
     originalContents: new Map<string, string>(),
     isAutoTranslating: false,
+    activeScope: null as string | null,
     observer: null as IntersectionObserver | null,
     mutationObserver: null as MutationObserver | null,
     rootMutationObserver: null as MutationObserver | null,
@@ -99,7 +104,6 @@ const translationState = {
 let sharedShadowStyleSheet: CSSStyleSheet | null = null;
 
 const translationDisplayModes = new Map<string, 'bilingual' | 'single'>();
-const appliedSingleTranslationContents = new Map<string, string>();
 
 let hasReportedInvalidatedExtensionContext = false;
 
@@ -275,14 +279,6 @@ function translateFirstLineText(textNode: Text, origin: string): void {
         });
 }
 
-function shouldBeautifyTranslatedHTML(origin: string, translated: string): boolean {
-    return /<[^>]+>/.test(origin) || /<[^>]+>/.test(translated);
-}
-
-function usesSafeTranslationOnlyWrapper(service: string): boolean {
-    return service === services.google || service === services.microsoft;
-}
-
 function shouldStartTranslation(node: HTMLElement): boolean {
     const translatableText = getTranslatableText(node);
     return Boolean(translatableText.trim()) && shouldTranslateText(translatableText);
@@ -290,7 +286,7 @@ function shouldStartTranslation(node: HTMLElement): boolean {
 
 function clearUnfinishedAutoTranslation(node: HTMLElement): void {
     if (!node.hasAttribute(TRANSLATED_ATTR)) return;
-    if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return;
+    if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS) || hasTranslationOnlyRecord(node)) return;
 
     clearTranslationHostMarkers(node);
 }
@@ -300,11 +296,10 @@ function clearTranslationHostMarkers(node: HTMLElement): void {
     if (nodeId) {
         originalContents.delete(nodeId);
         translationDisplayModes.delete(nodeId);
-        appliedSingleTranslationContents.delete(nodeId);
         node.removeAttribute(TRANSLATED_ID_ATTR);
     }
     node.removeAttribute(TRANSLATED_ATTR);
-    node.classList.remove(BILINGUAL_WRAPPER_CLASS);
+    if (node.classList.contains(BILINGUAL_WRAPPER_CLASS)) node.classList.remove(BILINGUAL_WRAPPER_CLASS);
     translationState.translatedHosts.delete(node);
 }
 
@@ -322,6 +317,8 @@ function normalizeTranslationSource(value: string): string {
 function captureTranslationAttempt(node: HTMLElement, sourceText: string): TranslationAttemptSnapshot {
     const sourceClone = node.cloneNode(true) as HTMLElement;
     sourceClone.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`).forEach(element => element.remove());
+    sourceClone.querySelectorAll(`.${BILINGUAL_ORIGINAL_CLASS}`).forEach(wrapper => wrapper.replaceWith(...Array.from(wrapper.childNodes)));
+    sourceClone.querySelectorAll(`[${BILINGUAL_LABEL_ATTR}]`).forEach(label => label.removeAttribute(BILINGUAL_LABEL_ATTR));
     removeExcludedTranslatableTextContent(sourceClone);
     return {
         sourceText: normalizeTranslationSource(sourceText),
@@ -369,7 +366,7 @@ function clearStaleBilingualTranslationMarkers(root: ParentNode = document.body)
     }
 
     translatedElements.forEach(element => {
-        if (findOwnedClassName(element, BILINGUAL_CONTENT_CLASS)) return;
+        if (findOwnedClassName(element, BILINGUAL_CONTENT_CLASS) || hasTranslationOnlyRecord(element)) return;
         if (element.matches(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
         if (element.querySelector(ACTIVE_TRANSLATION_STATUS_SELECTOR)) return;
 
@@ -384,7 +381,9 @@ export function restoreOriginalContent() {
     translationState.targetCollectionController?.abort();
     translationState.targetCollectionController = null;
     setAutoTranslating(false);
+    translationState.activeScope = null;
     translationState.sessionVersion += 1;
+    restoreAllBilingualLayouts();
 
     restoreAllTranslationOnly().forEach(node => {
         clearTranslationHostMarkers(node);
@@ -396,17 +395,6 @@ export function restoreOriginalContent() {
         ...querySelectorAllComposed<HTMLElement>(`[${TRANSLATED_ATTR}="true"]`, translationState.shadowRoots)
     ]);
     translatedHosts.forEach(node => {
-        const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
-        const displayMode = nodeId ? translationDisplayModes.get(nodeId) : undefined;
-        if (nodeId && displayMode === 'single') {
-            const originalContent = originalContents.get(nodeId);
-            const appliedContent = appliedSingleTranslationContents.get(nodeId);
-            // 仅当宿主仍保持为只译写入的结果时恢复，避免覆盖网站在翻译期间的新渲染。
-            if (originalContent !== undefined && appliedContent !== undefined && node.innerHTML === appliedContent) {
-                node.innerHTML = originalContent;
-            }
-        }
-
         node.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
         clearTranslationHostMarkers(node);
     });
@@ -424,6 +412,9 @@ export function restoreOriginalContent() {
     querySelectorAllComposed('.only-translate-loading, .only-translate-retry-wrapper', translationState.shadowRoots).forEach(element => {
         element.remove();
     });
+    querySelectorAllComposed('.only-translate-failure', translationState.shadowRoots).forEach(element => {
+        element.classList.remove('only-translate-failure');
+    });
 
     querySelectorAllComposed(`[${DIRECT_TEXT_TARGET_ATTR}="true"]`, translationState.shadowRoots).forEach(element => {
         unwrapDirectTextTarget(element);
@@ -432,7 +423,6 @@ export function restoreOriginalContent() {
     // 4. 清空存储的原始内容
     originalContents.clear();
     translationDisplayModes.clear();
-    appliedSingleTranslationContents.clear();
     translationState.translatedHosts.clear();
     
     // 5. 停止所有观察器
@@ -497,6 +487,7 @@ async function startAutoTranslation(
 
     // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
     const scope = scopeOverride ?? config.translationScope;
+    translationState.activeScope = scope;
     let target: AutoTranslateTarget;
     try {
         target = await resolveAutoTranslationTargetAsync(scope, {
@@ -559,7 +550,7 @@ async function startAutoTranslation(
         ensureShadowTranslationStyles(node);
 
         // 保存原始内容
-        originalContents.set(nodeId, node.innerHTML);
+        originalContents.set(nodeId, captureTranslationAttempt(node, getTranslatableText(node)).sourceHTML);
         translationDisplayModes.set(
             nodeId,
             config.display === styles.bilingualTranslation ? 'bilingual' : 'single'
@@ -600,7 +591,7 @@ async function startAutoTranslation(
     const takeNextBackgroundNode = (): Element | null => {
         while (backgroundCursor < nodes.length) {
             const node = nodes[backgroundCursor++];
-            if (node instanceof HTMLElement && !node.hasAttribute(TRANSLATED_ATTR)) {
+            if (node instanceof HTMLElement && node.isConnected && !node.hasAttribute(TRANSLATED_ATTR)) {
                 return node;
             }
         }
@@ -649,13 +640,40 @@ async function startAutoTranslation(
 
     const refreshTranslatedHost = (host: HTMLElement): void => {
         const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
-        if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return;
+        if (!nodeId) return;
+        if (translationDisplayModes.get(nodeId) === 'single') restoreTranslationOnly(host);
+        restoreBilingualLayout(host);
         queryOwnedElements(host, `.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
         queryOwnedElements(host, ACTIVE_TRANSLATION_STATUS_SELECTOR).forEach(element => element.remove());
         clearTranslationHostMarkers(host);
         if (translationState.isAutoTranslating && host.isConnected) {
             translationState.observer?.observe(host);
         }
+    };
+
+    const getOwnedHosts = (root: Element): HTMLElement[] => [root, ...Array.from(root.querySelectorAll(`[${TRANSLATED_ID_ATTR}]`))]
+        .filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute(TRANSLATED_ID_ATTR));
+    const forgetDetachedHosts = (root: Element): void => {
+        getOwnedHosts(root).filter(host => !host.isConnected).forEach(host => {
+            refreshTranslatedHost(host);
+            translationState.observer?.unobserve(host);
+            observedTranslationNodes.delete(host);
+            const index = nodes.indexOf(host);
+            if (index >= 0) {
+                nodes.splice(index, 1);
+                if (index < backgroundCursor) backgroundCursor--;
+            }
+        });
+    };
+    const refreshReusedHosts = (root: Element): void => {
+        if (root.matches(`.${BILINGUAL_CONTENT_CLASS}, .${BILINGUAL_ORIGINAL_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)) return;
+        getOwnedHosts(root).forEach(host => {
+            const nodeId = host.getAttribute(TRANSLATED_ID_ATTR)!;
+            const changed = hasTranslationOnlyRecord(host)
+                ? hasTranslationOnlySourceChanged(host)
+                : originalContents.has(nodeId) && originalContents.get(nodeId) !== captureTranslationAttempt(host, '').sourceHTML;
+            if (changed) refreshTranslatedHost(host);
+        });
     };
 
     const handleTranslatedHostMutation = (mutation: MutationRecord): boolean => {
@@ -672,7 +690,21 @@ async function startAutoTranslation(
         }
         if (!host) return false;
         const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
-        if (!nodeId || translationDisplayModes.get(nodeId) !== 'bilingual') return true;
+        if (!nodeId) return true;
+        if (mutation.type === 'attributes' && ['translate', 'contenteditable'].includes(mutation.attributeName ?? '')) {
+            refreshTranslatedHost(host);
+            return true;
+        }
+        if (translationDisplayModes.get(nodeId) === 'single') {
+            const websiteChildChange = mutation.type === 'childList'
+                && [...Array.from(mutation.addedNodes), ...Array.from(mutation.removedNodes)]
+                    .some(node => !(node instanceof Element && node.matches(ACTIVE_TRANSLATION_STATUS_SELECTOR)));
+            if (hasTranslationOnlyRecord(host) && (hasTranslationOnlySourceChanged(host) || websiteChildChange)) {
+                refreshTranslatedHost(host);
+            }
+            return true;
+        }
+        if (isOriginalWrappingMutation(mutation)) return true;
 
         if (mutation.type === 'characterData') {
             refreshTranslatedHost(host);
@@ -740,6 +772,7 @@ async function startAutoTranslation(
                 .filter(host => !host.isConnected && host.getRootNode() === root)
                 .forEach(host => {
                     restoreTranslationOnly(host);
+                    restoreBilingualLayout(host);
                     host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)
                         .forEach(element => element.remove());
                     clearTranslationHostMarkers(host);
@@ -823,6 +856,10 @@ async function startAutoTranslation(
         }
 
         for (const mutation of mutations) {
+            if (mutation.type === 'childList') {
+                mutation.removedNodes?.forEach(node => { if (node instanceof Element) forgetDetachedHosts(node); });
+                mutation.addedNodes?.forEach(node => { if (node instanceof Element) refreshReusedHosts(node); });
+            }
             if (handleTranslatedHostMutation(mutation)) continue;
 
             if (mutation.type === 'childList') {
@@ -958,6 +995,7 @@ export function handleBilingualTranslation(
             spinner.remove();
             const content = findOwnedClassName(bilingualNode, BILINGUAL_CONTENT_CLASS);
             content?.remove();
+            restoreBilingualLayout(bilingualNode);
             bilingualNode.classList.remove(BILINGUAL_WRAPPER_CLASS);
             translationState.htmlSet.delete(nodeOuterHTML);
             resolve();
@@ -987,51 +1025,6 @@ export function handleBilingualTranslation(
 
 // 单语翻译
 export function handleSingleTranslation(node: HTMLElement, slide: boolean, options: TranslationRequestOptions = {}): Promise<void> {
-    if (usesSafeTranslationOnlyWrapper(config.service)) {
-        return handleSafeTranslationOnly(node, slide, options);
-    }
-
-    let nodeOuterHTML = node.outerHTML;
-    const attempt = captureTranslationAttempt(node, getTranslatableText(node));
-    let outerHTMLCache = cache.localGet(node.outerHTML, config.to, getWebpagePromptContext(node));
-
-
-    if (outerHTMLCache) {
-        // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
-        let spinner = insertLoadingSpinner(node, true);
-        return new Promise(resolve => setTimeout(() => {
-            spinner.remove();
-            translationState.htmlSet.delete(nodeOuterHTML);
-            if (!isTranslationAttemptCurrent(node, attempt)) {
-                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
-                resolve();
-                return;
-            }
-
-            // 兼容部分网站独特的 DOM 结构
-            let fn = replaceCompatFn[getMainDomain(document.location.hostname)];
-            if (fn) fn(node, outerHTMLCache);
-            else node.outerHTML = outerHTMLCache;
-
-            if (attempt.nodeId) {
-                const appliedNode = node.isConnected
-                    ? node
-                    : document.querySelector<HTMLElement>(`[${TRANSLATED_ID_ATTR}="${attempt.nodeId}"]`);
-                if (appliedNode) appliedSingleTranslationContents.set(attempt.nodeId, appliedNode.innerHTML);
-            }
-
-            resolve();
-        }, 250));
-    }
-
-    return singleTranslate(node, options);
-}
-
-function handleSafeTranslationOnly(
-    node: HTMLElement,
-    slide: boolean,
-    options: TranslationRequestOptions,
-): Promise<void> {
     const nodeOuterHTML = node.outerHTML;
     if (hasTranslationOnlyRecord(node)) {
         if (slide) {
@@ -1040,25 +1033,30 @@ function handleSafeTranslationOnly(
         }
 
         const spinner = insertLoadingSpinner(node, true);
+        const sessionVersion = translationState.sessionVersion;
         return new Promise(resolve => setTimeout(() => {
             spinner.remove();
-            restoreTranslationOnly(node);
-            clearTranslationHostMarkers(node);
+            if (sessionVersion === translationState.sessionVersion) {
+                restoreTranslationOnly(node);
+                clearTranslationHostMarkers(node);
+            }
             translationState.htmlSet.delete(nodeOuterHTML);
             resolve();
         }, 250));
     }
 
-    return safeTranslationOnlyTranslate(node, nodeOuterHTML, options);
+    return singleTranslate(node, options);
 }
 
 
 function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: TranslationRequestOptions = {}): Promise<void> {
     const plainOrigin = getTranslatableText(node);
     const attempt = captureTranslationAttempt(node, plainOrigin);
-    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
-    const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
-    if (!shouldTranslateText(plainOrigin)) {
+    const full = isFullPageTranslation();
+    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node, full ? isFullPageExcludedText : undefined);
+    const origin = full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
+    const direction = getWebpageTranslationDirection(plainOrigin);
+    if (!direction.shouldTranslate) {
         clearUnfinishedAutoTranslation(node);
         return Promise.resolve();
     }
@@ -1071,7 +1069,10 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     
     // 使用队列管理的翻译API
     const promptContext = getWebpagePromptContext(node);
-    return translateText(origin, promptContext, options)
+    const requestOptions = full
+        ? { ...options, sourceLangHint: direction.sourceLang, targetLangHint: direction.targetLang }
+        : options;
+    return translateText(origin, promptContext, requestOptions)
         .then(async (text: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
@@ -1086,7 +1087,8 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, promptContext, options);
+                const fallbackOrigin = full ? protectedInlineOrigin.text.replace(/__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g, '') : plainOrigin;
+                text = await translateText(fallbackOrigin, promptContext, requestOptions);
                 if (!isTranslationAttemptCurrent(node, attempt)) {
                     discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                     return;
@@ -1096,134 +1098,110 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
         })
         .catch((error: Error) => {
             spinner.remove();
-            if (stopForInvalidatedExtensionContext(error, node)) return;
-            if (isTranslationCancelledError(error)) {
-                translationState.htmlSet.delete(nodeOuterHTML);
-                clearUnfinishedAutoTranslation(node);
-                return;
-            }
-            insertFailedTip(node, error.toString() || "翻译失败", spinner);
-        });
-}
-
-function safeTranslationOnlyTranslate(
-    node: HTMLElement,
-    nodeOuterHTML: string,
-    options: TranslationRequestOptions = {},
-): Promise<void> {
-    const plainOrigin = getTranslatableText(node);
-    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node);
-    const origin = protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
-    if (!shouldTranslateText(plainOrigin)) {
-        translationState.htmlSet.delete(nodeOuterHTML);
-        clearUnfinishedAutoTranslation(node);
-        return Promise.resolve();
-    }
-
-    if (!origin?.trim()) {
-        translationState.htmlSet.delete(nodeOuterHTML);
-        clearUnfinishedAutoTranslation(node);
-        return Promise.resolve();
-    }
-
-    const prepared = prepareTranslationOnly(node, getBilingualAppendTarget(node));
-    const spinner = insertLoadingSpinner(node);
-    const promptContext = getWebpagePromptContext(node);
-    return translateText(origin, promptContext, options)
-        .then(async (text: string) => {
-            spinner.remove();
-            translationState.htmlSet.delete(nodeOuterHTML);
-            if (!text || origin === text) {
-                clearUnfinishedAutoTranslation(node);
-                return;
-            }
-
-            const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
-            if (content) {
-                appendSafeTranslationOnly(node, content, prepared);
-                notifyDiagnosticVisible(options);
-                return;
-            }
-
-            if (protectedInlineOrigin.protectedInlines.length) {
-                text = await translateText(plainOrigin, promptContext, options);
-            }
-            appendSafeTranslationOnly(node, text, prepared);
-            notifyDiagnosticVisible(options);
-        })
-        .catch((error: Error) => {
-            spinner.remove();
-            if (stopForInvalidatedExtensionContext(error, node)) return;
-            if (isTranslationCancelledError(error)) {
-                translationState.htmlSet.delete(nodeOuterHTML);
-                clearUnfinishedAutoTranslation(node);
-                return;
-            }
-            insertFailedTip(node, error.toString() || "翻译失败", spinner);
-        });
-}
-
-
-export function singleTranslate(node: HTMLElement, options: TranslationRequestOptions = {}): Promise<void> {
-    const nodeOuterHTML = node.outerHTML;
-    const translatableText = getTranslatableText(node);
-    const attempt = captureTranslationAttempt(node, translatableText);
-    if (!shouldTranslateText(translatableText)) {
-        clearUnfinishedAutoTranslation(node);
-        return Promise.resolve();
-    }
-
-    let origin = servicesType.isMachine(config.service) ? getTranslatableHTML(node) : LLMStandardHTML(node);
-    if (!origin?.trim()) {
-        origin = translatableText.trim();
-    }
-    if (!origin) {
-        clearUnfinishedAutoTranslation(node);
-        return Promise.resolve();
-    }
-    let spinner = insertLoadingSpinner(node);
-    
-    // 使用队列管理的翻译API
-    const promptContext = getWebpagePromptContext(node);
-    return translateText(origin, promptContext, options)
-        .then((text: string) => {
-            spinner.remove();
             if (!isTranslationAttemptCurrent(node, attempt)) {
                 discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                 return;
             }
-            
-            if (shouldBeautifyTranslatedHTML(origin, text)) {
-                text = beautyHTML(text);
-            }
-            
-            if (!text || origin === text) {
-                clearUnfinishedAutoTranslation(node);
-                return;
-            }
-            
-            let oldOuterHtml = node.outerHTML;
-            node.innerHTML = text;
-            let newOuterHtml = node.outerHTML;
-            const nodeId = node.getAttribute(TRANSLATED_ID_ATTR);
-            if (nodeId) appliedSingleTranslationContents.set(nodeId, node.innerHTML);
-            
-            // 缓存翻译结果
-            cache.localSetDual(oldOuterHtml, newOuterHtml, config.to, promptContext);
-            cache.set(translationState.htmlSet, newOuterHtml, 250);
-            translationState.htmlSet.delete(oldOuterHtml);
-            notifyDiagnosticVisible(options);
-        })
-        .catch((error: Error) => {
-            spinner.remove();
             if (stopForInvalidatedExtensionContext(error, node)) return;
             if (isTranslationCancelledError(error)) {
+                translationState.htmlSet.delete(nodeOuterHTML);
                 clearUnfinishedAutoTranslation(node);
                 return;
             }
             insertFailedTip(node, error.toString() || "翻译失败", spinner);
         });
 }
+
+export function singleTranslate(node: HTMLElement, options: TranslationRequestOptions = {}): Promise<void> {
+    const nodeOuterHTML = node.outerHTML;
+    const plainOrigin = getTranslatableText(node);
+    const direction = getWebpageTranslationDirection(plainOrigin);
+    if (!direction.shouldTranslate) {
+        translationState.htmlSet.delete(nodeOuterHTML);
+        clearUnfinishedAutoTranslation(node);
+        return Promise.resolve();
+    }
+
+    const attempt = captureTranslationAttempt(node, plainOrigin);
+    const prepared = prepareTranslationOnly(node);
+    if (!prepared.text.trim()) {
+        translationState.htmlSet.delete(nodeOuterHTML);
+        clearUnfinishedAutoTranslation(node);
+        return Promise.resolve();
+    }
+
+    const spinner = insertLoadingSpinner(node);
+    const promptContext = getWebpagePromptContext(node);
+    const requestOptions = {
+        ...options,
+        sourceLangHint: direction.sourceLang,
+        targetLangHint: direction.targetLang,
+    };
+    return translateText(prepared.text, promptContext, requestOptions)
+        .then(async (text: string) => {
+            spinner.remove();
+            translationState.htmlSet.delete(nodeOuterHTML);
+            if (!isTranslationAttemptCurrent(node, attempt) || !isPreparedTranslationOnlyCurrent(prepared)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                return;
+            }
+            if (!text || text === prepared.text) return;
+            let applied = applyTranslationOnly(prepared, text);
+            if (!applied) {
+                cache.localRemove(prepared.text, direction.targetLang, promptContext);
+                // 只对有结构边界的异常响应重试一次；沿用原快照，不能重新接受网站的新 DOM。
+                if (prepared.separators.length) {
+                    const retryPrepared = withTranslationOnlyLineSeparators(prepared);
+                    const retrySpinner = insertLoadingSpinner(node);
+                    let retryText: string;
+                    try {
+                        retryText = await translateText(retryPrepared.text, promptContext, requestOptions);
+                    } finally {
+                        retrySpinner.remove();
+                    }
+                    if (!isTranslationAttemptCurrent(node, attempt) || !isPreparedTranslationOnlyCurrent(prepared)) {
+                        discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                        return;
+                    }
+                    applied = Boolean(retryText && retryText !== retryPrepared.text && applyTranslationOnly(retryPrepared, retryText));
+                    if (!applied) cache.localRemove(retryPrepared.text, direction.targetLang, promptContext);
+                }
+                if (!applied) throw new Error(t('runtime.translationOnlyApplyFailed'));
+            }
+            node.setAttribute(TRANSLATED_ATTR, 'true');
+            notifyDiagnosticVisible(options);
+        })
+        .catch((error: Error) => {
+            spinner.remove();
+            if (!isTranslationAttemptCurrent(node, attempt) || !isPreparedTranslationOnlyCurrent(prepared)) {
+                discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                return;
+            }
+            if (stopForInvalidatedExtensionContext(error, node)) return;
+            if (isTranslationCancelledError(error)) {
+                translationState.htmlSet.delete(nodeOuterHTML);
+                clearUnfinishedAutoTranslation(node);
+                return;
+            }
+            insertFailedTip(node, error.toString() || "翻译失败", spinner);
+        });
+}
+
+function isFullPageTranslation(): boolean {
+    return (translationState.isAutoTranslating ? translationState.activeScope : config.translationScope) === 'full';
+}
+
+function getWebpageTranslationDirection(text: string) {
+    const direction = resolveTranslationDirection(text);
+    // 紧凑拉丁字母标签缺少语言证据；自动源语言交给服务判断，不把短词误判当作跳过依据。
+    if (isFullPageTranslation() && !config.bidirectionalTranslation
+        && text.trim().length < 20 && /[A-Za-z]/.test(text)) {
+        const sourceLang = config.from && config.from !== 'auto' ? config.from : 'auto';
+        return { sourceLang, targetLang: config.to, shouldTranslate: sourceLang !== config.to };
+    }
+    return direction;
+}
+
 
 export const handleBtnTranslation = throttle((node: HTMLElement) => {
     let origin = node.innerText;
@@ -1259,31 +1237,19 @@ function bilingualAppendChild(node: HTMLElement, text: string | Node): boolean {
     const translation = (typeof text === 'string' ? text : getTranslatableText(text)).replace(/\s+/g, ' ').trim();
     // 自动目标保留本轮已处理标记，避免没有插入译文时被动态扫描反复请求。
     if (translation === source) return false;
-    return appendTranslationContent(node, text, false);
-}
-
-function appendSafeTranslationOnly(
-    node: HTMLElement,
-    text: string | Node,
-    prepared: PreparedTranslationOnly,
-): void {
-    if (!appendTranslationContent(node, text, prepared)) {
-        throw new Error(t('runtime.translationOnlyApplyFailed'));
-    }
+    return appendTranslationContent(node, text);
 }
 
 function appendTranslationContent(
     node: HTMLElement,
     text: string | Node,
-    translationOnly: PreparedTranslationOnly | false,
 ): boolean {
     if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return false;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);
-    smashTruncationStyle(node);
-    const appendTarget = translationOnly
-        ? translationOnly.appendTarget
-        : getBilingualAppendTarget(node);
+    const initialTarget = getBilingualAppendTarget(node);
+    const compact = isCompactTranslationTarget(initialTarget);
+    const appendTarget = compact ? prepareCompactBilingualTarget(node, initialTarget) : initialTarget;
     const insertionNode = document.createElement('span');
     insertionNode.classList.add(BILINGUAL_CONTENT_CLASS);
     const translationNode = document.createElement('span');
@@ -1294,22 +1260,19 @@ function appendTranslationContent(
         translationNode.classList.add(style.class);
     }
     translationNode.append(text);
+    const clipped = !compact && prepareBilingualClipping(appendTarget, insertionNode, translationNode);
     const layout = resolveBilingualInsertionLayout(appendTarget);
-    if (!translationOnly && (layout === 'normal-flow' || layout === 'float-aware-inline')) {
+    if (!compact && !clipped && (layout === 'normal-flow' || layout === 'float-aware-inline')) {
         insertionNode.appendChild(document.createElement('br'));
     }
     insertionNode.appendChild(translationNode);
     appendTarget.appendChild(insertionNode);
-    applyBilingualInsertionLayout(appendTarget, insertionNode, translationNode, layout);
+    if (compact) {
+        insertionNode.classList.add('only-translate-bilingual-content--inline');
+    } else if (!clipped) applyBilingualInsertionLayout(appendTarget, insertionNode, translationNode, layout);
 
     const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
     if (fn) fn(node, translationNode, appendTarget, insertionNode);
-
-    if (translationOnly && !hideOriginalForTranslationOnly(translationOnly, insertionNode)) {
-        insertionNode.remove();
-        node.classList.remove(BILINGUAL_WRAPPER_CLASS);
-        return false;
-    }
 
     cache.set(translationState.htmlSet, node.outerHTML, 250);
     return true;
@@ -1352,7 +1315,7 @@ function applyBilingualInsertionLayout(
 
     if (layout !== 'blockified-flex') return;
 
-    appendTarget.style.display = 'block';
+    setTranslationStyle(appendTarget, appendTarget, 'display', 'block');
     insertionNode.style.display = 'block';
     insertionNode.style.width = '100%';
     translationNode.style.display = 'block';
@@ -1397,8 +1360,8 @@ function isFlexOrGridDisplay(display: string): boolean {
 
 function getBilingualAppendTarget(node: HTMLElement): HTMLElement {
     return getTranslationTargetAppendTarget(node, {
-        mode: config.translationScope === 'full' ? 'full' : 'smart',
-        scope: config.translationScope,
+        mode: isFullPageTranslation() ? 'full' : 'smart',
+        scope: isFullPageTranslation() ? 'full' : 'smart',
         contentRoot: document.body
     });
 }

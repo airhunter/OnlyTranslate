@@ -45,7 +45,8 @@ vi.mock('@/entrypoints/utils/icon', () => ({
 }))
 
 vi.mock('@/entrypoints/utils/translationDirection', () => ({
-  shouldTranslateText: vi.fn(() => true)
+  shouldTranslateText: vi.fn(() => true),
+  resolveTranslationDirection: vi.fn(() => ({ sourceLang: 'en', targetLang: mockConfig.to, shouldTranslate: true }))
 }))
 
 vi.mock('element-plus', () => ({
@@ -57,7 +58,6 @@ vi.mock('element-plus', () => ({
 
 import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
 import { DIRECT_TEXT_TARGET_ATTR, getTranslatableText, getTranslatableTextWithProtectedInline, grabAllNode, grabNode } from '@/entrypoints/main/dom'
-import { TRANSLATION_ONLY_BACKUP_CLASS } from '@/entrypoints/main/translationOnly'
 import { collectTranslationTargets, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
@@ -71,7 +71,7 @@ import {
 } from '@/entrypoints/main/translationTarget/constants'
 import { siteProfiles } from '@/entrypoints/main/siteProfiles'
 import { translateText } from '@/entrypoints/utils/translateApi'
-import { shouldTranslateText } from '@/entrypoints/utils/translationDirection'
+import { resolveTranslationDirection, shouldTranslateText } from '@/entrypoints/utils/translationDirection'
 import { cache } from '@/entrypoints/utils/cache'
 import { invalidateContentFilterCache } from '@/entrypoints/utils/contentFilter'
 
@@ -1346,12 +1346,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}, .${BILINGUAL_TEXT_CLASS}`)).toBeNull()
   })
 
-  it.each(['google', 'microsoft'])(
-    'renders %s translation-only output separately and restores the original nodes',
+  it.each(['google', 'microsoft', 'deepseek', 'deepL', 'chromeTranslator', 'custom_test'])(
+    'keeps original links interactive during %s translation-only display and restore',
     async service => {
       mockConfig.service = service
       mockConfig.display = 0
-      vi.mocked(translateText).mockResolvedValue('阅读文档。')
+      vi.mocked(translateText).mockImplementation(async origin => origin.replace(/ (__ONLY_TRANSLATE_SLOT_\d+__) /g, '$1').replace('Read ', '阅读').replace('the docs', '文档').replace(/\.$/, '。'))
       document.body.innerHTML = '<p id="translation-only">Read <a href="/docs" title="Documentation">the docs</a>.</p>'
 
       const paragraph = document.querySelector('#translation-only') as HTMLElement
@@ -1362,14 +1362,18 @@ describe('resolveAutoTranslateTarget behavior', () => {
       await handleSingleTranslation(paragraph, false)
 
       const insertion = paragraph.querySelector<HTMLElement>(`.${BILINGUAL_CONTENT_CLASS}`)
-      const backup = insertion?.querySelector<HTMLTemplateElement>(`template.${TRANSLATION_ONLY_BACKUP_CLASS}`)
-      expect(translateText).toHaveBeenCalledWith('Read the docs.', {
+      expect(translateText).toHaveBeenCalledTimes(1)
+      expect(translateText).toHaveBeenCalledWith('Read  __ONLY_TRANSLATE_SLOT_0__ the docs __ONLY_TRANSLATE_SLOT_1__ .', {
         scene: 'webpage',
         title: document.title,
       }, expect.any(Object))
-      expect(insertion?.textContent).toContain('阅读文档。')
-      expect(paragraph.querySelector('a')).toBeNull()
-      expect(backup?.content.querySelector('a')).toBe(link)
+      expect(insertion).toBeNull()
+      expect(paragraph.textContent).toBe('阅读文档。')
+      expect(paragraph.querySelector('a')).toBe(link)
+      expect(link.textContent).toBe('文档')
+      expect(link.getAttribute('href')).toBe('/docs')
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      expect(listener).toHaveBeenCalledTimes(1)
 
       restoreOriginalContent()
 
@@ -1377,9 +1381,140 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(paragraph.querySelector('a')).toBe(link)
       expect(paragraph.classList.contains(BILINGUAL_WRAPPER_CLASS)).toBe(false)
       link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-      expect(listener).toHaveBeenCalledTimes(1)
+      expect(listener).toHaveBeenCalledTimes(2)
     }
   )
+
+  it('retains original links and offers retry when a provider loses structure markers', async () => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    const originalHTML = target.innerHTML
+    const link = target.querySelector('a')!
+    const removeCache = vi.spyOn(cache, 'localRemove')
+    vi.mocked(translateText).mockResolvedValueOnce('无法对应原结构的译文。').mockResolvedValueOnce('重试仍然缺少结构标记。')
+
+    try {
+      await handleSingleTranslation(target, false)
+      expect(target.innerHTML).toBe(originalHTML)
+      expect(target.querySelector('a')).toBe(link)
+      expect(mockInsertFailedTip).toHaveBeenCalledTimes(1)
+      expect(removeCache).toHaveBeenCalledWith(
+        expect.stringContaining('__ONLY_TRANSLATE_SLOT_0__'), 'zh-Hans', expect.objectContaining({ scene: 'webpage' }),
+      )
+
+      vi.mocked(translateText).mockImplementationOnce(async origin => origin.replace(/ (__ONLY_TRANSLATE_SLOT_\d+__) /g, '$1').replace('Read ', '阅读').replace('the docs', '文档').replace(/\.$/, '。'))
+      await handleSingleTranslation(target, false)
+      expect(target.textContent).toBe('阅读文档。')
+      expect(target.querySelector('a')).toBe(link)
+      restoreOriginalContent()
+      expect(target.innerHTML).toBe(originalHTML)
+    } finally {
+      removeCache.mockRestore()
+      restoreOriginalContent()
+    }
+  })
+
+  it('retries a malformed continuous sentence once with line boundaries while retaining the original link', async () => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    const link = target.querySelector('a')!
+    vi.mocked(translateText)
+      .mockResolvedValueOnce('第一次响应缺少结构标记。')
+      .mockImplementationOnce(async origin => origin.replace('Read ', '阅读').replace('the docs', '文档').replace(/\.$/, '。'))
+
+    await handleSingleTranslation(target, false)
+    expect(translateText).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(translateText).mock.calls[0]![0]).toContain(' __ONLY_TRANSLATE_SLOT_0__ ')
+    expect(vi.mocked(translateText).mock.calls[1]![0]).toContain('\n__ONLY_TRANSLATE_SLOT_0__\n')
+    expect(target.textContent).toBe('阅读文档。')
+    expect(target.querySelector('a')).toBe(link)
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+    restoreOriginalContent()
+    expect(target.innerHTML).toBe('Read <a href="/docs">the docs</a>.')
+  })
+
+  it.each(['restore', 'source-update'])('does not apply line retry output after %s', async change => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    const link = target.querySelector('a')!
+    let resolveRetry!: (value: string) => void
+    vi.mocked(translateText)
+      .mockResolvedValueOnce('第一次响应缺少结构标记。')
+      .mockReturnValueOnce(new Promise(resolve => { resolveRetry = resolve }))
+
+    const translation = handleSingleTranslation(target, false)
+    await Promise.resolve()
+    expect(translateText).toHaveBeenCalledTimes(2)
+    if (change === 'restore') restoreOriginalContent()
+    else target.firstChild!.textContent = 'Updated by website '
+    const currentHTML = target.innerHTML
+    resolveRetry('阅读\n__ONLY_TRANSLATE_SLOT_0__\n文档\n__ONLY_TRANSLATE_SLOT_1__\n。')
+    await translation
+    expect(target.innerHTML).toBe(currentHTML)
+    expect(target.querySelector('a')).toBe(link)
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+  })
+
+  it('does not add a formatting retry for an upstream rate-limit failure', async () => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    const originalHTML = target.innerHTML
+    vi.mocked(translateText).mockRejectedValueOnce(new Error('HTTP 429'))
+    await handleSingleTranslation(target, false)
+    expect(translateText).toHaveBeenCalledTimes(1)
+    expect(target.innerHTML).toBe(originalHTML)
+    expect(mockInsertFailedTip).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears failed host markers and retry UI when restoring so a failed target can be selected again', () => {
+    document.body.innerHTML = '<p class="only-translate-failure" id="target">Read the documentation.<span class="only-translate-retry-wrapper">Retry</span></p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    restoreOriginalContent()
+    expect(target.classList.contains('only-translate-failure')).toBe(false)
+    expect(target.querySelector('.only-translate-retry-wrapper')).toBeNull()
+    expect(target.textContent).toBe('Read the documentation.')
+    expect(resolveAutoTranslateTarget('full').nodes).toContain(target)
+  })
+
+  it.each(['result', 'error'])('does not apply a pending translation-only %s after restore', async outcome => {
+    let resolveTranslation!: (value: string) => void
+    let rejectTranslation!: (error: Error) => void
+    vi.mocked(translateText).mockReturnValueOnce(new Promise((resolve, reject) => {
+      resolveTranslation = resolve
+      rejectTranslation = reject
+    }))
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    const originalHTML = target.innerHTML
+    const link = target.querySelector('a')!
+    const pending = handleSingleTranslation(target, false)
+    restoreOriginalContent()
+    if (outcome === 'result') resolveTranslation('已经取消的旧译文')
+    else rejectTranslation(new Error('Late provider failure'))
+    await pending
+
+    expect(target.innerHTML).toBe(originalHTML)
+    expect(target.querySelector('a')).toBe(link)
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+    expect(target.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+  })
+
+  it('uses the direction of original text rather than DOM markers for bidirectional translation', async () => {
+    document.body.innerHTML = '<p id="target">阅读<a href="/docs">文档</a>。</p>'
+    vi.mocked(resolveTranslationDirection).mockReturnValueOnce({ sourceLang: 'zh-Hans', targetLang: 'en', shouldTranslate: true })
+    vi.mocked(translateText).mockImplementationOnce(async origin => origin.replace(/ (__ONLY_TRANSLATE_SLOT_\d+__) /g, '$1').replace('阅读', 'Read ').replace('文档', 'the docs').replace('。', '.'))
+    const target = document.querySelector<HTMLElement>('#target')!
+
+    await handleSingleTranslation(target, false)
+    expect(resolveTranslationDirection).toHaveBeenCalledWith('阅读文档。')
+    expect(translateText).toHaveBeenCalledWith(
+      expect.stringContaining('__ONLY_TRANSLATE_SLOT_0__'), expect.any(Object),
+      expect.objectContaining({ sourceLangHint: 'zh-Hans', targetLangHint: 'en' }),
+    )
+    expect(target.textContent).toBe('Read the docs.')
+    restoreOriginalContent()
+    expect(target.textContent).toBe('阅读文档。')
+  })
 
   it('sends only the page title when translating a heading', async () => {
     vi.mocked(translateText).mockResolvedValue('如何部署')
@@ -1398,7 +1533,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }, expect.any(Object))
   })
 
-  it('toggles a Google translation-only wrapper off without retranslating', async () => {
+  it('toggles Google translation-only off without retranslating', async () => {
     mockConfig.service = 'google'
     mockConfig.display = 0
     vi.mocked(translateText).mockResolvedValue('安全恢复原文。')
@@ -1444,7 +1579,11 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.display = 0
     vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
     vi.stubGlobal('MutationObserver', NoopMutationObserver)
-    vi.mocked(translateText).mockResolvedValue('自动翻译后的正文。')
+    vi.mocked(translateText).mockImplementation(async origin => origin
+      .replace(/ (__ONLY_TRANSLATE_SLOT_\d+__) /g, '$1')
+      .replace('Automatic translation keeps ', '自动翻译保留')
+      .replace('the original link', '原始链接')
+      .replace(' available for restoration.', '供点击和恢复。'))
     document.body.innerHTML = `
       <main>
         <article>
@@ -1459,8 +1598,9 @@ describe('resolveAutoTranslateTarget behavior', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(paragraph.getAttribute(TRANSLATED_ATTR)).toBe('true')
-    expect(paragraph.textContent).toContain('自动翻译后的正文。')
-    expect(paragraph.querySelector('a')).toBeNull()
+    expect(paragraph.textContent).toContain('自动翻译保留原始链接供点击和恢复。')
+    expect(paragraph.querySelector('a')).toBe(link)
+    expect(link.getAttribute('href')).toBe('/original')
 
     restoreOriginalContent()
 
@@ -1488,11 +1628,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(paragraph.textContent).toContain('Updated by the host while translation was pending.')
     expect(paragraph.textContent).not.toContain('请求开始时对应的旧译文。')
     expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
-    expect(mockInsertFailedTip).toHaveBeenCalledWith(
-      paragraph,
-      expect.stringContaining('translation-only'),
-      expect.anything(),
-    )
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
   })
 
   it('restores bilingual direct text wrappers without disturbing nested child blocks', async () => {
@@ -3240,7 +3376,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
   })
 
-  it('does not overwrite updated host content with an outdated legacy translation-only result', async () => {
+  it('does not overwrite updated host content with an outdated LLM translation-only result', async () => {
     let resolveTranslation!: (value: string) => void
     mockConfig.service = 'deepseek'
     mockConfig.display = 0
@@ -3259,25 +3395,28 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(target.textContent).not.toContain('第一版对应的旧译文')
   })
 
-  it('does not apply a cached legacy translation-only result after the source structure changes', async () => {
-    vi.useFakeTimers()
+  it('ignores legacy HTML cache entries and preserves the original link during LLM translation', async () => {
     mockConfig.service = 'deepseek'
     mockConfig.display = 0
     const cached = vi.spyOn(cache, 'localGet').mockReturnValue('<p id="target"><a href="/old">缓存中的旧译文</a></p>')
-    document.body.innerHTML = '<p id="target"><a href="/first">CASE-CACHE-V1: The original linked source is ready for translation.</a></p>'
+    vi.mocked(translateText).mockResolvedValue('当前译文')
+    document.body.innerHTML = '<p id="target"><a href="/first">The original linked source is ready for translation.</a></p>'
 
     try {
       const target = document.querySelector('#target') as HTMLElement
-      const translation = handleSingleTranslation(target, false)
-      target.innerHTML = '<a href="/second">CASE-CACHE-V1: The original linked source is ready for translation.</a>'
-      await vi.runAllTimersAsync()
-      await translation
+      const link = target.querySelector('a')!
+      await handleSingleTranslation(target, false)
 
-      expect(target.querySelector('a')?.getAttribute('href')).toBe('/second')
-      expect(target.textContent).not.toContain('缓存中的旧译文')
+      expect(cached).not.toHaveBeenCalled()
+      expect(translateText).toHaveBeenCalledTimes(1)
+      expect(target.querySelector('a')).toBe(link)
+      expect(link.getAttribute('href')).toBe('/first')
+      expect(link.textContent).toBe('当前译文')
+      restoreOriginalContent()
+      expect(target.querySelector('a')).toBe(link)
+      expect(link.textContent).toBe('The original linked source is ready for translation.')
     } finally {
       cached.mockRestore()
-      vi.useRealTimers()
     }
   })
 
@@ -3303,7 +3442,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
   })
 
-  it('does not restore a legacy translation-only snapshot over newer host content', async () => {
+  it('does not restore an LLM translation-only snapshot over newer host content', async () => {
     class ImmediateIntersectionObserver {
       constructor(private readonly callback: IntersectionObserverCallback) {}
       observe(target: Element) {
@@ -3713,4 +3852,323 @@ describe('resolveAutoTranslateTarget behavior', () => {
       vi.useRealTimers()
     }
   })
+  it('translates full-page controls without exposing input text or replacing original controls', async () => {
+    mockConfig.translationScope = 'full'
+    mockConfig.display = 0
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/full-page-interface.html', 'utf8')
+    const button = document.querySelector<HTMLButtonElement>('#full-save')!
+    const link = document.querySelector<HTMLAnchorElement>('#full-home')!
+    const input = document.querySelector<HTMLInputElement>('input')!
+    input.value = 'new user input'
+    const onClick = vi.fn((event: Event) => event.preventDefault())
+    button.addEventListener('click', onClick)
+    const originalMain = document.querySelector('main')!.innerHTML
+    vi.mocked(translateText).mockImplementation(async origin => origin.split(/(__ONLY_TRANSLATE_(?:SLOT_\d+|INLINE_\d+_[a-z0-9]+)__)/g)
+      .map(part => part.startsWith('__ONLY_TRANSLATE_') ? part : part.replace(/[A-Za-z]+/g, '译')).join(''))
+    try {
+      const targets = resolveAutoTranslateTarget('full').nodes
+      await Promise.all(targets.map(node => handleSingleTranslation(node as HTMLElement, false)))
+      expect(button.textContent).toContain('译')
+      expect(link.textContent).toContain('译')
+      expect(document.querySelector('#full-save')).toBe(button)
+      expect(link.getAttribute('href')).toBe('/')
+      button.click()
+      expect(onClick).toHaveBeenCalledTimes(1)
+      expect(input.value).toBe('new user input')
+      expect(vi.mocked(translateText).mock.calls.map(call => call[0]).join(' ')).not.toMatch(/private draft|Private editable|Private selection|Private message/)
+      restoreOriginalContent()
+      expect(button.textContent).toBe('Save changes')
+      expect(document.querySelector('main')!.innerHTML).toBe(originalMain)
+      expect(input.value).toBe('new user input')
+    } finally { restoreOriginalContent() }
+  })
+
+  it('keeps full-page bilingual button labels inline and preserves focus and native click events', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = '<button id="compact" style="display: inline-flex"><span>Save changes</span></button>'
+    const button = document.querySelector<HTMLButtonElement>('#compact')!
+    const label = button.firstChild
+    const listener = vi.fn()
+    button.addEventListener('click', listener)
+    button.focus()
+    vi.mocked(translateText).mockResolvedValue('保存更改')
+    try {
+      await handleBilingualTranslation(button, false)
+      expect(button.querySelector('br')).toBeNull()
+      expect(button.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.classList.contains('only-translate-bilingual-content--inline')).toBe(true)
+      expect(button.firstElementChild?.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).not.toBeNull()
+      expect(button.style.display).toBe('inline-flex')
+      expect(document.activeElement).toBe(button)
+      button.click()
+      expect(listener).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(button.firstChild).toBe(label)
+      expect(button.textContent).toBe('Save changes')
+    } finally { restoreOriginalContent() }
+  })
+
+  it('keeps a real sidebar label translation inside the original link and restores its exact child structure', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = '<nav><li id="row" style="display:flex"><a href="/latest" style="display:flex"><span class="icon"><svg></svg></span><span id="label">Topics</span></a></li></nav>'
+    const host = document.querySelector<HTMLElement>('#row')!
+    const link = host.querySelector('a')!
+    const text = document.querySelector('#label')!.firstChild
+    const original = host.innerHTML
+    const onClick = vi.fn((event: Event) => event.preventDefault())
+    link.addEventListener('click', onClick)
+    vi.mocked(translateText).mockResolvedValueOnce('主题')
+    try {
+      await handleBilingualTranslation(host, false)
+      const translation = host.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+      expect(translation.closest('a')).toBe(link)
+      expect(translation.parentElement?.parentElement?.id).toBe('label')
+      expect(host.children.length).toBe(1)
+      translation.click()
+      expect(onClick).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(host.innerHTML).toBe(original)
+      expect(host.querySelector('a')).toBe(link)
+      expect(document.querySelector('#label')!.firstChild).toBe(text)
+    } finally { restoreOriginalContent() }
+  })
+
+  it('collects newly revealed menu and details text in full mode using the initial scope rules', () => {
+    document.body.innerHTML = '<nav id="menu" hidden><button id="menu-action">Open settings</button><a id="menu-go" href="/go">Go</a></nav><details id="details"><summary id="summary">More information</summary><p id="details-copy">Expanded content should be translated in the same scope.</p></details>'
+    const menu = document.querySelector<HTMLElement>('#menu')!
+    const details = document.querySelector<HTMLDetailsElement>('#details')!
+    expect(resolveAutoTranslateTarget('full').nodes).not.toContain(document.querySelector('#menu-action'))
+    expect(resolveAutoTranslateTarget('full').nodes).not.toContain(document.querySelector('#details-copy'))
+    menu.hidden = false
+    details.open = true
+    const menuTargets = collectDynamicTranslationNodes(menu, document.body, 'full', { siteCompatMode: 'full', scanContext: createScanContext() })
+    const detailsTargets = collectDynamicTranslationNodes(details, document.body, 'full', { siteCompatMode: 'full', scanContext: createScanContext() })
+    expect(menuTargets).toEqual(expect.arrayContaining([document.querySelector('#menu-action'), document.querySelector('#menu-go')]))
+    expect(menuTargets).not.toContain(menu)
+    expect(detailsTargets).toContain(document.querySelector('#details-copy'))
+    expect(collectDynamicTranslationNodes(menu, document.body, 'smart', { siteCompatMode: 'smart' })).toEqual([])
+  })
+
+  it('does not send separate toolbar controls as one paragraph', () => {
+    document.body.innerHTML = '<ul><li id="actions"><a id="edit" href="/edit">Edit</a> <button id="save">Save</button> <button id="close">Close</button></li></ul>'
+    const targets = resolveAutoTranslateTarget('full').nodes
+    expect(targets).not.toContain(document.querySelector('#actions'))
+    for (const id of ['edit', 'save', 'close']) expect(targets.some(target => target === document.getElementById(id) || target.contains(document.getElementById(id)))).toBe(true)
+    expect(targets.every(target => target.querySelectorAll('a, button').length <= 1)).toBe(true)
+  })
+
+  it('discards a pending result after host attributes change without adding a misleading formatting retry', async () => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    let finish!: (text: string) => void
+    vi.mocked(translateText).mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    const pending = handleSingleTranslation(target, false)
+    target.className = 'new-render-state'
+    finish('阅读 __ONLY_TRANSLATE_SLOT_0__ 文档 __ONLY_TRANSLATE_SLOT_1__ 。')
+    await pending
+    expect(target.textContent).toBe('Read the docs.')
+    expect(translateText).toHaveBeenCalledTimes(1)
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+  })
+
+  it('shows failure when the formatting retry only echoes the original protocol text', async () => {
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    vi.mocked(translateText).mockResolvedValueOnce('Invalid response').mockImplementationOnce(async origin => origin)
+    await handleSingleTranslation(target, false)
+    expect(target.textContent).toBe('Read the docs.')
+    expect(mockInsertFailedTip).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the service detect short full-page labels instead of trusting a same-language false positive', async () => {
+    mockConfig.translationScope = 'full'
+    mockConfig.to = 'en'
+    document.body.innerHTML = '<button id="target">Go</button>'
+    vi.mocked(resolveTranslationDirection).mockReturnValueOnce({ sourceLang: 'en', targetLang: 'en', shouldTranslate: false })
+    vi.mocked(translateText).mockResolvedValueOnce('Go')
+    await handleSingleTranslation(document.querySelector<HTMLElement>('#target')!, false)
+    expect(translateText).toHaveBeenCalledWith('Go', expect.anything(), expect.objectContaining({ sourceLangHint: 'auto', targetLangHint: 'en' }))
+  })
+
+  it('excludes protected nested text from full-page bilingual requests', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = '<p id="target">Read the guide.<span translate="no">Private unchanged content</span><span hidden>Private hidden content</span><span contenteditable="true">Private editable content</span></p>'
+    vi.mocked(translateText).mockResolvedValueOnce('阅读指南。')
+    try {
+      await handleBilingualTranslation(document.querySelector<HTMLElement>('#target')!, false)
+      expect(vi.mocked(translateText).mock.calls[0]![0]).toBe('Read the guide.')
+      expect(document.querySelector('[contenteditable]')?.textContent).toBe('Private editable content')
+    } finally { restoreOriginalContent() }
+  })
+
+  it.each(['text', 'replacement'])('refreshes translation-only hosts after website %s updates and ignores its own text writes', async change => {
+    class ImmediateObserver {
+      constructor(readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+    }
+    class CapturingObserver {
+      static instances: CapturingObserver[] = []
+      readonly roots: Node[] = []
+      constructor(readonly callback: MutationCallback) { CapturingObserver.instances.push(this) }
+      observe(root: Node) { this.roots.push(root) }
+      disconnect() {}
+    }
+    mockConfig.translationScope = 'full'
+    mockConfig.display = 0
+    vi.stubGlobal('IntersectionObserver', ImmediateObserver)
+    vi.stubGlobal('MutationObserver', CapturingObserver)
+    document.body.innerHTML = '<p id="target">Read <a href="/docs">the docs</a>.</p>'
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Read ', '阅读 ').replace('Updated ', '更新 ').replace('the docs', '文档'))
+    try {
+      autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const target = document.querySelector<HTMLElement>('#target')!
+      const observer = CapturingObserver.instances.find(item => item.roots.includes(document.body))!
+      observer.callback([{ type: 'characterData', target: target.firstChild! } as unknown as MutationRecord], observer as unknown as MutationObserver)
+      expect(translateText).toHaveBeenCalledTimes(1)
+      let mutation: MutationRecord
+      if (change === 'text') {
+        target.firstChild!.textContent = 'Updated '
+        mutation = { type: 'characterData', target: target.firstChild! } as unknown as MutationRecord
+      } else {
+        target.innerHTML = 'Updated <a href="/new">the docs</a>.'
+        mutation = { type: 'childList', target, addedNodes: Array.from(target.childNodes), removedNodes: [] } as unknown as MutationRecord
+      }
+      const currentLink = target.querySelector('a')
+      observer.callback([mutation], observer as unknown as MutationObserver)
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(translateText).toHaveBeenCalledTimes(2)
+      expect(target.textContent).toContain('更新')
+      expect(target.querySelector('a')).toBe(currentLink)
+      restoreOriginalContent()
+      expect(target.textContent).toBe('Updated the docs.')
+    } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+  })
+
+  it.each(['restore', 'source-update'])('ignores a late bilingual error after %s', async change => {
+    document.body.innerHTML = '<p id="target">This original paragraph is waiting for its translation.</p>'
+    const target = document.querySelector<HTMLElement>('#target')!
+    let reject!: (error: Error) => void
+    vi.mocked(translateText).mockReturnValueOnce(new Promise((_resolve, fail) => { reject = fail }))
+    const pending = handleBilingualTranslation(target, false)
+    if (change === 'restore') restoreOriginalContent()
+    else target.textContent = 'New content supplied by the website.'
+    const current = target.innerHTML
+    reject(new Error('Late upstream failure'))
+    await pending
+    expect(target.innerHTML).toBe(current)
+    expect(mockInsertFailedTip).not.toHaveBeenCalled()
+  })
+
+  it.each([[0, 'separate'], [0, 'same-batch'], [1, 'separate'], [1, 'same-batch']] as const)('translates reused nodes after removal with display %s and %s mutations', async (display, timing) => {
+    class ImmediateObserver {
+      constructor(readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+    }
+    class CapturingObserver {
+      static instances: CapturingObserver[] = []
+      readonly roots: Node[] = []
+      constructor(readonly callback: MutationCallback) { CapturingObserver.instances.push(this) }
+      observe(root: Node) { this.roots.push(root) }
+      disconnect() {}
+    }
+    mockConfig.translationScope = 'full'
+    mockConfig.display = display
+    vi.stubGlobal('IntersectionObserver', ImmediateObserver)
+    vi.stubGlobal('MutationObserver', CapturingObserver)
+    document.body.innerHTML = '<section id="pool"><p id="target">Original source content in this reusable post.</p></section>'
+    vi.mocked(translateText).mockImplementation(async origin => origin.includes('Updated') ? '新版帖子的译文。' : '最初帖子的译文。')
+    try {
+      autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const target = document.querySelector<HTMLElement>('#target')!
+      const pool = document.querySelector('#pool')!
+      const firstId = target.getAttribute(TRANSLATED_ID_ATTR)
+      const observer = CapturingObserver.instances.find(item => item.roots.includes(document.body))!
+      target.remove()
+      if (timing === 'separate') {
+        observer.callback([{ type: 'childList', target: pool, removedNodes: [target], addedNodes: [] } as unknown as MutationRecord], observer as unknown as MutationObserver)
+        expect(target.textContent).toBe('Original source content in this reusable post.')
+        expect(target.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+      }
+      target.textContent = 'Updated source content in the reused post.'
+      pool.appendChild(target)
+      observer.callback([{ type: 'childList', target: pool, removedNodes: timing === 'same-batch' ? [target] : [], addedNodes: [target] } as unknown as MutationRecord], observer as unknown as MutationObserver)
+      await new Promise(resolve => setTimeout(resolve, 220))
+      expect(target.textContent).toContain('新版帖子的译文。')
+      expect(target.textContent).not.toContain('最初帖子的译文。')
+      expect(target.getAttribute(TRANSLATED_ID_ATTR)).not.toBe(firstId)
+      expect(translateText).toHaveBeenCalledTimes(2)
+      restoreOriginalContent()
+      expect(target.textContent).toBe('Updated source content in the reused post.')
+    } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+  })
+
+  it('does not mistake its nested label marker for a source change when a sidebar row is reinserted', async () => {
+    class ImmediateObserver {
+      constructor(readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+    }
+    class CapturingObserver {
+      static instances: CapturingObserver[] = []
+      readonly roots: Node[] = []
+      constructor(readonly callback: MutationCallback) { CapturingObserver.instances.push(this) }
+      observe(root: Node) { this.roots.push(root) }
+      disconnect() {}
+    }
+    mockConfig.translationScope = 'full'
+    vi.stubGlobal('IntersectionObserver', ImmediateObserver)
+    vi.stubGlobal('MutationObserver', CapturingObserver)
+    document.body.innerHTML = '<nav><ul id="pool"><li id="row"><a href="/docs"><span>Documentation</span></a></li></ul></nav>'
+    vi.mocked(translateText).mockResolvedValue('文档')
+    try {
+      autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const host = document.querySelector<HTMLElement>('#row')!
+      const pool = document.querySelector('#pool')!
+      const observer = CapturingObserver.instances.find(item => item.roots.includes(document.body))!
+      const translation = host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)
+      expect(translation?.closest('a')).not.toBeNull()
+      host.remove()
+      pool.appendChild(host)
+      observer.callback([{ type: 'childList', target: pool, removedNodes: [host], addedNodes: [host] } as unknown as MutationRecord], observer as unknown as MutationObserver)
+      await new Promise(resolve => setTimeout(resolve, 220))
+      expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBe(translation)
+      expect(translateText).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(host.innerHTML).toBe('<a href="/docs"><span>Documentation</span></a>')
+    } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+  })
+
+  it('ignores direct flex-label wrapping with the real MutationObserver and restores the original text node', async () => {
+    class ImmediateObserver {
+      constructor(readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+    }
+    mockConfig.translationScope = 'full'
+    vi.stubGlobal('IntersectionObserver', ImmediateObserver)
+    document.body.innerHTML = '<button id="target" style="display:flex"><svg aria-hidden="true"></svg>Save changes</button>'
+    const button = document.querySelector<HTMLElement>('#target')!
+    const text = button.lastChild
+    const original = button.innerHTML
+    vi.mocked(translateText).mockResolvedValue('保存更改')
+    try {
+      autoTranslateEnglishPage('full')
+      await new Promise(resolve => setTimeout(resolve, 220))
+      expect(translateText).toHaveBeenCalledTimes(1)
+      expect(button.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(button.textContent).toBe('Save changes保存更改')
+      restoreOriginalContent()
+      expect(button.innerHTML).toBe(original)
+      expect(button.lastChild).toBe(text)
+    } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+  })
+
 })

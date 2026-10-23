@@ -1,0 +1,18 @@
+{
+  "service": "Google Translate",
+  "display": "Translation only",
+  "originalCount": 58,
+  "displayedCount": 58,
+  "hrefsEqual": true,
+  "retainedNodesEqual": true,
+  "translatedLinkCount": 15,
+  "sample": {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "text": "罗森菲尔德等人。 (2020)",
+    "target": null
+  },
+  "destinationUrl": "https://arxiv.org/abs/1909.12673",
+  "destinationTitle": "[1909.12673] A Constructive Prediction of the Generalization Error Across Scales",
+  "loading": 4,
+  "failures": 7
+}

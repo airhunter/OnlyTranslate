@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-23T06:43:08.435Z",
+  "branch": "codex/page-translation-redesign",
+  "devCommand": "corepack pnpm dev",
+  "cdpPort": 9223,
+  "config": {
+    "extensionId": "lbcchhmdaojgfbdbfbefjljcijoodimf",
+    "service": "microsoft",
+    "display": 1,
+    "scope": "full"
+  },
+  "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+  "sourceHashes": {
+    "entrypoints/main/trans.ts": "6bd8d106042812502bd1a55575063d01634e71b271213dc0332a774741e5f686",
+    "entrypoints/main/translationLayout.ts": "e10350b3cf94bf773b7b6003ed72e0563bbbb6eec86a8a70bbb581ba288f0723",
+    "entrypoints/style.css": "0e715b426d18a0d7aec7be1d1c7d751b40703495d104af2504e81a3fb111a3a6"
+  },
+  "checks": {
+    "contentTests": 389,
+    "allTests": 1309,
+    "typecheck": "passed",
+    "build": "passed",
+    "realPages": 4,
+    "forumWidths": [
+      1440,
+      1100
+    ],
+    "blogWidths": [
+      1440,
+      900
+    ],
+    "forumLabelGeometryAndClicks": "passed",
+    "allCasesRestoredBeforeReview": "passed",
+    "screenshotsVisuallyReviewed": true
+  },
+  "reviewState": "Forum topic translated for user review; other pages restored",
+  "devOptionsScripts": [
+    "http://localhost:3000/@vite/client",
+    "http://localhost:3000/@id/virtual:wxt-html-plugins",
+    "http://localhost:3000/entrypoints/options/main.ts"
+  ]
+}

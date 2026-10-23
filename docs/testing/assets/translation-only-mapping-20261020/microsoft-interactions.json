@@ -1,0 +1,22 @@
+{
+  "labels": {
+    "button": "节目详情",
+    "link": "文献资料",
+    "body": "阅读文献资料 在做出改变之前。本段包含一个原始链接，点击处理器必须在翻译文本显示时继续工作。"
+  },
+  "network": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "failures": 0,
+  "buttonClicks": "按钮点击：2",
+  "linkClicks": "正文链接点击：1",
+  "identity": "原节点保留：true",
+  "input": "typed before mapping fix",
+  "checked": true,
+  "selection": "second"
+}

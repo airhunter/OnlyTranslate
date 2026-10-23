@@ -1,0 +1,18 @@
+{
+  "posts": [
+    {
+      "chinese": true
+    },
+    {
+      "chinese": true
+    },
+    {
+      "chinese": true
+    },
+    {
+      "chinese": true
+    }
+  ],
+  "codeCount": 1,
+  "codeMatchesPriorSample": true
+}

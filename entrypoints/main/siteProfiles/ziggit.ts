@@ -53,8 +53,9 @@ export const ziggitProfile: SiteProfile = {
             reason: 'ziggit-cooked-text'
         };
     },
-    skipTarget: (node) => {
-        if (node.matches(UI_SELECTOR) || node.closest(UI_SELECTOR)) {
+    skipTarget: (node, context) => {
+        const excluded = context.scope === 'full' ? '.sr-only, .cooked-selection-barrier' : UI_SELECTOR;
+        if (node.matches(excluded) || node.closest(excluded)) {
             return { policy: 'hard-skip', role: 'ui', reason: 'ziggit-ui' };
         }
         if (node.matches(LAYOUT_SELECTOR)) {

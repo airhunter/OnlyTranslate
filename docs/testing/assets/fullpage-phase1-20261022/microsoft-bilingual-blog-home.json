@@ -1,0 +1,60 @@
+{
+  "url": "https://lilianweng.github.io/",
+  "service": "microsoft",
+  "mode": "bilingual",
+  "scope": "full",
+  "counts": {
+    "targets": 42,
+    "translations": 42,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 11202,
+  "stableMs": 8104,
+  "originalLinks": 16,
+  "displayedLinks": 16,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 0,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 0,
+  "connectedOriginalCodeBlocks": 0,
+  "visibleCodeBlocks": 0,
+  "connectedOriginalLinks": 16,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": {
+    "source": {
+      "x": 255.5,
+      "y": 507.3671875,
+      "width": 670,
+      "height": 44.796875,
+      "top": 507.3671875,
+      "right": 925.5,
+      "bottom": 552.1640625,
+      "left": 255.5
+    },
+    "translation": {
+      "x": 255.5,
+      "y": 552.1640625,
+      "width": 670,
+      "height": 44.796875,
+      "top": 552.1640625,
+      "right": 925.5,
+      "bottom": 596.9609375,
+      "left": 255.5
+    },
+    "container": {
+      "x": 255.5,
+      "y": 507.3671875,
+      "width": 670,
+      "height": 89.59375,
+      "top": 507.3671875,
+      "right": 925.5,
+      "bottom": 596.9609375,
+      "left": 255.5
+    },
+    "text": "\n    The concept of recursive self-improvement (RSI) dates back to I. J. Good (1965), where he defined an “ultraintelligent machine” as a system that can surpass humans in all intellectual activities and design better ma"
+  },
+  "rejected": []
+}

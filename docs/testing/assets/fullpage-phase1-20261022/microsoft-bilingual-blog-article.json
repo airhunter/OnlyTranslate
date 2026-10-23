@@ -1,0 +1,28 @@
+{
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "service": "microsoft",
+  "mode": "bilingual",
+  "scope": "full",
+  "counts": {
+    "targets": 205,
+    "translations": 199,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 31223,
+  "stableMs": 8146,
+  "originalLinks": 58,
+  "displayedLinks": 58,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 0,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 1,
+  "connectedOriginalCodeBlocks": 1,
+  "visibleCodeBlocks": 1,
+  "connectedOriginalLinks": 58,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": null,
+  "rejected": []
+}

@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Full page translation acceptance</title>
+<style>
+body{font:18px/1.5 system-ui;max-width:850px;margin:30px auto;padding:0 20px}nav,footer,aside,form,details{margin:20px 0;padding:12px;border:1px solid #aaa}nav{display:flex;gap:18px}button,input{font:inherit}button{padding:5px 10px}#card{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:27px}#summary{margin:0}#evidence{background:#f3f7ff;padding:16px}output{display:block}
+</style>
+<header><nav><a id="home" href="#destination">Home</a><a id="guide" href="#destination">Go</a><button id="toggle-menu" type="button">Open menu</button></nav></header>
+<main><h1>Full page translation with original interactions</h1><section id="card"><p id="summary">This article summary is intentionally longer than two lines. It explains how a translated card must show both languages without hiding its translation below the clipping boundary. Original and translated summaries should keep the same line limit, so a long paragraph cannot push every other card away.</p></section><p id="body-copy">Read <a id="body-link" href="#destination">the documentation</a> before making changes. Keep the original link and its click handler working while reading this translated article.</p></main>
+<aside><h2>Related articles</h2><a href="#destination">Next article</a></aside>
+<div id="menu" role="menu" hidden><button id="menu-action" type="button" role="menuitem">Show details</button></div>
+<form id="form"><label>Email address <input id="email" value="original name" type="text"></label><p>We only use this address to send your receipt.</p><button id="save" type="submit"><span>Save changes</span></button></form>
+<details id="details"><summary id="more">More information</summary><p id="details-copy">This content only appears after you expand the original disclosure control.</p></details>
+<button id="replace" type="button">Update article text</button><p id="live-copy">This original live paragraph will be updated by the website after translation.</p>
+<p>Run <code id="code">npm install</code> to install the dependencies.</p>
+<section id="destination" translate="no">链接默认跳转目标</section>
+<footer><a href="#destination">Terms of service</a></footer>
+<section id="evidence" translate="no"><output id="clicks">按钮事件：0</output><output id="submits">表单事件：0</output><output id="links">链接事件：0</output><output id="identity">原节点保留：尚未检查</output><output id="state">输入状态：尚未检查</output></section>
+<script>
+const controls=['home','body-link','menu-action','save','email','more'].map(id=>document.getElementById(id));let clicks=0,submits=0,links=0;
+function report(){document.getElementById('identity').textContent='原节点保留：'+controls.every(el=>document.getElementById(el.id)===el);document.getElementById('state').textContent='输入状态：'+document.getElementById('email').value;}
+document.getElementById('toggle-menu').addEventListener('click',()=>{document.getElementById('menu').hidden=!document.getElementById('menu').hidden;report()});
+document.getElementById('menu-action').addEventListener('click',()=>{document.getElementById('clicks').textContent='按钮事件：'+ ++clicks;report()});
+document.getElementById('form').addEventListener('submit',event=>{event.preventDefault();document.getElementById('submits').textContent='表单事件：'+ ++submits;report()});
+for(const id of ['home','body-link'])document.getElementById(id).addEventListener('click',()=>{document.getElementById('links').textContent='链接事件：'+ ++links;report()});
+document.getElementById('email').addEventListener('input',report);
+document.getElementById('replace').addEventListener('click',()=>{document.getElementById('live-copy').textContent='The website now supplies a new paragraph. Its new content must be translated without restoring the older text.';report()});
+</script></html>

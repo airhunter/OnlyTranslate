@@ -25,6 +25,7 @@ import {
     isInactiveSlotFallback
 } from './composedTree';
 import { TRANSLATED_ATTR } from './constants';
+import { collectFullPageTargets } from './fullPage';
 
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
@@ -286,7 +287,10 @@ function collectTranslationCandidates(
         ? []
         : collectSiteProfileSelectedTargets(root, context);
 
-    for (const node of grabAllNode(root, context.grabOptions)) {
+    const ordinaryTargets = context.scope === 'full'
+        ? collectFullPageTargets(root, context.grabOptions ?? {})
+        : grabAllNode(root, context.grabOptions);
+    for (const node of ordinaryTargets) {
         candidates.push({
             node,
             source: options.fallback ? 'fallback' : 'grab-node',

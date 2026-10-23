@@ -1,0 +1,56 @@
+{
+  "service": "google",
+  "scope": "full",
+  "display": "translation only",
+  "network": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "initial": {
+    "failures": 0,
+    "loading": 0,
+    "sourceWrappers": 0,
+    "code": "npm install",
+    "summary": "本文摘要故意超过两行。它解释了翻译后的卡片如何必须显示两种语言而不将其翻译隐藏在剪切边界以下。原始摘要和翻译摘要应保持相同的行数限制，因此长段落不能将其他所有卡片推开。",
+    "save": "保存更改",
+    "home": "家",
+    "closed": "This content only appears after you expand the original disclosure control."
+  },
+  "result": {
+    "clicks": "按钮事件：2",
+    "submits": "表单事件：1",
+    "identity": "原节点保留：true",
+    "input": "edited while single translated",
+    "updated": "这篇回收的帖子在分离和重复使用后现在包含不同的内容。",
+    "failures": 0,
+    "loading": 0,
+    "markers": false
+  },
+  "originalNodesRetained": true,
+  "restored": {
+    "summaryRestored": true,
+    "input": "edited while single translated",
+    "updated": "This recycled post now contains different content after being detached and reused.",
+    "links": "链接事件：1",
+    "code": "npm install",
+    "failures": 0
+  }
+}

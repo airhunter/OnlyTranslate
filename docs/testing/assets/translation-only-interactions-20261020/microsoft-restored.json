@@ -1,0 +1,11 @@
+{
+  "button": "Show details",
+  "body": "Read the documentation before making changes. This paragraph contains an original link whose click handler must continue working while the translated text is displayed.",
+  "buttonClicks": "按钮点击：3",
+  "bodyClicks": "正文链接点击：2",
+  "identity": "原节点保留：true",
+  "input": "typed before Microsoft translation",
+  "checked": true,
+  "selection": "second",
+  "markers": 0
+}

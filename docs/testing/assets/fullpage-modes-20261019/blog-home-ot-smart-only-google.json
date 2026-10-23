@@ -1,0 +1,31 @@
+{
+  "backups": 22,
+  "bodyLinkCount": 0,
+  "bodyMathCount": 0,
+  "cards": [
+    {
+      "excerptChinese": true,
+      "heading": "利用工程进行自我提升",
+      "meta": "Date: July 4, 2026 | Estimated Reading Time: 31 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2026-07-04-harness/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "谨慎缩放法则",
+      "meta": "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "我们为何思考",
+      "meta": "Date: May 1, 2025 | Estimated Reading Time: 40 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2025-05-01-thinking/"
+    }
+  ],
+  "firstParagraphChinese": false,
+  "heading": "👋 欢迎来到 Lil’Log",
+  "nav": "Lil'Log\n|\nPosts\nArchive\nSearch\nTags\nFAQ",
+  "scope": "smart",
+  "title": "Lil'Log",
+  "url": "https://lilianweng.github.io/"
+}

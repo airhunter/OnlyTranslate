@@ -1,0 +1,71 @@
+{
+  "service": "Google Translate",
+  "display": "Translation only",
+  "scope": "Full page",
+  "before": "仅翻译交互接受\n阅读原始文档\n\n在进行更改之前，请阅读文档。该段落包含一个原始链接，其点击处理程序必须在显示翻译文本时继续工作。\n\n本段说明本地演示控制。按显示详细信息 显示演示面板。该按钮有自己的单击处理程序，并且必须在翻译期间和恢复原始文本后保持可用。\n\n此演示保留您在原始控件中输入的值。 名称  记住这一点choice Level \nFirst\nSecond\n 这些控件必须保留其当前状态，而不会在翻译周围段落时重新创建。\n\n运行 npm install 安装依赖项，然后阅读 设置指南 了解更多说明。内联命令应保持不变，原始链接应保持交互。\n\n链接目标区域\n\n跳到这里说明链接默认跳转有效。",
+  "failures": 0,
+  "afterMouse": {
+    "count": "按钮点击：1",
+    "panelVisible": true,
+    "expanded": "true"
+  },
+  "afterKeyboard": {
+    "count": "按钮点击：2",
+    "panelVisible": false
+  },
+  "bodyLinkResult": {
+    "url": "http://127.0.0.1:4174/translation-only-interactions.html#link-destination",
+    "count": "正文链接点击：1"
+  },
+  "titleLinkResult": {
+    "url": "http://127.0.0.1:4174/translation-only-interactions.html#link-destination",
+    "count": "标题链接点击：1"
+  },
+  "identity": "原节点保留：true",
+  "input": "typed before translation",
+  "checked": true,
+  "selection": "second",
+  "command": "npm install",
+  "buttons": [
+    {
+      "text": "显示详细信息",
+      "aria": null
+    },
+    {
+      "text": "SmartFull page",
+      "aria": null
+    },
+    {
+      "text": "Google 翻译",
+      "aria": null
+    },
+    {
+      "text": "微软翻译",
+      "aria": null
+    },
+    {
+      "text": "Google 翻译",
+      "aria": null
+    },
+    {
+      "text": "Chrome 内置 AI 翻译",
+      "aria": null
+    },
+    {
+      "text": "Reading",
+      "aria": null
+    },
+    {
+      "text": "More",
+      "aria": null
+    },
+    {
+      "text": "",
+      "aria": "Open page translation tools"
+    },
+    {
+      "text": "",
+      "aria": "Restore"
+    }
+  ]
+}

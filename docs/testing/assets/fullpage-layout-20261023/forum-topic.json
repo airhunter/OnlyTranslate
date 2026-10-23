@@ -1,0 +1,3834 @@
+{
+  "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+  "service": "microsoft",
+  "mode": "bilingual",
+  "scope": "full",
+  "baseline": {
+    "width": 1440,
+    "scrollWidth": 1425,
+    "headerLinks": [],
+    "rows": [
+      {
+        "source": "Topics",
+        "label": {
+          "x": 76.21875,
+          "y": 74.3984375,
+          "width": 45.3515625,
+          "height": 22.3984375,
+          "top": 74.3984375,
+          "right": 121.5703125,
+          "bottom": 96.796875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 295.21875,
+          "bottom": 103.1953125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 77.59375,
+          "width": 24,
+          "height": 16,
+          "top": 77.59375,
+          "right": 68.21875,
+          "bottom": 93.59375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 295.21875,
+          "bottom": 103.1953125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 45,
+        "clientWidth": 45,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Docs",
+        "label": {
+          "x": 76.21875,
+          "y": 111.59375,
+          "width": 36.453125,
+          "height": 22.3984375,
+          "top": 111.59375,
+          "right": 112.671875,
+          "bottom": 133.9921875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 295.21875,
+          "bottom": 140.390625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 114.7890625,
+          "width": 24,
+          "height": 16,
+          "top": 114.7890625,
+          "right": 68.21875,
+          "bottom": 130.7890625,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 295.21875,
+          "bottom": 140.390625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 36,
+        "clientWidth": 36,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "More",
+        "label": {
+          "x": 76.21875,
+          "y": 150.390625,
+          "width": 36.453125,
+          "height": 19.1953125,
+          "top": 150.390625,
+          "right": 112.671875,
+          "bottom": 169.5859375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 295.21875,
+          "bottom": 177.5859375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 151.984375,
+          "width": 24,
+          "height": 16,
+          "top": 151.984375,
+          "right": 68.21875,
+          "bottom": 167.984375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 295.21875,
+          "bottom": 177.5859375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 19,
+        "clientHeight": 19,
+        "scrollWidth": 36,
+        "clientWidth": 36,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Brainstorming",
+        "label": {
+          "x": 76.21875,
+          "y": 228.1796875,
+          "width": 98.703125,
+          "height": 22.3984375,
+          "top": 228.1796875,
+          "right": 174.921875,
+          "bottom": 250.578125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 295.21875,
+          "bottom": 256.9765625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 232.9765625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 232.9765625,
+          "right": 68.21875,
+          "bottom": 245.7734375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 295.21875,
+          "bottom": 256.9765625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 99,
+        "clientWidth": 99,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Explain",
+        "label": {
+          "x": 76.21875,
+          "y": 265.375,
+          "width": 52.4765625,
+          "height": 22.3984375,
+          "top": 265.375,
+          "right": 128.6953125,
+          "bottom": 287.7734375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 295.21875,
+          "bottom": 294.171875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 270.171875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 270.171875,
+          "right": 68.21875,
+          "bottom": 282.96875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 295.21875,
+          "bottom": 294.171875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 52,
+        "clientWidth": 52,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Help",
+        "label": {
+          "x": 76.21875,
+          "y": 302.5703125,
+          "width": 32.90625,
+          "height": 22.3984375,
+          "top": 302.5703125,
+          "right": 109.125,
+          "bottom": 324.96875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 295.21875,
+          "bottom": 331.3671875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 307.3671875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 307.3671875,
+          "right": 68.21875,
+          "bottom": 320.1640625,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 295.21875,
+          "bottom": 331.3671875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 33,
+        "clientWidth": 33,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Showcase",
+        "label": {
+          "x": 76.21875,
+          "y": 339.765625,
+          "width": 73.8203125,
+          "height": 22.3984375,
+          "top": 339.765625,
+          "right": 150.0390625,
+          "bottom": 362.1640625,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 295.21875,
+          "bottom": 368.5625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 344.5625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 344.5625,
+          "right": 68.21875,
+          "bottom": 357.359375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 295.21875,
+          "bottom": 368.5625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 74,
+        "clientWidth": 74,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "All categories",
+        "label": {
+          "x": 76.21875,
+          "y": 376.1328125,
+          "width": 83.59375,
+          "height": 19.5,
+          "top": 376.1328125,
+          "right": 159.8125,
+          "bottom": 395.6328125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 295.21875,
+          "bottom": 401.203125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 378.921875,
+          "width": 24,
+          "height": 13.921875,
+          "top": 378.921875,
+          "right": 68.21875,
+          "bottom": 392.84375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 295.21875,
+          "bottom": 401.203125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 84,
+        "clientWidth": 84,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "build-system",
+        "label": {
+          "x": 76.21875,
+          "y": 451.796875,
+          "width": 89.8046875,
+          "height": 22.3984375,
+          "top": 451.796875,
+          "right": 166.0234375,
+          "bottom": 474.1953125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 295.21875,
+          "bottom": 480.59375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 454.9921875,
+          "width": 24,
+          "height": 16,
+          "top": 454.9921875,
+          "right": 68.21875,
+          "bottom": 470.9921875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 295.21875,
+          "bottom": 480.59375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 90,
+        "clientWidth": 90,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "language",
+        "label": {
+          "x": 76.21875,
+          "y": 488.9921875,
+          "width": 65.84375,
+          "height": 22.3984375,
+          "top": 488.9921875,
+          "right": 142.0625,
+          "bottom": 511.390625,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 295.21875,
+          "bottom": 517.7890625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 492.1875,
+          "width": 24,
+          "height": 16,
+          "top": 492.1875,
+          "right": 68.21875,
+          "bottom": 508.1875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 295.21875,
+          "bottom": 517.7890625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 66,
+        "clientWidth": 66,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "memory-management",
+        "label": {
+          "x": 76.21875,
+          "y": 526.1875,
+          "width": 156.5,
+          "height": 22.3984375,
+          "top": 526.1875,
+          "right": 232.71875,
+          "bottom": 548.5859375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 519.7890625,
+          "right": 295.21875,
+          "bottom": 554.984375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 529.3828125,
+          "width": 24,
+          "height": 16,
+          "top": 529.3828125,
+          "right": 68.21875,
+          "bottom": 545.3828125,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 519.7890625,
+          "right": 295.21875,
+          "bottom": 554.984375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 157,
+        "clientWidth": 157,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "standard-library",
+        "label": {
+          "x": 76.21875,
+          "y": 563.3828125,
+          "width": 111.15625,
+          "height": 22.3984375,
+          "top": 563.3828125,
+          "right": 187.375,
+          "bottom": 585.78125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 556.984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 556.984375,
+          "right": 295.21875,
+          "bottom": 592.1796875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 566.578125,
+          "width": 24,
+          "height": 16,
+          "top": 566.578125,
+          "right": 68.21875,
+          "bottom": 582.578125,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 556.984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 556.984375,
+          "right": 295.21875,
+          "bottom": 592.1796875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 111,
+        "clientWidth": 111,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "All tags",
+        "label": {
+          "x": 76.21875,
+          "y": 599.75,
+          "width": 45.671875,
+          "height": 19.5,
+          "top": 599.75,
+          "right": 121.890625,
+          "bottom": 619.25,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 594.1796875,
+          "width": 255,
+          "height": 30.640625,
+          "top": 594.1796875,
+          "right": 295.21875,
+          "bottom": 624.8203125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 602.5390625,
+          "width": 24,
+          "height": 13.921875,
+          "top": 602.5390625,
+          "right": 68.21875,
+          "bottom": 616.4609375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 594.1796875,
+          "width": 255,
+          "height": 30.640625,
+          "top": 594.1796875,
+          "right": 295.21875,
+          "bottom": 624.8203125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 46,
+        "clientWidth": 46,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      }
+    ],
+    "counts": {
+      "targets": 0,
+      "translations": 0,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": []
+  },
+  "narrowBaseline": {
+    "width": 1100,
+    "scrollWidth": 1085,
+    "headerLinks": [],
+    "rows": [
+      {
+        "source": "Topics",
+        "label": {
+          "x": 54.71875,
+          "y": 74.3984375,
+          "width": 45.3515625,
+          "height": 22.3984375,
+          "top": 74.3984375,
+          "right": 100.0703125,
+          "bottom": 96.796875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 273.71875,
+          "bottom": 103.1953125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 77.59375,
+          "width": 24,
+          "height": 16,
+          "top": 77.59375,
+          "right": 46.71875,
+          "bottom": 93.59375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 273.71875,
+          "bottom": 103.1953125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 45,
+        "clientWidth": 45,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Docs",
+        "label": {
+          "x": 54.71875,
+          "y": 111.59375,
+          "width": 36.453125,
+          "height": 22.3984375,
+          "top": 111.59375,
+          "right": 91.171875,
+          "bottom": 133.9921875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 273.71875,
+          "bottom": 140.390625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 114.7890625,
+          "width": 24,
+          "height": 16,
+          "top": 114.7890625,
+          "right": 46.71875,
+          "bottom": 130.7890625,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 273.71875,
+          "bottom": 140.390625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 36,
+        "clientWidth": 36,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "More",
+        "label": {
+          "x": 54.71875,
+          "y": 150.390625,
+          "width": 36.453125,
+          "height": 19.1953125,
+          "top": 150.390625,
+          "right": 91.171875,
+          "bottom": 169.5859375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 273.71875,
+          "bottom": 177.5859375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 151.984375,
+          "width": 24,
+          "height": 16,
+          "top": 151.984375,
+          "right": 46.71875,
+          "bottom": 167.984375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 273.71875,
+          "bottom": 177.5859375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 19,
+        "clientHeight": 19,
+        "scrollWidth": 36,
+        "clientWidth": 36,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Brainstorming",
+        "label": {
+          "x": 54.71875,
+          "y": 228.1796875,
+          "width": 98.703125,
+          "height": 22.3984375,
+          "top": 228.1796875,
+          "right": 153.421875,
+          "bottom": 250.578125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 273.71875,
+          "bottom": 256.9765625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 232.9765625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 232.9765625,
+          "right": 46.71875,
+          "bottom": 245.7734375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 273.71875,
+          "bottom": 256.9765625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 99,
+        "clientWidth": 99,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Explain",
+        "label": {
+          "x": 54.71875,
+          "y": 265.375,
+          "width": 52.4765625,
+          "height": 22.3984375,
+          "top": 265.375,
+          "right": 107.1953125,
+          "bottom": 287.7734375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 273.71875,
+          "bottom": 294.171875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 270.171875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 270.171875,
+          "right": 46.71875,
+          "bottom": 282.96875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 273.71875,
+          "bottom": 294.171875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 52,
+        "clientWidth": 52,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Help",
+        "label": {
+          "x": 54.71875,
+          "y": 302.5703125,
+          "width": 32.90625,
+          "height": 22.3984375,
+          "top": 302.5703125,
+          "right": 87.625,
+          "bottom": 324.96875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 273.71875,
+          "bottom": 331.3671875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 307.3671875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 307.3671875,
+          "right": 46.71875,
+          "bottom": 320.1640625,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 273.71875,
+          "bottom": 331.3671875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 33,
+        "clientWidth": 33,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "Showcase",
+        "label": {
+          "x": 54.71875,
+          "y": 339.765625,
+          "width": 73.8203125,
+          "height": 22.3984375,
+          "top": 339.765625,
+          "right": 128.5390625,
+          "bottom": 362.1640625,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 273.71875,
+          "bottom": 368.5625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 344.5625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 344.5625,
+          "right": 46.71875,
+          "bottom": 357.359375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 273.71875,
+          "bottom": 368.5625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 74,
+        "clientWidth": 74,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "All categories",
+        "label": {
+          "x": 54.71875,
+          "y": 376.1328125,
+          "width": 83.59375,
+          "height": 19.5,
+          "top": 376.1328125,
+          "right": 138.3125,
+          "bottom": 395.6328125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 273.71875,
+          "bottom": 401.203125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 378.921875,
+          "width": 24,
+          "height": 13.921875,
+          "top": 378.921875,
+          "right": 46.71875,
+          "bottom": 392.84375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 273.71875,
+          "bottom": 401.203125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 84,
+        "clientWidth": 84,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "build-system",
+        "label": {
+          "x": 54.71875,
+          "y": 451.796875,
+          "width": 89.8046875,
+          "height": 22.3984375,
+          "top": 451.796875,
+          "right": 144.5234375,
+          "bottom": 474.1953125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 273.71875,
+          "bottom": 480.59375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 454.9921875,
+          "width": 24,
+          "height": 16,
+          "top": 454.9921875,
+          "right": 46.71875,
+          "bottom": 470.9921875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 273.71875,
+          "bottom": 480.59375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 90,
+        "clientWidth": 90,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "language",
+        "label": {
+          "x": 54.71875,
+          "y": 488.9921875,
+          "width": 65.84375,
+          "height": 22.3984375,
+          "top": 488.9921875,
+          "right": 120.5625,
+          "bottom": 511.390625,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 273.71875,
+          "bottom": 517.7890625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 492.1875,
+          "width": 24,
+          "height": 16,
+          "top": 492.1875,
+          "right": 46.71875,
+          "bottom": 508.1875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 273.71875,
+          "bottom": 517.7890625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 66,
+        "clientWidth": 66,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "memory-management",
+        "label": {
+          "x": 54.71875,
+          "y": 526.1875,
+          "width": 156.5,
+          "height": 22.3984375,
+          "top": 526.1875,
+          "right": 211.21875,
+          "bottom": 548.5859375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 519.7890625,
+          "right": 273.71875,
+          "bottom": 554.984375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 529.3828125,
+          "width": 24,
+          "height": 16,
+          "top": 529.3828125,
+          "right": 46.71875,
+          "bottom": 545.3828125,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 519.7890625,
+          "right": 273.71875,
+          "bottom": 554.984375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 157,
+        "clientWidth": 157,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "standard-library",
+        "label": {
+          "x": 54.71875,
+          "y": 563.3828125,
+          "width": 111.15625,
+          "height": 22.3984375,
+          "top": 563.3828125,
+          "right": 165.875,
+          "bottom": 585.78125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 556.984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 556.984375,
+          "right": 273.71875,
+          "bottom": 592.1796875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 566.578125,
+          "width": 24,
+          "height": 16,
+          "top": 566.578125,
+          "right": 46.71875,
+          "bottom": 582.578125,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 556.984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 556.984375,
+          "right": 273.71875,
+          "bottom": 592.1796875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 111,
+        "clientWidth": 111,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      },
+      {
+        "source": "All tags",
+        "label": {
+          "x": 54.71875,
+          "y": 599.75,
+          "width": 45.671875,
+          "height": 19.5,
+          "top": 599.75,
+          "right": 100.390625,
+          "bottom": 619.25,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 594.1796875,
+          "width": 255,
+          "height": 30.640625,
+          "top": 594.1796875,
+          "right": 273.71875,
+          "bottom": 624.8203125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 602.5390625,
+          "width": 24,
+          "height": 13.921875,
+          "top": 602.5390625,
+          "right": 46.71875,
+          "bottom": 616.4609375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 594.1796875,
+          "width": 255,
+          "height": 30.640625,
+          "top": 594.1796875,
+          "right": 273.71875,
+          "bottom": 624.8203125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "nowrap",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 46,
+        "clientWidth": 46,
+        "rowChildren": 1,
+        "translationInOriginalLink": false,
+        "chars": []
+      }
+    ],
+    "counts": {
+      "targets": 0,
+      "translations": 0,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": []
+  },
+  "desktop": {
+    "width": 1440,
+    "scrollWidth": 1425,
+    "headerLinks": [],
+    "rows": [
+      {
+        "source": "Topics",
+        "translation": "主题",
+        "label": {
+          "x": 76.21875,
+          "y": 74.3984375,
+          "width": 87.390625,
+          "height": 22.3984375,
+          "top": 74.3984375,
+          "right": 163.609375,
+          "bottom": 96.796875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 295.21875,
+          "bottom": 103.1953125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 77.59375,
+          "width": 24,
+          "height": 16,
+          "top": 77.59375,
+          "right": 68.21875,
+          "bottom": 93.59375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 295.21875,
+          "bottom": 103.1953125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 87,
+        "clientWidth": 87,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "主",
+            "x": 131.609375,
+            "y": 76.3984375,
+            "width": 16,
+            "height": 18,
+            "top": 76.3984375,
+            "right": 147.609375,
+            "bottom": 94.3984375,
+            "left": 131.609375
+          },
+          {
+            "char": "题",
+            "x": 147.609375,
+            "y": 76.3984375,
+            "width": 16,
+            "height": 18,
+            "top": 76.3984375,
+            "right": 163.609375,
+            "bottom": 94.3984375,
+            "left": 147.609375
+          }
+        ]
+      },
+      {
+        "source": "Docs",
+        "translation": "文档",
+        "label": {
+          "x": 76.21875,
+          "y": 111.59375,
+          "width": 78.4921875,
+          "height": 22.3984375,
+          "top": 111.59375,
+          "right": 154.7109375,
+          "bottom": 133.9921875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 295.21875,
+          "bottom": 140.390625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 114.7890625,
+          "width": 24,
+          "height": 16,
+          "top": 114.7890625,
+          "right": 68.21875,
+          "bottom": 130.7890625,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 295.21875,
+          "bottom": 140.390625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 78,
+        "clientWidth": 78,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "文",
+            "x": 122.7109375,
+            "y": 113.59375,
+            "width": 16,
+            "height": 18,
+            "top": 113.59375,
+            "right": 138.7109375,
+            "bottom": 131.59375,
+            "left": 122.7109375
+          },
+          {
+            "char": "档",
+            "x": 138.7109375,
+            "y": 113.59375,
+            "width": 16,
+            "height": 18,
+            "top": 113.59375,
+            "right": 154.7109375,
+            "bottom": 131.59375,
+            "left": 138.7109375
+          }
+        ]
+      },
+      {
+        "source": "More",
+        "translation": "更多",
+        "label": {
+          "x": 76.21875,
+          "y": 150.390625,
+          "width": 78.4921875,
+          "height": 19.1953125,
+          "top": 150.390625,
+          "right": 154.7109375,
+          "bottom": 169.5859375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 295.21875,
+          "bottom": 177.5859375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 151.984375,
+          "width": 24,
+          "height": 16,
+          "top": 151.984375,
+          "right": 68.21875,
+          "bottom": 167.984375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 295.21875,
+          "bottom": 177.5859375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 19,
+        "clientHeight": 19,
+        "scrollWidth": 78,
+        "clientWidth": 78,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "更",
+            "x": 122.7109375,
+            "y": 150.890625,
+            "width": 16,
+            "height": 18,
+            "top": 150.890625,
+            "right": 138.7109375,
+            "bottom": 168.890625,
+            "left": 122.7109375
+          },
+          {
+            "char": "多",
+            "x": 138.7109375,
+            "y": 150.890625,
+            "width": 16,
+            "height": 18,
+            "top": 150.890625,
+            "right": 154.7109375,
+            "bottom": 168.890625,
+            "left": 138.7109375
+          }
+        ]
+      },
+      {
+        "source": "Brainstorming",
+        "translation": "头脑风暴",
+        "label": {
+          "x": 76.21875,
+          "y": 228.1796875,
+          "width": 172.7421875,
+          "height": 22.3984375,
+          "top": 228.1796875,
+          "right": 248.9609375,
+          "bottom": 250.578125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 295.21875,
+          "bottom": 256.9765625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 232.9765625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 232.9765625,
+          "right": 68.21875,
+          "bottom": 245.7734375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 295.21875,
+          "bottom": 256.9765625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 173,
+        "clientWidth": 173,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "头",
+            "x": 184.9609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 200.9609375,
+            "bottom": 248.1796875,
+            "left": 184.9609375
+          },
+          {
+            "char": "脑",
+            "x": 200.9609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 216.9609375,
+            "bottom": 248.1796875,
+            "left": 200.9609375
+          },
+          {
+            "char": "风",
+            "x": 216.9609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 232.9609375,
+            "bottom": 248.1796875,
+            "left": 216.9609375
+          },
+          {
+            "char": "暴",
+            "x": 232.9609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 248.9609375,
+            "bottom": 248.1796875,
+            "left": 232.9609375
+          }
+        ]
+      },
+      {
+        "source": "Explain",
+        "translation": "解释一下",
+        "label": {
+          "x": 76.21875,
+          "y": 265.375,
+          "width": 126.515625,
+          "height": 22.3984375,
+          "top": 265.375,
+          "right": 202.734375,
+          "bottom": 287.7734375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 295.21875,
+          "bottom": 294.171875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 270.171875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 270.171875,
+          "right": 68.21875,
+          "bottom": 282.96875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 295.21875,
+          "bottom": 294.171875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 127,
+        "clientWidth": 127,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "解",
+            "x": 138.734375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 154.734375,
+            "bottom": 285.375,
+            "left": 138.734375
+          },
+          {
+            "char": "释",
+            "x": 154.734375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 170.734375,
+            "bottom": 285.375,
+            "left": 154.734375
+          },
+          {
+            "char": "一",
+            "x": 170.734375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 186.734375,
+            "bottom": 285.375,
+            "left": 170.734375
+          },
+          {
+            "char": "下",
+            "x": 186.734375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 202.734375,
+            "bottom": 285.375,
+            "left": 186.734375
+          }
+        ]
+      },
+      {
+        "source": "Help",
+        "translation": "帮助",
+        "label": {
+          "x": 76.21875,
+          "y": 302.5703125,
+          "width": 74.9453125,
+          "height": 22.3984375,
+          "top": 302.5703125,
+          "right": 151.1640625,
+          "bottom": 324.96875,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 295.21875,
+          "bottom": 331.3671875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 307.3671875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 307.3671875,
+          "right": 68.21875,
+          "bottom": 320.1640625,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 295.21875,
+          "bottom": 331.3671875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 75,
+        "clientWidth": 75,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "帮",
+            "x": 119.1640625,
+            "y": 304.5703125,
+            "width": 16,
+            "height": 18,
+            "top": 304.5703125,
+            "right": 135.1640625,
+            "bottom": 322.5703125,
+            "left": 119.1640625
+          },
+          {
+            "char": "助",
+            "x": 135.1640625,
+            "y": 304.5703125,
+            "width": 16,
+            "height": 18,
+            "top": 304.5703125,
+            "right": 151.1640625,
+            "bottom": 322.5703125,
+            "left": 135.1640625
+          }
+        ]
+      },
+      {
+        "source": "Showcase",
+        "translation": "展示",
+        "label": {
+          "x": 76.21875,
+          "y": 339.765625,
+          "width": 115.859375,
+          "height": 22.3984375,
+          "top": 339.765625,
+          "right": 192.078125,
+          "bottom": 362.1640625,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 295.21875,
+          "bottom": 368.5625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 344.5625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 344.5625,
+          "right": 68.21875,
+          "bottom": 357.359375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 295.21875,
+          "bottom": 368.5625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 116,
+        "clientWidth": 116,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "展",
+            "x": 160.078125,
+            "y": 341.765625,
+            "width": 16,
+            "height": 18,
+            "top": 341.765625,
+            "right": 176.078125,
+            "bottom": 359.765625,
+            "left": 160.078125
+          },
+          {
+            "char": "示",
+            "x": 176.078125,
+            "y": 341.765625,
+            "width": 16,
+            "height": 18,
+            "top": 341.765625,
+            "right": 192.078125,
+            "bottom": 359.765625,
+            "left": 176.078125
+          }
+        ]
+      },
+      {
+        "source": "All categories",
+        "translation": "所有类别",
+        "label": {
+          "x": 76.21875,
+          "y": 376.1328125,
+          "width": 148.046875,
+          "height": 19.5,
+          "top": 376.1328125,
+          "right": 224.265625,
+          "bottom": 395.6328125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 295.21875,
+          "bottom": 401.203125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 378.921875,
+          "width": 24,
+          "height": 13.921875,
+          "top": 378.921875,
+          "right": 68.21875,
+          "bottom": 392.84375,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 295.21875,
+          "bottom": 401.203125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 148,
+        "clientWidth": 148,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "所",
+            "x": 168.5625,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 182.4921875,
+            "bottom": 393.6328125,
+            "left": 168.5625
+          },
+          {
+            "char": "有",
+            "x": 182.484375,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 196.4140625,
+            "bottom": 393.6328125,
+            "left": 182.484375
+          },
+          {
+            "char": "类",
+            "x": 196.40625,
+            "y": 378.1328125,
+            "width": 13.9375,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 210.34375,
+            "bottom": 393.6328125,
+            "left": 196.40625
+          },
+          {
+            "char": "别",
+            "x": 210.3359375,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 224.265625,
+            "bottom": 393.6328125,
+            "left": 210.3359375
+          }
+        ]
+      },
+      {
+        "source": "build-system",
+        "translation": "构建系统",
+        "label": {
+          "x": 76.21875,
+          "y": 451.796875,
+          "width": 163.84375,
+          "height": 22.3984375,
+          "top": 451.796875,
+          "right": 240.0625,
+          "bottom": 474.1953125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 295.21875,
+          "bottom": 480.59375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 454.9921875,
+          "width": 24,
+          "height": 16,
+          "top": 454.9921875,
+          "right": 68.21875,
+          "bottom": 470.9921875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 295.21875,
+          "bottom": 480.59375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 164,
+        "clientWidth": 164,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "构",
+            "x": 176.0625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 192.0625,
+            "bottom": 471.796875,
+            "left": 176.0625
+          },
+          {
+            "char": "建",
+            "x": 192.0625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 208.0625,
+            "bottom": 471.796875,
+            "left": 192.0625
+          },
+          {
+            "char": "系",
+            "x": 208.0625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 224.0625,
+            "bottom": 471.796875,
+            "left": 208.0625
+          },
+          {
+            "char": "统",
+            "x": 224.0625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 240.0625,
+            "bottom": 471.796875,
+            "left": 224.0625
+          }
+        ]
+      },
+      {
+        "source": "language",
+        "translation": "语言",
+        "label": {
+          "x": 76.21875,
+          "y": 488.9921875,
+          "width": 107.8828125,
+          "height": 22.3984375,
+          "top": 488.9921875,
+          "right": 184.1015625,
+          "bottom": 511.390625,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 295.21875,
+          "bottom": 517.7890625,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 492.1875,
+          "width": 24,
+          "height": 16,
+          "top": 492.1875,
+          "right": 68.21875,
+          "bottom": 508.1875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 295.21875,
+          "bottom": 517.7890625,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 108,
+        "clientWidth": 108,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "语",
+            "x": 152.1015625,
+            "y": 490.9921875,
+            "width": 16,
+            "height": 18,
+            "top": 490.9921875,
+            "right": 168.1015625,
+            "bottom": 508.9921875,
+            "left": 152.1015625
+          },
+          {
+            "char": "言",
+            "x": 168.1015625,
+            "y": 490.9921875,
+            "width": 16,
+            "height": 18,
+            "top": 490.9921875,
+            "right": 184.1015625,
+            "bottom": 508.9921875,
+            "left": 168.1015625
+          }
+        ]
+      },
+      {
+        "source": "memory-management",
+        "translation": "内存管理",
+        "label": {
+          "x": 76.21875,
+          "y": 519.7890625,
+          "width": 215,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 291.21875,
+          "bottom": 564.5859375,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 295.21875,
+          "bottom": 564.5859375,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 534.1875,
+          "width": 24,
+          "height": 16,
+          "top": 534.1875,
+          "right": 68.21875,
+          "bottom": 550.1875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 295.21875,
+          "bottom": 564.5859375,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 45,
+        "clientHeight": 45,
+        "scrollWidth": 215,
+        "clientWidth": 215,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "内",
+            "x": 81.8125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 97.8125,
+            "bottom": 562.1875,
+            "left": 81.8125
+          },
+          {
+            "char": "存",
+            "x": 97.8125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 113.8125,
+            "bottom": 562.1875,
+            "left": 97.8125
+          },
+          {
+            "char": "管",
+            "x": 113.8125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 129.8125,
+            "bottom": 562.1875,
+            "left": 113.8125
+          },
+          {
+            "char": "理",
+            "x": 129.8125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 145.8125,
+            "bottom": 562.1875,
+            "left": 129.8125
+          }
+        ]
+      },
+      {
+        "source": "standard-library",
+        "translation": "标准库",
+        "label": {
+          "x": 76.21875,
+          "y": 572.984375,
+          "width": 169.1953125,
+          "height": 22.3984375,
+          "top": 572.984375,
+          "right": 245.4140625,
+          "bottom": 595.3828125,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 566.5859375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 566.5859375,
+          "right": 295.21875,
+          "bottom": 601.78125,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 576.1796875,
+          "width": 24,
+          "height": 16,
+          "top": 576.1796875,
+          "right": 68.21875,
+          "bottom": 592.1796875,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 566.5859375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 566.5859375,
+          "right": 295.21875,
+          "bottom": 601.78125,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 169,
+        "clientWidth": 169,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "标",
+            "x": 197.4140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 213.4140625,
+            "bottom": 592.984375,
+            "left": 197.4140625
+          },
+          {
+            "char": "准",
+            "x": 213.4140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 229.4140625,
+            "bottom": 592.984375,
+            "left": 213.4140625
+          },
+          {
+            "char": "库",
+            "x": 229.4140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 245.4140625,
+            "bottom": 592.984375,
+            "left": 229.4140625
+          }
+        ]
+      },
+      {
+        "source": "All tags",
+        "translation": "所有标签",
+        "label": {
+          "x": 76.21875,
+          "y": 609.3515625,
+          "width": 110.125,
+          "height": 19.5,
+          "top": 609.3515625,
+          "right": 186.34375,
+          "bottom": 628.8515625,
+          "left": 76.21875
+        },
+        "row": {
+          "x": 40.21875,
+          "y": 603.78125,
+          "width": 255,
+          "height": 30.640625,
+          "top": 603.78125,
+          "right": 295.21875,
+          "bottom": 634.421875,
+          "left": 40.21875
+        },
+        "icon": {
+          "x": 44.21875,
+          "y": 612.140625,
+          "width": 24,
+          "height": 13.921875,
+          "top": 612.140625,
+          "right": 68.21875,
+          "bottom": 626.0625,
+          "left": 44.21875
+        },
+        "link": {
+          "x": 40.21875,
+          "y": 603.78125,
+          "width": 255,
+          "height": 30.640625,
+          "top": 603.78125,
+          "right": 295.21875,
+          "bottom": 634.421875,
+          "left": 40.21875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 110,
+        "clientWidth": 110,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "所",
+            "x": 130.640625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 144.5703125,
+            "bottom": 626.8515625,
+            "left": 130.640625
+          },
+          {
+            "char": "有",
+            "x": 144.5625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 158.4921875,
+            "bottom": 626.8515625,
+            "left": 144.5625
+          },
+          {
+            "char": "标",
+            "x": 158.484375,
+            "y": 611.3515625,
+            "width": 13.9375,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 172.421875,
+            "bottom": 626.8515625,
+            "left": 158.484375
+          },
+          {
+            "char": "签",
+            "x": 172.4140625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 186.34375,
+            "bottom": 626.8515625,
+            "left": 172.4140625
+          }
+        ]
+      }
+    ],
+    "counts": {
+      "targets": 45,
+      "translations": 45,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": [
+      {
+        "text": "跳到最后一条回复",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "跳转到顶部",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "跳转到主要内容",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "注册",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "登录",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "主题",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "文档",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "更多",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "类别",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "头脑风暴",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "解释一下",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "帮助",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "展示",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "所有类别",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "标签",
+        "display": "inline",
+        "margin": "0px"
+      }
+    ]
+  },
+  "moreMenuOpened": true,
+  "translatedLinkOpened": "https://ziggit.dev/latest",
+  "narrow": {
+    "width": 1100,
+    "scrollWidth": 1085,
+    "headerLinks": [],
+    "rows": [
+      {
+        "source": "Topics",
+        "translation": "主题",
+        "label": {
+          "x": 54.71875,
+          "y": 74.3984375,
+          "width": 87.390625,
+          "height": 22.3984375,
+          "top": 74.3984375,
+          "right": 142.109375,
+          "bottom": 96.796875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 273.71875,
+          "bottom": 103.1953125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 77.59375,
+          "width": 24,
+          "height": 16,
+          "top": 77.59375,
+          "right": 46.71875,
+          "bottom": 93.59375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 68,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 68,
+          "right": 273.71875,
+          "bottom": 103.1953125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 87,
+        "clientWidth": 87,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "主",
+            "x": 110.109375,
+            "y": 76.3984375,
+            "width": 16,
+            "height": 18,
+            "top": 76.3984375,
+            "right": 126.109375,
+            "bottom": 94.3984375,
+            "left": 110.109375
+          },
+          {
+            "char": "题",
+            "x": 126.109375,
+            "y": 76.3984375,
+            "width": 16,
+            "height": 18,
+            "top": 76.3984375,
+            "right": 142.109375,
+            "bottom": 94.3984375,
+            "left": 126.109375
+          }
+        ]
+      },
+      {
+        "source": "Docs",
+        "translation": "文档",
+        "label": {
+          "x": 54.71875,
+          "y": 111.59375,
+          "width": 78.4921875,
+          "height": 22.3984375,
+          "top": 111.59375,
+          "right": 133.2109375,
+          "bottom": 133.9921875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 273.71875,
+          "bottom": 140.390625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 114.7890625,
+          "width": 24,
+          "height": 16,
+          "top": 114.7890625,
+          "right": 46.71875,
+          "bottom": 130.7890625,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 105.1953125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 105.1953125,
+          "right": 273.71875,
+          "bottom": 140.390625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 78,
+        "clientWidth": 78,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "文",
+            "x": 101.2109375,
+            "y": 113.59375,
+            "width": 16,
+            "height": 18,
+            "top": 113.59375,
+            "right": 117.2109375,
+            "bottom": 131.59375,
+            "left": 101.2109375
+          },
+          {
+            "char": "档",
+            "x": 117.2109375,
+            "y": 113.59375,
+            "width": 16,
+            "height": 18,
+            "top": 113.59375,
+            "right": 133.2109375,
+            "bottom": 131.59375,
+            "left": 117.2109375
+          }
+        ]
+      },
+      {
+        "source": "More",
+        "translation": "更多",
+        "label": {
+          "x": 54.71875,
+          "y": 150.390625,
+          "width": 78.4921875,
+          "height": 19.1953125,
+          "top": 150.390625,
+          "right": 133.2109375,
+          "bottom": 169.5859375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 273.71875,
+          "bottom": 177.5859375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 151.984375,
+          "width": 24,
+          "height": 16,
+          "top": 151.984375,
+          "right": 46.71875,
+          "bottom": 167.984375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 142.390625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 142.390625,
+          "right": 273.71875,
+          "bottom": 177.5859375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 19,
+        "clientHeight": 19,
+        "scrollWidth": 78,
+        "clientWidth": 78,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "更",
+            "x": 101.2109375,
+            "y": 150.890625,
+            "width": 16,
+            "height": 18,
+            "top": 150.890625,
+            "right": 117.2109375,
+            "bottom": 168.890625,
+            "left": 101.2109375
+          },
+          {
+            "char": "多",
+            "x": 117.2109375,
+            "y": 150.890625,
+            "width": 16,
+            "height": 18,
+            "top": 150.890625,
+            "right": 133.2109375,
+            "bottom": 168.890625,
+            "left": 117.2109375
+          }
+        ]
+      },
+      {
+        "source": "Brainstorming",
+        "translation": "头脑风暴",
+        "label": {
+          "x": 54.71875,
+          "y": 228.1796875,
+          "width": 172.7421875,
+          "height": 22.3984375,
+          "top": 228.1796875,
+          "right": 227.4609375,
+          "bottom": 250.578125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 273.71875,
+          "bottom": 256.9765625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 232.9765625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 232.9765625,
+          "right": 46.71875,
+          "bottom": 245.7734375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 221.78125,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 221.78125,
+          "right": 273.71875,
+          "bottom": 256.9765625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 173,
+        "clientWidth": 173,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "头",
+            "x": 163.4609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 179.4609375,
+            "bottom": 248.1796875,
+            "left": 163.4609375
+          },
+          {
+            "char": "脑",
+            "x": 179.4609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 195.4609375,
+            "bottom": 248.1796875,
+            "left": 179.4609375
+          },
+          {
+            "char": "风",
+            "x": 195.4609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 211.4609375,
+            "bottom": 248.1796875,
+            "left": 195.4609375
+          },
+          {
+            "char": "暴",
+            "x": 211.4609375,
+            "y": 230.1796875,
+            "width": 16,
+            "height": 18,
+            "top": 230.1796875,
+            "right": 227.4609375,
+            "bottom": 248.1796875,
+            "left": 211.4609375
+          }
+        ]
+      },
+      {
+        "source": "Explain",
+        "translation": "解释一下",
+        "label": {
+          "x": 54.71875,
+          "y": 265.375,
+          "width": 126.515625,
+          "height": 22.3984375,
+          "top": 265.375,
+          "right": 181.234375,
+          "bottom": 287.7734375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 273.71875,
+          "bottom": 294.171875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 270.171875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 270.171875,
+          "right": 46.71875,
+          "bottom": 282.96875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 258.9765625,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 258.9765625,
+          "right": 273.71875,
+          "bottom": 294.171875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 127,
+        "clientWidth": 127,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "解",
+            "x": 117.234375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 133.234375,
+            "bottom": 285.375,
+            "left": 117.234375
+          },
+          {
+            "char": "释",
+            "x": 133.234375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 149.234375,
+            "bottom": 285.375,
+            "left": 133.234375
+          },
+          {
+            "char": "一",
+            "x": 149.234375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 165.234375,
+            "bottom": 285.375,
+            "left": 149.234375
+          },
+          {
+            "char": "下",
+            "x": 165.234375,
+            "y": 267.375,
+            "width": 16,
+            "height": 18,
+            "top": 267.375,
+            "right": 181.234375,
+            "bottom": 285.375,
+            "left": 165.234375
+          }
+        ]
+      },
+      {
+        "source": "Help",
+        "translation": "帮助",
+        "label": {
+          "x": 54.71875,
+          "y": 302.5703125,
+          "width": 74.9453125,
+          "height": 22.3984375,
+          "top": 302.5703125,
+          "right": 129.6640625,
+          "bottom": 324.96875,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 273.71875,
+          "bottom": 331.3671875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 307.3671875,
+          "width": 24,
+          "height": 12.796875,
+          "top": 307.3671875,
+          "right": 46.71875,
+          "bottom": 320.1640625,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 296.171875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 296.171875,
+          "right": 273.71875,
+          "bottom": 331.3671875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 75,
+        "clientWidth": 75,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "帮",
+            "x": 97.6640625,
+            "y": 304.5703125,
+            "width": 16,
+            "height": 18,
+            "top": 304.5703125,
+            "right": 113.6640625,
+            "bottom": 322.5703125,
+            "left": 97.6640625
+          },
+          {
+            "char": "助",
+            "x": 113.6640625,
+            "y": 304.5703125,
+            "width": 16,
+            "height": 18,
+            "top": 304.5703125,
+            "right": 129.6640625,
+            "bottom": 322.5703125,
+            "left": 113.6640625
+          }
+        ]
+      },
+      {
+        "source": "Showcase",
+        "translation": "展示",
+        "label": {
+          "x": 54.71875,
+          "y": 339.765625,
+          "width": 115.859375,
+          "height": 22.3984375,
+          "top": 339.765625,
+          "right": 170.578125,
+          "bottom": 362.1640625,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 273.71875,
+          "bottom": 368.5625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 344.5625,
+          "width": 24,
+          "height": 12.796875,
+          "top": 344.5625,
+          "right": 46.71875,
+          "bottom": 357.359375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 333.3671875,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 333.3671875,
+          "right": 273.71875,
+          "bottom": 368.5625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 116,
+        "clientWidth": 116,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "展",
+            "x": 138.578125,
+            "y": 341.765625,
+            "width": 16,
+            "height": 18,
+            "top": 341.765625,
+            "right": 154.578125,
+            "bottom": 359.765625,
+            "left": 138.578125
+          },
+          {
+            "char": "示",
+            "x": 154.578125,
+            "y": 341.765625,
+            "width": 16,
+            "height": 18,
+            "top": 341.765625,
+            "right": 170.578125,
+            "bottom": 359.765625,
+            "left": 154.578125
+          }
+        ]
+      },
+      {
+        "source": "All categories",
+        "translation": "所有类别",
+        "label": {
+          "x": 54.71875,
+          "y": 376.1328125,
+          "width": 148.046875,
+          "height": 19.5,
+          "top": 376.1328125,
+          "right": 202.765625,
+          "bottom": 395.6328125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 273.71875,
+          "bottom": 401.203125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 378.921875,
+          "width": 24,
+          "height": 13.921875,
+          "top": 378.921875,
+          "right": 46.71875,
+          "bottom": 392.84375,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 370.5625,
+          "width": 255,
+          "height": 30.640625,
+          "top": 370.5625,
+          "right": 273.71875,
+          "bottom": 401.203125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 148,
+        "clientWidth": 148,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "所",
+            "x": 147.0625,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 160.9921875,
+            "bottom": 393.6328125,
+            "left": 147.0625
+          },
+          {
+            "char": "有",
+            "x": 160.984375,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 174.9140625,
+            "bottom": 393.6328125,
+            "left": 160.984375
+          },
+          {
+            "char": "类",
+            "x": 174.90625,
+            "y": 378.1328125,
+            "width": 13.9375,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 188.84375,
+            "bottom": 393.6328125,
+            "left": 174.90625
+          },
+          {
+            "char": "别",
+            "x": 188.8359375,
+            "y": 378.1328125,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 378.1328125,
+            "right": 202.765625,
+            "bottom": 393.6328125,
+            "left": 188.8359375
+          }
+        ]
+      },
+      {
+        "source": "build-system",
+        "translation": "构建系统",
+        "label": {
+          "x": 54.71875,
+          "y": 451.796875,
+          "width": 163.84375,
+          "height": 22.3984375,
+          "top": 451.796875,
+          "right": 218.5625,
+          "bottom": 474.1953125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 273.71875,
+          "bottom": 480.59375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 454.9921875,
+          "width": 24,
+          "height": 16,
+          "top": 454.9921875,
+          "right": 46.71875,
+          "bottom": 470.9921875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 445.3984375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 445.3984375,
+          "right": 273.71875,
+          "bottom": 480.59375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 164,
+        "clientWidth": 164,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "构",
+            "x": 154.5625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 170.5625,
+            "bottom": 471.796875,
+            "left": 154.5625
+          },
+          {
+            "char": "建",
+            "x": 170.5625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 186.5625,
+            "bottom": 471.796875,
+            "left": 170.5625
+          },
+          {
+            "char": "系",
+            "x": 186.5625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 202.5625,
+            "bottom": 471.796875,
+            "left": 186.5625
+          },
+          {
+            "char": "统",
+            "x": 202.5625,
+            "y": 453.796875,
+            "width": 16,
+            "height": 18,
+            "top": 453.796875,
+            "right": 218.5625,
+            "bottom": 471.796875,
+            "left": 202.5625
+          }
+        ]
+      },
+      {
+        "source": "language",
+        "translation": "语言",
+        "label": {
+          "x": 54.71875,
+          "y": 488.9921875,
+          "width": 107.8828125,
+          "height": 22.3984375,
+          "top": 488.9921875,
+          "right": 162.6015625,
+          "bottom": 511.390625,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 273.71875,
+          "bottom": 517.7890625,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 492.1875,
+          "width": 24,
+          "height": 16,
+          "top": 492.1875,
+          "right": 46.71875,
+          "bottom": 508.1875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 482.59375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 482.59375,
+          "right": 273.71875,
+          "bottom": 517.7890625,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 108,
+        "clientWidth": 108,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "语",
+            "x": 130.6015625,
+            "y": 490.9921875,
+            "width": 16,
+            "height": 18,
+            "top": 490.9921875,
+            "right": 146.6015625,
+            "bottom": 508.9921875,
+            "left": 130.6015625
+          },
+          {
+            "char": "言",
+            "x": 146.6015625,
+            "y": 490.9921875,
+            "width": 16,
+            "height": 18,
+            "top": 490.9921875,
+            "right": 162.6015625,
+            "bottom": 508.9921875,
+            "left": 146.6015625
+          }
+        ]
+      },
+      {
+        "source": "memory-management",
+        "translation": "内存管理",
+        "label": {
+          "x": 54.71875,
+          "y": 519.7890625,
+          "width": 215,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 269.71875,
+          "bottom": 564.5859375,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 273.71875,
+          "bottom": 564.5859375,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 534.1875,
+          "width": 24,
+          "height": 16,
+          "top": 534.1875,
+          "right": 46.71875,
+          "bottom": 550.1875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 519.7890625,
+          "width": 255,
+          "height": 44.796875,
+          "top": 519.7890625,
+          "right": 273.71875,
+          "bottom": 564.5859375,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 45,
+        "clientHeight": 45,
+        "scrollWidth": 215,
+        "clientWidth": 215,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "内",
+            "x": 60.3125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 76.3125,
+            "bottom": 562.1875,
+            "left": 60.3125
+          },
+          {
+            "char": "存",
+            "x": 76.3125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 92.3125,
+            "bottom": 562.1875,
+            "left": 76.3125
+          },
+          {
+            "char": "管",
+            "x": 92.3125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 108.3125,
+            "bottom": 562.1875,
+            "left": 92.3125
+          },
+          {
+            "char": "理",
+            "x": 108.3125,
+            "y": 544.1875,
+            "width": 16,
+            "height": 18,
+            "top": 544.1875,
+            "right": 124.3125,
+            "bottom": 562.1875,
+            "left": 108.3125
+          }
+        ]
+      },
+      {
+        "source": "standard-library",
+        "translation": "标准库",
+        "label": {
+          "x": 54.71875,
+          "y": 572.984375,
+          "width": 169.1953125,
+          "height": 22.3984375,
+          "top": 572.984375,
+          "right": 223.9140625,
+          "bottom": 595.3828125,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 566.5859375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 566.5859375,
+          "right": 273.71875,
+          "bottom": 601.78125,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 576.1796875,
+          "width": 24,
+          "height": 16,
+          "top": 576.1796875,
+          "right": 46.71875,
+          "bottom": 592.1796875,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 566.5859375,
+          "width": 255,
+          "height": 35.1953125,
+          "top": 566.5859375,
+          "right": 273.71875,
+          "bottom": 601.78125,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 22,
+        "clientHeight": 22,
+        "scrollWidth": 169,
+        "clientWidth": 169,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "标",
+            "x": 175.9140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 191.9140625,
+            "bottom": 592.984375,
+            "left": 175.9140625
+          },
+          {
+            "char": "准",
+            "x": 191.9140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 207.9140625,
+            "bottom": 592.984375,
+            "left": 191.9140625
+          },
+          {
+            "char": "库",
+            "x": 207.9140625,
+            "y": 574.984375,
+            "width": 16,
+            "height": 18,
+            "top": 574.984375,
+            "right": 223.9140625,
+            "bottom": 592.984375,
+            "left": 207.9140625
+          }
+        ]
+      },
+      {
+        "source": "All tags",
+        "translation": "所有标签",
+        "label": {
+          "x": 54.71875,
+          "y": 609.3515625,
+          "width": 110.125,
+          "height": 19.5,
+          "top": 609.3515625,
+          "right": 164.84375,
+          "bottom": 628.8515625,
+          "left": 54.71875
+        },
+        "row": {
+          "x": 18.71875,
+          "y": 603.78125,
+          "width": 255,
+          "height": 30.640625,
+          "top": 603.78125,
+          "right": 273.71875,
+          "bottom": 634.421875,
+          "left": 18.71875
+        },
+        "icon": {
+          "x": 22.71875,
+          "y": 612.140625,
+          "width": 24,
+          "height": 13.921875,
+          "top": 612.140625,
+          "right": 46.71875,
+          "bottom": 626.0625,
+          "left": 22.71875
+        },
+        "link": {
+          "x": 18.71875,
+          "y": 603.78125,
+          "width": 255,
+          "height": 30.640625,
+          "top": 603.78125,
+          "right": 273.71875,
+          "bottom": 634.421875,
+          "left": 18.71875
+        },
+        "display": "flex",
+        "whiteSpace": "normal",
+        "scrollHeight": 20,
+        "clientHeight": 20,
+        "scrollWidth": 110,
+        "clientWidth": 110,
+        "rowChildren": 1,
+        "translationInOriginalLink": true,
+        "chars": [
+          {
+            "char": "所",
+            "x": 109.140625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 123.0703125,
+            "bottom": 626.8515625,
+            "left": 109.140625
+          },
+          {
+            "char": "有",
+            "x": 123.0625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 136.9921875,
+            "bottom": 626.8515625,
+            "left": 123.0625
+          },
+          {
+            "char": "标",
+            "x": 136.984375,
+            "y": 611.3515625,
+            "width": 13.9375,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 150.921875,
+            "bottom": 626.8515625,
+            "left": 136.984375
+          },
+          {
+            "char": "签",
+            "x": 150.9140625,
+            "y": 611.3515625,
+            "width": 13.9296875,
+            "height": 15.5,
+            "top": 611.3515625,
+            "right": 164.84375,
+            "bottom": 626.8515625,
+            "left": 150.9140625
+          }
+        ]
+      }
+    ],
+    "counts": {
+      "targets": 42,
+      "translations": 42,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": [
+      {
+        "text": "跳到最后一条回复",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "跳转到顶部",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "跳转到主要内容",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "注册",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "登录",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "主题",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "文档",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "更多",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "类别",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "头脑风暴",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "解释一下",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "帮助",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "展示",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "所有类别",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "标签",
+        "display": "inline",
+        "margin": "0px"
+      }
+    ]
+  },
+  "restored": {
+    "labelsSame": true,
+    "markers": 0
+  }
+}

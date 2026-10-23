@@ -1,0 +1,31 @@
+{
+  "backups": 16,
+  "header": "Sign Up\nLog In\n​",
+  "heading": "Panic on attempting to access union payload\nHelp\nlanguage",
+  "posts": [
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80130"
+    },
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80132"
+    },
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80134"
+    },
+    {
+      "chinese": true,
+      "links": 4,
+      "post": "80156"
+    }
+  ],
+  "rf": 0,
+  "scope": "smart",
+  "sidebar": "Topics\nDocs\nMore\nCATEGORIES\nBrainstorming\nExplain\nHelp\nShowcase\nAll categories\nTAGS\nbuild-system\nlanguage\nmemory-management\nstandard-library\nAll tags\n​",
+  "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027"
+}

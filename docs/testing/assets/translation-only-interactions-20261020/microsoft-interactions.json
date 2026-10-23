@@ -1,0 +1,17 @@
+{
+  "translatedLabels": {
+    "bodyLink": "the documentation",
+    "titleLink": "阅读原始文档",
+    "button": "Show details",
+    "paragraph": "本段解释了本地的示范控制。按Show details可显示演示面板。该按钮有自己的点击处理程序，必须在翻译过程中和恢复原文后都保持可用。"
+  },
+  "url": "http://127.0.0.1:4174/translation-only-interactions.html#link-destination",
+  "buttons": "按钮点击：2",
+  "bodyClicks": "正文链接点击：1",
+  "titleClicks": "标题链接点击：1",
+  "identity": "原节点保留：true",
+  "input": "typed before Microsoft translation",
+  "checked": true,
+  "selection": "second",
+  "failures": 0
+}

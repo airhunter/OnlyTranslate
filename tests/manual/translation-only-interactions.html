@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Translation-only interaction acceptance</title>
+  <style>
+    body { font: 18px/1.7 system-ui; max-width: 900px; margin: 28px auto; padding: 0 24px; }
+    button, input, select { font: inherit; }
+    button { padding: 6px 14px; cursor: pointer; }
+    p { margin: 22px 0; }
+    aside { border: 1px solid #aaa; padding: 14px; background: #f6f6f6; }
+    output { display: block; }
+    #link-destination { border-top: 1px solid #aaa; margin-top: 26px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Translation-only interaction acceptance</h1>
+    <h2 id="linked-title"><a id="title-link" href="#link-destination">Read the original documentation</a></h2>
+    <p id="linked-paragraph">Read <a id="body-link" href="#link-destination"><strong>the documentation</strong></a> before making changes. This paragraph contains an original link whose click handler must continue working while the translated text is displayed.</p>
+    <p id="button-paragraph">This paragraph explains the local demonstration control. Press <button id="details-button" type="button" aria-expanded="false"><span>Show details</span></button> to reveal the demonstration panel. The button has its own click handler and must remain usable both during translation and after restoring the original text.</p>
+    <div id="details-panel" hidden translate="no">演示面板已打开，按钮原事件有效。</div>
+    <p id="controls-paragraph">This demonstration keeps the values you entered in the original controls. <label>Name <input id="name-input" value="sample name"></label> <label><input id="checkbox" type="checkbox">Remember this choice</label> <label>Level <select id="level"><option value="first">First</option><option value="second">Second</option></select></label> These controls must preserve their current state without being recreated when the surrounding paragraph is translated.</p>
+    <p id="protected-paragraph">Run <code id="command">npm install</code> to install dependencies, then read <a id="protected-link" href="#link-destination">the setup guide</a> for further instructions. Inline commands should remain unchanged and original links should remain interactive.</p>
+    <section id="link-destination" translate="no"><h2>链接目标区域</h2><p>跳到这里说明链接默认跳转有效。</p></section>
+  </main>
+  <aside translate="no" id="evidence">
+    <strong>原事件与节点检查（不参与翻译）</strong>
+    <output id="title-clicks">标题链接点击：0</output>
+    <output id="body-clicks">正文链接点击：0</output>
+    <output id="button-clicks">按钮点击：0</output>
+    <output id="node-identity">节点检查：尚未点击</output>
+    <output id="control-state">输入状态：尚未操作</output>
+  </aside>
+  <script>
+    const titleLink = document.querySelector('#title-link');
+    const bodyLink = document.querySelector('#body-link');
+    const button = document.querySelector('#details-button');
+    const input = document.querySelector('#name-input');
+    const checkbox = document.querySelector('#checkbox');
+    const level = document.querySelector('#level');
+    let titleClicks = 0;
+    let bodyClicks = 0;
+    let buttonClicks = 0;
+    const identity = () => {
+      document.querySelector('#node-identity').textContent = '原节点保留：' + (
+        document.querySelector('#title-link') === titleLink &&
+        document.querySelector('#body-link') === bodyLink &&
+        document.querySelector('#details-button') === button &&
+        document.querySelector('#name-input') === input &&
+        document.querySelector('#checkbox') === checkbox &&
+        document.querySelector('#level') === level
+      );
+    };
+    titleLink.addEventListener('click', () => {
+      document.querySelector('#title-clicks').textContent = '标题链接点击：' + ++titleClicks;
+      identity();
+    });
+    bodyLink.addEventListener('click', () => {
+      document.querySelector('#body-clicks').textContent = '正文链接点击：' + ++bodyClicks;
+      identity();
+    });
+    button.addEventListener('click', () => {
+      document.querySelector('#button-clicks').textContent = '按钮点击：' + ++buttonClicks;
+      const expanded = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(expanded));
+      document.querySelector('#details-panel').hidden = !expanded;
+      identity();
+    });
+    const reportState = () => {
+      document.querySelector('#control-state').textContent =
+        `输入值：${input.value}；勾选：${checkbox.checked}；选项：${level.value}`;
+      identity();
+    };
+    input.addEventListener('input', reportState);
+    checkbox.addEventListener('change', reportState);
+    level.addEventListener('change', reportState);
+  </script>
+</body>
+</html>

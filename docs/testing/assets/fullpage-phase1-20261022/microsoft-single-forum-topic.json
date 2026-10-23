@@ -1,0 +1,28 @@
+{
+  "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+  "service": "microsoft",
+  "mode": "single",
+  "scope": "full",
+  "counts": {
+    "targets": 45,
+    "translations": 0,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 11229,
+  "stableMs": 8115,
+  "originalLinks": 41,
+  "displayedLinks": 41,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 24,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 2,
+  "connectedOriginalCodeBlocks": 2,
+  "visibleCodeBlocks": 2,
+  "connectedOriginalLinks": 41,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": null,
+  "rejected": []
+}

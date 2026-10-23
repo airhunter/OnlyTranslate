@@ -1,0 +1,24 @@
+{
+  "name": "Ziggit full page includes visible post controls while keeping duplicate and code protection",
+  "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+  "scope": "full",
+  "html": "ziggit-topic-thread.html",
+  "include": [
+    "reply-point",
+    "reply-workaround",
+    "like-second",
+    "like-third"
+  ],
+  "exclude": [
+    "intro",
+    "already-final"
+  ],
+  "textIncludes": [
+    "That is the point of export",
+    "found a workaround",
+    "like this post"
+  ],
+  "textExcludes": [
+    "pub export fn DllMain()"
+  ]
+}

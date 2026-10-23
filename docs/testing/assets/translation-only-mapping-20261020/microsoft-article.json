@@ -1,0 +1,71 @@
+{
+  "service": "Microsoft Translator",
+  "scope": "full",
+  "counts": {
+    "loading": 0,
+    "failures": 0,
+    "targets": 200
+  },
+  "stableForMs": 7020,
+  "originalLinkCount": 58,
+  "displayedLinkCount": 58,
+  "sameNodes": true,
+  "formerlyFailedCases": [
+    {
+      "prefix": "One of the earliest empirical studies by Hestness et al. (20",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "最早的实证研究之一Hestness 等（2017） 解释了泛化误差、模型规模与数据之间的关系。对于给定的训练数据大小，他们通过网格搜索确定最佳拟合模型大小，然后绘制训练数据集大小的损失图。在深度学习的四个不同领域（神经机器翻译、图像分类、语言建模和语音识别）中，观察到一个反复出现的模式，即："
+    },
+    {
+      "prefix": "The number of model parameters N needed to fit a dataset of ",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "模型参数的数量N 需要适应一个规模为 的数据集D 也可按幂律扩展。"
+    },
+    {
+      "prefix": "Given a fixed compute budget, it is more efficient to train ",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "在计算预算固定的情况下，训练一个非常大的模型并停止运行会更高效收敛前 比起训练一个更小的模型直到收敛。这一发现是龙猫缩放定律（下一节）不同意的地方：Kaplan等人高估了最优模型大小，因为他们的拟合指数更大。"
+    },
+    {
+      "prefix": "The Chinchilla paper (Hoffmann et al. 2022) studied the rela",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "Chinchilla报纸（Hoffmann 等人，2022研究了最优模型大小之间的关系N （总参数，包括 嵌入）以及令牌数量D 在a固定 计算预算C 通过更为细致的实验设计，得出了与Kaplan等人略有不同的答案。"
+    },
+    {
+      "prefix": "We can actually get a closed form approximation of optimal N",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "我们实际上可以得到最优的闭式近似Nopt(C),Dopt(C) 通过最小化L^(N,D) 在 约束下FLOPs(N,D)=C≈6ND."
+    },
+    {
+      "prefix": "The study by Hernandez et al. (2022) focused on a controlled",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "研究Hernandez 等（2022） 聚焦于受控版本：一个大部分独一无二的数据集，重复数据占少少。从一个大型数据集出发，数据组合保留90%的非重复，但用极小部分的重复替代剩余的10%。通过训练一个针对100B符号的变换器模型，他们观察到一种双下降现象，即检验损耗实际上可以得到更糟 然后随着重复数据的强调程度，效果也会更好，这种效应随着重复比例的增加而更加明显。"
+    },
+    {
+      "prefix": "The key modeling adjustment is to decompose the total token ",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "关键的建模调整是分解总代币数量D 分为两部分：（i） 唯一代币数量UD 以及（ii）重复次数RD （即数个纪元数 - 1个）。因此我们有D=UD(1+RD).采用唯一数据预算Duniq，按定义UD=min{Duniq,D} 以及RD=(D/UD)−1.他们利用龙猫缩放定律来寻找最优模型尺寸UN 用于拟合UD并通过重复定义超额模型大小RN=(N/UN)−1."
+    },
+    {
+      "prefix": "and thus Nopt∝C0.5126,Dopt∝C0.4874. This is the estimate fro",
+      "translated": true,
+      "loading": false,
+      "failure": false,
+      "text": "因此Nopt∝C0.5126,Dopt∝C0.4874.这是从Besiroglu 等人（2024）."
+    }
+  ]
+}

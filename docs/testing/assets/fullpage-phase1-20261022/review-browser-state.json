@@ -1,0 +1,68 @@
+{
+  "scope": "full",
+  "service": "微软翻译",
+  "display": "Bilingual",
+  "loadedOptionsScripts": [
+    "http://localhost:3000/@vite/client",
+    "http://localhost:3000/@id/virtual:wxt-html-plugins",
+    "http://localhost:3000/entrypoints/options/main.ts"
+  ],
+  "pagesRestored": [
+    {
+      "url": "http://127.0.0.1:4174/full-page-acceptance.html#destination",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "https://lilianweng.github.io/",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "http://127.0.0.1:4174/full-page-acceptance.html#destination",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "https://ziggit.dev/",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "http://127.0.0.1:4174/translation-only-interactions.html",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "http://127.0.0.1:4174/full-page-acceptance.html#destination",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    },
+    {
+      "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+      "translatedMarkers": 0,
+      "loading": 0,
+      "failures": 0,
+      "sourceWrappers": 0
+    }
+  ]
+}

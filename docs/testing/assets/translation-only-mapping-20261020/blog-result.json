@@ -1,0 +1,119 @@
+{
+  "counts": {
+    "loading": 4,
+    "failures": 26,
+    "targets": 45
+  },
+  "stableForMs": 529,
+  "originalLinks": 58,
+  "displayedLinks": 58,
+  "sameNodes": true,
+  "failures": [
+    {
+      "source": "Scaling laws are one of the most critical empirical findings in deep learning. The observation is simple in form: the training loss L decreases predictably as we scale up model size N, dataset size D, and compute C, following a power-law curve, which appears as a straight line on a log-log plot. We can view scaling laws as a framework for describing the relationship between compute, loss, model size and data; at its core, it is about how to allocate precious compute optimally between N and D.\n  ",
+      "tag": "P"
+    },
+    {
+      "source": "This predictability makes scaling laws highly valuable in practice. A common workflow is to fit scaling laws on a handful of small runs and then extrapolate to estimate the token and compute requirements for larger models.\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "Symbol\n    \nRetry\n    \nError reason",
+      "tag": "TH"
+    },
+    {
+      "source": "Note\n    \nRetry\n    \nError reason",
+      "tag": "TH"
+    },
+    {
+      "source": "Model size, measured in parameter count.\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Training dataset size, usually measured in token count.\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Training compute in FLOPs. As a useful approximation, C≈6ND (Kaplan et al. 2020), where 2ND accounts for the forward pass and 4ND for backpropagation.\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Irreducible loss\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Test loss / test loss prediction function; can also refer to training loss, since they are strongly correlated.\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Generalization error.\n    \nRetry\n    \nError reason",
+      "tag": "TD"
+    },
+    {
+      "source": "Early days: ML loss predictability#\n    \nRetry\n    \nError reason",
+      "tag": "H1"
+    },
+    {
+      "source": "The predictability of generalization error with scale had already been investigated before scaling laws became a mainstream concept.\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "Amari et al. (1992) derived four types of learning curves using a Bayesian approach and the annealed approximation.\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "Deterministic learning algorithm, noiseless data, one unique solution: ϵ∼c⋅D−1, where c is some constant.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Deterministic learning algorithm, noiseless data, multiple equivalent solutions: ϵ∼c⋅D−2; the learning is faster with each new data point, because the model only learns the optimal manifold of parameters, instead of finding the single solution point.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Deterministic learning algorithm, noisy data: ϵ∼c⋅D−1/2; noises in data make learning harder.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Stochastic learning algorithm, noisy data: ϵ∼c⋅D−1+E; here the irreducible loss E is the residual error that a stochastic learner cannot reduce further, for example when the model runs out of capacity on large data.\nAll four types of learning curves follow a power law:\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "where E can be 0 and α=−2,−1,−1/2. Although their theoretical setup is based on a simplified binary classification task, it points in a useful direction for building empirical ML loss prediction models.\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "One of the earliest empirical studies by Hestness et al. (2017) explained the relationship between generalization error, model size and data. For a given training data size, they identified the best-fit model size via grid search and then plotted loss against training dataset size. Across four different domains in deep learning (neural machine translation, image classification, language modeling, and speech recognition), a recurring pattern was observed where:\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "Generalization error scales as a power law across a set of factors (e.g. data size).\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Model improvements shift the error curve but do not seem to affect the power-law exponent.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Interestingly, architecture changes the offset (E) of the power-law fit but does not change the exponent (α). The slope of the power law appears to be a property of the problem domain rather than the model architecture.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "The number of model parameters N needed to fit a dataset of size D also scales as a power law.\n    \nRetry\n    \nError reason",
+      "tag": "LI"
+    },
+    {
+      "source": "Learning curves for (Left) Deep-Speech-2 (DS2) and attention speech model and for (Right) DS2 models of various sizes. The losses of small models plateau when training data becomes large. (Image source: Hestness et al. 2017)\n    \nRetry\n    \nError reason",
+      "tag": "FIGCAPTION"
+    },
+    {
+      "source": "A conceptual illustration breaks the learning curve into three stages. In the small-data region, when there are not enough learning signals, the model performs only slightly better than random guessing. In the middle (“power-law region”), we observe a power-law relationship between loss, data, and model size. The final irreducible-error region can be attributed to factors such as noise in the data.\n    \nRetry\n    \nError reason",
+      "tag": "P"
+    },
+    {
+      "source": "Illustration of power-law learning curve phases. (Image source: Hestness et al. 2017)\n    \nRetry\n    \nError reason",
+      "tag": "FIGCAPTION"
+    }
+  ],
+  "requestsCaptured": 176,
+  "markerFailures": []
+}

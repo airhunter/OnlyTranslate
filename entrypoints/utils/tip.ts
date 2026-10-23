@@ -5,15 +5,15 @@ import {throttle} from "@/entrypoints/utils/common";
 const prefix = "";
 
 function _sendErrorMessage(message: string) {
-    ElMessage({message: prefix + message, type: 'error'});
+    ElMessage({message: prefix + message, type: 'error', customClass: 'notranslate'});
 }
 
 function _sendSuccessMessage(message: string) {
-    ElMessage({message: prefix + message, type: 'success'});
+    ElMessage({message: prefix + message, type: 'success', customClass: 'notranslate'});
 }
 
 function _sendWarningMessage(message: string) {
-    ElMessage({message: prefix + message, type: 'warning'});
+    ElMessage({message: prefix + message, type: 'warning', customClass: 'notranslate'});
 }
 
 // 使用防抖函数包装，1s 内只能发送一次消息

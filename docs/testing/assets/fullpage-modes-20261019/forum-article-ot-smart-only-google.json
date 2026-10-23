@@ -1,0 +1,39 @@
+{
+  "backups": 16,
+  "firstTopics": [],
+  "header": "Sign Up\nLog In\n​",
+  "heading": "Panic on attempting to access union payload\nHelp\nlanguage",
+  "ot": 16,
+  "posts": [
+    {
+      "chinese": true,
+      "links": [],
+      "post": "80130"
+    },
+    {
+      "chinese": true,
+      "links": [],
+      "post": "80132"
+    },
+    {
+      "chinese": true,
+      "links": [],
+      "post": "80134"
+    },
+    {
+      "chinese": true,
+      "links": [
+        "https://github.com/ypsvlq/wio/blob/dd0f273fdbbd1ced2a8e716ea3a5526a6c4d83cf/src/unix.zig#L20-L98",
+        "https://github.com/ypsvlq/wio/blob/dd0f273fdbbd1ced2a8e716ea3a5526a6c4d83cf/src/unix.zig#L20-L98",
+        "https://github.com/ypsvlq/wio/blob/dd0f273fdbbd1ced2a8e716ea3a5526a6c4d83cf/src/unix.zig#L20-L98",
+        "https://github.com/ypsvlq/wio/blob/dd0f273fdbbd1ced2a8e716ea3a5526a6c4d83cf/src/unix.zig#L20-L98"
+      ],
+      "post": "80156"
+    }
+  ],
+  "rf": 0,
+  "scope": "smart",
+  "sidebar": "Topics\nDocs\nMore\nCATEGORIES\nBrainstorming\nExplain\nHelp\nShowcase\nAll categories\nTAGS\nbuild-system\nlanguage\nmemory-management\nstandard-library\nAll tags\n​",
+  "title": "Panic on attempting to access union payload - Help - Ziggit",
+  "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027"
+}

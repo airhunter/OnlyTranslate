@@ -1,0 +1,79 @@
+- banner:
+  - link "Ziggit":
+    - /url: /
+  - generic: 吉吉特
+  - paragraph:
+    - text: A community for people programming in Zig.
+    - generic: 这是一个为用Zig编程的人打造的社区。
+- main:
+  - table:
+    - rowgroup:
+      - row "Topic 主题 Replies 回复 Views 观点 Activity 活动":
+        - columnheader "Topic 主题":
+          - text: Topic
+          - generic: 主题
+        - columnheader "Replies 回复":
+          - text: Replies
+          - generic: 回复
+        - columnheader "Views 观点":
+          - text: Views
+          - generic: 观点
+        - columnheader "Activity 活动":
+          - text: Activity
+          - generic: 活动
+    - rowgroup:
+      - 'row "About #32099: remove TypeOf and anytype; introduce T syntax 关于 #32099：删除 TypeOf 和 anytype;引入T语法 Brainstorming 头脑风暴 language 语言 alice bob 爱丽丝·鲍勃 25 1069 May 30, 2026 2026年5月30日"':
+        - 'cell "About #32099: remove TypeOf and anytype; introduce T syntax 关于 #32099：删除 TypeOf 和 anytype;引入T语法 Brainstorming 头脑风暴 language 语言"':
+          - 'link "About #32099: remove TypeOf and anytype; introduce T syntax"':
+            - /url: https://ziggit.dev/t/about-32099-remove-typeof-and-anytype-introduce-t-syntax
+          - generic: "关于 #32099：删除 TypeOf 和 anytype;引入T语法"
+          - link "Brainstorming":
+            - /url: /c/brainstorming/13
+          - generic: 头脑风暴
+          - link "language 语言":
+            - /url: /tag/language
+            - text: language
+            - generic: 语言
+        - cell "alice bob 爱丽丝·鲍勃":
+          - text: alice bob
+          - generic: 爱丽丝·鲍勃
+        - cell "25"
+        - cell "1069"
+        - cell "May 30, 2026 2026年5月30日":
+          - text: May 30, 2026
+          - generic: 2026年5月30日
+      - 'row "ZSFN: Zig SHOWTIME, 31 May 2026 ZSFN：Zig SHOWTIME，2026年5月31日 Showcase 展示 carol 卡萝尔 12 540 May 29, 2026 2026年5月29日"':
+        - 'cell "ZSFN: Zig SHOWTIME, 31 May 2026 ZSFN：Zig SHOWTIME，2026年5月31日 Showcase 展示"':
+          - 'link "ZSFN: Zig SHOWTIME, 31 May 2026"':
+            - /url: https://ziggit.dev/t/zig-showtime-31-may-2026
+          - generic: ZSFN：Zig SHOWTIME，2026年5月31日
+          - link "Showcase 展示":
+            - /url: /c/showcase/14
+            - text: Showcase
+            - generic: 展示
+        - cell "carol 卡萝尔":
+          - text: carol
+          - generic: 卡萝尔
+        - cell "12"
+        - cell "540"
+        - cell "May 29, 2026 2026年5月29日":
+          - text: May 29, 2026
+          - generic: 2026年5月29日
+  - navigation:
+    - link "next page 下一页":
+      - /url: /latest?no_definitions=true&page=1
+      - text: next page
+      - generic: 下一页
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"

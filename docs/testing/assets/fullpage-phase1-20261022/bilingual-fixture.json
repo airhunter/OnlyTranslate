@@ -1,0 +1,85 @@
+{
+  "service": "Microsoft Translator",
+  "scope": "full",
+  "display": "bilingual",
+  "before": {
+    "failures": 0,
+    "loading": 0,
+    "translations": 16,
+    "card": {
+      "x": 167.5,
+      "y": 269.234375,
+      "width": 850,
+      "height": 108,
+      "top": 269.234375,
+      "right": 1017.5,
+      "bottom": 377.234375,
+      "left": 167.5
+    },
+    "source": {
+      "x": 167.5,
+      "y": 269.234375,
+      "width": 850,
+      "height": 54,
+      "top": 269.234375,
+      "right": 1017.5,
+      "bottom": 323.234375,
+      "left": 167.5
+    },
+    "translation": {
+      "x": 167.5,
+      "y": 323.234375,
+      "width": 850,
+      "height": 54,
+      "top": 323.234375,
+      "right": 1017.5,
+      "bottom": 377.234375,
+      "left": 167.5
+    },
+    "saveText": "Save changes存档更改",
+    "saveBr": false,
+    "closedTranslated": false
+  },
+  "interaction": {
+    "clicks": "按钮事件：2",
+    "submits": "表单事件：1",
+    "links": "链接事件：1",
+    "identity": "原节点保留：true",
+    "input": "edited while translated",
+    "live": "This recycled post now contains different content after being detached and reused.这篇被重复使用的帖子在被拆解并重复使用后，内容已不同。",
+    "failures": 0,
+    "translations": 18
+  },
+  "narrow": {
+    "width": 375,
+    "scroll": 375,
+    "card": {
+      "x": 20,
+      "y": -614.765625,
+      "width": 335,
+      "height": 108,
+      "top": -614.765625,
+      "right": 355,
+      "bottom": -506.765625,
+      "left": 20
+    },
+    "translation": {
+      "x": 20,
+      "y": -560.765625,
+      "width": 335,
+      "height": 54,
+      "top": -560.765625,
+      "right": 355,
+      "bottom": -506.765625,
+      "left": 20
+    }
+  },
+  "restored": {
+    "summaryRestored": true,
+    "sourceWrappers": 0,
+    "cardClamp": "2",
+    "input": "edited while translated",
+    "live": "This recycled post now contains different content after being detached and reused.",
+    "code": "npm install"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "url": "https://ziggit.dev/",
+  "service": "microsoft",
+  "mode": "single",
+  "scope": "full",
+  "counts": {
+    "targets": 168,
+    "translations": 0,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 19025,
+  "stableMs": 8977,
+  "originalLinks": 294,
+  "displayedLinks": 294,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 121,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 0,
+  "connectedOriginalCodeBlocks": 0,
+  "visibleCodeBlocks": 0,
+  "connectedOriginalLinks": 294,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": null,
+  "rejected": [],
+  "opened": {
+    "href": "/t/now-youre-cooking-a-roguelike-deckbuilder/17763",
+    "url": "https://ziggit.dev/t/now-youre-cooking-a-roguelike-deckbuilder/17763",
+    "title": "🍳 Now You're Cooking! - A Roguelike Deckbuilder - Showcase - Ziggit"
+  }
+}

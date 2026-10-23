@@ -382,6 +382,30 @@
     overflow-wrap: break-word; /* 处理长单词或 URL 的断行，避免溢出 */
 }
 
+[data-only-translate-bilingual-label="true"] {
+    white-space: normal !important;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.only-translate-bilingual-content--inline {
+    display: inline !important;
+    margin-inline-start: 0.35em;
+}
+
+.only-translate-bilingual-content--inline > .only-translate-bilingual-text {
+    display: inline-block !important;
+    max-width: 100%;
+    margin: 0 !important;
+}
+
+/* Ziggit / Discourse 侧栏原有固定行高；只让已经插入双语标签的行随文字增高。 */
+.sidebar-section-link-wrapper.only-translate-bilingual > .sidebar-row:has([data-only-translate-bilingual-label="true"]),
+.sidebar-section-link-wrapper > .sidebar-row.only-translate-bilingual:has([data-only-translate-bilingual-label="true"]) {
+    height: auto;
+    min-height: var(--d-sidebar-row-height, 2.2em);
+}
+
 .only-translate-asterisk-footnote {
     font: inherit;
     line-height: inherit;

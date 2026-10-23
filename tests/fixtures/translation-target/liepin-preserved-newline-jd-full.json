@@ -4,7 +4,6 @@
   "scope": "full",
   "html": "liepin-preserved-newline-jd.html",
   "exclude": [
-    "navigation",
     "code-sample"
   ],
   "textIncludes": [
@@ -12,11 +11,12 @@
     "WHAT THE ROLE INVOLVES",
     "SKILLS AND CAPABILITIES NEEDED",
     "Why Evinova (AstraZeneca)?",
-    "Learn more about Evinova"
+    "Learn more about Evinova",
+    "Navigation content should stay excluded."
   ],
   "textExcludes": [
-    "Navigation content should stay excluded.",
     "do not translate code"
   ],
-  "nodesEveryElement": true
+  "nodesEveryElement": true,
+  "include": ["navigation"]
 }

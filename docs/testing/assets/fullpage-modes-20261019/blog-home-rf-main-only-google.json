@@ -1,0 +1,31 @@
+{
+  "backups": 0,
+  "bodyLinkCount": 0,
+  "bodyMathCount": 0,
+  "cards": [
+    {
+      "excerptChinese": true,
+      "heading": "利用工程学进行自我提升",
+      "meta": "日期：2026年7月4日 | 预计阅读时间：31分钟 | 作者：翁莉莲",
+      "postLink": "https://lilianweng.github.io/posts/2026-07-04-harness/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "尺度定律，仔细研究",
+      "meta": "日期：2026年6月24日 | 预计阅读时间：25分钟 | 作者：翁莉莲",
+      "postLink": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "我们为什么思考",
+      "meta": "日期：2025年5月1日 | 预计阅读时间：40分钟 | 作者：翁莉莲",
+      "postLink": "https://lilianweng.github.io/posts/2025-05-01-thinking/"
+    }
+  ],
+  "firstParagraphChinese": false,
+  "heading": "👋 欢迎来到 Lil'Log",
+  "nav": "Lil'Log\n|\nPosts\nArchive\nSearch\nTags\nFAQ",
+  "scope": "full",
+  "title": "小日志",
+  "url": "https://lilianweng.github.io/"
+}

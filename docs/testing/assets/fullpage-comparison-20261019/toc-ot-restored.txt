@@ -1,0 +1,52 @@
+- main:
+  - article:
+    - heading "Scaling Laws for Language Models" [level=1]
+    - generic: "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng"
+    - generic "Table of Contents"
+    - list:
+      - 'link "Early days: ML loss predictability"':
+        - /url: "#early"
+      - link "Scaling Laws in Data-Infinite Region":
+        - /url: "#infinite"
+      - list:
+        - link "Kaplan et al.'s Scaling Laws":
+          - /url: "#kaplan"
+        - link "Chinchilla Scaling Laws":
+          - /url: "#chinchilla"
+        - list:
+          - 'link "Method 1: Fix model sizes, vary the token budget"':
+            - /url: "#method-1"
+          - 'link "Method 2: IsoFLOP profiles"':
+            - /url: "#method-2"
+          - 'link "Method 3: Parametric fit"':
+            - /url: "#method-3"
+        - link "Reconciling Kaplan and Chinchilla":
+          - /url: "#reconcile"
+        - link "Why power law?":
+          - /url: "#why-power"
+      - link "Scaling Laws in Data-Limited Region":
+        - /url: "#limited"
+      - link "Trickiness of Fitting Scaling Laws in Reality":
+        - /url: "#tricky"
+      - list:
+        - link "Toy simulation":
+          - /url: "#toy"
+      - link "Citation":
+        - /url: "#citation"
+      - link "References":
+        - /url: "#references"
+    - paragraph: This article surveys scaling laws for language models with enough natural language prose to make the article shell the main content. The discussion compares empirical predictability, data constraints, and practical fitting challenges across many paragraphs in a normal technical blog post.
+    - paragraph: Additional readable prose keeps this sample representative of a long-form article rather than a standalone navigation widget. It gives the content detector enough evidence to use smart mode while preserving the nested table of contents near the top of the article.
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"

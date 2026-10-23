@@ -1,0 +1,37 @@
+- main:
+  - heading "Properties 性质" [level=1]:
+    - text: Properties
+    - generic: 性质
+  - button "Save & Continue"
+  - heading "Category" [level=4]
+  - text: Pick the category that best describes your extension
+  - link "Learn More about Category":
+    - /url: /category-help
+  - combobox:
+    - option "Pick a category"
+    - option "Productivity" [selected]
+  - heading "Support details" [level=4]
+  - generic: Website
+  - textbox "Enter a valid URL": https://example.test
+  - generic: Support contact detail
+  - textbox "Enter a valid URL or email address"
+  - heading "Mature content" [level=4]
+  - text: Select this checkbox if your extension includes mature content
+  - link "Learn More about Mature Content":
+    - /url: /mature-help
+  - text: Examples of mature content include sexual and suggestive content, strong language, violence or a focus on consumption or sale of alcohol, tobacco, or drugs
+  - checkbox "This item contains content that might not be suitable for all ages" [checked]
+  - text: This item contains content that might not be suitable for all ages
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"

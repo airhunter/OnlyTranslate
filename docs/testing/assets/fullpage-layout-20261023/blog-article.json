@@ -1,0 +1,676 @@
+{
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "service": "microsoft",
+  "mode": "bilingual",
+  "scope": "full",
+  "baseline": {
+    "width": 1440,
+    "scrollWidth": 1421,
+    "headerLinks": [
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 222,
+          "y": 0,
+          "width": 74,
+          "height": 60,
+          "top": 0,
+          "right": 296,
+          "bottom": 60,
+          "left": 222
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 917.109375,
+          "y": 0,
+          "width": 40.1484375,
+          "height": 60,
+          "top": 0,
+          "right": 957.2578125,
+          "bottom": 60,
+          "left": 917.109375
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/archives",
+        "rect": {
+          "x": 981.2578125,
+          "y": 0,
+          "width": 54.2734375,
+          "height": 60,
+          "top": 0,
+          "right": 1035.53125,
+          "bottom": 60,
+          "left": 981.2578125
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/search/",
+        "rect": {
+          "x": 1059.53125,
+          "y": 0,
+          "width": 50.515625,
+          "height": 60,
+          "top": 0,
+          "right": 1110.046875,
+          "bottom": 60,
+          "left": 1059.53125
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/tags/",
+        "rect": {
+          "x": 1134.046875,
+          "y": 0,
+          "width": 34.203125,
+          "height": 60,
+          "top": 0,
+          "right": 1168.25,
+          "bottom": 60,
+          "left": 1134.046875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/faq",
+        "rect": {
+          "x": 1192.25,
+          "y": 0,
+          "width": 30.25,
+          "height": 60,
+          "top": 0,
+          "right": 1222.5,
+          "bottom": 60,
+          "left": 1192.25
+        }
+      }
+    ],
+    "rows": [],
+    "counts": {
+      "targets": 0,
+      "translations": 0,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": []
+  },
+  "narrowBaseline": {
+    "width": 900,
+    "scrollWidth": 1064,
+    "headerLinks": [
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": -48,
+          "y": 0,
+          "width": 74,
+          "height": 60,
+          "top": 0,
+          "right": 26,
+          "bottom": 60,
+          "left": -48
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 551.609375,
+          "y": 0,
+          "width": 40.1484375,
+          "height": 60,
+          "top": 0,
+          "right": 591.7578125,
+          "bottom": 60,
+          "left": 551.609375
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/archives",
+        "rect": {
+          "x": 615.7578125,
+          "y": 0,
+          "width": 54.2734375,
+          "height": 60,
+          "top": 0,
+          "right": 670.03125,
+          "bottom": 60,
+          "left": 615.7578125
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/search/",
+        "rect": {
+          "x": 694.03125,
+          "y": 0,
+          "width": 50.515625,
+          "height": 60,
+          "top": 0,
+          "right": 744.546875,
+          "bottom": 60,
+          "left": 694.03125
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/tags/",
+        "rect": {
+          "x": 768.546875,
+          "y": 0,
+          "width": 34.203125,
+          "height": 60,
+          "top": 0,
+          "right": 802.75,
+          "bottom": 60,
+          "left": 768.546875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/faq",
+        "rect": {
+          "x": 826.75,
+          "y": 0,
+          "width": 30.25,
+          "height": 60,
+          "top": 0,
+          "right": 857,
+          "bottom": 60,
+          "left": 826.75
+        }
+      }
+    ],
+    "rows": [],
+    "counts": {
+      "targets": 0,
+      "translations": 0,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": []
+  },
+  "desktop": {
+    "width": 1440,
+    "scrollWidth": 1421,
+    "headerLinks": [
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 222,
+          "y": 0,
+          "width": 150.953125,
+          "height": 60,
+          "top": 0,
+          "right": 372.953125,
+          "bottom": 60,
+          "left": 222
+        },
+        "translation": {
+          "x": 304.3984375,
+          "y": 0,
+          "width": 68.5546875,
+          "height": 60,
+          "top": 0,
+          "right": 372.953125,
+          "bottom": 60,
+          "left": 304.3984375
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 705.0625,
+          "y": 0,
+          "width": 76.421875,
+          "height": 60,
+          "top": 0,
+          "right": 781.484375,
+          "bottom": 60,
+          "left": 705.0625
+        },
+        "translation": {
+          "x": 750.8046875,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 781.484375,
+          "bottom": 60,
+          "left": 750.8046875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/archives",
+        "rect": {
+          "x": 805.484375,
+          "y": 0,
+          "width": 90.546875,
+          "height": 60,
+          "top": 0,
+          "right": 896.03125,
+          "bottom": 60,
+          "left": 805.484375
+        },
+        "translation": {
+          "x": 865.3515625,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 896.03125,
+          "bottom": 60,
+          "left": 865.3515625
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/search/",
+        "rect": {
+          "x": 920.03125,
+          "y": 0,
+          "width": 86.7890625,
+          "height": 60,
+          "top": 0,
+          "right": 1006.8203125,
+          "bottom": 60,
+          "left": 920.03125
+        },
+        "translation": {
+          "x": 976.140625,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 1006.8203125,
+          "bottom": 60,
+          "left": 976.140625
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/tags/",
+        "rect": {
+          "x": 1030.8203125,
+          "y": 0,
+          "width": 70.4765625,
+          "height": 60,
+          "top": 0,
+          "right": 1101.296875,
+          "bottom": 60,
+          "left": 1030.8203125
+        },
+        "translation": {
+          "x": 1070.6171875,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 1101.296875,
+          "bottom": 60,
+          "left": 1070.6171875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/faq",
+        "rect": {
+          "x": 1125.296875,
+          "y": 0,
+          "width": 97.203125,
+          "height": 60,
+          "top": 0,
+          "right": 1222.5,
+          "bottom": 60,
+          "left": 1125.296875
+        },
+        "translation": {
+          "x": 1161.140625,
+          "y": 0,
+          "width": 61.359375,
+          "height": 60,
+          "top": 0,
+          "right": 1222.5,
+          "bottom": 60,
+          "left": 1161.140625
+        }
+      }
+    ],
+    "rows": [],
+    "counts": {
+      "targets": 205,
+      "translations": 199,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": [
+      {
+        "text": "小洛格",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "职位",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "档案",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "搜索",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "标签",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "常见问题",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "目录",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "象征",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "注释",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "模型规模，以参数计数衡量。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "训练数据集大小，通常以令牌数量衡量。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "在FLOP中训练计算。作为一个有用的近似，C≈6ND（Kaplan等，2020），其中2ND考虑了前向通，4ND了反向传播。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "不可约损失",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "测试损耗/测试损耗预测函数;也可以指训练损失，因为它们高度相关。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "泛化错误。",
+        "display": "inline",
+        "margin": "0px"
+      }
+    ]
+  },
+  "linksSame": [
+    {
+      "href": "https://lilianweng.github.io/",
+      "text": "Lil'Log小洛格"
+    },
+    {
+      "href": "https://lilianweng.github.io/",
+      "text": "\n                    Posts\n职位\n                \n                "
+    },
+    {
+      "href": "https://lilianweng.github.io/archives",
+      "text": "\n                    Archive\n档案\n                \n                "
+    },
+    {
+      "href": "https://lilianweng.github.io/search/",
+      "text": "\n                    Search\n搜索\n                \n                "
+    },
+    {
+      "href": "https://lilianweng.github.io/tags/",
+      "text": "\n                    Tags\n标签\n                \n                "
+    },
+    {
+      "href": "https://lilianweng.github.io/faq",
+      "text": "\n                    FAQ\n常见问题\n                \n                "
+    }
+  ],
+  "narrow": {
+    "width": 900,
+    "scrollWidth": 1064,
+    "headerLinks": [
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": -48,
+          "y": 0,
+          "width": 150.953125,
+          "height": 60,
+          "top": 0,
+          "right": 102.953125,
+          "bottom": 60,
+          "left": -48
+        },
+        "translation": {
+          "x": 34.3984375,
+          "y": 0,
+          "width": 68.5546875,
+          "height": 60,
+          "top": 0,
+          "right": 102.953125,
+          "bottom": 60,
+          "left": 34.3984375
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/",
+        "rect": {
+          "x": 339.5625,
+          "y": 0,
+          "width": 76.421875,
+          "height": 60,
+          "top": 0,
+          "right": 415.984375,
+          "bottom": 60,
+          "left": 339.5625
+        },
+        "translation": {
+          "x": 385.3046875,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 415.984375,
+          "bottom": 60,
+          "left": 385.3046875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/archives",
+        "rect": {
+          "x": 439.984375,
+          "y": 0,
+          "width": 90.546875,
+          "height": 60,
+          "top": 0,
+          "right": 530.53125,
+          "bottom": 60,
+          "left": 439.984375
+        },
+        "translation": {
+          "x": 499.8515625,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 530.53125,
+          "bottom": 60,
+          "left": 499.8515625
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/search/",
+        "rect": {
+          "x": 554.53125,
+          "y": 0,
+          "width": 86.7890625,
+          "height": 60,
+          "top": 0,
+          "right": 641.3203125,
+          "bottom": 60,
+          "left": 554.53125
+        },
+        "translation": {
+          "x": 610.640625,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 641.3203125,
+          "bottom": 60,
+          "left": 610.640625
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/tags/",
+        "rect": {
+          "x": 665.3203125,
+          "y": 0,
+          "width": 70.4765625,
+          "height": 60,
+          "top": 0,
+          "right": 735.796875,
+          "bottom": 60,
+          "left": 665.3203125
+        },
+        "translation": {
+          "x": 705.1171875,
+          "y": 0,
+          "width": 30.6796875,
+          "height": 60,
+          "top": 0,
+          "right": 735.796875,
+          "bottom": 60,
+          "left": 705.1171875
+        }
+      },
+      {
+        "href": "https://lilianweng.github.io/faq",
+        "rect": {
+          "x": 759.796875,
+          "y": 0,
+          "width": 97.203125,
+          "height": 60,
+          "top": 0,
+          "right": 857,
+          "bottom": 60,
+          "left": 759.796875
+        },
+        "translation": {
+          "x": 795.640625,
+          "y": 0,
+          "width": 61.359375,
+          "height": 60,
+          "top": 0,
+          "right": 857,
+          "bottom": 60,
+          "left": 795.640625
+        }
+      }
+    ],
+    "rows": [],
+    "counts": {
+      "targets": 205,
+      "translations": 199,
+      "loading": 0,
+      "failures": 0
+    },
+    "compact": [
+      {
+        "text": "小洛格",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "职位",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "档案",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "搜索",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "标签",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "常见问题",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "目录",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "象征",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "注释",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "模型规模，以参数计数衡量。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "训练数据集大小，通常以令牌数量衡量。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "在FLOP中训练计算。作为一个有用的近似，C≈6ND（Kaplan等，2020），其中2ND考虑了前向通，4ND了反向传播。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "不可约损失",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "测试损耗/测试损耗预测函数;也可以指训练损失，因为它们高度相关。",
+        "display": "inline",
+        "margin": "0px"
+      },
+      {
+        "text": "泛化错误。",
+        "display": "inline",
+        "margin": "0px"
+      }
+    ]
+  },
+  "restored": {
+    "labelsSame": true,
+    "markers": 0
+  }
+}

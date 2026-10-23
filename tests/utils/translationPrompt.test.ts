@@ -17,6 +17,22 @@ import {
 } from '@/entrypoints/utils/translationPrompt'
 
 describe('translation prompt context', () => {
+  it('preserves DOM text boundaries for single and batch translation, including custom prompts', () => {
+    const origin = 'Read __ONLY_TRANSLATE_SLOT_0__the docs__ONLY_TRANSLATE_SLOT_1__.'
+    const single = renderTranslationPrompt(origin, 'zh-Hans', { scene: 'webpage' })
+    const custom = renderTranslationPrompt(origin, 'zh-Hans', { scene: 'webpage' }, 'Custom system', '{{origin}}')
+    const batch = renderBatchTranslationPrompt([origin], 'zh-Hans', { scene: 'webpage' })
+
+    expect(single.system).toContain('exactly once and in its original order')
+    expect(single.system).toContain('without moving text across token boundaries')
+    expect(custom.system).toContain('Custom system')
+    expect(custom.system).toContain('Do not add HTML')
+    expect(custom.user).toBe(origin)
+    expect(batch.user).toContain('exactly once and in its original order')
+    expect(renderTranslationPrompt('Unmarked text.', 'zh-Hans', { scene: 'webpage' }).system)
+      .toBe(DEFAULT_SYSTEM_PROMPT)
+  })
+
   it('uses the enhanced official prompt only for a target-marked selection', () => {
     const prompt = renderTranslationPrompt('bank', 'zh-Hans', {
       scene: 'selection',

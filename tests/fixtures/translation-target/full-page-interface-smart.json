@@ -1,0 +1,25 @@
+{
+  "name": "smart mode keeps its reading scope when full page adds interface text",
+  "url": "https://example.com/full-page-interface",
+  "scope": "smart",
+  "html": "full-page-interface.html",
+  "include": [
+    "full-title",
+    "full-body"
+  ],
+  "exclude": [
+    "full-home",
+    "full-go",
+    "full-tab",
+    "full-menu",
+    "full-legend",
+    "full-save",
+    "full-summary",
+    "full-footer"
+  ],
+  "textExcludes": [
+    "Private message body",
+    "Private editable draft",
+    "Open settings"
+  ]
+}

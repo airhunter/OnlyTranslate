@@ -1,0 +1,28 @@
+{
+  "url": "https://lilianweng.github.io/",
+  "service": "microsoft",
+  "mode": "single",
+  "scope": "full",
+  "counts": {
+    "targets": 42,
+    "translations": 0,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 10132,
+  "stableMs": 8109,
+  "originalLinks": 16,
+  "displayedLinks": 16,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 0,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 0,
+  "connectedOriginalCodeBlocks": 0,
+  "visibleCodeBlocks": 0,
+  "connectedOriginalLinks": 16,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": null,
+  "rejected": []
+}

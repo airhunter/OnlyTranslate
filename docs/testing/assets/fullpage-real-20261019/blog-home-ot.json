@@ -1,0 +1,24 @@
+{
+  "articles": [
+    {
+      "excerptChinese": true,
+      "heading": "Harness Engineering for Self-Improvement\n自我提升的束带工程",
+      "meta": "Date: July 4, 2026 | Estimated Reading Time: 31 min | Author: Lilian Weng"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "Scaling Laws, Carefully\n谨慎地调整定律",
+      "meta": "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "Why We Think\n我们为什么这么想",
+      "meta": "Date: May 1, 2025 | Estimated Reading Time: 40 min | Author: Lilian Weng"
+    }
+  ],
+  "nav": "Lil'Log\n|\nPosts\nArchive\nSearch\nTags\nFAQ",
+  "rf": 0,
+  "title": "Lil'Log",
+  "url": "https://lilianweng.github.io/",
+  "welcome": "👋 Welcome to Lil’Log\n👋 欢迎来到Lil'Log\n\nHi, this is Lilian. I’m documenting my learning notes in this blog since 2017.\n嗨，我是莉莲。自2017年以来，我一直在博客中记录我的学习笔记。\n\n    "
+}

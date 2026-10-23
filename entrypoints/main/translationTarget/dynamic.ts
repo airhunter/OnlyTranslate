@@ -134,7 +134,7 @@ export function getDynamicTranslationScanRoot(
         return profileScanRoot;
     };
 
-    if (isObviousUiSubtree(grabOptions.scanContext, root)) {
+    if (scope !== 'full' && isObviousUiSubtree(grabOptions.scanContext, root)) {
         const scanRoot = getProfileScanRoot();
         return scanRoot && isInTranslationScope(scanRoot, contentRoot, scope, grabOptions)
             ? scanRoot
@@ -143,6 +143,7 @@ export function getDynamicTranslationScanRoot(
 
     const profileSkip = getCurrentSiteProfile()?.skipTarget?.(root, context);
     if (profileSkip && profileSkip.policy === 'hard-skip' && profileSkip.role !== 'layout') return null;
+    if (scope === 'full') return root;
 
     if (scope !== 'full' && !composedContains(contentRoot, root)) {
         if (isInTranslationScope(root, contentRoot, scope, grabOptions)) return root;

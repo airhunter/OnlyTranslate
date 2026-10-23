@@ -1,0 +1,33 @@
+{
+  "backups": 22,
+  "cards": [
+    {
+      "excerptChinese": true,
+      "heading": "自我提升的束带工程",
+      "meta": "Date: July 4, 2026 | Estimated Reading Time: 31 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2026-07-04-harness/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "谨慎地调整定律",
+      "meta": "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/"
+    },
+    {
+      "excerptChinese": true,
+      "heading": "我们为什么这么想",
+      "meta": "Date: May 1, 2025 | Estimated Reading Time: 40 min | Author: Lilian Weng",
+      "postLink": "https://lilianweng.github.io/posts/2025-05-01-thinking/"
+    }
+  ],
+  "firstExcerptGeometry": {
+    "containerBottom": 550.375,
+    "containerTop": 422.3828125,
+    "translationTop": 430.3828125
+  },
+  "nav": "Lil'Log\n|\nPosts\nArchive\nSearch\nTags\nFAQ",
+  "rf": 0,
+  "scope": "full",
+  "url": "https://lilianweng.github.io/",
+  "welcome": "👋 欢迎来到Lil'Log"
+}

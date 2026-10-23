@@ -1,0 +1,16 @@
+{
+  "service": "Google Translate",
+  "display": "Translation only",
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "originalCount": 58,
+  "displayedCount": 58,
+  "sameNodes": true,
+  "sample": {
+    "index": 2,
+    "text": "阿玛瑞等人。 (1992)",
+    "href": "https://ieeexplore.ieee.org/document/6796972",
+    "translated": true
+  },
+  "loading": 4,
+  "failures": 0
+}

@@ -1,0 +1,33 @@
+{
+  "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+  "service": "microsoft",
+  "mode": "single",
+  "scope": "full",
+  "counts": {
+    "targets": 199,
+    "translations": 0,
+    "loading": 0,
+    "failures": 0
+  },
+  "elapsedMs": 28648,
+  "stableMs": 8132,
+  "originalLinks": 58,
+  "displayedLinks": 58,
+  "hrefsEqual": true,
+  "sameOriginalNodes": true,
+  "translatedLinkLabels": 43,
+  "codeUnchanged": true,
+  "originalCodeBlocks": 1,
+  "connectedOriginalCodeBlocks": 1,
+  "visibleCodeBlocks": 1,
+  "connectedOriginalLinks": 58,
+  "connectedLinkHrefsEqual": true,
+  "markersVisible": false,
+  "card": null,
+  "rejected": [],
+  "opened": {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "url": "https://arxiv.org/abs/1909.12673",
+    "title": "[1909.12673] A Constructive Prediction of the Generalization Error Across Scales"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "service": "Microsoft Translator",
+  "scope": "full",
+  "display": "translation only",
+  "labels": {
+    "button": "节目详情",
+    "link": "阅读文档，",
+    "body": "在更改前阅读文档，。本段包含一个原始链接，点击处理器必须在翻译文本显示时继续工作。",
+    "buttonParagraph": "本段解释了本地的示范控制。请按节目详情揭示演示面板。该按钮有自己的点击处理程序，必须在翻译过程中和恢复原文后都保持可用。"
+  },
+  "network": [
+    200
+  ],
+  "failures": 0,
+  "loading": 0,
+  "buttonClicks": "按钮点击：2",
+  "bodyClicks": "正文链接点击：1",
+  "titleClicks": "标题链接点击：1",
+  "identity": "原节点保留：true",
+  "input": "typed before translation",
+  "checked": true,
+  "selection": "second"
+}

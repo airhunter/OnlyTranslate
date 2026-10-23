@@ -1,0 +1,72 @@
+- banner:
+  - navigation:
+    - link "Home":
+      - /url: /
+    - link "World":
+      - /url: /world
+    - link "Business":
+      - /url: /business
+    - button "Sign in"
+- main:
+  - button "Latest"
+  - button "Watch"
+  - button "Listen"
+  - button "Subscribe"
+  - link "Advertisement":
+    - /url: /sponsor
+  - article:
+    - heading "Scientists trace a rare signal across the Pacific after months of careful observation 科学家们经过数月的细致观察，追踪到一个罕见的信号横跨太平洋" [level=1]:
+      - text: Scientists trace a rare signal across the Pacific after months of careful observation
+      - generic: 科学家们经过数月的细致观察，追踪到一个罕见的信号横跨太平洋
+    - paragraph:
+      - text: Researchers said the signal appeared repeatedly during overnight monitoring sessions, giving the team enough evidence to compare it with earlier measurements from coastal stations.
+      - generic: 研究人员表示，该信号在夜间监测过程中反复出现，为团队提供了足够的证据与沿海站点的早期测量进行比较。
+    - paragraph:
+      - text: The findings do not point to a single cause yet, but they offer a clearer map of how the signal moved through the region and why previous instruments missed it during shorter surveys.
+      - generic: 这些发现尚未指向单一原因，但它们为信号如何穿越该地区以及之前的仪器为何在较短时间的巡天中漏接了信号提供了更清晰的地图。
+  - complementary:
+    - heading "Recommended 推荐阅读" [level=2]:
+      - text: Recommended
+      - generic: 推荐阅读
+    - link "A short teaser 简短的预告":
+      - /url: /one
+      - text: A short teaser
+      - generic: 简短的预告
+    - link "Another short teaser 又一个简短的预告":
+      - /url: /two
+      - text: Another short teaser
+      - generic: 又一个简短的预告
+    - button "Show all"
+  - link "Partner message 合作伙伴信息":
+    - /url: /promo-1
+    - text: Partner message
+    - generic: 合作伙伴信息
+  - button "Open"
+  - link "Sponsored update 赞助更新":
+    - /url: /promo-2
+    - text: Sponsored update
+    - generic: 赞助更新
+  - button "Open"
+  - link "Trending now 当前热门":
+    - /url: /promo-3
+    - text: Trending now
+    - generic: 当前热门
+  - button "Open"
+  - link "Newsletter 通讯":
+    - /url: /promo-4
+    - text: Newsletter
+    - generic: 通讯
+  - button "Join"
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"

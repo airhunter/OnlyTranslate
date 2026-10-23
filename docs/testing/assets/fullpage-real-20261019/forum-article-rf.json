@@ -1,0 +1,52 @@
+{
+  "header": "Sign Up  注册\nLog In  登录\n​",
+  "heading": "Panic on attempting to access union payload\n尝试访问工会有效载荷时的恐慌\nHelp  帮助\nlanguage  语言",
+  "meta": [
+    "aurelivia   奥蕾莉维亚\n1\n14h  下午2点。",
+    "andrewrk   安德鲁克\n12h  中午12点。"
+  ],
+  "ot": 0,
+  "posts": [
+    {
+      "chinese": true,
+      "translated": 3
+    },
+    {
+      "chinese": true,
+      "translated": 1
+    },
+    {
+      "chinese": true,
+      "translated": 3
+    }
+  ],
+  "sidebar": "Topics   主题\nDocs   文档\nMore   更多\nCATEGORIES   类别\nBrainstorming   头脑风暴\nExplain   解释一下\nHelp   帮助\nShowcase   展示\nAll categories   所有类别\nTAGS   标签\nbuild-system   构建系统\nlanguage   语言\nmemory-management   内存管理\nstandard-library   标准库\nAll tags   所有标签\n​",
+  "title": "尝试访问联合有效载荷时惊慌失措 - 求助 - Ziggit",
+  "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+  "afterScroll": {
+    "posts": [
+      {
+        "hasChinese": true,
+        "id": "",
+        "translations": 3
+      },
+      {
+        "hasChinese": true,
+        "id": "",
+        "translations": 1
+      },
+      {
+        "hasChinese": true,
+        "id": "",
+        "translations": 3
+      },
+      {
+        "hasChinese": true,
+        "id": "",
+        "translations": 3
+      }
+    ],
+    "codeCount": 1,
+    "codeMatchesOriginal": true
+  }
+}

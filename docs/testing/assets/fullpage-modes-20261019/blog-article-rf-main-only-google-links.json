@@ -1,0 +1,23 @@
+{
+  "originalLinks": 58,
+  "renderedLinks": 58,
+  "hrefsPreserved": true,
+  "sample": [
+    {
+      "href": "https://arxiv.org/abs/2001.08361",
+      "text": "Kaplan等人，2020"
+    },
+    {
+      "href": "#early-days-ml-loss-predictability",
+      "text": "#"
+    },
+    {
+      "href": "https://ieeexplore.ieee.org/document/6796972",
+      "text": "Amari 等人 (1992)"
+    },
+    {
+      "href": "https://arxiv.org/abs/1712.00409",
+      "text": "Hestness 等人 (2017)"
+    }
+  ]
+}

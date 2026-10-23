@@ -1,0 +1,48 @@
+{
+  "header": "Sign Up\nLog In\n​",
+  "heading": "Panic on attempting to access union payload\n尝试访问工会有效载荷时的恐慌\nHelp\nlanguage\n语言",
+  "meta": [
+    "aurelivia\n1\n14h",
+    "andrewrk\n12h"
+  ],
+  "posts": [
+    {
+      "chinese": true,
+      "targets": 3
+    },
+    {
+      "chinese": true,
+      "targets": 1
+    },
+    {
+      "chinese": true,
+      "targets": 3
+    }
+  ],
+  "rf": 0,
+  "sidebar": "Topics\nDocs\nMore\nCATEGORIES\nBrainstorming\nExplain\nHelp\nShowcase\nAll categories\nTAGS\nbuild-system\nlanguage\nmemory-management\nstandard-library\nAll tags\n​",
+  "title": "Panic on attempting to access union payload - Help - Ziggit",
+  "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+  "afterScroll": {
+    "posts": [
+      {
+        "chinese": true,
+        "targets": 3
+      },
+      {
+        "chinese": true,
+        "targets": 1
+      },
+      {
+        "chinese": true,
+        "targets": 3
+      },
+      {
+        "chinese": true,
+        "targets": 9
+      }
+    ],
+    "codeCount": 1,
+    "codeMatchesOriginal": true
+  }
+}

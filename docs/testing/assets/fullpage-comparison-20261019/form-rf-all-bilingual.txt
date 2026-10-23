@@ -1,0 +1,51 @@
+- main:
+  - heading "Properties 性质" [level=1]:
+    - text: Properties
+    - generic: 性质
+  - button "Save & Continue 保存并继续":
+    - text: Save & Continue
+    - generic: 保存并继续
+  - heading "Category 类别" [level=4]:
+    - text: Category
+    - generic: 类别
+  - text: Pick the category that best describes your extension
+  - link "Learn More about Category":
+    - /url: /category-help
+  - generic: 选择最能描述你扩展的类别 了解更多关于类别
+  - combobox:
+    - option "Pick a category"
+    - option "Productivity" [selected]
+  - heading "Support details 支持详情" [level=4]:
+    - text: Support details
+    - generic: 支持详情
+  - text: Website
+  - generic: 网站
+  - textbox "Enter a valid URL": https://example.test
+  - text: Support contact detail
+  - generic: 支持联系方式
+  - textbox "Enter a valid URL or email address": <redacted>
+  - heading "Mature content 成熟内容" [level=4]:
+    - text: Mature content
+    - generic: 成熟内容
+  - text: Select this checkbox if your extension includes mature content
+  - generic: 如果您的扩展包含成人内容，请勾选此框
+  - link "Learn More about Mature Content":
+    - /url: /mature-help
+  - text: Examples of mature content include sexual and suggestive content, strong language, violence or a focus on consumption or sale of alcohol, tobacco, or drugs
+  - generic: 了解更多关于成熟内容的例子包括性暗示性内容、粗俗语言、暴力，或聚焦于酒精、烟草或毒品的消费或销售
+  - checkbox "This item contains content that might not be suitable for all ages 本内容可能不适合所有年龄段" [checked] [active]
+  - text: This item contains content that might not be suitable for all ages
+  - generic: 本内容可能不适合所有年龄段
+- region "Notifications"
+- button "Toggle page translation":
+- img "Read Frog"
+- button "Settings":
+- button "Send feedback":
+- region "Notifications"
+- region "Notifications"
+- button "Translation":
+- button "Speak":
+- button "Dictionary":
+- button "Sentence Analysis":
+- button "More actions":
+- region "Notifications"

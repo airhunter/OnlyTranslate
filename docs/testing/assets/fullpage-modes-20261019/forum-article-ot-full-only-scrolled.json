@@ -1,0 +1,26 @@
+{
+  "posts": [
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80130"
+    },
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80132"
+    },
+    {
+      "chinese": true,
+      "links": 0,
+      "post": "80134"
+    },
+    {
+      "chinese": true,
+      "links": 2,
+      "post": "80156"
+    }
+  ],
+  "codeCount": 1,
+  "codeMatchesPriorSample": true
+}

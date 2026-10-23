@@ -6,7 +6,7 @@ export const pageMessages = {
     unknownFailure: '出现了未知错误，请前往开源社区联系开发者吧~', serviceNotConfigured: '当前服务尚未配置，请前往设置页配置访问令牌后再试。',
     modelNotConfigured: '当前服务尚未配置模型，请前往设置页选择模型后再试。',
     translationOnlyUnsupported: '当前翻译服务不支持安全的仅译文模式，请切换到双语对照模式后再试。',
-    translationOnlyApplyFailed: '页面内容已发生变化，无法安全显示仅译文',
+    translationOnlyApplyFailed: '无法将译文安全对应到页面结构，已保留原文，请重试',
     inputTranslationReloadPage: '扩展已更新或重新加载，请刷新当前网页以继续使用',
   } },
   'en-US': { runtime: {
@@ -19,7 +19,7 @@ export const pageMessages = {
     serviceNotConfigured: 'The current service is not configured. Configure its access token in Settings and try again.',
     modelNotConfigured: 'The current service has no model configured. Choose a model in Settings and try again.',
     translationOnlyUnsupported: 'The current translation service does not safely support translation-only mode. Switch to bilingual mode and try again.',
-    translationOnlyApplyFailed: 'The page changed before translation-only mode could be applied safely',
+    translationOnlyApplyFailed: 'The translation could not be safely matched to the page structure. The original text was kept. Please retry.',
     inputTranslationReloadPage: 'The extension was updated or reloaded. Refresh this page to continue.',
   } },
   'zh-TW': { runtime: {
@@ -30,7 +30,7 @@ export const pageMessages = {
     serviceNotConfigured: '目前服務尚未設定，請前往設定頁設定存取權杖後再試。',
     modelNotConfigured: '目前服務尚未設定模型，請前往設定頁選擇模型後再試。',
     translationOnlyUnsupported: '目前翻譯服務不支援安全的僅譯文模式，請切換到雙語對照模式後再試。',
-    translationOnlyApplyFailed: '頁面內容已變更，無法安全顯示僅譯文',
+    translationOnlyApplyFailed: '無法將譯文安全對應至頁面結構，已保留原文，請重試',
     inputTranslationReloadPage: '擴充功能已更新或重新載入，請重新整理目前網頁以繼續使用',
   } },
   'ja-JP': { runtime: {
@@ -43,7 +43,7 @@ export const pageMessages = {
     serviceNotConfigured: '現在のサービスは未設定です。設定ページでアクセストークンを設定してからお試しください。',
     modelNotConfigured: '現在のサービスはモデルが未設定です。設定ページでモデルを選択してからお試しください。',
     translationOnlyUnsupported: '現在の翻訳サービスは安全な翻訳のみモードに対応していません。対訳表示に切り替えてください。',
-    translationOnlyApplyFailed: 'ページ内容が変更されたため、翻訳のみを安全に表示できませんでした',
+    translationOnlyApplyFailed: '翻訳をページ構造に安全に対応付けられないため、原文を保持しました。再試行してください。',
     inputTranslationReloadPage: '拡張機能が更新または再読み込みされました。続行するにはページを更新してください。',
   } },
 } as const

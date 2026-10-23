@@ -1,0 +1,93 @@
+{
+  "counts": {
+    "loading": 3,
+    "failures": 8,
+    "targets": 166
+  },
+  "stableForMs": 2344,
+  "failures": [
+    {
+      "tag": "P",
+      "sourceText": "One of the earliest empirical studies by Hestness et al. (2017) explained the relationship between generalization error, model size and data. For a given training data size, they identified the best-fit model size via grid search and then plotted loss against training dataset size. Across four different domains in deep learning (neural machine translation, image classification, language modeling, ",
+      "protectedElements": 0,
+      "links": 1
+    },
+    {
+      "tag": "LI",
+      "sourceText": "The number of model parameters N needed to fit a dataset of size D also scales as a power law.",
+      "protectedElements": 4,
+      "links": 0
+    },
+    {
+      "tag": "LI",
+      "sourceText": "Given a fixed compute budget, it is more efficient to train a very large model and stop before convergence than to train a smaller model all the way to convergence. This finding is where the Chinchilla scaling laws (the next section) disagree: Kaplan et al. overestimated the optimal model size as their fitted exponent was larger.",
+      "protectedElements": 0,
+      "links": 0
+    },
+    {
+      "tag": "P",
+      "sourceText": "The Chinchilla paper (Hoffmann et al. 2022) studied the relationship between the optimal model size N (total parameters, including embeddings) and the number of tokens D under a fixed compute budget C with a more careful experimental design and arrived at a somewhat different answer from Kaplan et al..",
+      "protectedElements": 6,
+      "links": 1
+    },
+    {
+      "tag": "P",
+      "sourceText": "We can actually get a closed form approximation of optimal Nopt(C),Dopt(C) by minimizing L^(N,D) under the constraint FLOPs(N,D)=C≈6ND.",
+      "protectedElements": 6,
+      "links": 0
+    },
+    {
+      "tag": "P",
+      "sourceText": "The study by Hernandez et al. (2022) focused on a controlled version: a mostly-unique dataset with a small fraction of repeated data. Starting from a large dataset, the data mix keeps 90% non-repeated but replaces the remaining 10% with repeats of a tiny portion of the original. By training a Transformer model for 100B tokens, they observed a double-descent phenomenon, that is, the test loss can a",
+      "protectedElements": 0,
+      "links": 1
+    },
+    {
+      "tag": "P",
+      "sourceText": "The key modeling adjustment is to decompose the total token count D into two parts: (i) the number of unique tokens UD and (ii) the number of repeats RD (i.e. num. epochs - 1). Thus we have D=UD(1+RD). With a unique-data budget Duniq, by definition UD=min{Duniq,D} and RD=(D/UD)−1. They use the Chinchilla scaling laws to find the optimal model size UN for fitting UD, and define excess model size vi",
+      "protectedElements": 20,
+      "links": 0
+    },
+    {
+      "tag": "P",
+      "sourceText": "and thus Nopt∝C0.5126,Dopt∝C0.4874. This is the estimate from Besiroglu et al. (2024).",
+      "protectedElements": 2,
+      "links": 1
+    }
+  ],
+  "reasons": [
+    {
+      "index": 0,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 1,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 2,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 3,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 4,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 5,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 6,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    },
+    {
+      "index": 7,
+      "message": "Error: The translation could not be safely matched to the page structure. The original text was kept. Please retry."
+    }
+  ],
+  "hrefCount": 58
+}

@@ -1,0 +1,25 @@
+Browser tab: 1435460723, Title: "www.threads.com", URL: "https://www.threads.com/".
+0 AXWebArea www.threads.com, URL: chrome-error://chromewebdata/
+	1 container main-frame-error
+		2 container main-content
+			3 image
+			4 container main-message
+				5 heading This site can’t be reached, Value: 1
+					6 text This site can’t be reached
+				7 text www.threads.com
+				8 text  unexpectedly closed the connection.
+				9 container suggestions-list
+					10 text Try:
+					11 content list
+						12 container
+							13 AXListMarker • 
+							14 text Checking the connection
+						15 container
+							16 AXListMarker • 
+							17 link Description: Checking the proxy and the firewall, Value: chrome-error://chromewebdata/#buttons
+				18 text ERR_CONNECTION_CLOSED
+		19 container buttons
+			20 button Reload, ID: reload-button
+			21 button Details, ID: details-button
+
+The focused UI element is 0 AXWebArea www.threads.com, URL: chrome-error://chromewebdata/

@@ -1,0 +1,28 @@
+{
+  "service": "Microsoft Translator",
+  "scope": "full",
+  "display": "translation only",
+  "initialAuditRejectedCount": 3,
+  "stateBeforeRemainingRetry": {
+    "targets": 195,
+    "loading": 0,
+    "failures": 0
+  },
+  "rejected": [],
+  "remainingManualRetries": 0,
+  "final": {
+    "targets": 195,
+    "loading": 0,
+    "failures": 0
+  },
+  "linkCount": 58,
+  "hrefsMatchOriginal": true,
+  "sameNodesAcrossRetry": true,
+  "opened": {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "url": "https://arxiv.org/abs/1909.12673",
+    "title": "[1909.12673] A Constructive Prediction of the Generalization Error Across Scales"
+  },
+  "manualRetriesAcrossSessions": 3,
+  "note": "首轮文章审核有 3 处带公式目标显示结构对应错误；之后逐项手动重试 3 次，均恢复。收尾脚本进入时已无失败目标，remainingManualRetries=0。195 是收尾标记数快照，不是整页覆盖率。sameNodesAcrossRetry 只证明收尾检查期间节点身份；初始审核的 href 与节点检查已执行，但失败断言中止，未落盘。"
+}

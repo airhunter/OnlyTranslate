@@ -1,0 +1,30 @@
+# Selected homepage UI, headings and metadata only
+- banner:
+  - navigation:
+    - link "Lil'Log 小洛格":
+    - button "(Alt + T)":
+    - heading "👋 Welcome to Lil’Log 👋 欢迎来到Lil'Log" [level=1]:
+    - link "Twitter":
+    - link "Other":
+    - link "Rss":
+    - link "Github":
+    - link "Instagram":
+    - heading "Harness Engineering for Self-Improvement 自我提升的束带工程" [level=2]:
+    - text: "Date: July 4, 2026 | Estimated Reading Time: 31 min | Author: Lilian Weng"
+    - generic: 日期：2026年7月4日 | 预计阅读时间：31分钟 | 作者：李莲·翁
+    - link "post link to Harness Engineering for Self-Improvement":
+    - heading "Scaling Laws, Carefully 谨慎地调整定律" [level=2]:
+    - text: "Date: June 24, 2026 | Estimated Reading Time: 25 min | Author: Lilian Weng"
+    - generic: 日期：2026年6月24日 | 预计阅读时间：25分钟 | 作者：李莲·翁
+    - link "post link to Scaling Laws, Carefully":
+    - heading "Why We Think 我们为什么这么想" [level=2]:
+    - link "post link to Why We Think":
+    - link "post link to Reward Hacking in Reinforcement Learning":
+    - link "post link to Extrinsic Hallucinations in LLMs":
+    - link "post link to Diffusion Models for Video Generation":
+    - link "post link to Thinking about High-Quality Human Data":
+    - link "post link to Adversarial Attacks on LLMs":
+    - link "post link to LLM Powered Autonomous Agents":
+    - link "post link to Prompt Engineering":
+  - navigation:
+    - link "»":

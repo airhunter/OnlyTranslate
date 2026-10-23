@@ -29,6 +29,7 @@ import type {
     TranslationTargetSkip
 } from './types';
 import { composedClosest, getComposedParentElement, isUnassignedLightDomSubtree } from './composedTree';
+import { FULL_PAGE_PROTECTED_SELECTOR, hasFullPageText, isFullPageVisible } from './fullPage';
 
 const HARD_SKIP_SELECTOR = [
     'script',
@@ -87,6 +88,12 @@ export function decideTranslationTarget(
     if (profileAllow) {
         return allowDecision(node, profileAllow, candidate, context);
     }
+    if (context.scope === 'full') {
+        return {
+            node, target: node, policy: 'allow', role: inferDefaultRole(node), source: candidate.source,
+            reasons: [...(candidate.reasons ?? []), 'full-page-visible-text'],
+        };
+    }
 
     const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
     if (filterSkip?.policy === 'hard-skip') {
@@ -94,7 +101,7 @@ export function decideTranslationTarget(
     }
 
     const contentUnitDecision = getCachedContentUnitDecision(context.grabOptions?.scanContext, node, classifyContentUnit);
-    if (contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
+    if (context.scope !== 'full' && contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
         return {
             node,
             target: node,
@@ -165,6 +172,7 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
 
 export function isVisibleForTranslation(element: Element, context?: TranslationTargetContext): boolean {
     if (isUnassignedLightDomSubtree(element)) return false;
+    if (context?.scope === 'full' && !isFullPageVisible(element)) return false;
     return getCachedVisibility(context?.grabOptions?.scanContext, element, isElementVisible);
 }
 
@@ -238,13 +246,15 @@ function getContentFilterSkip(element: Element, context: TranslationTargetContex
 }
 
 function getGenericHardSkipReason(element: Element, context: TranslationTargetContext): string | undefined {
+    const full = context.scope === 'full';
+    if (full && composedClosest(element, FULL_PAGE_PROTECTED_SELECTOR)) return 'full-page-protected-content';
     if (composedClosest(element, HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
     if (!isVisibleForTranslation(element, context)) return 'not-visible';
     if (element instanceof HTMLElement && element.isContentEditable) return 'contenteditable';
-    if (isFormOnlyContainer(element)) return 'form-only-container';
+    if (!full && isFormOnlyContainer(element)) return 'form-only-container';
 
     let interactiveAncestor: Element | null = element;
-    while (interactiveAncestor) {
+    while (!full && interactiveAncestor) {
         const role = interactiveAncestor.getAttribute('role')?.toLowerCase();
         if (role && HARD_SKIP_ROLES.has(role)) return `hard-skip-role:${role}`;
         if ((interactiveAncestor.matches('button') || role === 'button')
@@ -253,7 +263,7 @@ function getGenericHardSkipReason(element: Element, context: TranslationTargetCo
     }
 
     const text = getCachedNormalizedText(context.grabOptions?.scanContext, element) || getTranslatableText(element).replace(/\s+/g, ' ').trim();
-    if (text.length < 3) return 'too-short';
+    if (full ? !hasFullPageText(text) : text.length < 3) return 'too-short';
     if (text.length > 3072 || (element.outerHTML.length > 4096
         && !isSemanticInlineTextBlock(element)
         && !getCurrentSiteProfile()?.allowOversizedMarkup?.(element))) {

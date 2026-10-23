@@ -1,0 +1,234 @@
+[
+  {
+    "href": "https://arxiv.org/abs/2001.08361",
+    "text": "Kaplan et al. 2020"
+  },
+  {
+    "href": "#early-days-ml-loss-predictability",
+    "text": "#"
+  },
+  {
+    "href": "https://ieeexplore.ieee.org/document/6796972",
+    "text": "Amari et al. (1992)"
+  },
+  {
+    "href": "https://arxiv.org/abs/1712.00409",
+    "text": "Hestness et al. (2017)"
+  },
+  {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "text": "Rosenfeld et al. (2020)"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Vapnik%E2%80%93Chervonenkis_dimension",
+    "text": "VC dimension"
+  },
+  {
+    "href": "#scaling-laws-in-data-infinite-region",
+    "text": "#"
+  },
+  {
+    "href": "#kaplan-et-als-scaling-laws",
+    "text": "#"
+  },
+  {
+    "href": "https://arxiv.org/abs/2001.08361",
+    "text": "Kaplan et al. (2020)"
+  },
+  {
+    "href": "#chinchilla-scaling-laws",
+    "text": "#"
+  },
+  {
+    "href": "https://arxiv.org/abs/2203.15556",
+    "text": "Hoffmann et al. 2022"
+  },
+  {
+    "href": "#method-1-fix-model-sizes-vary-the-token-budget",
+    "text": "#"
+  },
+  {
+    "href": "#method-2-isoflop-profiles",
+    "text": "#"
+  },
+  {
+    "href": "#method-3-parametric-fit",
+    "text": "#"
+  },
+  {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "text": "Rosenfeld et al. (2020)"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Huber_loss",
+    "text": "Huber loss"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Limited-memory_BFGS",
+    "text": "L-BFGS algorithm"
+  },
+  {
+    "href": "https://arxiv.org/abs/2112.11446",
+    "text": "Rae et al. 2021"
+  },
+  {
+    "href": "#reconciling-kaplan-and-chinchilla",
+    "text": "#"
+  },
+  {
+    "href": "#toy-simulation",
+    "text": "toy simulation"
+  },
+  {
+    "href": "https://arxiv.org/abs/2406.12907",
+    "text": "Pearce & Song (2024)"
+  },
+  {
+    "href": "https://arxiv.org/abs/2406.12907",
+    "text": "Pearce & Song (2024)"
+  },
+  {
+    "href": "#why-power-law",
+    "text": "#"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Zipf%27s_law",
+    "text": "Zipf’s law"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Scale-free_network",
+    "text": "scale-free networks"
+  },
+  {
+    "href": "https://en.wikipedia.org/wiki/Urban_scaling",
+    "text": "urban scaling laws"
+  },
+  {
+    "href": "https://arxiv.org/abs/1712.00409",
+    "text": "Hestness et al. 2017"
+  },
+  {
+    "href": "https://arxiv.org/abs/2004.10802",
+    "text": "Sharma & Kaplan (2020)"
+  },
+  {
+    "href": "https://arxiv.org/abs/2303.13506",
+    "text": "Michaud et al. 2023"
+  },
+  {
+    "href": "https://arxiv.org/abs/2412.07942",
+    "text": "Brill 2024"
+  },
+  {
+    "href": "#scaling-laws-in-data-limited-region",
+    "text": "#"
+  },
+  {
+    "href": "https://arxiv.org/abs/2205.10487",
+    "text": "Hernandez et al. (2022)"
+  },
+  {
+    "href": "https://arxiv.org/abs/2305.16264",
+    "text": "Muennighoff et al. (2023)"
+  },
+  {
+    "href": "#chinchilla-method3",
+    "text": "method 3"
+  },
+  {
+    "href": "https://arxiv.org/abs/2605.01640",
+    "text": "Lovelace et al. (2026)"
+  },
+  {
+    "href": "https://arxiv.org/abs/2605.01640",
+    "text": "Lovelace et al. (2026)"
+  },
+  {
+    "href": "#trickiness-of-fitting-scaling-laws-in-reality",
+    "text": "#"
+  },
+  {
+    "href": "#method-3-parametric-fit",
+    "text": "method 3"
+  },
+  {
+    "href": "https://arxiv.org/abs/2404.10102",
+    "text": "Besiroglu et al. (2024)"
+  },
+  {
+    "href": "#toy-simulation",
+    "text": "#"
+  },
+  {
+    "href": "https://arxiv.org/abs/2404.10102",
+    "text": "Besiroglu et al. (2024)"
+  },
+  {
+    "href": "#citation",
+    "text": "#"
+  },
+  {
+    "href": "#references",
+    "text": "#"
+  },
+  {
+    "href": "https://ieeexplore.ieee.org/document/6796972",
+    "text": "“Four Types of Learning Curves. Neural Computation.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/1712.00409",
+    "text": "“Deep Learning Scaling is Predictable, Empirically.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/1909.12673",
+    "text": "“A Constructive Prediction of the Generalization Error Across Scales.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2001.08361",
+    "text": "“Scaling Laws for Neural Language Models.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2203.15556",
+    "text": "“Training Compute-Optimal Large Language Models.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2406.12907",
+    "text": "“Reconciling Kaplan and Chinchilla Scaling Laws.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2102.06701",
+    "text": "“Explaining Neural Scaling Laws.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2004.10802",
+    "text": "“A Neural Scaling Law from the Dimension of the Data Manifold.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2205.10487",
+    "text": "“Scaling Laws and Interpretability of Learning from Repeated Data.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2305.16264",
+    "text": "“Scaling Data-Constrained Language Models.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2605.01640",
+    "text": "“Prescriptive Scaling Laws for Data Constrained Training.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2404.10102",
+    "text": "“Chinchilla Scaling: A Replication Attempt.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2303.13506",
+    "text": "“The Quantization Model of Neural Scaling”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2412.07942",
+    "text": "“Neural Scaling Laws Rooted in the Data Distribution.”"
+  },
+  {
+    "href": "https://arxiv.org/abs/2112.11446",
+    "text": "“Scaling Language Models: Methods, Analysis & Insights from Training Gopher.”"
+  }
+]

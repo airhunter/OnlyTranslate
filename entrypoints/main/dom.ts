@@ -63,7 +63,7 @@ export interface TranslatableTextWithProtectedInline {
     protectedInlines: ProtectedInlinePlaceholder[];
 }
 
-export function getTranslatableTextWithProtectedInline(node: Node): TranslatableTextWithProtectedInline {
+export function getTranslatableTextWithProtectedInline(node: Node, excludeElement?: (element: Element) => boolean): TranslatableTextWithProtectedInline {
     const protectedInlines: ProtectedInlinePlaceholder[] = [];
     const boundary = node instanceof Element ? node : undefined;
 
@@ -73,7 +73,7 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
         }
 
         if (!(current instanceof Element)) return current.textContent ?? '';
-        if (isNonTranslatableContentElement(current) || isExcludedFromTranslatableText(current)) return '';
+        if (isNonTranslatableContentElement(current) || isExcludedFromTranslatableText(current) || excludeElement?.(current)) return '';
 
         if (isProtectedInlineElement(current)) {
             const placeholder = buildProtectedInlinePlaceholder(current, protectedInlines.length);
@@ -97,7 +97,7 @@ export function getTranslatableTextWithProtectedInline(node: Node): Translatable
     };
 }
 
-function isProtectedInlineElement(node: Element): boolean {
+export function isProtectedInlineElement(node: Element): boolean {
     if (isProseLikeInlineCode(node)) return false;
     return matchesSelectorList(node, getActiveKeepSelector());
 }
@@ -202,7 +202,7 @@ export function renderTextWithProtectedInline(
     return fragment;
 }
 
-function buildProtectedInlinePlaceholder(node: Element, index: number): string {
+export function buildProtectedInlinePlaceholder(node: Element, index: number): string {
     return `__ONLY_TRANSLATE_INLINE_${index}_${hashString(node.outerHTML)}__`;
 }
 
@@ -1073,7 +1073,7 @@ function getDirectTextRunText(run: ChildNode[]): string {
     return run.map(child => getTranslatableText(child)).join('');
 }
 
-function wrapDirectTextRun(host: Element, run: ChildNode[], options: GrabAllNodeOptions): Element | false {
+export function wrapDirectTextRun(host: Element, run: ChildNode[], options: GrabAllNodeOptions, allowShortText = false): Element | false {
     const first = run[0];
     if (!first) return false;
 
@@ -1083,7 +1083,9 @@ function wrapDirectTextRun(host: Element, run: ChildNode[], options: GrabAllNode
     run.forEach(child => wrapper.appendChild(child));
     options.directTextRunWrapperCollector?.add(wrapper);
 
-    if (shouldSkipNode(wrapper, wrapper.tagName.toLowerCase())) {
+    if (shouldSkipNode(wrapper, wrapper.tagName.toLowerCase()) && !(allowShortText
+        && (wrapper.textContent?.trim().length ?? 0) < 3
+        && !isMainlyNumericContent(wrapper))) {
         unwrapDirectTextTarget(wrapper);
         options.directTextRunWrapperCollector?.delete(wrapper);
         return false;
@@ -1385,7 +1387,7 @@ function isUserIdentifier(text: string): boolean {
  * 
  * 这些格式的数字和用户标识符通常不需要翻译，保持原样更有利于页面理解。
  */
-function isNumericContent(text: string): boolean {
+export function isNumericContent(text: string): boolean {
     if (!text || typeof text !== 'string') return false;
     
     // 去除空白字符

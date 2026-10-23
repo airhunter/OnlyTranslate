@@ -1,0 +1,64 @@
+{
+  "container": {
+    "bottom": 568.1640625,
+    "overflow": "hidden",
+    "y": 523.3671875
+  },
+  "nodes": [
+    {
+      "bottom": 568.1640625,
+      "chinese": true,
+      "class": "entry-content",
+      "display": "flow-root",
+      "height": 44.796875,
+      "lineClamp": "2",
+      "overflow": "hidden",
+      "tag": "SECTION",
+      "y": 523.3671875
+    },
+    {
+      "bottom": 568.1640625,
+      "chinese": true,
+      "class": "only-translate-bilingual",
+      "display": "block",
+      "height": 44.796875,
+      "lineClamp": "none",
+      "overflow": "visible",
+      "tag": "P",
+      "y": 523.3671875
+    },
+    {
+      "bottom": 841.546875,
+      "chinese": true,
+      "class": "only-translate-bilingual-content",
+      "display": "inline",
+      "height": 16.5,
+      "lineClamp": "none",
+      "overflow": "visible",
+      "tag": "SPAN",
+      "y": 825.046875
+    },
+    {
+      "bottom": 721.5546875,
+      "chinese": false,
+      "class": "",
+      "display": "inline",
+      "height": 16.5,
+      "lineClamp": "none",
+      "overflow": "visible",
+      "tag": "BR",
+      "y": 705.0546875
+    },
+    {
+      "bottom": 844.9453125,
+      "chinese": true,
+      "class": "only-translate-bilingual-text fluent-display-bold",
+      "display": "inline-block",
+      "height": 111.9921875,
+      "lineClamp": "none",
+      "overflow": "visible",
+      "tag": "SPAN",
+      "y": 732.953125
+    }
+  ]
+}
