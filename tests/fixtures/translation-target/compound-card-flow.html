@@ -1,0 +1,31 @@
+<style>
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card-link { display: block; color: inherit; text-decoration: none; }
+  .card-frame { display: flex; flex-direction: column; height: 100%; overflow: hidden; border: 1px solid #ddd; box-sizing: border-box; }
+  .card-head { display: flex; flex-direction: column; height: 264px; padding: 16px 16px 24px; box-sizing: border-box; }
+  .card-head img { width: 96px; height: 48px; margin-bottom: 16px; }
+  .card-copy { font: 24px/32px Arial; }
+  .card-foot { display: flex; height: 110px; padding: 16px; background: #f4f4f4; box-sizing: border-box; align-items: end; }
+  .card-metric { font: bold 20px/28px Arial; }
+  .card-description { font: 18px/22px Arial; }
+  @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+</style>
+<!-- 从 IBM 真页提取的布局关系：Logo + 固定高度标题区 + 独立固定高度指标区。 -->
+<div class="cards">
+  <a id="case-link" class="card-link" href="/case-study">
+    <div id="case-frame" class="card-frame">
+      <div id="case-head" class="card-head">
+        <div><img alt="Company logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='48'/%3E"></div>
+        <div id="case-copy" class="card-copy">See how automation helped a racing team create content for fans</div>
+      </div>
+      <div id="case-foot" class="card-foot"><div>
+        <div class="card-metric">100%</div>
+        <div id="case-description" class="card-description">Increase in daily active users</div>
+      </div></div>
+    </div>
+  </a>
+  <a class="card-link" href="/other-study"><div class="card-frame">
+    <div class="card-head"><div class="card-copy">Explore more customer stories</div></div>
+    <div class="card-foot"><div class="card-description">Learn about the results</div></div>
+  </div></a>
+</div>

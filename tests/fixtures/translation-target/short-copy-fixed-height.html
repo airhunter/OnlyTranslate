@@ -1,0 +1,16 @@
+<style>
+  .title-slot { height: 24px; width: 170px; line-height: 24px; font-size: 16px; }
+  .card-list { display: grid; grid-template-columns: repeat(2, 230px); gap: 20px; }
+  .card { display: flex; flex-direction: column; }
+  .card-copy { display: block; }
+  .fixed-row { display: flex; align-items: center; gap: 8px; height: 36px; width: 170px; line-height: 24px; font-size: 16px; }
+  .fixed-row svg { flex: 0 0 20px; }
+  @media (max-width: 600px) { .card-list { grid-template-columns: 230px; } }
+</style>
+<div id="section-title" class="title-slot"><span>Our Projects</span></div>
+<p id="section-description">Our projects bring people together to create and share knowledge around the world.</p>
+<div class="card-list">
+  <a class="card" href="/encyclopedia"><div class="card-copy"><div id="card-title" class="title-slot"><span>Wikipedia</span></div><span id="card-description" class="card-caption">The Free Encyclopedia</span></div></a>
+  <a class="card" href="/dictionary"><div class="card-copy"><div id="other-title" class="title-slot"><span>Wiktionary</span></div><span id="other-description" class="card-caption">Free dictionary</span></div></a>
+</div>
+<nav><a id="fixed-row" class="fixed-row" href="/docs"><svg aria-hidden="true" width="20" height="20"></svg><span>Open documentation</span></a></nav>

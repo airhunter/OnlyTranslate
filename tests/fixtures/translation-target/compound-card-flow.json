@@ -1,0 +1,8 @@
+{
+  "name": "full page keeps text from compound fixed-height linked cards available without merging the logo and footer",
+  "url": "https://example.com/customer-stories",
+  "scope": "full",
+  "html": "compound-card-flow.html",
+  "textIncludes": ["See how automation helped", "Increase in daily active users", "Explore more customer stories", "Learn about the results"],
+  "nodesEveryElement": true
+}

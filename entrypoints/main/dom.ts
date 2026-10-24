@@ -68,6 +68,7 @@ export function getTranslatableTextWithProtectedInline(node: Node, excludeElemen
     const boundary = node instanceof Element ? node : undefined;
 
     const collect = (current: Node): string => {
+        if (current.nodeType === Node.COMMENT_NODE) return '';
         if (current instanceof Text) {
             return isInsideNonTranslatableContent(current, boundary) ? '' : current.nodeValue ?? '';
         }
@@ -1549,6 +1550,7 @@ export function LLMStandardHTML(node: Node): string {
 }
 
 export function getTranslatableText(node: Node): string {
+    if (node.nodeType === Node.COMMENT_NODE) return '';
     if (node instanceof Text) {
         return isInsideNonTranslatableContent(node) ? '' : node.nodeValue ?? '';
     }

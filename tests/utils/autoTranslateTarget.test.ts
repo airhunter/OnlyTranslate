@@ -990,6 +990,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     const paragraph = document.querySelector<HTMLElement>('#unit-two')!
     const originalLink = title.querySelector('a')!
     const originalLinkHtml = originalLink.outerHTML
+    const originalText = originalLink.firstChild
     const targets = resolveAutoTranslateTarget('smart').nodes
       .filter((node): node is HTMLElement => node instanceof HTMLElement)
 
@@ -999,7 +1000,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(translateText).toHaveBeenCalledTimes(2)
       expect(title.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('为什么理解现有代码很重要')
       expect(paragraph.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('理解已有系统需要仔细研究它的行为。')
-      expect(originalLink.outerHTML).toBe(originalLinkHtml)
+      expect(title.querySelector('a')).toBe(originalLink)
+      expect(originalLink.firstChild).toBe(originalText)
+      expect(originalLink.href).toBe('https://example.com/article')
+      expect(originalLink.contains(title.querySelector(`.${BILINGUAL_TEXT_CLASS}`))).toBe(true)
       expect(document.querySelector('#unit-three')?.textContent).toBe('1 comment')
     } finally {
       restoreOriginalContent()
@@ -1702,6 +1706,31 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(lyrics.innerHTML).toBe(originalHTML)
     expect(lyrics.querySelector(`[${DIRECT_TEXT_TARGET_ATTR}="true"], .${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('grows compound card sections and restores independently translated fields without losing the link or logo', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/compound-card-flow.html', 'utf8')
+    const link = document.getElementById('case-link')!
+    const original = link.outerHTML
+    const logo = link.querySelector('img')!
+    const title = document.getElementById('case-copy')!
+    const description = document.getElementById('case-description')!
+    const listener = vi.fn((event: Event) => event.preventDefault())
+    link.addEventListener('click', listener)
+    vi.mocked(translateText).mockResolvedValue('足够长的中文译文，用于检查标题和独立底部信息都能保留在原卡片内。')
+    try {
+      await Promise.all([title, description].map(node => handleBilingualTranslation(node, false)))
+      expect(document.getElementById('case-head')!.style.height).toBe('auto')
+      expect(document.getElementById('case-foot')!.style.height).toBe('auto')
+      expect(document.getElementById('case-frame')!.style.minHeight).toBe('min-content')
+      description.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!.click()
+      expect(listener).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(link.outerHTML).toBe(original)
+      expect(link.querySelector('img')).toBe(logo)
+      expect(document.getElementById('case-link')).toBe(link)
+    } finally { restoreOriginalContent() }
   })
 
   it.each([
@@ -3726,6 +3755,64 @@ describe('resolveAutoTranslateTarget behavior', () => {
     }
   })
 
+  it('collects and translates all six navigation labels including native slot fallback text without leaking framework comments', async () => {
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class NoopMutationObserver {
+      observe() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/slot-fallback-menu.html', 'utf8')
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a'))
+    const roots: ShadowRoot[] = []
+    for (const link of links.filter(node => node.querySelector('slot'))) {
+      const host = document.createElement('navigation-item')
+      link.replaceWith(host)
+      const root = host.attachShadow({ mode: 'open' })
+      root.appendChild(link)
+      roots.push(root)
+      const slot = link.querySelector('slot')!
+      // Chromium 的 flatten:true 在未分配内容时返回备用节点；补齐测试 DOM 的这项原生语义。
+      vi.spyOn(slot, 'assignedNodes').mockImplementation(options => options?.flatten ? Array.from(slot.childNodes) : [])
+    }
+    const originals = links.map(link => ({ html: link.outerHTML, source: link.querySelector('slot')?.lastChild ?? link.firstChild }))
+    const listener = vi.fn((event: Event) => event.preventDefault())
+    links.forEach(link => link.addEventListener('click', listener))
+    vi.mocked(translateText).mockImplementation(async text => `译：${text.trim()}`)
+    try {
+      const targets = resolveAutoTranslateTarget('full').nodes as HTMLElement[]
+      const sources = targets.map(node => getTranslatableText(node).trim())
+      expect(sources.sort()).toEqual(['Software', 'Infrastructure', 'Consulting', 'Support', 'Think', 'Developer Tools'].sort())
+      autoTranslateEnglishPage('full')
+      await vi.waitFor(() => {
+        expect(translateText).toHaveBeenCalledTimes(6)
+        expect(links.every(link => link.querySelector(`.${BILINGUAL_TEXT_CLASS}`))).toBe(true)
+      })
+      expect(vi.mocked(translateText).mock.calls.every(call => !call[0].includes('lit$'))).toBe(true)
+      for (const link of links) {
+        const translation = link.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+        expect(translation).not.toBeNull()
+        translation.click()
+      }
+      expect(listener).toHaveBeenCalledTimes(6)
+      restoreOriginalContent()
+      links.forEach((link, index) => {
+        expect(link.outerHTML).toBe(originals[index].html)
+        expect(link.contains(originals[index].source)).toBe(true)
+      })
+      expect(roots.every(root => !root.querySelector(`.${BILINGUAL_CONTENT_CLASS}`))).toBe(true)
+    } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+  })
+
   it('uses assigned slot content once and falls back when the assignment changes', () => {
     document.body.innerHTML = `
       <article>
@@ -3735,17 +3822,27 @@ describe('resolveAutoTranslateTarget behavior', () => {
     `
     const root = document.querySelector('#host')!.attachShadow({ mode: 'open' })
     root.innerHTML = '<slot name="copy"><p id="fallback">Fallback article copy becomes visible without an assignment.</p></slot>'
+    const slot = root.querySelector('slot')!
+    const assignedNodes = slot.assignedNodes.bind(slot)
+    vi.spyOn(slot, 'assignedNodes').mockImplementation(options => {
+      const assigned = assignedNodes()
+      return options?.flatten && assigned.length === 0 ? Array.from(slot.childNodes) : assignedNodes(options)
+    })
     const assigned = document.querySelector('#assigned')!
     const fallback = root.querySelector('#fallback')!
 
     const assignedResult = resolveAutoTranslateTarget('smart')
     expect(assignedResult.nodes.filter(node => node === assigned)).toHaveLength(1)
     expect(assignedResult.nodes).not.toContain(fallback)
+    expect(resolveAutoTranslateTarget('full').nodes).not.toContain(fallback)
 
     assigned.setAttribute('slot', 'unused')
     const fallbackResult = resolveAutoTranslateTarget('smart')
     expect(fallbackResult.nodes).not.toContain(assigned)
     expect(fallbackResult.nodes).toContain(fallback)
+    const fullFallback = resolveAutoTranslateTarget('full').nodes
+    expect(fullFallback).not.toContain(assigned)
+    expect(fullFallback.filter(node => node === fallback)).toHaveLength(1)
   })
 
   it.each([1, 0])('applies and restores display mode %s inside an open shadow root', async display => {
@@ -3904,6 +4001,85 @@ describe('resolveAutoTranslateTarget behavior', () => {
       restoreOriginalContent()
       expect(button.firstChild).toBe(label)
       expect(button.textContent).toBe('Save changes')
+    } finally { restoreOriginalContent() }
+  })
+
+  it('renders ordinary fixed-height card titles and captions inline and restores the original structure', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/short-copy-fixed-height.html', 'utf8')
+    const original = document.body.innerHTML
+    const link = document.querySelector<HTMLAnchorElement>('a.card')!
+    const listener = vi.fn((event: Event) => event.preventDefault())
+    link.addEventListener('click', listener)
+    const title = document.querySelector<HTMLElement>('#card-title')!
+    const text = title.querySelector('span')!.firstChild
+    vi.mocked(translateText).mockResolvedValue('一段需要在窄容器中换行的很长的中文译文')
+    try {
+      for (const id of ['section-title', 'card-title', 'card-description', 'other-title', 'other-description']) {
+        const host = document.getElementById(id)!
+        await handleBilingualTranslation(host, false)
+        expect(host.querySelector('br')).toBeNull()
+        expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.classList.contains('only-translate-bilingual-content--inline')).toBe(true)
+      }
+      expect(title.style.height).toBe('auto')
+      expect(title.style.minHeight).toBe('24px')
+      expect(title.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.parentElement?.tagName).toBe('SPAN')
+      expect(link.style.height).toBe('')
+      title.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!.click()
+      expect(listener).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(document.body.innerHTML).toBe(original)
+      expect(document.querySelector('a.card')).toBe(link)
+      expect(title.querySelector('span')!.firstChild).toBe(text)
+    } finally { restoreOriginalContent() }
+  })
+
+  it.each([
+    ['notification', 'notification-action'],
+    ['generic-notification', 'generic-action'],
+  ])('mounts a long notification inside its original action and removes it with that action: %s', async (hostId, actionId) => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/single-control-notification.html', 'utf8')
+    const host = document.getElementById(hostId)!
+    const action = document.getElementById(actionId)!
+    const original = host.innerHTML
+    const source = action.querySelector('span')!.firstChild
+    const listener = vi.fn((event: Event) => event.preventDefault())
+    action.addEventListener('click', listener)
+    vi.mocked(translateText).mockResolvedValue('查看新消息或更新的主题')
+    try {
+      await handleBilingualTranslation(host, false)
+      const translation = host.querySelector<HTMLElement>(`.${BILINGUAL_TEXT_CLASS}`)!
+      expect(action.contains(translation)).toBe(true)
+      expect(translation.closest(`.${BILINGUAL_CONTENT_CLASS}`)?.classList.contains('only-translate-bilingual-content--inline')).toBe(true)
+      expect(host.style.position).toBe('')
+      translation.click()
+      expect(listener).toHaveBeenCalledTimes(1)
+      restoreOriginalContent()
+      expect(host.innerHTML).toBe(original)
+      expect(document.getElementById(actionId)).toBe(action)
+      expect(action.querySelector('span')!.firstChild).toBe(source)
+      await handleBilingualTranslation(host, false)
+      action.remove()
+      expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      restoreOriginalContent()
+      expect(document.getElementById(actionId)).toBeNull()
+    } finally { restoreOriginalContent() }
+  })
+
+  it('does not append a late notification translation after the website removes its action', async () => {
+    mockConfig.translationScope = 'full'
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/single-control-notification.html', 'utf8')
+    const host = document.getElementById('notification')!
+    let finish!: (text: string) => void
+    vi.mocked(translateText).mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    try {
+      const pending = handleBilingualTranslation(host, false)
+      document.getElementById('notification-action')!.remove()
+      finish('查看新消息或更新的主题')
+      await pending
+      expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      expect(host.textContent?.trim()).toBe('')
     } finally { restoreOriginalContent() }
   })
 
@@ -4124,7 +4300,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     mockConfig.translationScope = 'full'
     vi.stubGlobal('IntersectionObserver', ImmediateObserver)
     vi.stubGlobal('MutationObserver', CapturingObserver)
-    document.body.innerHTML = '<nav><ul id="pool"><li id="row"><a href="/docs"><span>Documentation</span></a></li></ul></nav>'
+    document.body.innerHTML = '<nav><ul id="pool"><li id="row"><a href="/docs" style="display:flex;height:36px;line-height:24px"><span style="height:24px">Documentation</span></a></li></ul></nav>'
     vi.mocked(translateText).mockResolvedValue('文档')
     try {
       autoTranslateEnglishPage('full')
@@ -4141,7 +4317,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBe(translation)
       expect(translateText).toHaveBeenCalledTimes(1)
       restoreOriginalContent()
-      expect(host.innerHTML).toBe('<a href="/docs"><span>Documentation</span></a>')
+      expect(host.innerHTML).toBe('<a href="/docs" style="display:flex;height:36px;line-height:24px"><span style="height:24px">Documentation</span></a>')
     } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
   })
 
@@ -4164,7 +4340,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
       await new Promise(resolve => setTimeout(resolve, 220))
       expect(translateText).toHaveBeenCalledTimes(1)
       expect(button.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
-      expect(button.textContent).toBe('Save changes保存更改')
+      expect(button.textContent).toBe('Save changes 保存更改')
       restoreOriginalContent()
       expect(button.innerHTML).toBe(original)
       expect(button.lastChild).toBe(text)

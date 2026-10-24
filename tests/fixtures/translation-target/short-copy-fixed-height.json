@@ -1,0 +1,8 @@
+{
+  "name": "full page keeps ordinary short card labels and fixed-height title copy available for translation",
+  "url": "https://example.com/short-copy-cards",
+  "scope": "full",
+  "html": "short-copy-fixed-height.html",
+  "textIncludes": ["Our Projects", "Wikipedia", "The Free Encyclopedia", "Wiktionary", "Free dictionary", "Open documentation"],
+  "nodesEveryElement": true
+}

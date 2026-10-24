@@ -1,0 +1,18 @@
+<style>
+  .notification-area { position: relative; height: 180px; }
+  .show-more { position: absolute; top: 0; left: 0; right: 0; width: 208px; margin: 0 auto; }
+  .alert { display: flex; position: relative; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 8px; background: #d1f0ff; }
+  .alert > span { display: block; }
+</style>
+<!-- 开发浏览器 Ziggit 实际更新提示结构，省略空白及框架注释。 -->
+<div class="notification-area">
+  <div id="notification" class="show-more has-topics">
+    <a id="notification-action" class="alert alert-info clickable" href="" tabindex="0">
+      <span>See 3 new or updated topics</span>
+    </a>
+  </div>
+</div>
+<!-- 相同的唯一控件边界，不依赖站点类名或链接标签。 -->
+<div id="generic-notification">
+  <div><button id="generic-action" style="display:inline-flex;align-items:center"><svg width="16" height="16" aria-hidden="true"></svg><span>Open the recently updated messages</span></button></div>
+</div>

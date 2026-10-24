@@ -69,7 +69,8 @@ export function isInactiveSlotFallback(element: Element): boolean {
         ? element
         : element.closest('slot');
     if (!slot) return false;
-    if (slot.assignedNodes({ flatten: true }).length > 0) return true;
+    // flatten 会在没有投影时返回正在显示的备用节点，不能据此判定备用内容已被替代。
+    if (slot.assignedNodes().length > 0) return true;
     const root = slot.getRootNode();
     if (!(root instanceof ShadowRoot)) return false;
     const name = slot.getAttribute('name') ?? '';

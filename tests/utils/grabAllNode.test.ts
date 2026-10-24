@@ -71,6 +71,19 @@ describe('grabAllNode', () => {
     expect(LLMStandardHTML(node)).toBe('1989 - 2026')
   })
 
+  it('ignores non-rendered framework comments in protected and plain text extraction without removing them', () => {
+    document.body.innerHTML = '<a><span><slot><!--?lit$142764369$-->Consulting</slot></span></a>'
+    const anchor = document.querySelector('a')!
+    const comment = anchor.querySelector('slot')!.firstChild!
+    const original = anchor.innerHTML
+    expect(getTranslatableTextWithProtectedInline(anchor).text).toBe('Consulting')
+    expect(getTranslatableText(anchor)).toBe('Consulting')
+    expect(getTranslatableTextWithProtectedInline(comment).text).toBe('')
+    expect(getTranslatableText(comment)).toBe('')
+    expect(anchor.innerHTML).toBe(original)
+    expect(anchor.querySelector('slot')!.firstChild).toBe(comment)
+  })
+
   it('preserves protected inline code when rendering translated text', () => {
     document.body.innerHTML = `
       <p id="intro"><strong>VS Code</strong> is mature. Run <code>code --install-extension Anthropic.claude-code</code>.</p>

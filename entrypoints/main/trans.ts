@@ -42,9 +42,9 @@ import {
     restoreTranslationOnly,
 } from '@/entrypoints/main/translationOnly';
 import {
-    isCompactTranslationTarget, prepareCompactBilingualTarget, prepareBilingualClipping, setTranslationStyle,
+    isCompactTranslationTarget, resolveBilingualControlTarget, prepareCompactBilingualTarget, prepareBilingualClipping, prepareBilingualCardFlow, setTranslationStyle,
     restoreAllBilingualLayouts, restoreBilingualLayout, isOriginalWrappingMutation, BILINGUAL_ORIGINAL_CLASS,
-    BILINGUAL_LABEL_ATTR,
+    BILINGUAL_LABEL_ATTR, prepareBilingualTextFlow, normalizeBilingualSourceStyles,
 } from '@/entrypoints/main/translationLayout';
 import { resolveAutoTranslationTarget, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
@@ -316,6 +316,7 @@ function normalizeTranslationSource(value: string): string {
 
 function captureTranslationAttempt(node: HTMLElement, sourceText: string): TranslationAttemptSnapshot {
     const sourceClone = node.cloneNode(true) as HTMLElement;
+    normalizeBilingualSourceStyles(node, sourceClone);
     sourceClone.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`).forEach(element => element.remove());
     sourceClone.querySelectorAll(`.${BILINGUAL_ORIGINAL_CLASS}`).forEach(wrapper => wrapper.replaceWith(...Array.from(wrapper.childNodes)));
     sourceClone.querySelectorAll(`[${BILINGUAL_LABEL_ATTR}]`).forEach(label => label.removeAttribute(BILINGUAL_LABEL_ATTR));
@@ -1247,7 +1248,7 @@ function appendTranslationContent(
     if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return false;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);
-    const initialTarget = getBilingualAppendTarget(node);
+    const initialTarget = resolveBilingualControlTarget(getBilingualAppendTarget(node));
     const compact = isCompactTranslationTarget(initialTarget);
     const appendTarget = compact ? prepareCompactBilingualTarget(node, initialTarget) : initialTarget;
     const insertionNode = document.createElement('span');
@@ -1260,16 +1261,20 @@ function appendTranslationContent(
         translationNode.classList.add(style.class);
     }
     translationNode.append(text);
-    const clipped = !compact && prepareBilingualClipping(appendTarget, insertionNode, translationNode);
+    const clipped = !compact && prepareBilingualClipping(appendTarget, insertionNode, translationNode, node);
     const layout = resolveBilingualInsertionLayout(appendTarget);
     if (!compact && !clipped && (layout === 'normal-flow' || layout === 'float-aware-inline')) {
         insertionNode.appendChild(document.createElement('br'));
+    } else if (compact) {
+        insertionNode.appendChild(document.createTextNode(' '));
     }
     insertionNode.appendChild(translationNode);
+    prepareBilingualTextFlow(node, appendTarget);
     appendTarget.appendChild(insertionNode);
     if (compact) {
         insertionNode.classList.add('only-translate-bilingual-content--inline');
-    } else if (!clipped) applyBilingualInsertionLayout(appendTarget, insertionNode, translationNode, layout);
+    } else if (!clipped) applyBilingualInsertionLayout(node, appendTarget, insertionNode, translationNode, layout);
+    prepareBilingualCardFlow(node, appendTarget);
 
     const fn = afterBilingualAppendCompatFn[getMainDomain(document.location.hostname)];
     if (fn) fn(node, translationNode, appendTarget, insertionNode);
@@ -1303,6 +1308,7 @@ function queryOwnedElements(node: HTMLElement, selector: string): HTMLElement[] 
 type BilingualInsertionLayout = 'normal-flow' | 'float-aware-inline' | 'blockified-flex' | 'preserved-flex';
 
 function applyBilingualInsertionLayout(
+    host: HTMLElement,
     appendTarget: HTMLElement,
     insertionNode: HTMLElement,
     translationNode: HTMLElement,
@@ -1315,7 +1321,7 @@ function applyBilingualInsertionLayout(
 
     if (layout !== 'blockified-flex') return;
 
-    setTranslationStyle(appendTarget, appendTarget, 'display', 'block');
+    setTranslationStyle(host, appendTarget, 'display', 'block');
     insertionNode.style.display = 'block';
     insertionNode.style.width = '100%';
     translationNode.style.display = 'block';

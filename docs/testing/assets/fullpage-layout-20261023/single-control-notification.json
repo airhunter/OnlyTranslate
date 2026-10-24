@@ -1,0 +1,135 @@
+{
+  "service": "microsoft",
+  "cache": false,
+  "clicks": 2,
+  "wide": {
+    "viewport": 1200,
+    "scrollWidth": 1200,
+    "items": [
+      {
+        "id": "notification-action",
+        "source": "See 3 new or updated topics",
+        "translation": "\n查看3个新或更新主题\n    \n",
+        "action": {
+          "x": 496,
+          "y": 24,
+          "width": 208,
+          "height": 55,
+          "top": 24,
+          "right": 704,
+          "bottom": 79,
+          "left": 496
+        },
+        "translated": {
+          "x": 552.46875,
+          "y": 51.5,
+          "width": 133.7890625,
+          "height": 19.5,
+          "top": 51.5,
+          "right": 686.2578125,
+          "bottom": 71,
+          "left": 552.46875
+        },
+        "containerPosition": "absolute",
+        "display": "flex"
+      },
+      {
+        "id": "generic-action",
+        "source": "Open the recently updated messages",
+        "translation": "\n打开最近更新的消息\n",
+        "action": {
+          "x": 24,
+          "y": 204,
+          "width": 394.59375,
+          "height": 25.5,
+          "top": 204,
+          "right": 418.59375,
+          "bottom": 229.5,
+          "left": 24
+        },
+        "translated": {
+          "x": 284.59375,
+          "y": 207,
+          "width": 126,
+          "height": 19.5,
+          "top": 207,
+          "right": 410.59375,
+          "bottom": 226.5,
+          "left": 284.59375
+        },
+        "containerPosition": "static",
+        "display": "inline-flex"
+      }
+    ]
+  },
+  "narrow": {
+    "viewport": 360,
+    "scrollWidth": 360,
+    "items": [
+      {
+        "id": "notification-action",
+        "source": "See 3 new or updated topics",
+        "translation": "\n查看3个新或更新主题\n    \n",
+        "action": {
+          "x": 76,
+          "y": 24,
+          "width": 208,
+          "height": 55,
+          "top": 24,
+          "right": 284,
+          "bottom": 79,
+          "left": 76
+        },
+        "translated": {
+          "x": 132.46875,
+          "y": 51.5,
+          "width": 133.7890625,
+          "height": 19.5,
+          "top": 51.5,
+          "right": 266.2578125,
+          "bottom": 71,
+          "left": 132.46875
+        },
+        "containerPosition": "absolute",
+        "display": "flex"
+      },
+      {
+        "id": "generic-action",
+        "source": "Open the recently updated messages",
+        "translation": "\n打开最近更新的消息\n",
+        "action": {
+          "x": 24,
+          "y": 204,
+          "width": 312,
+          "height": 45,
+          "top": 204,
+          "right": 336,
+          "bottom": 249,
+          "left": 24
+        },
+        "translated": {
+          "x": 123.25,
+          "y": 226.5,
+          "width": 126,
+          "height": 19.5,
+          "top": 226.5,
+          "right": 249.25,
+          "bottom": 246,
+          "left": 123.25
+        },
+        "containerPosition": "static",
+        "display": "inline-flex"
+      }
+    ]
+  },
+  "restoration": {
+    "content": true,
+    "actions": true,
+    "texts": true,
+    "noMarkers": true
+  },
+  "removal": {
+    "noResidue": true,
+    "notResurrected": true
+  }
+}

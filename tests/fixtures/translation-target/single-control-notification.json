@@ -1,0 +1,8 @@
+{
+  "name": "full page keeps long messages in single-control notification wrappers available for translation",
+  "url": "https://example.com/notifications",
+  "scope": "full",
+  "html": "single-control-notification.html",
+  "textIncludes": ["See 3 new or updated topics", "Open the recently updated messages"],
+  "nodesEveryElement": true
+}

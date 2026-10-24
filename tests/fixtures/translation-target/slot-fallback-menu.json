@@ -1,0 +1,8 @@
+{
+  "name": "full page keeps all six navigation labels including slot fallback text available",
+  "url": "https://example.com/component-navigation",
+  "scope": "full",
+  "html": "slot-fallback-menu.html",
+  "textIncludes": ["Software", "Infrastructure", "Consulting", "Support", "Think", "Developer Tools"],
+  "nodesEveryElement": true
+}
