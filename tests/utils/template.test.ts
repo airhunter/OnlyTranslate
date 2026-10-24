@@ -74,6 +74,15 @@ describe('translation templates', () => {
     expect(userContent).toContain('Inline formatting guide')
   })
 
+  it('instructs single and batch AI requests to retain numbered social link boundaries', () => {
+    const origin = 'Read ⟦0⟧ the story ⟦1⟧ today.'
+    const single = JSON.parse(commonMsgTemplate(origin, 'zh-Hans', false, undefined, { scene: 'webpage' }))
+    expect(single.messages[0].content).toContain('numbered boundary like ⟦0⟧')
+    expect(single.messages[0].content).toContain('original order')
+    const batch = JSON.parse(commonBatchMsgTemplate([origin], 'zh-Hans', false, { scene: 'webpage' }))
+    expect(batch.messages.find((message: { role: string }) => message.role === 'user').content).toContain('numbered boundary like ⟦0⟧')
+  })
+
   it('forwards structured translation context through active AI payload formats', () => {
     const context = {
       scene: 'selection' as const,

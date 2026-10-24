@@ -75,7 +75,7 @@ export function withTranslationOnlyLineSeparators(prepared: PreparedTranslationO
     };
 }
 
-export function prepareTranslationOnly(host: HTMLElement): PreparedTranslationOnly {
+export function prepareTranslationOnly(host: HTMLElement, preserveElement?: (node: Element) => boolean): PreparedTranslationOnly {
     const parts: TranslationPart[] = [];
     const positions: PreparedTranslationOnly['positions'] = [];
     const collect = (node: Node, ancestors: Node[]): void => {
@@ -87,7 +87,7 @@ export function prepareTranslationOnly(host: HTMLElement): PreparedTranslationOn
             return;
         }
         if (!(node instanceof Element)) return;
-        if (node.matches(protectedSelector) || isExcludedFromTranslatableText(node) || isProtectedInlineElement(node)) {
+        if (node.matches(protectedSelector) || isExcludedFromTranslatableText(node) || isProtectedInlineElement(node) || preserveElement?.(node)) {
             parts.push({ placeholder: buildProtectedInlinePlaceholder(node, parts.length) });
             return;
         }

@@ -28,6 +28,7 @@ export type SiteProfileExpandTarget = (node: Element, context: TranslationTarget
 export type SiteProfileFastPathTargetCollector = (root: ParentNode, context: SiteProfileContext) => Element[] | false | undefined;
 export type SiteProfileShouldKeepNestedTarget = (parent: Element, child: Element, context: TranslationTargetContext) => boolean;
 export type SiteProfileTextExclude = (node: Element) => boolean;
+export type InlineLinkPolicy = 'preserve' | 'translate';
 
 export interface SiteProfile {
     id: string;
@@ -52,6 +53,8 @@ export interface SiteProfile {
     shouldKeepNestedTarget?: SiteProfileShouldKeepNestedTarget;
     // Exclude duplicated or derived descendants from a parent target's bilingual source text.
     excludeFromText?: SiteProfileTextExclude;
+    // Opt-in policy for links inside recognized smart-mode reading targets only.
+    inlineLink?: (node: Element) => InlineLinkPolicy | false;
 }
 
 export interface SelectCompatFn {

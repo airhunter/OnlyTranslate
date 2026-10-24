@@ -37,7 +37,7 @@ export const DEFAULT_BATCH_TRANSLATION_OPTIONS: Required<BatchTranslationQueueOp
 
 const groups = new Map<string, BatchGroup>();
 const isDev = process.env.NODE_ENV === 'development';
-const PROTECTED_INLINE_TOKEN_PATTERN = /__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g;
+const PROTECTED_INLINE_TOKEN_PATTERN = /__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__|⟦\d+⟧/g;
 
 function resolveOptions(options: BatchTranslationQueueOptions = {}): Required<BatchTranslationQueueOptions> {
   return {

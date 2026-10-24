@@ -1,4 +1,5 @@
 import type { SiteProfile } from './types';
+import { classifySocialInlineLink } from './socialInlineLinks';
 
 // Keep the legacy tweet marker and the public post/reply structure observed on X.
 // dir/lang alone also occur on authors, metadata and profile cards.
@@ -23,6 +24,7 @@ export const xProfile: SiteProfile = {
     id: 'x',
     domains: ['x.com'],
     targetStrategy: 'profile-first',
+    inlineLink: node => getTextTarget(node) ? classifySocialInlineLink(node) : false,
     select: node => getTextTarget(node) ?? { skip: true },
     supplemental: root => collectTextTargets(root),
     preserveSupplementalTargets: true,

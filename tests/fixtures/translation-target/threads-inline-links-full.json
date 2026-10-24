@@ -1,0 +1,9 @@
+{
+  "name": "Threads Full Page keeps its existing inner source target without smart link promotion",
+  "url": "https://www.threads.com/@mediaite/post/De3FHG9mzGJ",
+  "scope": "full",
+  "html": "threads-inline-links.html",
+  "include": ["post-text"],
+  "exclude": ["body-row", "short-link", "author", "navigation", "like", "footer"],
+  "textExcludes": ["dlvr.it/TW2bd…", "mediaite", "Like 168", "Threads Terms"]
+}

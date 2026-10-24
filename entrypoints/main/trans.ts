@@ -71,6 +71,7 @@ import {
 } from '@/entrypoints/main/translationTarget/composedTree';
 import { discoverScanShadowRoots, isElementVisible } from '@/entrypoints/main/translationTarget/scanContext';
 import shadowTranslationStyles from '@/entrypoints/style.css?inline';
+import { encodeInlineLinkRequest, getSmartInlineLinkPolicy, getSmartInlineLinkResolver, prepareInlineLinkTranslation, preserveInlineLink, renderInlineLinkTranslation } from './inlineLinks';
 
 // style 只进入合并后的动态队列，用于捕获组件直接通过内联样式切换正文显隐的情况；
 // 回调本身不读取布局，避免把动画 mutation 的成本放在 Observer 回调中。
@@ -628,6 +629,8 @@ async function startAutoTranslation(
     scheduleBackgroundTranslation(BACKGROUND_TRANSLATION_START_DELAY);
 
     const observedTranslationNodes = new Set<Element>(nodes);
+    const smartInlineLinks = getSmartInlineLinkPolicy(scope);
+    const inlineLinkAttributes = ['href', 'target', 'rel'];
     const observeTranslationNodes = (newNodes: Element[]) => {
         newNodes.forEach(node => {
             if (!observedTranslationNodes.has(node)) {
@@ -692,6 +695,11 @@ async function startAutoTranslation(
         if (!host) return false;
         const nodeId = host.getAttribute(TRANSLATED_ID_ATTR);
         if (!nodeId) return true;
+        if (smartInlineLinks && mutation.type === 'attributes' && targetElement.matches('a')
+            && inlineLinkAttributes.includes(mutation.attributeName ?? '')) {
+            refreshTranslatedHost(host);
+            return true;
+        }
         if (mutation.type === 'attributes' && ['translate', 'contenteditable'].includes(mutation.attributeName ?? '')) {
             refreshTranslatedHost(host);
             return true;
@@ -744,7 +752,7 @@ async function startAutoTranslation(
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: DYNAMIC_MUTATION_ATTRIBUTES,
+        attributeFilter: smartInlineLinks ? [...DYNAMIC_MUTATION_ATTRIBUTES, ...inlineLinkAttributes] : DYNAMIC_MUTATION_ATTRIBUTES,
         characterData: true
     };
 
@@ -1004,7 +1012,10 @@ export function handleBilingualTranslation(
     }
 
     // 检查是否有缓存
-    let cached = cache.localGet(originText, config.to, getWebpagePromptContext(node));
+    // Smart social links require structural rendering even when a legacy plain
+    // translation exists. translateText handles the structured request cache.
+    const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
+    let cached = inlineLinks ? null : cache.localGet(originText, config.to, getWebpagePromptContext(node));
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -1054,8 +1065,11 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     const plainOrigin = getTranslatableText(node);
     const attempt = captureTranslationAttempt(node, plainOrigin);
     const full = isFullPageTranslation();
+    const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
+    const linkedPrepared = inlineLinks ? prepareInlineLinkTranslation(node, inlineLinks) : undefined;
+    const linkedRequest = linkedPrepared ? encodeInlineLinkRequest(linkedPrepared) : undefined;
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node, full ? isFullPageExcludedText : undefined);
-    const origin = full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin;
+    const origin = linkedRequest?.text ?? (full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin);
     const direction = getWebpageTranslationDirection(plainOrigin);
     if (!direction.shouldTranslate) {
         clearUnfinishedAutoTranslation(node);
@@ -1070,7 +1084,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     
     // 使用队列管理的翻译API
     const promptContext = getWebpagePromptContext(node);
-    const requestOptions = full
+    const requestOptions = full || linkedPrepared
         ? { ...options, sourceLangHint: direction.sourceLang, targetLangHint: direction.targetLang }
         : options;
     return translateText(origin, promptContext, requestOptions)
@@ -1079,6 +1093,26 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
             translationState.htmlSet.delete(nodeOuterHTML);
             if (!isTranslationAttemptCurrent(node, attempt)) {
                 discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                return;
+            }
+            if (linkedPrepared && linkedRequest) {
+                let decoded = linkedRequest.decode(text);
+                let content = decoded === null ? null : renderInlineLinkTranslation(linkedPrepared, decoded);
+                if (!content) {
+                    cache.localRemove(origin, direction.targetLang, promptContext);
+                    const retryPrepared = withTranslationOnlyLineSeparators(linkedPrepared);
+                    const retryRequest = encodeInlineLinkRequest(retryPrepared);
+                    text = await translateText(retryRequest.text, promptContext, { ...requestOptions, useCache: false });
+                    if (!isTranslationAttemptCurrent(node, attempt)) {
+                        discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
+                        return;
+                    }
+                    decoded = retryRequest.decode(text);
+                    content = decoded === null ? null : renderInlineLinkTranslation(retryPrepared, decoded);
+                    if (!content) cache.localRemove(retryRequest.text, direction.targetLang, promptContext);
+                }
+                if (!content) throw new Error(t('runtime.translationOnlyApplyFailed'));
+                if (bilingualAppendChild(node, content)) notifyDiagnosticVisible(options);
                 return;
             }
             const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
@@ -1124,8 +1158,11 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
     }
 
     const attempt = captureTranslationAttempt(node, plainOrigin);
-    const prepared = prepareTranslationOnly(node);
-    if (!prepared.text.trim()) {
+    const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
+    const prepared = prepareTranslationOnly(node, inlineLinks ? element => preserveInlineLink(element, inlineLinks) : undefined);
+    const linkedRequest = inlineLinks ? encodeInlineLinkRequest(prepared) : undefined;
+    const requestText = linkedRequest?.text ?? prepared.text;
+    if (!requestText.trim()) {
         translationState.htmlSet.delete(nodeOuterHTML);
         clearUnfinishedAutoTranslation(node);
         return Promise.resolve();
@@ -1138,25 +1175,28 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
         sourceLangHint: direction.sourceLang,
         targetLangHint: direction.targetLang,
     };
-    return translateText(prepared.text, promptContext, requestOptions)
-        .then(async (text: string) => {
+    return translateText(requestText, promptContext, requestOptions)
+        .then(async (response: string) => {
             spinner.remove();
             translationState.htmlSet.delete(nodeOuterHTML);
             if (!isTranslationAttemptCurrent(node, attempt) || !isPreparedTranslationOnlyCurrent(prepared)) {
                 discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                 return;
             }
-            if (!text || text === prepared.text) return;
-            let applied = applyTranslationOnly(prepared, text);
+            if (!response || response === requestText) return;
+            const text = linkedRequest ? linkedRequest.decode(response) : response;
+            let applied = text !== null && applyTranslationOnly(prepared, text);
             if (!applied) {
-                cache.localRemove(prepared.text, direction.targetLang, promptContext);
+                cache.localRemove(requestText, direction.targetLang, promptContext);
                 // 只对有结构边界的异常响应重试一次；沿用原快照，不能重新接受网站的新 DOM。
                 if (prepared.separators.length) {
                     const retryPrepared = withTranslationOnlyLineSeparators(prepared);
+                    const retryRequest = inlineLinks ? encodeInlineLinkRequest(retryPrepared) : undefined;
+                    const retryOrigin = retryRequest?.text ?? retryPrepared.text;
                     const retrySpinner = insertLoadingSpinner(node);
                     let retryText: string;
                     try {
-                        retryText = await translateText(retryPrepared.text, promptContext, requestOptions);
+                        retryText = await translateText(retryOrigin, promptContext, inlineLinks ? { ...requestOptions, useCache: false } : requestOptions);
                     } finally {
                         retrySpinner.remove();
                     }
@@ -1164,8 +1204,9 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
                         discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                         return;
                     }
-                    applied = Boolean(retryText && retryText !== retryPrepared.text && applyTranslationOnly(retryPrepared, retryText));
-                    if (!applied) cache.localRemove(retryPrepared.text, direction.targetLang, promptContext);
+                    const decoded = retryRequest ? retryRequest.decode(retryText) : retryText;
+                    applied = Boolean(decoded && decoded !== retryPrepared.text && applyTranslationOnly(retryPrepared, decoded));
+                    if (!applied) cache.localRemove(retryOrigin, direction.targetLang, promptContext);
                 }
                 if (!applied) throw new Error(t('runtime.translationOnlyApplyFailed'));
             }
@@ -1189,7 +1230,11 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
 }
 
 function isFullPageTranslation(): boolean {
-    return (translationState.isAutoTranslating ? translationState.activeScope : config.translationScope) === 'full';
+    return getCurrentTranslationScope() === 'full';
+}
+
+function getCurrentTranslationScope(): string | null {
+    return translationState.isAutoTranslating ? translationState.activeScope : config.translationScope;
 }
 
 function getWebpageTranslationDirection(text: string) {

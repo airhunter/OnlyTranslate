@@ -718,6 +718,96 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(isNumericContent(text)).toBe(expected)
   })
 
+  it.each(['x', 'threads'])('preserves social entities and translated links despite legacy plain caches (%s)', async site => {
+    const url = new URL(site === 'x' ? 'https://x.com/author/status/123' : 'https://www.threads.com/@author/post/123')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    const text = 'Read <a href="https://example.com/story">the story</a> from <a href="/reader">@reader</a> <a href="/hashtag/cat">#cat</a> <a href="https://example.com/">example.com/…</a>.'
+    document.body.innerHTML = site === 'x'
+      ? `<article><div data-testid="tweetText" id="source">${text}</div></article>`
+      : `<div data-pressable-container="true"><div lang="en"><div><span dir="auto"><span id="source">${text}</span></span></div></div></div>`
+    const source = document.querySelector<HTMLElement>('#source')!
+    const originalHTML = source.innerHTML
+    const originalLinks = Array.from(source.querySelectorAll('a'))
+    const cached = vi.spyOn(cache, 'localGet').mockReturnValue('旧的纯文本译文，不包含链接')
+    vi.mocked(translateText).mockImplementation(origin => Promise.resolve(origin
+      .replace(/ (__ONLY_TRANSLATE_SLOT_\d+__|⟦\d+⟧) /g, '$1')
+      .replace('Read ', '阅读').replace('the story', '这篇报道').replace(' from ', '来自')
+    ))
+    try {
+      await handleBilingualTranslation(source, false)
+      const translation = source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)!
+      expect(translation).not.toBeNull()
+      expect(Array.from(translation.querySelectorAll('a')).map(a => a.textContent)).toEqual(['这篇报道', '@reader', '#cat', 'example.com/…'])
+      expect(cached).not.toHaveBeenCalled()
+      expect(originalLinks.every(link => link.isConnected)).toBe(true)
+      restoreOriginalContent()
+      expect(source.innerHTML).toBe(originalHTML)
+
+      await handleSingleTranslation(source, false)
+      expect(Array.from(source.querySelectorAll('a'))).toEqual(originalLinks)
+      expect(originalLinks.map(a => a.textContent)).toEqual(['这篇报道', '@reader', '#cat', 'example.com/…'])
+    } finally {
+      cached.mockRestore()
+      restoreOriginalContent()
+    }
+    expect(source.innerHTML).toBe(originalHTML)
+  })
+
+  it('keeps the existing Full Page rendering and translates link labels without smart entity protection', async () => {
+    const url = new URL('https://x.com/author/status/123')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = '<article><div data-testid="tweetText" id="source">Read <a href="/reader">@reader</a> and <a href="/hashtag/cat">#cat</a>.</div></article>'
+    const source = document.querySelector<HTMLElement>('#source')!
+    mockConfig.translationScope = 'full'
+    vi.mocked(translateText).mockImplementation(origin => Promise.resolve(origin.replace('@reader', '@读者').replace('#cat', '#猫')))
+    try {
+      await handleBilingualTranslation(source, false)
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.querySelector('a')).toBeNull()
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toContain('@读者')
+      restoreOriginalContent()
+      await handleSingleTranslation(source, false)
+      expect(source.querySelector('a')?.textContent?.trim()).toBe('@读者')
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('retries malformed smart link output once and leaves the original intact on failure', async () => {
+    const url = new URL('https://x.com/author/status/123')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = '<article><div data-testid="tweetText" id="source">Read this post from <a href="/reader">@reader</a>.</div></article>'
+    const source = document.querySelector<HTMLElement>('#source')!
+    const originalHTML = source.innerHTML
+    vi.mocked(translateText).mockResolvedValue('缺失所有结构标记的响应')
+    await handleBilingualTranslation(source, false)
+    expect(translateText).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(translateText).mock.calls.every(call => call[0].includes('⟦'))).toBe(true)
+    expect(vi.mocked(translateText).mock.calls[1][2]?.useCache).toBe(false)
+    expect(mockInsertFailedTip).toHaveBeenCalledTimes(1)
+    expect(source.innerHTML).toBe(originalHTML)
+    expect(source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('discards a pending smart link translation when the website replaces the link destination', async () => {
+    const url = new URL('https://x.com/author/status/123')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = '<article><div data-testid="tweetText" id="source">Read this post from <a href="/reader">@reader</a>.</div></article>'
+    const source = document.querySelector<HTMLElement>('#source')!
+    let complete!: (value: string) => void
+    vi.mocked(translateText).mockImplementation(() => new Promise(resolve => { complete = resolve }))
+    const request = handleBilingualTranslation(source, false)
+    const origin = vi.mocked(translateText).mock.calls[0][0]
+    source.querySelector('a')!.setAttribute('href', '/different-reader')
+    complete(origin.replace('Read this post from ', '阅读这篇帖子，来自'))
+    await request
+    expect(source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+    expect(source.querySelector('a')?.getAttribute('href')).toBe('/different-reader')
+  })
+
   it.each(['smart', 'full'])('translates X bodies, late replies and reused posts without touching authors or controls (%s)', async scope => {
     vi.useFakeTimers()
     class ImmediateIntersectionObserver {
@@ -732,10 +822,11 @@ describe('resolveAutoTranslateTarget behavior', () => {
     class CapturingMutationObserver {
       static instances: CapturingMutationObserver[] = []
       readonly observedTargets: Node[] = []
+      readonly options: MutationObserverInit[] = []
       constructor(readonly callback: MutationCallback) {
         CapturingMutationObserver.instances.push(this)
       }
-      observe(target: Node) { this.observedTargets.push(target) }
+      observe(target: Node, options: MutationObserverInit) { this.observedTargets.push(target); this.options.push(options) }
       disconnect() {}
       takeRecords() { return [] }
     }
@@ -745,9 +836,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
     Object.defineProperty(window, 'location', { value: url, configurable: true })
     Object.defineProperty(document, 'location', { value: url, configurable: true })
     document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/x-public-posts.html', 'utf8')
-    mockConfig.translationScope = scope
+    // Toolbar scope overrides the saved preference for this translation session.
+    mockConfig.translationScope = scope === 'smart' ? 'full' : 'smart'
     vi.mocked(translateText).mockImplementation(origin => Promise.resolve(
-      origin.includes('X-EXPANDED') ? '展开后的帖子全文' : '帖子正文译文'
+      origin.split(/(__ONLY_TRANSLATE_(?:SLOT_\d+|INLINE_\d+_[a-z0-9]+)__|⟦\d+⟧)/g).map(part =>
+        (part.startsWith('__ONLY_TRANSLATE_') || /^⟦\d+⟧$/.test(part)) ? part : part.trim() ? part.includes('X-EXPANDED') ? '展开后的帖子全文' : '帖子正文译文' : part
+      ).join('')
     ))
     const source = document.querySelector<HTMLElement>('#post-text')!
     const author = document.querySelector('#author')!
@@ -759,6 +853,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
       await vi.runAllTimersAsync()
       expect(translateText).toHaveBeenCalledTimes(3)
       expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(source.querySelectorAll(`.${BILINGUAL_TEXT_CLASS} a`)).toHaveLength(scope === 'smart' ? 2 : 0)
       expect(document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(3)
       expect(document.querySelector('#author')).toBe(author)
       expect(document.querySelector('#native-translate')).toBe(nativeButton)
@@ -767,26 +862,39 @@ describe('resolveAutoTranslateTarget behavior', () => {
         .not.toMatch(/Brandon Benitez|Tammy Loeschner|Translate post|Cookie Policy|Only some accounts|10.2K Views/)
 
       const observer = CapturingMutationObserver.instances.find(instance => instance.observedTargets.includes(document.body))!
+      expect(observer.options[0].attributeFilter?.includes('href')).toBe(scope === 'smart')
       const notify = (records: Partial<MutationRecord>[]) => observer.callback(records as MutationRecord[], observer as unknown as MutationObserver)
       const textNode = source.querySelectorAll('span')[1].firstChild!
       textNode.textContent = ' X-EXPANDED: This same post body now contains its complete text after expansion.'
       notify([{ type: 'characterData', target: textNode }])
       await vi.runAllTimersAsync()
       expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
-      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('展开后的帖子全文')
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toContain('展开后的帖子全文')
+
+      const mention = source.querySelector<HTMLAnchorElement>('#mention')!
+      mention.href = 'https://x.com/updated-destination'
+      notify([{ type: 'attributes', target: mention, attributeName: 'href' }])
+      await vi.runAllTimersAsync()
+      const callsAfterLinkUpdate = scope === 'smart' ? 5 : 4
+      expect(translateText).toHaveBeenCalledTimes(callsAfterLinkUpdate)
+      if (scope === 'smart') {
+        expect(source.querySelector<HTMLAnchorElement>(`.${BILINGUAL_TEXT_CLASS} a:last-child`)?.href).toBe(mention.href)
+        expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      }
 
       const reply = document.createElement('article')
-      reply.innerHTML = '<a href="/late"><div id="late-author" lang="ja">遅れて登場した作者</div></a><div id="late-text" dir="auto" class="text-body whitespace-pre-wrap"><span>A reply arrives after the initial translation pass.</span></div><button>Like</button>'
+      reply.innerHTML = '<a href="/late"><div id="late-author" lang="ja">遅れて登場した作者</div></a><div id="late-text" dir="auto" class="text-body whitespace-pre-wrap"><span>A reply arrives after the initial translation pass.</span><a href="/late">@late</a></div><button>Like</button>'
       document.body.appendChild(reply)
       notify([{ type: 'childList', target: document.body, addedNodes: [reply] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
       await vi.runAllTimersAsync()
       expect(reply.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      if (scope === 'smart') expect(reply.querySelector(`.${BILINGUAL_TEXT_CLASS} a`)?.textContent).toBe('@late')
       expect(reply.querySelector('#late-author')?.textContent).toBe('遅れて登場した作者')
-      expect(translateText).toHaveBeenCalledTimes(5)
+      expect(translateText).toHaveBeenCalledTimes(callsAfterLinkUpdate + 1)
 
       notify([{ type: 'childList', target: source, addedNodes: [source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
       await vi.runAllTimersAsync()
-      expect(translateText).toHaveBeenCalledTimes(5)
+      expect(translateText).toHaveBeenCalledTimes(callsAfterLinkUpdate + 1)
     } finally {
       restoreOriginalContent()
       vi.unstubAllGlobals()
@@ -840,7 +948,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
     const nativeButton = document.querySelector('#native-translate')!
     const counter = document.querySelector('#thread-counter')!
     const originalText = source.textContent
-    vi.mocked(translateText).mockResolvedValue('在城市漫步时阅读原文。')
+    vi.mocked(translateText).mockImplementation(origin => Promise.resolve(origin
+      .replace(/ (__ONLY_TRANSLATE_SLOT_\d+__|⟦\d+⟧) /g, '$1')
+      .replace('Read ', '在城市漫步时阅读')
+      .replace('the original story', '原文')
+      .replace(' while exploring the city.', '。')
+    ))
 
     await handleBilingualTranslation(source, false)
 
@@ -885,8 +998,9 @@ describe('resolveAutoTranslateTarget behavior', () => {
     Object.defineProperty(window, 'location', { value: url, configurable: true })
     Object.defineProperty(document, 'location', { value: url, configurable: true })
     document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/threads-feed.html', 'utf8')
+    document.querySelector('#first-paragraph')!.insertAdjacentHTML('beforeend', ' <a href="/@reader">@reader</a>')
     vi.mocked(translateText).mockImplementation(origin => Promise.resolve(
-      origin.includes('THREADS-EXPANDED') ? '展开后全文译文' : 'Threads 正文译文'
+      origin.split(/(⟦\d+⟧)/g).map(part => /^⟦\d+⟧$/.test(part) ? part : part.trim() ? part.includes('THREADS-EXPANDED') ? '展开后全文译文' : 'Threads 正文译文' : part).join('')
     ))
 
     try {
@@ -902,7 +1016,8 @@ describe('resolveAutoTranslateTarget behavior', () => {
       notify([{ type: 'characterData', target: textNode }])
       await vi.runAllTimersAsync()
       expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
-      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('展开后全文译文')
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toContain('展开后全文译文')
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS} a`)?.textContent).toBe('@reader')
       expect(translateText).toHaveBeenCalledTimes(4)
 
       const reply = document.querySelector('#reply')!.cloneNode(true) as HTMLElement
@@ -916,10 +1031,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
       replySource.removeAttribute(TRANSLATED_ID_ATTR)
       replySource.className = ''
       replySource.textContent = 'THREADS-NEW: A reply is loaded after the first translation pass.'
+      replySource.insertAdjacentHTML('beforeend', ' <a href="/@late">@late</a>')
       document.body.appendChild(reply)
       notify([{ type: 'childList', target: document.body, addedNodes: [reply] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
       await vi.runAllTimersAsync()
       expect(replySource.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(replySource.querySelector(`.${BILINGUAL_TEXT_CLASS} a`)?.textContent).toBe('@late')
       expect(translateText).toHaveBeenCalledTimes(5)
 
       notify([{ type: 'attributes', target: reply, attributeName: 'class' }])

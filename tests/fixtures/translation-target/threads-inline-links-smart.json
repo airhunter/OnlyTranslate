@@ -1,0 +1,10 @@
+{
+  "name": "Threads smart mode owns the source row including adjacent short links",
+  "url": "https://www.threads.com/@mediaite/post/De3FHG9mzGJ",
+  "scope": "smart",
+  "html": "threads-inline-links.html",
+  "include": ["body-row"],
+  "exclude": ["post-text", "short-link", "author", "navigation", "like", "footer"],
+  "textIncludes": ["Sean Hannity", "dlvr.it/TW2bd…"],
+  "textExcludes": ["mediaite", "Like 168", "Threads Terms"]
+}

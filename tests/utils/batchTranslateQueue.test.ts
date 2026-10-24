@@ -276,6 +276,15 @@ describe('batch translation queue', () => {
     expect(executeSingle).toHaveBeenCalledTimes(2)
   })
 
+  it('falls back when a batch drops numbered social link boundaries', async () => {
+    const executeBatch = vi.fn(async () => ['丢失标记的译文', '第二条 ⟦0⟧'])
+    const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)
+    const requests = ['Read ⟦0⟧ today.', 'Second ⟦0⟧'].map(origin => enqueueBatchTranslation({ key: 'k', origin, executeBatch, executeSingle }))
+    await vi.advanceTimersByTimeAsync(40)
+    await expect(Promise.all(requests)).resolves.toEqual(['单:Read ⟦0⟧ today.', '单:Second ⟦0⟧'])
+    expect(executeSingle).toHaveBeenCalledTimes(2)
+  })
+
   it('rejects pending items when the queue is cleared before flush', async () => {
     const executeBatch = vi.fn(async (origins: string[]) => origins.map(origin => `译:${origin}`))
     const executeSingle = vi.fn(async (origin: string) => `单:${origin}`)

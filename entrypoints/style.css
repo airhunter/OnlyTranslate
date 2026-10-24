@@ -382,6 +382,21 @@
     overflow-wrap: break-word; /* 处理长单词或 URL 的断行，避免溢出 */
 }
 
+.only-translate-bilingual-text a.only-translate-inline-link {
+    display: inline !important;
+    position: static !important;
+    float: none !important;
+    font: inherit !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+}
+
+.only-translate-bilingual-text a.only-translate-inline-link:hover,
+.only-translate-bilingual-text a.only-translate-inline-link:focus-visible {
+    text-decoration: underline;
+}
+
 [data-only-translate-bilingual-label="true"] {
     white-space: normal !important;
     min-width: 0;
