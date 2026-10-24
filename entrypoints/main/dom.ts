@@ -1353,8 +1353,8 @@ function isUserIdentifier(text: string): boolean {
     const trimmedText = text.trim();
     
     // 检查是否为社交媒体用户名格式
-    if (/^@\w+/.test(trimmedText)) return true;  // Twitter格式：@username
-    if (/^u\/\w+/.test(trimmedText)) return true; // Reddit格式：u/username
+    if (/^@\w+$/.test(trimmedText)) return true;  // Twitter格式：@username，不包含后续正文
+    if (/^u\/\w+$/.test(trimmedText)) return true; // Reddit格式：u/username，不包含后续正文
     
     // 检查是否为x.com或twitter.com的ID格式
     if (/^id@https?:\/\/(x\.com|twitter\.com)\/[\w-]+\/status\/\d+/.test(trimmedText)) return true;

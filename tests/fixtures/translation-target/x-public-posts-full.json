@@ -1,0 +1,46 @@
+{
+  "name": "X full recognizes only post/reply bodies (public-posts)",
+  "url": "https://x.com/BranitezSports/status/2113847887033667664",
+  "scope": "full",
+  "html": "x-public-posts.html",
+  "include": [
+    "post-text",
+    "reply-text",
+    "cat-text"
+  ],
+  "exclude": [
+    "post",
+    "reply",
+    "author",
+    "handle",
+    "post-time",
+    "views",
+    "native-translate",
+    "reply-action",
+    "like-action",
+    "card-title",
+    "reply-author",
+    "reply-time",
+    "reply-like",
+    "cat-author",
+    "reply-permissions",
+    "unrecognized-copy",
+    "sidebar-bio",
+    "footer-copy",
+    "hidden-title"
+  ],
+  "textExcludes": [
+    "Brandon Benitez",
+    "Tammy Loeschner",
+    "写真集「島にゃんこ」発売中",
+    "Relevant people",
+    "Translate post",
+    "10.2K Views",
+    "Only some accounts",
+    "Cookie Policy",
+    "duplicated accessible",
+    "unrelated readable",
+    "article preview",
+    "profile biography"
+  ]
+}

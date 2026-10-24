@@ -1,0 +1,21 @@
+{
+  "name": "X full recognizes only post/reply bodies (no-body)",
+  "url": "https://www.x.com/",
+  "scope": "full",
+  "html": "x-no-body.html",
+  "include": [],
+  "exclude": [
+    "header",
+    "author",
+    "unknown-copy",
+    "sidebar",
+    "footer-copy"
+  ],
+  "textExcludes": [
+    "Welcome to X",
+    "写真集",
+    "long readable paragraph",
+    "Relevant people",
+    "Terms of Service"
+  ]
+}

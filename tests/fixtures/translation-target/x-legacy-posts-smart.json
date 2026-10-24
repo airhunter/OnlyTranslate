@@ -1,0 +1,31 @@
+{
+  "name": "X smart recognizes only post/reply bodies (legacy-posts)",
+  "url": "https://twitter.com/example/status/123",
+  "scope": "smart",
+  "html": "x-legacy-posts.html",
+  "include": [
+    "id__post",
+    "reply-text",
+    "follow-text"
+  ],
+  "exclude": [
+    "author",
+    "reply-author",
+    "post-time",
+    "actions",
+    "unknown-copy",
+    "sidebar",
+    "bio",
+    "bottom-bar",
+    "footer-copy"
+  ],
+  "textExcludes": [
+    "写真集 発売中",
+    "reply_author",
+    "Sidebar profile recommendation",
+    "profile biography",
+    "Do not miss",
+    "Cookie Policy",
+    "media caption"
+  ]
+}

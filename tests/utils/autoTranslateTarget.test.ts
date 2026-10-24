@@ -57,7 +57,7 @@ vi.mock('element-plus', () => ({
 }))
 
 import { autoTranslateEnglishPage, collectDynamicTranslationNodes, handleBilingualTranslation, handleBtnTranslation, handleSingleTranslation, handleTranslation, originalContents, resolveAutoTranslateTarget, restoreOriginalContent } from '@/entrypoints/main/trans'
-import { DIRECT_TEXT_TARGET_ATTR, getTranslatableText, getTranslatableTextWithProtectedInline, grabAllNode, grabNode } from '@/entrypoints/main/dom'
+import { DIRECT_TEXT_TARGET_ATTR, getTranslatableText, getTranslatableTextWithProtectedInline, grabAllNode, grabNode, isNumericContent } from '@/entrypoints/main/dom'
 import { collectTranslationTargets, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect'
 import { getBilingualAppendTarget } from '@/entrypoints/main/translationTarget/decision'
 import { getDynamicTranslationScanRoot } from '@/entrypoints/main/translationTarget/dynamic'
@@ -706,6 +706,97 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(getTranslatableText(document.querySelector('#paragraph')!))
       .toBe('Readable article text.02Different inline explanation.')
+  })
+
+  it.each([
+    ['@reader', true],
+    ['u/reader', true],
+    ['1,234', true],
+    ['@reader Follow the story and share your thoughts.', false],
+    ['u/reader explained how this works in the discussion.', false]
+  ] as const)('distinguishes standalone identifiers from sentences (%s)', (text, expected) => {
+    expect(isNumericContent(text)).toBe(expected)
+  })
+
+  it.each(['smart', 'full'])('translates X bodies, late replies and reused posts without touching authors or controls (%s)', async scope => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly observedTargets: Node[] = []
+      constructor(readonly callback: MutationCallback) {
+        CapturingMutationObserver.instances.push(this)
+      }
+      observe(target: Node) { this.observedTargets.push(target) }
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    const url = new URL('https://x.com/BranitezSports/status/2113847887033667664')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/x-public-posts.html', 'utf8')
+    mockConfig.translationScope = scope
+    vi.mocked(translateText).mockImplementation(origin => Promise.resolve(
+      origin.includes('X-EXPANDED') ? '展开后的帖子全文' : '帖子正文译文'
+    ))
+    const source = document.querySelector<HTMLElement>('#post-text')!
+    const author = document.querySelector('#author')!
+    const nativeButton = document.querySelector('#native-translate')!
+    const links = Array.from(source.querySelectorAll('a'))
+
+    try {
+      autoTranslateEnglishPage(scope)
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(3)
+      expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(3)
+      expect(document.querySelector('#author')).toBe(author)
+      expect(document.querySelector('#native-translate')).toBe(nativeButton)
+      expect(links.every(link => link.isConnected && source.contains(link))).toBe(true)
+      expect(vi.mocked(translateText).mock.calls.map(call => call[0]).join(' '))
+        .not.toMatch(/Brandon Benitez|Tammy Loeschner|Translate post|Cookie Policy|Only some accounts|10.2K Views/)
+
+      const observer = CapturingMutationObserver.instances.find(instance => instance.observedTargets.includes(document.body))!
+      const notify = (records: Partial<MutationRecord>[]) => observer.callback(records as MutationRecord[], observer as unknown as MutationObserver)
+      const textNode = source.querySelectorAll('span')[1].firstChild!
+      textNode.textContent = ' X-EXPANDED: This same post body now contains its complete text after expansion.'
+      notify([{ type: 'characterData', target: textNode }])
+      await vi.runAllTimersAsync()
+      expect(source.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(source.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('展开后的帖子全文')
+
+      const reply = document.createElement('article')
+      reply.innerHTML = '<a href="/late"><div id="late-author" lang="ja">遅れて登場した作者</div></a><div id="late-text" dir="auto" class="text-body whitespace-pre-wrap"><span>A reply arrives after the initial translation pass.</span></div><button>Like</button>'
+      document.body.appendChild(reply)
+      notify([{ type: 'childList', target: document.body, addedNodes: [reply] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
+      await vi.runAllTimersAsync()
+      expect(reply.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(reply.querySelector('#late-author')?.textContent).toBe('遅れて登場した作者')
+      expect(translateText).toHaveBeenCalledTimes(5)
+
+      notify([{ type: 'childList', target: source, addedNodes: [source.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!] as unknown as NodeList, removedNodes: [] as unknown as NodeList }])
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(5)
+    } finally {
+      restoreOriginalContent()
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+    expect(source.textContent).toContain('X-EXPANDED')
+    expect(links.every(link => link.isConnected && source.contains(link))).toBe(true)
+    expect(document.querySelector('#author')).toBe(author)
+    expect(document.querySelector('#native-translate')).toBe(nativeButton)
+    expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
   })
 
   it.each(['smart', 'full'])('does not translate unrelated Threads content when no post body is found (%s)', scope => {
