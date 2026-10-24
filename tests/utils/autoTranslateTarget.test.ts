@@ -109,6 +109,59 @@ describe('resolveAutoTranslateTarget behavior', () => {
     })
   })
 
+  it.each([1, 0])('translates PoTown product prose without changing cart controls and restores its structure (display %s)', async display => {
+    const url = new URL('https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/potown-product.html', 'utf8')
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
+    mockConfig.display = display
+    vi.mocked(translateText).mockResolvedValue('这是完整的商品说明译文。')
+    const form = document.querySelector<HTMLFormElement>('#add')!
+    const quantity = document.querySelector<HTMLInputElement>('#quantity')!
+    const cartButton = document.querySelector<HTMLButtonElement>('#Add')!
+    const onClick = vi.fn()
+    cartButton.addEventListener('click', onClick)
+    quantity.value = '3'
+    const originalHTML = form.innerHTML
+    const description = form.querySelector('[itemprop="description"]')!
+    const originalList = description.querySelector('ul')!
+
+    try {
+      const target = resolveAutoTranslateTarget('smart')
+      const firstParagraph = target.nodes.find(node => getTranslatableText(node).includes('The PTCG Live game limits'))!
+      expect(getTranslatableText(firstParagraph)).toContain('4 code limit you can redeem.')
+      expect(getTranslatableText(firstParagraph)).toContain('Trainers Points instead of cards.')
+      expect(firstParagraph.querySelector('[style*="color:red"]')).not.toBeNull()
+      const again = resolveAutoTranslateTarget('smart')
+      expect(again.nodes).toEqual(target.nodes)
+      for (const node of target.nodes) {
+        if (display === 1) await handleBilingualTranslation(node as HTMLElement, false)
+        else await handleSingleTranslation(node as HTMLElement, false)
+      }
+      expect(description.textContent).toContain('这是完整的商品说明译文。')
+      expect(document.querySelector('#product-title')?.textContent).toContain('这是完整的商品说明译文。')
+      expect(form.querySelector('#quantity')).toBe(quantity)
+      expect(form.querySelector('#Add')).toBe(cartButton)
+      expect(quantity.value).toBe('3')
+      cartButton.click()
+      expect(onClick).toHaveBeenCalledOnce()
+      expect(cartButton.textContent).toBe('Add to Cart')
+      expect(description.querySelector('ul')).toBe(originalList)
+      expect(originalList.children).toHaveLength(2)
+      expect(document.querySelector('#notify-modal')?.textContent).not.toContain('这是完整的商品说明译文。')
+    } finally {
+      restoreOriginalContent()
+    }
+    const restored = form.cloneNode(true) as Element
+    restored.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
+    expect(restored.innerHTML).toBe(originalHTML)
+    expect(form.querySelector('#quantity')).toBe(quantity)
+    expect(form.querySelector('#Add')).toBe(cartButton)
+    expect(form.querySelector('a[href="mailto:support@potownstore.com"]')).not.toBeNull()
+  })
+
   it('uses the source text color for a bilingual translation of an Apple dark store card', async () => {
     const url = new URL('https://www.apple.com/store')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
