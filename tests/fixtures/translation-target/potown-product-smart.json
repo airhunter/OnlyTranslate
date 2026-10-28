@@ -3,8 +3,18 @@
   "url": "https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code",
   "scope": "smart",
   "html": "potown-product.html",
-  "include": ["product-title", "product-item"],
-  "exclude": ["product-price", "product-stock", "notify-modal", "quantity", "Add", "footer-copy"],
+  "include": [
+    "product-title",
+    "product-item"
+  ],
+  "exclude": [
+    "product-price",
+    "product-stock",
+    "notify-modal",
+    "quantity",
+    "Add",
+    "footer-copy"
+  ],
   "textIncludes": [
     "The PTCG Live game limits the number of codes",
     "4 code limit",
@@ -12,10 +22,17 @@
     "keep track of the number of codes",
     "You can only redeem 10 codes",
     "you get the following Pokemon Cards",
-    "1 Eevee ex SVP 174",
-    "You will receive the Pokémon codes via email",
-    "please check spam or promotional folder!"
+    "1 Eevee ex SVP 174"
   ],
-  "textExcludes": ["Your Price", "Availability", "Add to Cart", "Please enter your email", "special offers"],
-  "grabOptions": {"siteCompatMode": "smart"}
+  "textExcludes": [
+    "Your Price",
+    "Availability",
+    "Add to Cart",
+    "Please enter your email",
+    "special offers",
+    "You will receive the Pokémon codes"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
 }

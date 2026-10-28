@@ -21,7 +21,6 @@ import { microsoftPartnerCenterProfile } from './microsoftPartnerCenter';
 import { natureProfile } from './nature';
 import { nxgoaiProfile } from './nxgoai';
 import { productHuntProfile } from './productHunt';
-import { potownProfile } from './potown';
 import { quoraProfile } from './quora';
 import { realPythonProfile } from './realPython';
 import { redditProfile } from './reddit';
@@ -91,7 +90,6 @@ export const siteProfiles: SiteProfile[] = [
     mempkoProfile,
     nxgoaiProfile,
     productHuntProfile,
-    potownProfile,
     quoraProfile,
     realPythonProfile,
     redditProfile,

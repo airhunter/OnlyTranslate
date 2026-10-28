@@ -1,0 +1,52 @@
+{
+  "name": "semantic product form recovery works without a site profile and respects form and scope boundaries",
+  "url": "https://shop.example.org/products/keyboard",
+  "scope": "smart",
+  "html": "semantic-product-form.html",
+  "include": [
+    "generic-product-title",
+    "generic-description",
+    "generic-feature"
+  ],
+  "exclude": [
+    "hidden-description",
+    "offer-copy",
+    "review-copy",
+    "option-label",
+    "buy",
+    "price",
+    "add-to-cart",
+    "contact-title",
+    "contact-copy",
+    "newsletter-copy",
+    "checkout-copy",
+    "related-title",
+    "related-copy",
+    "article-description",
+    "checkout-product-title",
+    "checkout-product-description",
+    "login-product-description"
+  ],
+  "textIncludes": [
+    "Read the full product specification before ordering.",
+    "A rechargeable battery"
+  ],
+  "textExcludes": [
+    "Hidden promotional",
+    "Payment instructions",
+    "review belongs",
+    "Select a keyboard",
+    "Buy this product",
+    "Your price",
+    "Describe your question",
+    "Subscribe to our weekly",
+    "credit card details",
+    "Related product promotional",
+    "unrelated structured object",
+    "Product prose within a payment",
+    "Product prose in an account"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  }
+}

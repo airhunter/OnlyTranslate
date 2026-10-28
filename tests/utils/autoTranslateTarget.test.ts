@@ -162,6 +162,47 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(form.querySelector('a[href="mailto:support@potownstore.com"]')).not.toBeNull()
   })
 
+  it.each([1, 0])('recovers semantic product descriptions outside the main root, including dynamic paragraphs (display %s)', async display => {
+    const url = new URL('https://shop.example.org/products/keyboard')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/semantic-product-form.html', 'utf8')
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
+    mockConfig.display = display
+    vi.mocked(translateText).mockImplementation(async origin => origin.split(/(__ONLY_TRANSLATE_(?:SLOT_\d+|INLINE_\d+_[a-z0-9]+)__)/g)
+      .map(part => part.startsWith('__ONLY_TRANSLATE_') ? part : part.replace(/[A-Za-z]+/g, '商品说明的中文译文。')).join(''))
+    const description = document.querySelector<HTMLElement>('section[itemprop~="description"]')!
+    const originalHTML = description.innerHTML
+    const button = document.querySelector('#buy')!
+    const manual = document.querySelector('#manual-link')!
+    const target = resolveAutoTranslateTarget('smart')
+    const dynamic = document.createElement('p')
+    dynamic.innerHTML = '<strong>New details:</strong> The keyboard supports wireless connections and multiple languages.'
+    description.append(dynamic)
+    const dynamicTargets = collectDynamicTranslationNodes(dynamic, document.querySelector('main')!, 'smart', target.grabOptions)
+    expect(dynamicTargets).toContain(dynamic)
+    expect(collectDynamicTranslationNodes(button, document.querySelector('main')!, 'smart', target.grabOptions)).toEqual([])
+    try {
+      for (const node of [...target.nodes, dynamic]) {
+        if (display === 1) await handleBilingualTranslation(node as HTMLElement, false)
+        else await handleSingleTranslation(node as HTMLElement, false)
+      }
+      expect(dynamic.textContent).toContain('商品说明的中文译文。')
+      expect(document.querySelector('#buy')).toBe(button)
+      expect(button.textContent).toBe('Buy this product')
+      expect(document.querySelector('#offer-copy')?.textContent).not.toContain('商品说明的中文译文。')
+      expect(document.querySelector('#review-copy')?.textContent).not.toContain('商品说明的中文译文。')
+      if (display === 1) expect(document.querySelector('#manual-link')).toBe(manual)
+    } finally {
+      restoreOriginalContent()
+      dynamic.remove()
+    }
+    const restored = description.cloneNode(true) as Element
+    restored.querySelectorAll('[class=""]').forEach(node => node.removeAttribute('class'))
+    expect(restored.innerHTML).toBe(originalHTML)
+  })
+
   it('uses the source text color for a bilingual translation of an Apple dark store card', async () => {
     const url = new URL('https://www.apple.com/store')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
