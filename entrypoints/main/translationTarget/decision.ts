@@ -30,6 +30,7 @@ import type {
 } from './types';
 import { composedClosest, getComposedParentElement, isUnassignedLightDomSubtree } from './composedTree';
 import { FULL_PAGE_PROTECTED_SELECTOR, hasFullPageText, isFullPageVisible } from './fullPage';
+import { isProductReadingTarget } from './productReading';
 
 const HARD_SKIP_SELECTOR = [
     'script',
@@ -95,6 +96,9 @@ export function decideTranslationTarget(
         };
     }
 
+    if (context.scope === 'smart' && context.mode === 'smart' && isProductReadingTarget(node)) {
+        return allowDecision(node, { role: node.matches('h1') ? 'title' : 'paragraph', reason: 'semantic-product-reading-copy' }, candidate, context);
+    }
     const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
     if (filterSkip?.policy === 'hard-skip') {
         return skipDecision(node, filterSkip, candidate, context);

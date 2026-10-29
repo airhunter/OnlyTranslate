@@ -1,0 +1,11 @@
+{
+  "name": "PoTown full keeps its existing page-wide scope including cart labels",
+  "url": "https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code",
+  "scope": "full",
+  "html": "potown-product.html",
+  "include": ["product-title", "Add", "product-price", "product-stock"],
+  "exclude": ["quantity", "notify-modal"],
+  "textIncludes": ["The PTCG Live game limits", "You will receive the Pokémon codes", "Add to Cart"],
+  "textExcludes": ["Please enter your email"],
+  "grabOptions": {"siteCompatMode": "full"}
+}

@@ -15,6 +15,7 @@ import {
 } from './scanContext';
 import { composedClosest, composedContains, getComposedParentElement, isManagedComposedSubtree } from './composedTree';
 import type { TranslationTargetContext } from './types';
+import { getProductReadingRegion } from './productReading';
 
 const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
 
@@ -71,6 +72,7 @@ export function isInTranslationScope(
     grabOptions: GrabAllNodeOptions = {}
 ): boolean {
     if (scope === 'full' || composedContains(contentRoot, root)) return true;
+    if (scope === 'smart' && getProductReadingRegion(root)) return true;
 
     const context: TranslationTargetContext = {
         mode: grabOptions.siteCompatMode ?? (scope === 'full' ? 'full' : 'smart'),
@@ -133,6 +135,9 @@ export function getDynamicTranslationScanRoot(
         }
         return profileScanRoot;
     };
+
+    const productRegion = scope === 'smart' && context.mode === 'smart' ? getProductReadingRegion(root) : null;
+    if (productRegion) return productRegion;
 
     if (scope !== 'full' && isObviousUiSubtree(grabOptions.scanContext, root)) {
         const scanRoot = getProfileScanRoot();

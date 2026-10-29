@@ -26,6 +26,7 @@ import {
 } from './composedTree';
 import { TRANSLATED_ATTR } from './constants';
 import { collectFullPageTargets } from './fullPage';
+import { collectProductReadingTargets } from './productReading';
 
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
@@ -304,6 +305,10 @@ function collectTranslationCandidates(
             source: 'site-profile',
             reasons: ['site-profile-select']
         });
+    }
+
+    for (const node of collectProductReadingTargets(options.includeSupplemental ? document.body : root, context)) {
+        candidates.push({ node, source: 'supplemental', reasons: ['semantic-product-reading-copy'] });
     }
 
     if (options.includeSupplemental) {
