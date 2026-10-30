@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.14.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.14：全页翻译升级与社交网站适配',
+        items: [
+          '扩大全页翻译对导航、菜单和按钮等可见文字的覆盖，改善双语排版及仅译文模式下的链接和按钮交互。',
+          '优化 X、Threads 帖子与回复的正文识别，减少作者和界面误翻；识文译文保留链接跳转及 @提及、标签的显示样式。',
+          '修复部分商品页说明位于购买表单内时漏译的问题，识文模式可补选明确标记的商品标题和描述。',
+          '优化服务选择面板，采用双列布局、调整服务分组，并保留管理服务快捷入口。',
+          '新用户划词朗读默认使用 Edge 在线语音，改善音色匹配并明确提示播放失败；已有用户保留原设置。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.14: Full Page Translation and Social Site Improvements',
+        items: [
+          'Expanded Full Page translation to cover more visible navigation, menus and buttons, with improved bilingual layouts and working links and buttons in translation-only mode.',
+          'Improved post and reply detection on X and Threads, reducing unwanted author and interface translations. Smart translations preserve clickable links and the appearance of @mentions and hashtags.',
+          'Fixed missed product descriptions inside purchase forms. Smart translation now recovers explicitly marked product titles and descriptions.',
+          'Improved the service picker with a two-column layout, clearer service groups and a shortcut to manage services.',
+          'Selected-text read-aloud now defaults to Edge online voices for new users, with better voice matching and explicit playback errors. Existing users keep their saved settings.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.14：全頁翻譯升級與社群網站適配',
+        items: [
+          '擴大全頁翻譯對導覽、選單和按鈕等可見文字的涵蓋範圍，改善雙語排版及僅譯文模式下的連結和按鈕互動。',
+          '改善 X、Threads 貼文與回覆的正文辨識，減少作者和介面誤譯；智慧翻譯的譯文保留連結跳轉及 @提及、標籤的顯示樣式。',
+          '修復部分商品頁說明位於購買表單內時漏譯的問題，智慧翻譯可補選明確標記的商品標題和描述。',
+          '改善服務選擇面板，採用雙欄版面、調整服務分組，並保留管理服務捷徑。',
+          '新使用者的選取文字朗讀預設使用 Edge 線上語音，改善音色比對並明確提示播放失敗；既有使用者保留原設定。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.14：ページ全体翻訳と SNS サイトへの対応を改善',
+        items: [
+          'ページ全体翻訳でナビゲーション、メニュー、ボタンなどの表示テキストをより広く翻訳し、対訳レイアウトと訳文のみ表示でのリンクやボタンの操作を改善しました。',
+          'X と Threads の投稿・返信本文の検出を改善し、投稿者名や画面操作部分の不要な翻訳を削減しました。スマート翻訳ではリンクの移動先と @メンション、ハッシュタグの表示スタイルを保持します。',
+          '購入フォーム内の商品説明が翻訳されない問題を修正しました。スマート翻訳で明示的にマークされた商品名と説明を検出します。',
+          '翻訳サービスの選択画面を 2 列にし、サービスの分類と管理画面へのショートカットを改善しました。',
+          '新規ユーザーの選択テキスト読み上げは Edge オンライン音声が既定になりました。音声の照合を改善し、再生失敗を明示します。既存ユーザーの保存済み設定は維持します。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.13.0',
     notes: {
       'zh-CN': {

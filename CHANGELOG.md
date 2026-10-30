@@ -1,5 +1,24 @@
 # Changelog
 
+# [1.14.0](https://github.com/airhunter/OnlyTranslate/compare/v1.13.0...v1.14.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* **content:** 保留 X 和 Threads 识文译文中的链接实体 ([12a99cb](https://github.com/airhunter/OnlyTranslate/commit/12a99cbc48312c6743296a4dac17b9bdde62c57f))
+* **content:** 修复 PoTown 商品页识文正文漏翻 ([e0c3c97](https://github.com/airhunter/OnlyTranslate/commit/e0c3c972ff526e4b8d3916df6eef247626537ad8))
+* **content:** 修复 X 正文识别及作者与界面误翻 ([3a7019b](https://github.com/airhunter/OnlyTranslate/commit/3a7019b1579d8fa4da41026c8e2af8315d7a9d62))
+* **content:** 完善全页翻译布局并补齐插槽菜单 ([87e8412](https://github.com/airhunter/OnlyTranslate/commit/87e8412d6ba8193601442807e8900f2bd6ee93c1))
+* **content:** 通用识别表单内的商品正文 ([1fde71d](https://github.com/airhunter/OnlyTranslate/commit/1fde71d2572b7e1a5bee1655df3d007b3bb36f83))
+* **popup:** 优化服务分组与双列选择体验 ([b087a55](https://github.com/airhunter/OnlyTranslate/commit/b087a5518d26f76d3cc244b3df760712a3569823))
+* **tts:** 默认使用 Edge 语音并修正音色匹配与失败提示 ([d8569f3](https://github.com/airhunter/OnlyTranslate/commit/d8569f394868537741899b260cfcc5598942e15e))
+
+
+### Features
+
+* **content:** 完成全页翻译第一阶段并修复双语布局 ([369be43](https://github.com/airhunter/OnlyTranslate/commit/369be4389de00ddd16a0849821196b868eec2a51))
+* **content:** 适配 Threads 帖子与回复正文翻译 ([637af6b](https://github.com/airhunter/OnlyTranslate/commit/637af6b777be6d4cc90b4ace3a172a146e930d3d))
+
 # [1.13.0](https://github.com/airhunter/OnlyTranslate/compare/v1.12.0...v1.13.0) (2026-10-13)
 
 
