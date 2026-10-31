@@ -12,6 +12,7 @@ import {
     createScanContext,
     discoverScanShadowRoots,
     getCachedContentFilterDecision,
+    getCachedContentUnitDecision,
     getCachedNormalizedText,
     getCachedProseEvidence,
     hasEnoughProfileTargets,
@@ -400,6 +401,7 @@ function collectGenericSupplementalReadingTargets(
 ): Element[] {
     return [
         ...collectContentRootSiblingReadingTargets(context),
+        ...collectPrimaryHeadingIntroductionTargets(root, context),
         ...collectLabeledReadingTargets(root, context),
         ...collectSegmentedArticleReadingTargets(context),
         ...collectHighConfidenceReadingUnits(root, {
@@ -650,6 +652,23 @@ function isRecoverableSegmentedArticleTarget(target: Element, context: Translati
     return evidence.strength !== 'none'
         && evidence.linkDensity <= 0.35
         && evidence.interactiveDensity <= 0.35;
+}
+
+function collectPrimaryHeadingIntroductionTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
+    if (context.mode !== 'smart') return [];
+    const scanContext = context.grabOptions?.scanContext;
+    const targets: Element[] = [];
+    for (const introduction of Array.from(root.querySelectorAll('h1 + div'))) {
+        if (context.contentRoot.contains(introduction)) continue;
+        if (!isVisibleForTranslation(introduction, context)) continue;
+        const decision = getCachedContentUnitDecision(scanContext, introduction, classifyContentUnit);
+        if (decision.action !== 'allow' || decision.kind !== 'subtitle' || decision.confidence < 0.72) continue;
+        // Recover prose rather than its whole wrapper: a sibling call-to-action
+        // must not be merged into the introduction's translated sentence.
+        targets.push(...Array.from(introduction.querySelectorAll('p, blockquote'))
+            .filter(target => isRecoverableLeadingReadingTarget(target, introduction, context)));
+    }
+    return targets;
 }
 
 function collectLabeledReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {

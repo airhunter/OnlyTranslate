@@ -1,0 +1,20 @@
+{
+  "name": "full keeps the page introduction and its action available",
+  "url": "https://www.ontario.ca/page/ministry-natural-resources",
+  "scope": "full",
+  "html": "primary-heading-introduction.html",
+  "include": [
+    "page-title",
+    "page-introduction"
+  ],
+  "exclude": [],
+  "textIncludes": [
+    "Protecting Ontario’s biodiversity",
+    "Sustainably manage Ontario’s fish",
+    "Get an Outdoors Card"
+  ],
+  "textExcludes": [],
+  "grabOptions": {
+    "siteCompatMode": "full"
+  }
+}

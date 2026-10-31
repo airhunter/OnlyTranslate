@@ -203,6 +203,69 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(restored.innerHTML).toBe(originalHTML)
   })
 
+  it.each([1, 0])('translates and restores a recovered title introduction without including its action (display %s)', async display => {
+    const url = new URL('https://www.ontario.ca/page/ministry-natural-resources')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/primary-heading-introduction.html', 'utf8')
+    invalidateContentFilterCache(document.body)
+    invalidateContentFilterCache(document.documentElement)
+    mockConfig.display = display
+    vi.mocked(translateText).mockResolvedValue('保护安大略省的生物多样性，支持自然资源与户外活动。')
+    const introduction = document.querySelector<HTMLElement>('#page-introduction')!
+    const action = document.querySelector<HTMLAnchorElement>('#page-action a')!
+    const sourceHTML = introduction.innerHTML
+    const target = resolveAutoTranslateTarget('smart')
+    expect(target.contentRoot.contains(introduction)).toBe(false)
+    expect(target.nodes).toContain(introduction)
+    expect(target.nodes.some(node => node.contains(action))).toBe(false)
+    const onClick = vi.fn((event: Event) => event.preventDefault())
+    action.addEventListener('click', onClick)
+    const dynamic = document.createElement('p')
+    dynamic.textContent = 'The ministry protects wildlife and natural habitats while supporting outdoor activities across the province.'
+    introduction.parentElement!.append(dynamic)
+    try {
+      const dynamicTargets = collectDynamicTranslationNodes(dynamic, target.contentRoot, 'smart', target.grabOptions)
+      expect(dynamicTargets).toContain(dynamic)
+      for (const node of [introduction, dynamic]) {
+        if (display === 1) await handleBilingualTranslation(node, false)
+        else await handleSingleTranslation(node, false)
+        expect(node.textContent).toContain('保护安大略省的生物多样性')
+      }
+      expect(vi.mocked(translateText).mock.calls.map(call => call[0]).join(' ')).not.toContain('Get an Outdoors Card')
+      expect(document.querySelector('#page-action a')).toBe(action)
+      expect(action.getAttribute('href')).toBe('/page/get-outdoors-card')
+      action.click()
+      expect(onClick).toHaveBeenCalledOnce()
+    } finally {
+      restoreOriginalContent()
+      dynamic.remove()
+    }
+    expect(introduction.innerHTML).toBe(sourceHTML)
+    expect(introduction.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+  })
+
+  it('recovers unlabelled title introductions without treating navigation, forms or promotion as prose', () => {
+    const url = new URL('https://example.org/public-programs')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    document.body.innerHTML = `
+      <main>
+        <header><h1>Public programs and services</h1><div><div><p id="unlabelled-intro">We protect natural habitats and support outdoor recreation while providing programs and services for communities across the province.</p><p><a href="/apply">Apply now</a></p></div></div></header>
+        <section id="reading-root"><p>Our programs include wildlife management and protection of natural habitats across the province.</p></section>
+      </main>
+      ${['nav', 'aside', 'form', 'dialog'].map(tag => `<${tag}><h1>Other services</h1><div><p id="${tag}-intro">This unrelated introduction contains enough words to resemble reading content but belongs to a protected interface area.</p></div></${tag}>`).join('')}
+      <section class="newsletter"><h1>Subscribe to our newsletter</h1><div><p id="promo-intro">Join our mailing list for weekly news and special offers about the services available across the province.</p><a href="/subscribe">Subscribe</a></div></section>
+      <section hidden><h1>Hidden introduction</h1><div><p id="hidden-intro">This introductory paragraph must stay hidden even though it has a heading and enough readable text.</p></div></section>
+      <section translate="no"><h1>Protected introduction</h1><div><p id="protected-intro">This introductory paragraph must stay untranslated because its author explicitly requested that it be protected.</p></div></section>
+    `
+    const root = document.querySelector('#reading-root')!
+    const targets = collectTranslationTargets(root, { mode: 'smart', scope: 'smart', contentRoot: root }, { includeSupplemental: true })
+      .map(decision => decision.target)
+    expect(targets).toContain(document.querySelector('#unlabelled-intro'))
+    const text = targets.map(node => getTranslatableText(node)).join(' ')
+    expect(text).not.toMatch(/Apply now|unrelated introduction|mailing list|must stay hidden|must stay untranslated/)
+  })
+
   it('uses the source text color for a bilingual translation of an Apple dark store card', async () => {
     const url = new URL('https://www.apple.com/store')
     Object.defineProperty(window, 'location', { value: url, configurable: true })

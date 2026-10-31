@@ -1,0 +1,26 @@
+{
+  "name": "smart recovers nested prose immediately after the page title outside its selected reading root",
+  "url": "https://www.ontario.ca/page/ministry-natural-resources",
+  "scope": "smart",
+  "html": "primary-heading-introduction.html",
+  "include": [
+    "page-title",
+    "page-introduction"
+  ],
+  "exclude": [
+    "page-action"
+  ],
+  "textIncludes": [
+    "Protecting Ontario’s biodiversity",
+    "Sustainably manage Ontario’s fish"
+  ],
+  "textExcludes": [
+    "Get an Outdoors Card"
+  ],
+  "grabOptions": {
+    "siteCompatMode": "smart"
+  },
+  "contentRootExcludes": [
+    "#page-introduction"
+  ]
+}
