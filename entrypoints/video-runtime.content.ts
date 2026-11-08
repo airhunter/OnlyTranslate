@@ -5,7 +5,8 @@ import { isSupportedVideoSubtitleHost } from '@/entrypoints/content/videoSubtitl
 type RuntimeWindow = Window & { __onlyTranslateVideoRuntime?: boolean }
 export default defineContentScript({
   registration: 'runtime',
-  matches: ['*://*.youtube.com/*', '*://*.youtubekids.com/*', '*://*.udemy.com/*', '*://*.coursera.org/*', '*://*.khanacademy.org/*'],
+  matches: ['*://*.youtube.com/*', '*://*.youtubekids.com/*', '*://*.udemy.com/*', '*://*.coursera.org/*', '*://*.khanacademy.org/*',
+    '*://*.x.com/*', '*://*.twitter.com/*', '*://*.teapaw.org/*', '*://*.teapawt.org/*'],
   runAt: 'document_end',
   async main() {
     const runtimeWindow = window as RuntimeWindow

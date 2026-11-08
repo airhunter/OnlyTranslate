@@ -412,6 +412,20 @@ describe('video subtitle persistent cache', () => {
         )).toBe('https://example.com/openai?api-version=2026-01-01')
     })
 
+    it('normalizes the cache endpoint when the browser does not expose a search-param iterator', () => {
+        const entries = vi.spyOn(URLSearchParams.prototype, 'entries').mockImplementation(() => {
+            throw new TypeError('Search parameters are not iterable')
+        })
+        try {
+            expect(normalizeSubtitleCacheEndpoint('https://Example.com/v1/?b=2&key=secret&a=1'))
+                .toBe('https://example.com/v1?a=1&b=2')
+            expect(normalizeSubtitleCacheEndpoint('Example.com/v1/?b=2&key=secret&a=1'))
+                .toBe('example.com/v1?a=1&b=2')
+        } finally {
+            entries.mockRestore()
+        }
+    })
+
     it('treats storage and hashing failures as cache misses without breaking playback', async () => {
         const storage = new MemoryStorage()
         storage.get = vi.fn(async () => { throw new Error('storage unavailable') })

@@ -15,6 +15,7 @@ import {
     videoSubtitleCacheInternals,
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
+import { isXSubtitleRequest, isXVideoSubtitleHost, loadXSubtitle } from '@/entrypoints/video/xSubtitle'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
 import { buildUninstallFeedbackUrl } from '@/entrypoints/utils/uninstallFeedback'
@@ -283,6 +284,12 @@ export default defineBackground({
                 loadedContentFeatures,
             )
             if (message?.type === 'LOAD_CONTENT_FEATURE') return contentFeatureResponse
+
+            if (isXSubtitleRequest(message)) {
+                const senderUrl = URL.canParse(sender.url) ? new URL(sender.url) : undefined
+                if (senderUrl && isXVideoSubtitleHost(senderUrl.hostname)) return loadXSubtitle(message)
+                return Promise.resolve({ status: 'failed' })
+            }
 
             const ttsResponse = handleTtsBackgroundMessage(message)
             if (ttsResponse) return ttsResponse

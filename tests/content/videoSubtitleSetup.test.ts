@@ -4,6 +4,7 @@ import {
   isSupportedVideoSubtitleHost,
   setupVideoSubtitle
 } from '@/entrypoints/content/videoSubtitleSetup'
+import { isXVideoSubtitleHost } from '@/entrypoints/video/xSubtitle'
 
 describe('video subtitle setup', () => {
   beforeEach(() => {
@@ -34,5 +35,18 @@ describe('video subtitle setup', () => {
     expect(isSupportedVideoSubtitleHost('coursera.org')).toBe(true)
     expect(isSupportedVideoSubtitleHost('www.khanacademy.org')).toBe(true)
     expect(isSupportedVideoSubtitleHost('youtube.com.example.org')).toBe(false)
+    expect(isSupportedVideoSubtitleHost('x.com')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('mobile.twitter.com')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('teapaw.org')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('notx.com')).toBe(false)
+  })
+
+  it('enables the runtime and X subtitle source on both Teapaw domains', () => {
+    for (const host of ['teapaw.org', 'teapawt.org']) {
+      expect(isSupportedVideoSubtitleHost(host)).toBe(true)
+      expect(isXVideoSubtitleHost(host)).toBe(true)
+    }
+    expect(isSupportedVideoSubtitleHost('teapawt.org.example.com')).toBe(false)
+    expect(isXVideoSubtitleHost('teapawt.org.example.com')).toBe(false)
   })
 })

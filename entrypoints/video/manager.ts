@@ -32,6 +32,10 @@ import {
 } from '@/entrypoints/utils/providerEndpoint'
 import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
 import { isVideoFastModeEffective } from './fastMode'
+import { isXVideoSubtitleHost, type XSubtitleResult } from './xSubtitle'
+import {
+    getXVideoContextKey, getXVideoRequest, isXVideoForCurrentPost, mountXVideoFullscreen, watchXVideoPlayers,
+} from './xVideoPlayer'
 
 const EVENT_TYPE = 'fr-subtitle-inject'
 const QUICK_BTN_ID = 'fr-subtitle-quick-btn'
@@ -63,9 +67,20 @@ let consecutiveQualityTimeouts = 0
 let statusHintTimer: number | null = null
 let lastVisibleStatus: VisibleSubtitleStatus | null = null
 const lastStatusHintAt = new Map<VisibleSubtitleStatus, number>()
+const xVideoPlayers = new Map<HTMLVideoElement, { button: HTMLButtonElement; cleanupFullscreen?: () => void }>()
+let xPlayerWatchAttached = false
+let activeXPlayer: { video: HTMLVideoElement; button: HTMLButtonElement; contextKey: string } | null = null
 
 export function initVideoSubtitle() {
     if (!config.enableVideoSubtitle) return
+    if (isXVideoSubtitleHost(window.location.hostname)) {
+        if (!xPlayerWatchAttached) {
+            xPlayerWatchAttached = true
+            subtitleEnabled = false
+            watchXVideoPlayers(mountXVideoButton, unmountXVideoButton, syncXVideoPlayers, activateXPlayer)
+        }
+        return
+    }
     attachMessageListener()
     watchNavigation()
     sendConfig()
@@ -146,7 +161,11 @@ function setSubtitleLoadStatus(status: SubtitleLoadStatus) {
     updateQuickButton()
 }
 
-async function handleSubtitleData(url: string, rawData: string) {
+async function handleSubtitleData(
+    url: string,
+    rawData: string,
+    xTrack?: { video: HTMLVideoElement; language?: string },
+) {
     if (!isSubtitleTrackForPage(url)) return
     const trackKey = buildSubtitleTrackKey(url)
     if (trackKey === activeTrackKey) {
@@ -159,17 +178,18 @@ async function handleSubtitleData(url: string, rawData: string) {
     const parsed = parseSubtitleData(url, rawData)
     if (!parsed?.cues.length) {
         clearProcessingTrack(trackKey)
-        setSubtitleLoadStatus('failed')
+        setSubtitleLoadStatus(parsed && xTrack ? 'no-track' : 'failed')
         return
     }
-    const segments = buildSubtitleSegments(parsed.cues, parsed.sourceLanguage)
+    const sourceLanguage = xTrack?.language ?? parsed.sourceLanguage
+    const segments = buildSubtitleSegments(parsed.cues, sourceLanguage)
     if (!segments.length) {
         clearProcessingTrack(trackKey)
         setSubtitleLoadStatus('failed')
         return
     }
 
-    const video = findVideo()
+    const video = xTrack?.video ?? findVideo()
     if (!video) {
         clearProcessingTrack(trackKey)
         setSubtitleLoadStatus('failed')
@@ -181,7 +201,7 @@ async function handleSubtitleData(url: string, rawData: string) {
 
     currentVideo = video
     currentSegments = segments
-    currentSourceLanguage = parsed.sourceLanguage
+    currentSourceLanguage = sourceLanguage
     currentVideoTitle = getVideoTitle()
     activeTrackKey = trackKey
     const generation = sessionGeneration
@@ -189,19 +209,19 @@ async function handleSubtitleData(url: string, rawData: string) {
     setSubtitleLoadStatus('ready')
 
     let cacheSession: VideoSubtitleCacheSession | null = null
-    const cacheRuntimeSignature = createSubtitleCacheRuntimeSignature(parsed.sourceLanguage)
+    const cacheRuntimeSignature = createSubtitleCacheRuntimeSignature(sourceLanguage)
     try {
         cacheSession = await createVideoSubtitleCacheSession({
-            identity: await buildSubtitleCacheIdentity(trackKey, parsed.sourceLanguage),
+            identity: await buildSubtitleCacheIdentity(trackKey, sourceLanguage),
             segments,
             useCache: config.useCache,
         })
         if (!isCurrentSession(generation, trackKey, video)) return
 
-        if (cacheRuntimeSignature === createSubtitleCacheRuntimeSignature(parsed.sourceLanguage)) {
+        if (cacheRuntimeSignature === createSubtitleCacheRuntimeSignature(sourceLanguage)) {
             const hits = await cacheSession.hydrate()
             if (!isCurrentSession(generation, trackKey, video)) return
-            if (cacheRuntimeSignature === createSubtitleCacheRuntimeSignature(parsed.sourceLanguage)) {
+            if (cacheRuntimeSignature === createSubtitleCacheRuntimeSignature(sourceLanguage)) {
                 applyCacheHits(segments, hits)
             } else {
                 cacheSession = null
@@ -217,7 +237,7 @@ async function handleSubtitleData(url: string, rawData: string) {
     currentCacheSession = cacheSession
     currentCacheRuntimeSignature = cacheRuntimeSignature
 
-    overlay.mount(video, findMountTarget(video))
+    overlay.mount(video, findMountTarget(video), Boolean(xTrack))
     overlay.setSegments(currentSegments)
     hideNativeSubtitle()
     mountQuickButton()
@@ -538,7 +558,7 @@ function disableCurrentSession() {
 function resumeCurrentSession() {
     if (!currentSessionReady) {
         beginNewSession()
-        requestYouTubeSubtitle()
+        requestCurrentVideoSubtitle()
         return
     }
     if (
@@ -546,11 +566,11 @@ function resumeCurrentSession() {
         && currentCacheRuntimeSignature !== createSubtitleCacheRuntimeSignature(currentSourceLanguage)
     ) {
         beginNewSession()
-        requestYouTubeSubtitle()
+        requestCurrentVideoSubtitle()
         return
     }
     if (!currentVideo?.isConnected || !currentSegments.length) {
-        requestYouTubeSubtitle()
+        requestCurrentVideoSubtitle()
         return
     }
     sessionGeneration++
@@ -562,53 +582,155 @@ function resumeCurrentSession() {
     setSubtitleLoadStatus('ready')
 }
 
+function requestCurrentVideoSubtitle() {
+    if (activeXPlayer) void requestXVideoSubtitle(activeXPlayer)
+    else requestYouTubeSubtitle()
+}
+
+async function requestXVideoSubtitle(player: NonNullable<typeof activeXPlayer>) {
+    const generation = sessionGeneration
+    setSubtitleLoadStatus('loading')
+    let result: XSubtitleResult | undefined
+    try {
+        result = await browser.runtime.sendMessage(getXVideoRequest(player.video))
+    } catch {
+        // The extension may have been reloaded while the request was in progress.
+    }
+    if (generation !== sessionGeneration || activeXPlayer !== player || !subtitleEnabled) return
+    checkActiveXPlayer()
+    if (activeXPlayer !== player) return
+    if (result?.status === 'ready') {
+        await handleSubtitleData(result.url, result.data, { video: player.video, language: result.language })
+    } else {
+        setSubtitleLoadStatus(result?.status ?? 'failed')
+    }
+}
+
+function checkActiveXPlayer() {
+    if (!activeXPlayer) return
+    const { video, button, contextKey } = activeXPlayer
+    if (video.isConnected && button.isConnected && getXVideoContextKey(video) === contextKey) return
+    beginNewSession()
+    activeXPlayer = null
+    subtitleEnabled = false
+    renderQuickButton(button, 'idle', false)
+}
+
+function syncXVideoPlayers() {
+    checkActiveXPlayer()
+    if (activeXPlayer) return
+    const videos = [...xVideoPlayers.keys()]
+    const video = videos.find(candidate => !candidate.paused && !candidate.ended)
+        ?? videos.find(isXVideoForCurrentPost)
+    if (video) activateXPlayer(video)
+}
+
+function activateXPlayer(video: HTMLVideoElement) {
+    checkActiveXPlayer()
+    const button = xVideoPlayers.get(video)?.button
+    if (!button || !video.isConnected || activeXPlayer?.video === video) return
+    const previous = activeXPlayer?.button
+    beginNewSession()
+    if (previous) renderQuickButton(previous, 'idle', false)
+    activeXPlayer = { video, button, contextKey: getXVideoContextKey(video) }
+    subtitleEnabled = true
+    requestCurrentVideoSubtitle()
+}
+
+function mountXVideoButton(video: HTMLVideoElement) {
+    const parent = video.parentElement
+    if (!parent || video.matches('.gif') || xVideoPlayers.get(video)?.button.parentElement === parent) return
+    unmountXVideoButton(video)
+    const button = createQuickButton(() => {
+        checkActiveXPlayer()
+        if (activeXPlayer?.video === video) {
+            if (subtitleEnabled && subtitleLoadStatus === 'failed') resumeCurrentSession()
+            else toggleCurrentSession()
+            return
+        }
+        activateXPlayer(video)
+    })
+    button.dataset.onlyTranslateVideo = ''
+    button.style.cssText += ';position:absolute;top:8px;right:8px;height:30px;background:rgba(0,0,0,.78);border-radius:6px;z-index:2'
+    if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative'
+    parent.append(button)
+    const player: NonNullable<ReturnType<typeof xVideoPlayers.get>> = { button }
+    xVideoPlayers.set(video, player)
+    renderQuickButton(button, 'idle', false)
+    player.cleanupFullscreen = mountXVideoFullscreen(video, parent, button, () => activateXPlayer(video))
+}
+
+function unmountXVideoButton(video: HTMLVideoElement) {
+    const player = xVideoPlayers.get(video)
+    player?.cleanupFullscreen?.()
+    player?.button.remove()
+    xVideoPlayers.delete(video)
+}
+
+function toggleCurrentSession() {
+    subtitleEnabled = !subtitleEnabled
+    updateQuickButton()
+    if (subtitleEnabled) resumeCurrentSession()
+    else disableCurrentSession()
+}
+
+function createQuickButton(onClick: () => void): HTMLButtonElement {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.style.cssText = [
+        'background:transparent',
+        'border:none',
+        'cursor:pointer',
+        'padding:0 6px',
+        'height:100%',
+        'display:inline-flex',
+        'align-items:center',
+        'position:relative',
+        'opacity:0.9',
+        'vertical-align:top',
+    ].join(';')
+    button.addEventListener('click', event => {
+        if (button.dataset.onlyTranslateVideo !== undefined) event.stopPropagation()
+        onClick()
+    })
+    return button
+}
+
 function mountQuickButton() {
     if (!isYouTubeHost() || document.getElementById(QUICK_BTN_ID)) return
 
     waitForElement('.ytp-right-controls', controls => {
         if (document.getElementById(QUICK_BTN_ID)) return
 
-        const button = document.createElement('button')
+        const button = createQuickButton(toggleCurrentSession)
         button.id = QUICK_BTN_ID
-        button.title = t('video.subtitleButton')
-        button.setAttribute('aria-label', t('video.subtitleTranslation'))
-        button.style.cssText = [
-            'background:transparent',
-            'border:none',
-            'cursor:pointer',
-            'padding:0 6px',
-            'height:100%',
-            'display:inline-flex',
-            'align-items:center',
-            'position:relative',
-            'opacity:0.9',
-            'vertical-align:top',
-        ].join(';')
-        button.addEventListener('click', () => {
-            subtitleEnabled = !subtitleEnabled
-            updateQuickButton()
-            if (subtitleEnabled) resumeCurrentSession()
-            else disableCurrentSession()
-        })
-
         controls.prepend(button)
         updateQuickButton()
     })
 }
 
+function getActiveQuickButton(): HTMLButtonElement | null {
+    return activeXPlayer?.button ?? document.querySelector<HTMLButtonElement>(`#${QUICK_BTN_ID}`)
+}
+
 function updateQuickButton() {
-    const button = document.getElementById(QUICK_BTN_ID) as HTMLButtonElement | null
+    const button = getActiveQuickButton()
     if (!button) return
 
     const visibleStatus = resolveVisibleStatus()
+    const statusText = renderQuickButton(button, visibleStatus, subtitleEnabled)
+    ensureStatusHint(button)
+    handleVisibleStatusChange(visibleStatus, statusText, button)
+}
+
+function renderQuickButton(button: HTMLButtonElement, visibleStatus: VisibleSubtitleStatus, pressed: boolean) {
     const statusText = getQuickButtonStatusText(visibleStatus)
     button.dataset.subtitleStatus = visibleStatus
     button.title = `${statusText}${getFastModeTitleSuffix(visibleStatus)}`
     button.setAttribute('aria-label', button.title)
-    button.setAttribute('aria-pressed', String(subtitleEnabled))
+    button.setAttribute('aria-pressed', String(pressed))
     button.replaceChildren(buildBtnSvg(getQuickButtonColor(visibleStatus)), buildStatusDot(visibleStatus))
-    ensureStatusHint(button)
-    handleVisibleStatusChange(visibleStatus, statusText, button)
+    return statusText
 }
 
 function resolveVisibleStatus(): VisibleSubtitleStatus {
@@ -632,7 +754,7 @@ function getQuickButtonStatusText(status: VisibleSubtitleStatus): string {
     if (status === 'loading' || status === 'fetching') return t('video.subtitleLoading')
     if (status === 'waiting-cc') return t('video.subtitleWaitingCc')
     if (status === 'no-track') return t('video.subtitleNoTrack')
-    if (status === 'failed') return t('video.subtitleLoadFailed')
+    if (status === 'failed') return t(activeXPlayer ? 'video.subtitleRetryLoad' : 'video.subtitleLoadFailed')
     if (status === 'translation-failed') return t('video.subtitleTranslationFailed')
     if (status === 'starting') return t('video.subtitleTranslationStarting')
     if (status === 'catching-up') {
@@ -642,7 +764,7 @@ function getQuickButtonStatusText(status: VisibleSubtitleStatus): string {
     }
     if (status === 'buffered') return t('video.subtitleTranslationBuffered')
     if (status === 'ready') return t('video.subtitleReady')
-    return t('video.subtitleButtonOn')
+    return t(activeXPlayer || isXVideoSubtitleHost(window.location.hostname) ? 'video.subtitleButton' : 'video.subtitleButtonOn')
 }
 
 function getFastModeTitleSuffix(status: VisibleSubtitleStatus): string {
@@ -730,9 +852,8 @@ function createStatusHint(): HTMLSpanElement {
 
 function ensureStatusHint(button: HTMLButtonElement): HTMLElement | null {
     const existing = document.getElementById(STATUS_HINT_ID)
-    if (existing) return existing
-    const hint = createStatusHint()
-    button.parentElement?.append(hint)
+    const hint = existing ?? createStatusHint()
+    if (hint.parentElement !== button.parentElement) button.parentElement?.append(hint)
     return hint.isConnected ? hint : null
 }
 
@@ -786,7 +907,7 @@ function hideStatusHint() {
 }
 
 function showForcedFastModeHint() {
-    const button = document.getElementById(QUICK_BTN_ID) as HTMLButtonElement | null
+    const button = getActiveQuickButton()
     const hint = button ? ensureStatusHint(button) : null
     if (!button || !hint) return
     hideStatusHint()

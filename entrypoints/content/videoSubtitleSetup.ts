@@ -4,6 +4,10 @@ const supportedVideoHosts = [
   'udemy.com',
   'coursera.org',
   'khanacademy.org',
+  'x.com',
+  'twitter.com',
+  'teapaw.org',
+  'teapawt.org',
 ] as const
 
 interface VideoSubtitleModule {

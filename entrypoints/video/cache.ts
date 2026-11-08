@@ -152,6 +152,20 @@ function cacheKeysFrom(items: Record<string, unknown>): string[] {
     return Object.keys(items).filter(key => key.startsWith(CACHE_KEY_PREFIX))
 }
 
+function normalizeSubtitleCacheQuery(params: URLSearchParams): string {
+    const safeParameters: Array<[string, string]> = []
+    // Firefox content scripts cannot always iterate the object returned by entries().
+    params.forEach((value, name) => {
+        if (!SENSITIVE_ENDPOINT_PARAMETER.test(name)) safeParameters.push([name, value])
+    })
+    safeParameters.sort(([leftName, leftValue], [rightName, rightValue]) => (
+        leftName.localeCompare(rightName) || leftValue.localeCompare(rightValue)
+    ))
+    const query = new URLSearchParams()
+    for (const [name, value] of safeParameters) query.append(name, value)
+    return query.toString()
+}
+
 export function normalizeSubtitleCacheEndpoint(endpoint: string): string {
     const trimmed = String(endpoint || '').trim()
     if (!trimmed) return ''
@@ -160,7 +174,7 @@ export function normalizeSubtitleCacheEndpoint(endpoint: string): string {
         const url = new URL(trimmed)
         url.username = ''
         url.password = ''
-        url.search = ''
+        url.search = normalizeSubtitleCacheQuery(url.searchParams)
         url.hash = ''
         url.protocol = url.protocol.toLowerCase()
         url.hostname = url.hostname.toLowerCase()
@@ -168,23 +182,13 @@ export function normalizeSubtitleCacheEndpoint(endpoint: string): string {
             url.port = ''
         }
         url.pathname = url.pathname.replace(/\/+$/, '') || '/'
-        const safeParameters = [...new URL(trimmed).searchParams.entries()]
-            .filter(([name]) => !SENSITIVE_ENDPOINT_PARAMETER.test(name))
-            .sort(([leftName, leftValue], [rightName, rightValue]) => (
-                leftName.localeCompare(rightName) || leftValue.localeCompare(rightValue)
-            ))
-        for (const [name, value] of safeParameters) url.searchParams.append(name, value)
         return url.toString().replace(/\/(?=\?|$)/, '')
     } catch {
         const [base, rawQuery = ''] = trimmed.replace(/#.*$/, '').split('?', 2)
-        const safeQuery = [...new URLSearchParams(rawQuery).entries()]
-            .filter(([name]) => !SENSITIVE_ENDPOINT_PARAMETER.test(name))
-            .sort(([leftName, leftValue], [rightName, rightValue]) => (
-                leftName.localeCompare(rightName) || leftValue.localeCompare(rightValue)
-            ))
+        const safeQuery = normalizeSubtitleCacheQuery(new URLSearchParams(rawQuery))
         const normalizedBase = base.replace(/\/+$/, '').toLowerCase()
-        return safeQuery.length
-            ? `${normalizedBase}?${new URLSearchParams(safeQuery).toString()}`
+        return safeQuery
+            ? `${normalizedBase}?${safeQuery}`
             : normalizedBase
     }
 }

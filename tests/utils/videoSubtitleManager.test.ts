@@ -304,4 +304,54 @@ describe('video subtitle manager lifecycle', () => {
     nowSpy.mockRestore()
     timeoutSpy.mockRestore()
   })
+
+  it('automatically translates the post video and follows playback without re-enabling a disabled player', async () => {
+    window.location.href = 'https://teapaw.org/main/status/111'
+    document.body.innerHTML = `
+      <div class="timeline-item"><div><video></video></div></div>
+      <div class="timeline-item">
+        <span class="tweet-date"><a href="/reply/status/222#m">Reply</a></span>
+        <div><video></video></div>
+      </div>`
+    let finishFirst!: (result: unknown) => void
+    const sendMessage = vi.fn()
+      .mockReturnValueOnce(new Promise(resolve => { finishFirst = resolve }))
+      .mockResolvedValueOnce({ status: 'no-track' })
+      .mockResolvedValueOnce({
+        status: 'ready', url: 'https://video.twimg.com/second.vtt', data: 'WEBVTT', language: 'en',
+      })
+    vi.stubGlobal('browser', { runtime: { sendMessage } })
+    try {
+      vi.resetModules()
+      const { initVideoSubtitle } = await import('@/entrypoints/video/manager')
+      initVideoSubtitle()
+      const [first, second] = document.querySelectorAll<HTMLButtonElement>('[data-only-translate-video]')
+      const secondVideo = second.parentElement!.querySelector('video')!
+      expect(sendMessage).toHaveBeenCalledOnce()
+      expect(first.dataset.subtitleStatus).toBe('loading')
+
+      secondVideo.dispatchEvent(new Event('play'))
+      finishFirst({ status: 'ready', url: 'https://video.twimg.com/first.vtt', data: 'WEBVTT' })
+      await vi.waitFor(() => expect(second.dataset.subtitleStatus).toBe('no-track'))
+      expect(first.getAttribute('aria-pressed')).toBe('false')
+      expect(sendMessage.mock.calls.map(([request]) => request.postId)).toEqual(['111', '222'])
+      expect(mocks.overlayMount).not.toHaveBeenCalled()
+      expect(second.parentElement?.querySelector('[role="status"]')?.textContent).toBe('video.subtitleNoTrack')
+
+      second.click()
+      expect(second.dataset.subtitleStatus).toBe('disabled')
+      secondVideo.dispatchEvent(new Event('play'))
+      expect(sendMessage).toHaveBeenCalledTimes(2)
+      expect(second.dataset.subtitleStatus).toBe('disabled')
+      second.click()
+      await vi.waitFor(() => expect(mocks.schedulers).toHaveLength(1))
+      expect(mocks.overlayMount).toHaveBeenCalledWith(secondVideo, second.parentElement, true)
+      expect(mocks.schedulerOptions[0].sourceLanguage).toBe('en')
+      secondVideo?.remove()
+      await vi.waitFor(() => expect(mocks.schedulers[0].stop).toHaveBeenCalledOnce())
+      expect(second.isConnected).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 })
