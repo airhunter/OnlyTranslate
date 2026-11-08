@@ -10,7 +10,6 @@ export interface FloatingBallHotkeyOptions {
   window: Window
   navigator: Pick<Navigator, 'platform'>
   dispatchToggleEvent?: () => void
-  now?: () => number
   isDev?: boolean
   log?: (message: string) => void
 }
@@ -61,7 +60,6 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
     window,
     navigator,
     dispatchToggleEvent = () => document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation')),
-    now = Date.now,
     isDev = false,
     log = console.log
   } = options
@@ -71,7 +69,6 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
   }
 
   const hotkeysPressed = new Set<string>()
-  let lastKeyDownTime = 0
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 
   if (isDev) {
@@ -79,14 +76,11 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
   }
 
   const keydownHandler = (event: KeyboardEvent) => {
-    const currentTime = now()
-    if (currentTime - lastKeyDownTime < 50) return
-    lastKeyDownTime = currentTime
-
     if (isMac && event.metaKey) {
       return
     }
 
+    const previousPressedCount = hotkeysPressed.size
     if (event.altKey) hotkeysPressed.add('alt')
     if (event.ctrlKey) hotkeysPressed.add('control')
     if (event.metaKey && !isMac) hotkeysPressed.add('control')
@@ -119,6 +113,8 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
 
     event.preventDefault()
     event.stopPropagation()
+    if (event.repeat || hotkeysPressed.size === previousPressedCount) return
+
     dispatchToggleEvent()
 
     if (isDev) {
