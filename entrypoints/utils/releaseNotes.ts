@@ -25,6 +25,47 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.15.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.15：站内播放 YouTube 与视频字幕翻译',
+        items: [
+          '在 X 和 Threads 的 YouTube 卡片旁点击「站内播放并翻译」，即可留在原帖播放视频并查看双语字幕。',
+          '新增 X 和 Teapaw 原生视频字幕翻译，有可用字幕时可自动获取并翻译。',
+          '修复 Alt+T 快捷键偶尔不触发，以及长按时反复切换翻译的问题。',
+          '识文模式现在可以翻译部分页面中主标题旁原本漏掉的介绍段落。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.15: In-Page YouTube Playback and Subtitle Translation',
+        items: [
+          'Select “Play and translate here” beside a YouTube card on X or Threads to watch the video and view bilingual subtitles without leaving the post.',
+          'Added automatic translation for available captions on native X and Teapaw videos.',
+          'Fixed Alt+T sometimes failing to trigger or repeatedly toggling translation when held down.',
+          'Smart translation now includes introductory paragraphs it previously missed beside the main heading on some pages.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.15：站內播放 YouTube 與影片字幕翻譯',
+        items: [
+          '在 X 和 Threads 的 YouTube 卡片旁點選「站內播放並翻譯」，即可留在原貼文播放影片並查看雙語字幕。',
+          '新增 X 和 Teapaw 原生影片字幕翻譯，有可用字幕時可自動取得並翻譯。',
+          '修正 Alt+T 快速鍵偶爾無法觸發，以及長按時反覆切換翻譯的問題。',
+          '智慧翻譯現在可以翻譯部分頁面主標題旁原本漏掉的介紹段落。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.15：ページ内での YouTube 再生と動画字幕の翻訳',
+        items: [
+          'X や Threads の YouTube カードの横にある「ページ内で再生して翻訳」を選ぶと、投稿を離れずに動画を再生し、対訳字幕を表示できます。',
+          'X と Teapaw に直接投稿された動画に字幕がある場合、自動で取得して翻訳できるようになりました。',
+          'Alt+T が反応しないことがある問題と、長押しで翻訳が繰り返し切り替わる問題を修正しました。',
+          'スマート翻訳で、一部のページのメイン見出しに添えられた紹介文が翻訳されない問題を修正しました。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.14.0',
     notes: {
       'zh-CN': {

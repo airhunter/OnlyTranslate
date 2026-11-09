@@ -1,5 +1,19 @@
 # Changelog
 
+# [1.15.0](https://github.com/airhunter/OnlyTranslate/compare/v1.14.0...v1.15.0) (2026-11-09)
+
+
+### Bug Fixes
+
+* **content:** 补齐识文模式下标题旁的介绍段落 ([d295853](https://github.com/airhunter/OnlyTranslate/commit/d2958536f1ba2864e17952e553fa93b34a1d85d5))
+* **content:** 修复 Alt+T 快捷键漏触发和长按重复切换 ([2f3f575](https://github.com/airhunter/OnlyTranslate/commit/2f3f575ffa559b1ce5e0c4662334c7c6b9c2b44c))
+
+
+### Features
+
+* **video:** 支持 X 和 Teapaw 视频字幕自动翻译 ([368b2b6](https://github.com/airhunter/OnlyTranslate/commit/368b2b6a949608afde98de9b796f756628617fbe))
+* **video:** 支持在 X 和 Threads 站内播放并翻译 YouTube 视频 ([cc7ef01](https://github.com/airhunter/OnlyTranslate/commit/cc7ef0180a3d021d184553ddfd0016a2e913abd1))
+
 # [1.14.0](https://github.com/airhunter/OnlyTranslate/compare/v1.13.0...v1.14.0) (2026-10-30)
 
 
