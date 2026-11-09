@@ -16,6 +16,8 @@ import {
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 import { isXSubtitleRequest, isXVideoSubtitleHost, loadXSubtitle } from '@/entrypoints/video/xSubtitle'
+import { YOUTUBE_PLAYER_PAGE } from '@/entrypoints/video/youtubeEmbed'
+import { prepareYouTubeEmbedRequest, PREPARE_YOUTUBE_EMBED_REQUEST } from '@/entrypoints/video/youtubeEmbedRequest'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
 import { getCustomProviderProtocol } from '@/entrypoints/utils/providerEndpoint'
 import { buildUninstallFeedbackUrl } from '@/entrypoints/utils/uninstallFeedback'
@@ -276,6 +278,11 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any, sender: any) => {
+            if (message?.type === PREPARE_YOUTUBE_EMBED_REQUEST) {
+                if (sender.url?.split('#')[0] !== browser.runtime.getURL(YOUTUBE_PLAYER_PAGE)) return Promise.resolve(false)
+                return prepareYouTubeEmbedRequest().then(() => true, () => false)
+            }
+
             const contentFeatureResponse = loadContentFeatureForSender(
                 message,
                 sender,

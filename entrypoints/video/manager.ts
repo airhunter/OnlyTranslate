@@ -33,6 +33,7 @@ import {
 import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSelection'
 import { isVideoFastModeEffective } from './fastMode'
 import { isXVideoSubtitleHost, type XSubtitleResult } from './xSubtitle'
+import { getYouTubeVideoId, isOnlyTranslateYouTubeEmbed } from './youtubeEmbed'
 import {
     getXVideoContextKey, getXVideoRequest, isXVideoForCurrentPost, mountXVideoFullscreen, watchXVideoPlayers,
 } from './xVideoPlayer'
@@ -85,7 +86,17 @@ export function initVideoSubtitle() {
     watchNavigation()
     sendConfig()
     if (isYouTubeHost()) mountQuickButton()
+    if (isEmbeddedYouTubePlayer()) {
+        // Retry if the embed waited for playback before exposing caption tracks.
+        document.addEventListener('playing', event => {
+            if (event.target instanceof HTMLVideoElement && subtitleLoadStatus === 'failed') requestYouTubeSubtitle()
+        }, true)
+    }
     requestYouTubeSubtitle()
+}
+
+function isEmbeddedYouTubePlayer(): boolean {
+    return window !== window.top && isOnlyTranslateYouTubeEmbed(location.href)
 }
 
 function isYouTubeHost(): boolean {
@@ -149,7 +160,8 @@ function handleYouTubeSubtitleStatus(message: { status?: string; videoId?: strin
 function isStatusForCurrentVideo(videoId?: string): boolean {
     if (!videoId) return true
     try {
-        const currentVideoId = new URL(window.location.href).searchParams.get('v')
+        const currentVideoId = getYouTubeVideoId(window.location.href)
+            ?? new URL(window.location.href).searchParams.get('v')
         return !currentVideoId || currentVideoId === videoId
     } catch {
         return true
@@ -699,11 +711,15 @@ function createQuickButton(onClick: () => void): HTMLButtonElement {
 function mountQuickButton() {
     if (!isYouTubeHost() || document.getElementById(QUICK_BTN_ID)) return
 
-    waitForElement('.ytp-right-controls', controls => {
+    const embedded = isEmbeddedYouTubePlayer()
+    waitForElement(embedded ? '.html5-video-player' : '.ytp-right-controls', controls => {
         if (document.getElementById(QUICK_BTN_ID)) return
 
         const button = createQuickButton(toggleCurrentSession)
         button.id = QUICK_BTN_ID
+        if (embedded) {
+            button.style.cssText += ';position:absolute;right:8px;top:58px;height:30px;background:rgba(0,0,0,.78);border-radius:6px;z-index:100'
+        }
         controls.prepend(button)
         updateQuickButton()
     })

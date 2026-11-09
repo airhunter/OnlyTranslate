@@ -2,6 +2,7 @@ import { defineConfig } from 'wxt';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 import fs from 'fs';
+import { YOUTUBE_EMBED_MATCH } from './entrypoints/video/youtubeEmbed';
 
 
 const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
@@ -42,7 +43,7 @@ export default defineConfig({
         name: 'OnlyTranslate',
         artifactTemplate: '{{name}}-v{{version}}-{{browser}}.zip',
     },
-    manifest: ({ browser }) => ({
+    manifest: ({ browser, manifestVersion }) => ({
         name: '__MSG_extName__',
         description: '__MSG_extDescription__',
         homepage_url: 'https://onlytranslate.top/',
@@ -78,6 +79,12 @@ export default defineConfig({
             ...(browser === 'firefox' ? [] : ['tts']),
         ],
         host_permissions: ['<all_urls>'],
+        web_accessible_resources: manifestVersion === 2
+            ? ['youtube-player.html'] as any
+            : [{
+                resources: ['youtube-player.html'],
+                matches: ['https://x.com/*', 'https://twitter.com/*', 'https://threads.com/*', 'https://www.threads.com/*'],
+            }],
         content_security_policy: {
             extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
         },
@@ -98,6 +105,14 @@ export default defineConfig({
                     '*://*.coursera.org/*',
                     '*://*.khanacademy.org/*',
                 ],
+                js: ['video-subtitle-inject.js'],
+                exclude_matches: [YOUTUBE_EMBED_MATCH],
+                world: 'MAIN',
+                run_at: 'document_start',
+            } as any,
+            {
+                matches: [YOUTUBE_EMBED_MATCH],
+                all_frames: true,
                 js: ['video-subtitle-inject.js'],
                 world: 'MAIN',
                 run_at: 'document_start',

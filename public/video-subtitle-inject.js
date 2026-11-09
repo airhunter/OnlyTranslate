@@ -1,4 +1,10 @@
 (function () {
+  if (window !== window.top) {
+    if (window.parent === window.top || location.origin !== 'https://www.youtube.com'
+        || !/^\/embed\/[\w-]{11}$/.test(location.pathname)
+        || location.hash !== '#onlytranslate-player'
+        || location.search !== '?autoplay=1&mute=1&onlytranslate_player=1') return;
+  }
   const EVENT_TYPE = 'fr-subtitle-inject';
   const PLAYER_WAIT_INTERVAL_MS = 100;
   const PLAYER_WAIT_TIMEOUT_MS = 8000;
@@ -221,7 +227,7 @@
   }
 
   function ensureYoutubeSubtitlesEnabled(player) {
-    const button = document.querySelector('.ytp-subtitles-button');
+    const button = document.querySelector('.ytp-subtitles-button, .ytmClosedCaptioningButtonButton');
     if (button && button.getAttribute('aria-pressed') === 'true') return true;
     if (typeof player.toggleSubtitles === 'function') {
       player.toggleSubtitles();
