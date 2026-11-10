@@ -574,6 +574,8 @@ defineExpose({
   min-width: 28px;
   max-width: 28px;
   height: 28px;
+  min-height: 28px;
+  max-height: 28px;
   box-sizing: border-box;
   flex: 0 0 28px;
   margin: 0;
@@ -618,6 +620,8 @@ defineExpose({
   min-width: 42px;
   max-width: 42px;
   height: 42px;
+  min-height: 42px;
+  max-height: 42px;
   box-sizing: border-box;
   flex: 0 0 42px;
   margin: 0;

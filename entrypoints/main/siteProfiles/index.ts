@@ -28,6 +28,7 @@ import { simonWillisonProfile } from './simonWillison';
 import { simpleProfiles } from './simpleProfiles';
 import { stackOverflowProfile } from './stackoverflow';
 import { substackProfile } from './substack';
+import { teapawProfile } from './teapaw';
 import { tucProfile } from './tuc';
 import { threadsProfile } from './threads';
 import type {
@@ -95,6 +96,7 @@ export const siteProfiles: SiteProfile[] = [
     redditProfile,
     simonWillisonProfile,
     substackProfile,
+    teapawProfile,
     tucProfile,
     microsoftPartnerCenterProfile,
     hackerNewsProfile,

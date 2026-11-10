@@ -218,7 +218,7 @@ describe('FloatingBall', () => {
     wrapper.unmount()
   })
 
-  it('keeps both floating entries circular when the host page gives buttons a minimum width', () => {
+  it('keeps both floating entries circular when the host page sets button size limits', () => {
     const fixedEntryStyles = ['floating-ball-more-trigger', 'floating-ball-trigger']
       .map(className => floatingBallSource.match(new RegExp(`\\.${className} \\{[^}]+\\}`, 's'))?.[0] ?? '')
       .join('\n')
@@ -227,7 +227,7 @@ describe('FloatingBall', () => {
     document.head.appendChild(widgetStyles)
 
     const hostStyles = document.createElement('style')
-    hostStyles.textContent = 'button { min-width: 120px; }'
+    hostStyles.textContent = 'button { min-width: 120px; min-height: 40px; max-height: 40px; }'
     document.head.appendChild(hostStyles)
 
     const wrapper = mount(FloatingBall, {
@@ -241,9 +241,15 @@ describe('FloatingBall', () => {
       expect(moreTriggerStyle.width).toBe('28px')
       expect(moreTriggerStyle.minWidth).toBe('28px')
       expect(moreTriggerStyle.maxWidth).toBe('28px')
+      expect(moreTriggerStyle.height).toBe('28px')
+      expect(moreTriggerStyle.minHeight).toBe('28px')
+      expect(moreTriggerStyle.maxHeight).toBe('28px')
       expect(primaryTriggerStyle.width).toBe('42px')
       expect(primaryTriggerStyle.minWidth).toBe('42px')
       expect(primaryTriggerStyle.maxWidth).toBe('42px')
+      expect(primaryTriggerStyle.height).toBe('42px')
+      expect(primaryTriggerStyle.minHeight).toBe('42px')
+      expect(primaryTriggerStyle.maxHeight).toBe('42px')
     } finally {
       wrapper.unmount()
       hostStyles.remove()

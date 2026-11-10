@@ -1,0 +1,26 @@
+{
+  "name": "Teapaw smart mode includes visible homepage announcements as separate targets",
+  "url": "https://teapaw.org/",
+  "scope": "smart",
+  "html": "teapaw-home.html",
+  "include": [
+    "profiles-title",
+    "profiles-body",
+    "profiles-links",
+    "search-title",
+    "search-body",
+    "landing-title",
+    "landing-description",
+    "addresses-title",
+    "addresses-body"
+  ],
+  "exclude": [
+    "profiles-announcement",
+    "search-announcement",
+    "pass-link",
+    "unrelated-aside",
+    "hidden-announcement"
+  ],
+  "textIncludes": ["You can buy a search pass or make a donation to support the site."],
+  "textExcludes": ["Explore trending topics", "unrelated promotional material", "already been dismissed"]
+}
