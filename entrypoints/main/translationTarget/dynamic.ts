@@ -2,7 +2,8 @@ import type { GrabAllNodeOptions } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { getMainDomain } from '@/entrypoints/utils/domain';
-import { collectTargetsAcrossRegisteredRoots } from './collect';
+import { collectDynamicReadingBlocks, collectTargetsAcrossRegisteredRoots } from './collect';
+import { getReadingBlockRegion } from './readingBlocks';
 import { TRANSLATED_ATTR } from './constants';
 import { decideTranslationTarget, isOpenExpandableReadingContainer, isVisibleForTranslation } from './decision';
 import {
@@ -18,6 +19,7 @@ import type { TranslationTargetContext } from './types';
 import { getProductReadingRegion } from './productReading';
 
 const SUPPLEMENTAL_READING_CONFIDENCE = 0.72;
+const READING_NOTE_SELECTOR = 'aside, [role="complementary"], [role="note"]';
 
 export function collectDynamicTranslationNodes(
     root: Element,
@@ -55,9 +57,13 @@ export function collectDynamicTranslationNodes(
         return decision.policy === 'allow' ? [decision.target] : [];
     }
 
-    return collectTargetsAcrossRegisteredRoots(scanRoot, context, { includeSupplemental: false })
-        .map(decision => decision.target)
-        .filter(node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node) && isVisibleForTranslation(node, context));
+    const region = scope === 'smart' ? getReadingBlockRegion(scanRoot) : null;
+    const useReadingBlocks = region && !isProfileTranslationScope(scanRoot, context)
+        && (region.matches(READING_NOTE_SELECTOR) || !composedContains(contentRoot, scanRoot));
+    const targets = useReadingBlocks
+        ? collectDynamicReadingBlocks(region.matches(READING_NOTE_SELECTOR) ? region : scanRoot, context)
+        : collectTargetsAcrossRegisteredRoots(scanRoot, context, { includeSupplemental: false }).map(decision => decision.target);
+    return targets.filter(node => !node.hasAttribute(TRANSLATED_ATTR) && !isManagedTranslationNode(node) && isVisibleForTranslation(node, context));
 }
 
 export function isManagedTranslationNode(node: Node): boolean {
@@ -98,7 +104,7 @@ export function isInTranslationScope(
         current = getComposedParentElement(current);
     }
 
-    return false;
+    return scope === 'smart' && Boolean(getReadingBlockRegion(root));
 }
 
 function isProfileTranslationScope(element: Element, context: TranslationTargetContext): boolean {
@@ -149,6 +155,11 @@ export function getDynamicTranslationScanRoot(
     const profileSkip = getCurrentSiteProfile()?.skipTarget?.(root, context);
     if (profileSkip && profileSkip.policy === 'hard-skip' && profileSkip.role !== 'layout') return null;
     if (scope === 'full') return root;
+
+    const readingRegion = scope === 'smart' ? getReadingBlockRegion(root) : null;
+    if (readingRegion?.matches(READING_NOTE_SELECTOR) && !isProfileTranslationScope(root, context)) {
+        return readingRegion;
+    }
 
     if (scope !== 'full' && !composedContains(contentRoot, root)) {
         if (isInTranslationScope(root, contentRoot, scope, grabOptions)) return root;

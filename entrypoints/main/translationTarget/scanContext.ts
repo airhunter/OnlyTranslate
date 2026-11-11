@@ -15,6 +15,8 @@ export type ScanBudgetKind = 'supplemental' | 'dynamic';
 
 export interface TranslationTargetStats {
     scannedElements: number;
+    unselectedStrongOutsideBlocks: number;
+    budgetDeferredReadingSubtrees: number;
     classifiedElements: number;
     skippedSubtrees: number;
     budgetExceeded: boolean;
@@ -86,6 +88,8 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
     return {
         stats: {
             scannedElements: 0,
+            unselectedStrongOutsideBlocks: 0,
+            budgetDeferredReadingSubtrees: 0,
             classifiedElements: 0,
             skippedSubtrees: 0,
             budgetExceeded: false,

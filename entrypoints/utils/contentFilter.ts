@@ -16,6 +16,7 @@ const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|ad|ads|advert|advertisement|advertising|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;
 const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
+const PROMOTIONAL_ACTION_PATTERN = /\b(?:buy now|shop now|order now|start (?:your |a )?free trial|claim (?:your |the )?(?:offer|discount)|subscribe|sponsor|sign up|sign in|log in|join (?:our |the )?(?:newsletter|mailing list))\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
@@ -82,6 +83,13 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
 
 export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
+}
+
+export function hasPromotionalCallToAction(element: Element): boolean {
+    const metrics = getBlockMetrics(element);
+    return PROMOTIONAL_ACTION_PATTERN.test(metrics.interactiveSignalText)
+        || (metrics.buttonCount > 0 && /\b(?:newsletter|mailing list)\b/i.test(metrics.text))
+        || Boolean(element.querySelector('input[type="email"]'));
 }
 
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {

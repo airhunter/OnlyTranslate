@@ -1,0 +1,9 @@
+{
+  "name": "Smart mode finds Teapaw-shaped announcements without a site profile",
+  "url": "https://reading-blocks.example/",
+  "scope": "smart",
+  "html": "teapaw-home.html",
+  "include": ["profiles-title", "profiles-body", "profiles-links", "search-title", "search-body", "addresses-title", "addresses-body"],
+  "exclude": ["profiles-announcement", "search-announcement", "pass-link", "unrelated-aside", "hidden-announcement"],
+  "textExcludes": ["unrelated promotional material", "already been dismissed"]
+}

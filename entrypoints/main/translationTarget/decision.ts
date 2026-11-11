@@ -31,6 +31,7 @@ import type {
 import { composedClosest, getComposedParentElement, isUnassignedLightDomSubtree } from './composedTree';
 import { FULL_PAGE_PROTECTED_SELECTOR, hasFullPageText, isFullPageVisible } from './fullPage';
 import { isProductReadingTarget } from './productReading';
+import { getReadingBlockTargets, isCommentReadingRegion, isRecommendationBlock, isReadingBlockLeaf } from './readingBlocks';
 
 const HARD_SKIP_SELECTOR = [
     'script',
@@ -96,16 +97,28 @@ export function decideTranslationTarget(
         };
     }
 
+    if (context.mode === 'smart' && candidate.source !== 'site-profile') {
+        if (isRecommendationBlock(node)) {
+            return skipDecision(node, { policy: 'hard-skip', role: 'ui', reason: 'linked-recommendation' }, candidate, context);
+        }
+        if (candidate.source !== 'reading-block' && isCommentReadingRegion(node) && isReadingBlockLeaf(node)
+            && !getReadingBlockTargets(node, context.grabOptions?.scanContext).length) {
+            return skipDecision(node, { policy: 'hard-skip', role: 'ui', reason: 'comment-without-reading-evidence' }, candidate, context);
+        }
+    }
+
     if (context.scope === 'smart' && context.mode === 'smart' && isProductReadingTarget(node)) {
         return allowDecision(node, { role: node.matches('h1') ? 'title' : 'paragraph', reason: 'semantic-product-reading-copy' }, candidate, context);
     }
-    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
+    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context, candidate.source === 'reading-block') : undefined;
     if (filterSkip?.policy === 'hard-skip') {
         return skipDecision(node, filterSkip, candidate, context);
     }
 
     const contentUnitDecision = getCachedContentUnitDecision(context.grabOptions?.scanContext, node, classifyContentUnit);
-    if (context.scope !== 'full' && contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
+    const contextualLabel = candidate.source === 'reading-block' && candidate.readingRole === 'title'
+        && contentUnitDecision.reasons.includes('weak-ui-name');
+    if (context.scope !== 'full' && contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85 && !contextualLabel) {
         return {
             node,
             target: node,
@@ -114,6 +127,13 @@ export function decideTranslationTarget(
             source: 'content-unit',
             reasons: [...(candidate.reasons ?? []), ...contentUnitDecision.reasons]
         };
+    }
+    if (candidate.source === 'reading-block') {
+        return allowDecision(node, {
+            role: candidate.readingRole,
+            source: candidate.source,
+            reason: 'reading-block-evidence'
+        }, candidate, context);
     }
     if (contentUnitDecision.action === 'allow' && contentUnitDecision.confidence >= 0.7) {
         return {
@@ -227,7 +247,7 @@ function skipDecision(
     };
 }
 
-function getContentFilterSkip(element: Element, context: TranslationTargetContext): TranslationTargetSkip | undefined {
+function getContentFilterSkip(element: Element, context: TranslationTargetContext, readingBlock = false): TranslationTargetSkip | undefined {
     let current: Element | null = element;
 
     while (current) {
@@ -236,12 +256,16 @@ function getContentFilterSkip(element: Element, context: TranslationTargetContex
             const tag = current.tagName.toLowerCase();
             const role = current.getAttribute('role')?.toLowerCase();
             if (tag === 'aside' || role === 'complementary') {
+                if (readingBlock) {
+                    current = getComposedParentElement(current);
+                    continue;
+                }
                 return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${tag}:soft-subtree` };
             }
             return { policy: 'hard-skip', role: 'ui', reason: `content-filter:${current.tagName.toLowerCase()}:skip-subtree` };
         }
         if (decision === 'skip-self') {
-            return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${current.tagName.toLowerCase()}:skip-self` };
+            return { policy: readingBlock ? 'hard-skip' : 'soft-skip', role: 'metadata', reason: `content-filter:${current.tagName.toLowerCase()}:skip-self` };
         }
         current = getComposedParentElement(current);
     }

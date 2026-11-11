@@ -28,6 +28,7 @@ import {
 import { TRANSLATED_ATTR } from './constants';
 import { collectFullPageTargets } from './fullPage';
 import { collectProductReadingTargets } from './productReading';
+import { getReadingBlockRegion, getReadingBlockTargets, isReadingBlockLeaf } from './readingBlocks';
 
 const LEADING_READING_SIBLING_LABEL_PATTERN = /\b(abstract|summary|plain language|introduction|overview|background|key points?|highlights?|standfirst|lead)\b/i;
 const LEADING_READING_SIBLING_NEGATIVE_PATTERN = /\b(references?|bibliography|rights?|permissions?|about this article|share|social|comments?|related|recommend|recommended|advert|advertisement|advertising|promo|sponsor|sponsored|subscribe|newsletter|author|byline|citation|metrics?|footer|nav|toolbar)\b/i;
@@ -244,16 +245,26 @@ export function collectTranslationTargets(
 ): TranslationTargetDecision[] {
     const directTextRunWrappers = new Set<Element>();
     const trackedContext = withDirectTextRunWrapperCollector(context, directTextRunWrappers);
+    const observedOutsideBlocks = options.includeSupplemental ? new Set<Element>() : undefined;
     let mergedDecisions: TranslationTargetDecision[] = [];
 
     try {
-        const candidates = collectTranslationCandidates(root, trackedContext, options);
+        const candidates = collectTranslationCandidates(root, trackedContext, options, observedOutsideBlocks);
         const decisions = candidates
             .map(candidate => decideTranslationTarget(candidate, trackedContext))
             .filter(decision => decision.policy === 'allow')
             .filter(decision => isVisibleForTranslation(decision.target, trackedContext));
 
         mergedDecisions = mergeTranslationDecisions(decisions, trackedContext);
+        const stats = context.grabOptions?.scanContext?.stats;
+        if (stats && observedOutsideBlocks) {
+            const targets = new Set(mergedDecisions.map(decision => decision.target));
+            for (const block of observedOutsideBlocks) {
+                let ancestor: Element | null = block;
+                while (ancestor && !targets.has(ancestor)) ancestor = getComposedParentElement(ancestor);
+                if (!ancestor || hasExcludedTranslatableTextBoundary(ancestor, block)) stats.unselectedStrongOutsideBlocks++;
+            }
+        }
         return mergedDecisions;
     } finally {
         cleanupDirectTextTargets(
@@ -279,7 +290,8 @@ function withDirectTextRunWrapperCollector(
 function collectTranslationCandidates(
     root: ParentNode,
     context: TranslationTargetContext,
-    options: { includeSupplemental?: boolean; fallback?: boolean }
+    options: { includeSupplemental?: boolean; fallback?: boolean },
+    observedOutsideBlocks?: Set<Element>
 ): TranslationTargetCandidate[] {
     const profileFastPathCandidates = collectProfileFastPathCandidates(root, context, options);
     if (profileFastPathCandidates) return profileFastPathCandidates;
@@ -313,12 +325,12 @@ function collectTranslationCandidates(
     }
 
     if (options.includeSupplemental) {
-        for (const node of collectSupplementalReadingTargets(document.body, context, siteProfileSelectedTargets)) {
-            candidates.push({
-                node,
-                source: 'supplemental',
-                reasons: ['supplemental-reading-target']
-            });
+        const readingBlocks = new Map<Element, 'paragraph' | 'title'>();
+        for (const node of collectSupplementalReadingTargets(document.body, context, siteProfileSelectedTargets, readingBlocks, observedOutsideBlocks)) {
+            const readingRole = readingBlocks.get(node);
+            candidates.push(readingRole
+                ? { node, source: 'reading-block', readingRole }
+                : { node, source: 'supplemental', reasons: ['supplemental-reading-target'] });
         }
     }
 
@@ -373,22 +385,26 @@ function collectSiteProfileSelectedTargets(root: ParentNode, context: Translatio
 function collectSupplementalReadingTargets(
     root: ParentNode,
     context: TranslationTargetContext,
-    profileSelectedTargets: Element[]
+    profileSelectedTargets: Element[],
+    readingBlocks: Map<Element, 'paragraph' | 'title'>,
+    observedOutsideBlocks?: Set<Element>
 ): Element[] {
     const siteTargets = collectSiteSupplementalReadingTargets(root, context);
     const profileTargets = Array.from(new Set([...profileSelectedTargets, ...siteTargets]));
     const genericTargets = shouldUseProfileFastPath(profileTargets, context)
         ? []
-        : collectGenericSupplementalReadingTargets(root, context, siteTargets);
+        : collectGenericSupplementalReadingTargets(root, context, siteTargets, readingBlocks, observedOutsideBlocks);
+    const genericReadingTargets = genericTargets.filter(node => !readingBlocks.has(node) || !profileTargets.includes(node));
+    for (const node of profileTargets) readingBlocks.delete(node);
     const preservedSiteTargets = getCurrentSiteProfile()?.preserveSupplementalTargets
         ? new Set(siteTargets)
         : undefined;
 
     return [
-        ...genericTargets,
+        ...genericReadingTargets,
         ...siteTargets
     ]
-        .flatMap(unit => preservedSiteTargets?.has(unit)
+        .flatMap(unit => preservedSiteTargets?.has(unit) || readingBlocks.has(unit)
             ? [unit]
             : expandSupplementalReadingUnit(unit, context))
         .filter(unit => isVisibleForTranslation(unit, context));
@@ -397,22 +413,76 @@ function collectSupplementalReadingTargets(
 function collectGenericSupplementalReadingTargets(
     root: ParentNode,
     context: TranslationTargetContext,
-    siteTargets: Element[]
+    siteTargets: Element[],
+    readingBlocks: Map<Element, 'paragraph' | 'title'>,
+    observedOutsideBlocks?: Set<Element>
 ): Element[] {
-    return [
+    const legacyTargets = [
         ...collectContentRootSiblingReadingTargets(context),
-        ...collectPrimaryHeadingIntroductionTargets(root, context),
         ...collectLabeledReadingTargets(root, context),
-        ...collectSegmentedArticleReadingTargets(context),
-        ...collectHighConfidenceReadingUnits(root, {
-            scanContext: context.grabOptions?.scanContext,
-            scanBudget: 'supplemental',
-            candidateOnly: true,
-            pruneUiSubtrees: true
-        })
-    ]
+        ...collectSegmentedArticleReadingTargets(context)
+    ];
+    const readingUnits = collectSmartReadingUnits(root, context, readingBlocks, observedOutsideBlocks);
+    // A late introduction was previously independent of the supplemental budget.
+    const lateIntroductions = context.grabOptions?.scanContext?.stats.budgetExceeded
+        ? Array.from(root.querySelectorAll('h1 + div'))
+            .filter(node => isPrimaryHeadingIntroduction(node, context))
+            .flatMap(node => collectPrimaryHeadingIntroductionTargets(node, context))
+        : [];
+    return [...legacyTargets, ...readingUnits, ...lateIntroductions]
         .filter(unit => getCachedContentFilterDecision(context.grabOptions?.scanContext, unit, getContentFilterDecision) !== 'skip-self')
         .filter(unit => !siteTargets.some(target => unit !== target && unit.contains(target)));
+}
+
+function collectSmartReadingUnits(
+    root: ParentNode,
+    context: TranslationTargetContext,
+    readingBlocks: Map<Element, 'paragraph' | 'title'>,
+    observedOutsideBlocks?: Set<Element>,
+    blocksOnly = false
+): Element[] {
+    const scanContext = context.grabOptions?.scanContext;
+    // Reuse the existing budgeted walk. Explicit reading leaves can still be evaluated
+    // when the legacy classifier has tentatively selected an enclosing container.
+    return collectHighConfidenceReadingUnits(root, {
+        scanContext,
+        scanBudget: blocksOnly ? 'dynamic' : 'supplemental',
+        candidateOnly: true,
+        pruneUiSubtrees: true,
+        isExtraCandidate: node => (!blocksOnly && isPrimaryHeadingIntroduction(node, context))
+            || (Boolean(getReadingBlockRegion(node, context.contentRoot)) && isReadingBlockLeaf(node)),
+        selectReadingBlock: node => {
+            if (!blocksOnly && isPrimaryHeadingIntroduction(node, context)) {
+                const introduction = collectPrimaryHeadingIntroductionTargets(node, context);
+                if (introduction.length) return introduction;
+            }
+            if (observedOutsideBlocks && isReadingBlockLeaf(node)
+                && !composedContains(context.contentRoot, node)
+                && getCachedProseEvidence(scanContext, node).strength === 'strong'
+                && isVisibleForTranslation(node, context)) {
+                observedOutsideBlocks.add(node);
+            }
+            const [body, title] = getReadingBlockTargets(node, scanContext, context.contentRoot);
+            if (!body || !isVisibleForTranslation(body, context)) return blocksOnly ? [] : undefined;
+            // A label only belongs to the reading selection when its body passes final purpose checks.
+            if (decideTranslationTarget({ node: body, source: 'reading-block', readingRole: 'paragraph' }, context).policy !== 'allow') {
+                return blocksOnly ? [] : undefined;
+            }
+            readingBlocks.set(body, 'paragraph');
+            if (title && !readingBlocks.has(title)) readingBlocks.set(title, 'title');
+            return title ? [title, body] : [body];
+        }
+    });
+}
+
+export function collectDynamicReadingBlocks(root: Element, context: TranslationTargetContext): Element[] {
+    const readingBlocks = new Map<Element, 'paragraph' | 'title'>();
+    const decisions = collectSmartReadingUnits(root, context, readingBlocks, undefined, true)
+        .map(node => decideTranslationTarget({
+            node, source: 'reading-block', readingRole: readingBlocks.get(node)!
+        }, context))
+        .filter(decision => decision.policy === 'allow');
+    return mergeTranslationDecisions(decisions, context).map(decision => decision.target);
 }
 
 export interface AsyncTranslationTargetOptions {
@@ -654,21 +724,18 @@ function isRecoverableSegmentedArticleTarget(target: Element, context: Translati
         && evidence.interactiveDensity <= 0.35;
 }
 
-function collectPrimaryHeadingIntroductionTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
-    if (context.mode !== 'smart') return [];
+function isPrimaryHeadingIntroduction(node: Element, context: TranslationTargetContext): boolean {
+    return context.mode === 'smart' && node.matches('h1 + div') && !context.contentRoot.contains(node);
+}
+
+function collectPrimaryHeadingIntroductionTargets(introduction: Element, context: TranslationTargetContext): Element[] {
+    if (!isVisibleForTranslation(introduction, context)) return [];
     const scanContext = context.grabOptions?.scanContext;
-    const targets: Element[] = [];
-    for (const introduction of Array.from(root.querySelectorAll('h1 + div'))) {
-        if (context.contentRoot.contains(introduction)) continue;
-        if (!isVisibleForTranslation(introduction, context)) continue;
-        const decision = getCachedContentUnitDecision(scanContext, introduction, classifyContentUnit);
-        if (decision.action !== 'allow' || decision.kind !== 'subtitle' || decision.confidence < 0.72) continue;
-        // Recover prose rather than its whole wrapper: a sibling call-to-action
-        // must not be merged into the introduction's translated sentence.
-        targets.push(...Array.from(introduction.querySelectorAll('p, blockquote'))
-            .filter(target => isRecoverableLeadingReadingTarget(target, introduction, context)));
-    }
-    return targets;
+    const decision = getCachedContentUnitDecision(scanContext, introduction, classifyContentUnit);
+    if (decision.action !== 'allow' || decision.kind !== 'subtitle' || decision.confidence < 0.72) return [];
+    // Preserve paragraph boundaries and leave sibling calls to action outside the target.
+    return Array.from(introduction.querySelectorAll('p, blockquote'))
+        .filter(target => isRecoverableLeadingReadingTarget(target, introduction, context));
 }
 
 function collectLabeledReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
@@ -968,8 +1035,7 @@ function dedupeCandidates(candidates: TranslationTargetCandidate[]): Translation
         }
 
         map.set(candidate.node, {
-            node: candidate.node,
-            source: chooseStrongerSource(existing.source, candidate.source),
+            ...(chooseStrongerSource(existing.source, candidate.source) === existing.source ? existing : candidate),
             reasons: [...(existing.reasons ?? []), ...(candidate.reasons ?? [])]
         });
     }
@@ -1059,6 +1125,6 @@ function chooseStrongerSource(
     left: TranslationTargetCandidate['source'],
     right: TranslationTargetCandidate['source']
 ): TranslationTargetCandidate['source'] {
-    const order: TranslationTargetCandidate['source'][] = ['site-profile', 'supplemental', 'content-unit', 'dom-unit', 'grab-node', 'fallback'];
+    const order: TranslationTargetCandidate['source'][] = ['site-profile', 'reading-block', 'supplemental', 'content-unit', 'dom-unit', 'grab-node', 'fallback', 'shadow-root'];
     return order.indexOf(right) < order.indexOf(left) ? right : left;
 }

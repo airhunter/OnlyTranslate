@@ -245,7 +245,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(introduction.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
   })
 
-  it('recovers unlabelled title introductions without treating navigation, forms or promotion as prose', () => {
+  it.each([undefined, 1])('recovers unlabelled title introductions without including UI (supplemental budget %s)', supplementalBudget => {
     const url = new URL('https://example.org/public-programs')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
     document.body.innerHTML = `
@@ -259,8 +259,15 @@ describe('resolveAutoTranslateTarget behavior', () => {
       <section translate="no"><h1>Protected introduction</h1><div><p id="protected-intro">This introductory paragraph must stay untranslated because its author explicitly requested that it be protected.</p></div></section>
     `
     const root = document.querySelector('#reading-root')!
-    const targets = collectTranslationTargets(root, { mode: 'smart', scope: 'smart', contentRoot: root }, { includeSupplemental: true })
+    const scanContext = createScanContext({ supplementalBudget })
+    const targets = collectTranslationTargets(root, {
+      mode: 'smart', scope: 'smart', contentRoot: root, grabOptions: { scanContext }
+    }, { includeSupplemental: true })
       .map(decision => decision.target)
+    if (supplementalBudget === 1) {
+      expect(scanContext.stats.budgetExceeded).toBe(true)
+      expect(scanContext.stats.budgetDeferredReadingSubtrees).toBeGreaterThan(0)
+    }
     expect(targets).toContain(document.querySelector('#unlabelled-intro'))
     const text = targets.map(node => getTranslatableText(node)).join(' ')
     expect(text).not.toMatch(/Apply now|unrelated introduction|mailing list|must stay hidden|must stay untranslated/)
@@ -3629,6 +3636,49 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(nodes).toHaveLength(0)
   })
 
+  it.each([
+    { url: 'https://reading-blocks.example/', insideRoot: false },
+    { url: 'https://teapaw.org/', insideRoot: false },
+    { url: 'https://teapaw.org/', insideRoot: true }
+  ])('collects an inserted reading note on $url (inside root: $insideRoot)', ({ url, insideRoot }) => {
+    Object.defineProperty(window, 'location', {
+      value: new URL(url),
+      configurable: true
+    })
+    document.body.innerHTML = '<main id="reading-root"><p>The current article describes how the new system handles incoming requests.</p></main>'
+    const contentRoot = document.querySelector('#reading-root')!
+    const note = document.createElement('aside')
+    note.innerHTML = `
+      <strong id="new-note-title">Compatibility note</strong>
+      <div><p id="new-note-body">Older clients can continue using the same configuration because the migration preserves existing connection settings.</p></div>
+      <button id="new-note-button">Dismiss</button>
+    `
+    const container = insideRoot ? contentRoot : document.body
+    container.append(note)
+
+    const nodes = collectDynamicTranslationNodes(note, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })
+    expect(nodes.map(node => node.id)).toEqual(['new-note-title', 'new-note-body'])
+
+    const title = note.querySelector('#new-note-title')!
+    title.setAttribute('data-fr-translated', 'true')
+    note.querySelector('#new-note-body')!.setAttribute('data-fr-translated', 'true')
+    const translation = document.createElement('span')
+    translation.className = BILINGUAL_CONTENT_CLASS
+    translation.textContent = '兼容性说明。'.repeat(20)
+    title.append(translation)
+    const followUp = document.createElement('p')
+    followUp.textContent = 'The same connection settings also remain available when an administrator reinstalls the service.'
+    note.append(followUp)
+
+    expect(collectDynamicTranslationNodes(followUp, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })).toEqual([followUp])
+  })
+
   it('drops batched dynamic UI outside the smart content root before deep scanning', () => {
     const scanContext = createScanContext()
     document.body.innerHTML = `
@@ -3659,6 +3709,28 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(scanRoot).toBeNull()
     expect(nodes).toHaveLength(0)
     expect(scanContext.stats.classifiedElements).toBeLessThanOrEqual(1)
+  })
+
+  it('collects neutral paragraphs added outside the smart root and includes their adjacent short label', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ordinary-blocks.example/'),
+      configurable: true
+    })
+    document.body.innerHTML = '<main id="primary"><p>The main guide describes the planting calendar and the equipment used by our volunteers.</p></main>'
+    const contentRoot = document.querySelector('#primary')!
+    const group = document.createElement('div')
+    group.innerHTML = `
+      <strong id="late-neutral-title">Watering guidance</strong>
+      <div id="late-neutral-body">Record each watering day so the next volunteer can check the soil before adding more water to the garden beds.</div>
+      <p id="late-neutral-support">Use a little more water if the soil is dry before the next visit</p>
+      <button id="late-neutral-action">Manage account</button>
+    `
+    document.body.append(group)
+    const nodes = collectDynamicTranslationNodes(group, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })
+    expect(nodes.map(node => node.id)).toEqual(['late-neutral-title', 'late-neutral-body', 'late-neutral-support'])
   })
 
   it('keeps dynamic readable paragraphs inside heavy content roots within the dynamic budget', () => {

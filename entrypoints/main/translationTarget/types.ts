@@ -17,6 +17,7 @@ export type TranslationTargetSource =
     | 'content-unit'
     | 'dom-unit'
     | 'supplemental'
+    | 'reading-block'
     | 'fallback'
     | 'shadow-root';
 
@@ -37,11 +38,13 @@ export interface TranslationTargetContext {
     grabOptions?: GrabAllNodeOptions;
 }
 
-export interface TranslationTargetCandidate {
+export type TranslationTargetCandidate = {
     node: Element;
-    source: TranslationTargetSource;
     reasons?: string[];
-}
+} & (
+    | { source: 'reading-block'; readingRole: 'paragraph' | 'title' }
+    | { source: Exclude<TranslationTargetSource, 'reading-block'> }
+);
 
 export interface TranslationTargetOverride {
     target?: Element;

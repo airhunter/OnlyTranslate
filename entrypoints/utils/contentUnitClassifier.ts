@@ -52,6 +52,8 @@ interface CollectReadingUnitsOptions {
     candidateOnly?: boolean;
     pruneUiSubtrees?: boolean;
     includeRoot?: boolean;
+    isExtraCandidate?: (element: Element) => boolean;
+    selectReadingBlock?: (element: Element) => Element[] | undefined;
 }
 
 const READABLE_CONTAINER_PATTERN = /\b(article|content|story|post|body|entry|main|prose|markdown|readme|docs?|document)\b/i;
@@ -73,6 +75,10 @@ export function classifyContentUnit(element: Element): ContentUnitDecision {
     if (isStructuralUi(element, metrics)) return skip('ui', 0.98, 'structural-ui');
     if (metrics.proseEvidence.strength !== 'strong' && isMetadataElement(element, metrics)) return skip('metadata', 0.92, 'metadata-signal');
     if (isNoiseElement(element, metrics)) return skip('noise', 0.9, 'noise-signal');
+    if (metrics.proseEvidence.strength !== 'strong' && metrics.textLength < 80
+        && UI_PATTERN.test(getStructuralHint(element))) {
+        return skip('ui', 0.98, 'weak-ui-name');
+    }
 
     const forumTopicScore = scoreForumTopic(element, metrics);
     if (forumTopicScore >= 6) {
@@ -113,9 +119,26 @@ export function collectHighConfidenceReadingUnits(
     const result: Element[] = [];
 
     for (const element of iterateReadingUnitCandidates(root, options)) {
-        if (result.some(parent => parent.contains(element))) continue;
+        const covered = result.some(parent => parent.contains(element));
+        if (covered && !options.isExtraCandidate?.(element)) continue;
 
-        if (!tryUseScanBudget(options.scanContext, options.scanBudget)) break;
+        if (!tryUseScanBudget(options.scanContext, options.scanBudget)) {
+            // Count the disjoint unvisited roots, without walking their descendants.
+            let deferred = 1;
+            for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
+                for (let sibling = current.nextElementSibling; sibling; sibling = sibling.nextElementSibling) deferred++;
+                if (current.parentNode === root) break;
+            }
+            if (options.scanContext) options.scanContext.stats.budgetDeferredReadingSubtrees += deferred;
+            break;
+        }
+
+        const readingBlock = options.selectReadingBlock?.(element);
+        if (readingBlock) {
+            result.push(...readingBlock.filter(target => !result.includes(target)));
+            continue;
+        }
+        if (covered) continue;
 
         const decision = getCachedContentUnitDecision(options.scanContext, element, classifyContentUnit);
         if (decision.action === 'skip') continue;
@@ -163,7 +186,7 @@ function* iterateReadingUnitCandidates(
 
 function shouldVisitReadingCandidate(element: Element, options: CollectReadingUnitsOptions): boolean {
     if (!options.candidateOnly) return true;
-    return isLikelyReadingCandidate(element);
+    return isLikelyReadingCandidate(element) || Boolean(options.isExtraCandidate?.(element));
 }
 
 function scoreTitle(element: Element, metrics: UnitMetrics): number {
@@ -317,11 +340,6 @@ function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
 
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return true;
     if (element.closest('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]')) return true;
-
-    const hint = getStructuralHint(element);
-    const text = metrics.text;
-    if (metrics.proseEvidence.strength === 'strong') return false;
-    if (UI_PATTERN.test(hint) && text.length < 80) return true;
 
     return false;
 }
