@@ -39,6 +39,9 @@ describe('video subtitle setup', () => {
     expect(isSupportedVideoSubtitleHost('mobile.twitter.com')).toBe(true)
     expect(isSupportedVideoSubtitleHost('teapaw.org')).toBe(true)
     expect(isSupportedVideoSubtitleHost('notx.com')).toBe(false)
+    expect(isSupportedVideoSubtitleHost('www.reddit.com')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('old.reddit.com')).toBe(true)
+    expect(isSupportedVideoSubtitleHost('reddit.com.example.org')).toBe(false)
   })
 
   it('enables the runtime and X subtitle source on both Teapaw domains', () => {

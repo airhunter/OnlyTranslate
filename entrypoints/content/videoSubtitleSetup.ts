@@ -8,6 +8,7 @@ const supportedVideoHosts = [
   'twitter.com',
   'teapaw.org',
   'teapawt.org',
+  'reddit.com',
 ] as const
 
 interface VideoSubtitleModule {

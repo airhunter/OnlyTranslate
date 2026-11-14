@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  playerWatchCleanups: [] as Array<() => void>,
   parseSubtitleData: vi.fn(),
   buildSubtitleSegments: vi.fn(),
   overlayMount: vi.fn(),
@@ -92,6 +93,17 @@ vi.mock('@/entrypoints/video/cache', () => ({
   sha256SubtitleCacheValue: vi.fn(async () => 'prompt-sha256'),
 }))
 vi.mock('@/entrypoints/utils/config', () => ({ config: mocks.config }))
+vi.mock('@/entrypoints/video/redditVideoPlayer', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/entrypoints/video/redditVideoPlayer')>()
+  return {
+    ...actual,
+    watchRedditVideoPlayers: (...args: Parameters<typeof actual.watchRedditVideoPlayers>) => {
+      const cleanup = actual.watchRedditVideoPlayers(...args)
+      mocks.playerWatchCleanups.push(cleanup)
+      return cleanup
+    },
+  }
+})
 vi.mock('@/entrypoints/utils/i18n/content', () => ({
   t: (key: string, params: Record<string, string | number> = {}) => (
     params.seconds === undefined ? key : `${key}:${params.seconds}`
@@ -99,6 +111,9 @@ vi.mock('@/entrypoints/utils/i18n/content', () => ({
 }))
 
 describe('video subtitle manager lifecycle', () => {
+  afterEach(() => {
+    mocks.playerWatchCleanups.splice(0).forEach(stop => stop())
+  })
   beforeEach(() => {
     window.location.href = 'https://www.youtube.com/watch?v=video'
     document.body.innerHTML = `
@@ -303,6 +318,74 @@ describe('video subtitle manager lifecycle', () => {
     expect(navigationHint.textContent).toBe('')
     nowSpy.mockRestore()
     timeoutSpy.mockRestore()
+  })
+
+  it('loads Reddit captions into the shared scheduler and restores native captions when disabled', async () => {
+    window.location.href = 'https://www.reddit.com/r/test/comments/1oiu9xm/video/'
+    document.body.innerHTML = '<shreddit-player post-id="t3_1oiu9xm" src="https://v.redd.it/eflpgc6r0zxf1/HLSPlaylist.m3u8" caption-url="https://v.redd.it/eflpgc6r0zxf1/wh_ben_en.vtt"></shreddit-player>'
+    const host = document.querySelector('shreddit-player')!
+    const root = host.attachShadow({ mode: 'open' })
+    root.innerHTML = '<video src="blob:reddit"></video><shreddit-media-ui></shreddit-media-ui>'
+    const native = root.querySelector('shreddit-media-ui')!.attachShadow({ mode: 'open' })
+    native.innerHTML = '<shreddit-caption-overlay></shreddit-caption-overlay>'
+    const sendMessage = vi.fn().mockResolvedValue({
+      status: 'ready', url: 'https://v.redd.it/eflpgc6r0zxf1/wh_ben_en.vtt', data: 'WEBVTT', language: 'en',
+    })
+    vi.stubGlobal('browser', { runtime: { sendMessage } })
+    try {
+      vi.resetModules()
+      const { initVideoSubtitle } = await import('@/entrypoints/video/manager')
+      initVideoSubtitle()
+      await vi.waitFor(() => expect(mocks.schedulers).toHaveLength(1))
+      const button = root.querySelector<HTMLButtonElement>('[data-only-translate-video]')!
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: 'LOAD_REDDIT_VIDEO_SUBTITLE', videoId: 'eflpgc6r0zxf1',
+        captionUrl: 'https://v.redd.it/eflpgc6r0zxf1/wh_ben_en.vtt',
+      })
+      expect(mocks.overlayMount).toHaveBeenCalledWith(root.querySelector('video'), button.parentElement, true)
+      expect(mocks.schedulerOptions[0].sourceLanguage).toBe('en')
+      const caption = native.querySelector<HTMLElement>('shreddit-caption-overlay')!
+      expect(caption.style.visibility).toBe('hidden')
+      button.click()
+      expect(button.dataset.subtitleStatus).toBe('disabled')
+      expect(mocks.schedulers[0].stop).toHaveBeenCalledOnce()
+      expect(caption.style.visibility).toBe('')
+      root.querySelector('video')!.dispatchEvent(new Event('play'))
+      expect(sendMessage).toHaveBeenCalledOnce()
+      button.click()
+      expect(mocks.schedulers).toHaveLength(2)
+      expect(caption.style.visibility).toBe('hidden')
+      host.remove()
+      await vi.waitFor(() => expect(mocks.schedulers[1].stop).toHaveBeenCalledOnce())
+      expect(caption.style.visibility).toBe('')
+    } finally { vi.unstubAllGlobals() }
+  })
+
+  it('discards late Reddit responses when a player element is reused for a different media ID', async () => {
+    window.location.href = 'https://www.reddit.com/r/test/comments/1oiu9xm/video/'
+    document.body.innerHTML = '<shreddit-player post-id="t3_1oiu9xm" src="https://v.redd.it/eflpgc6r0zxf1/HLSPlaylist.m3u8"></shreddit-player>'
+    const host = document.querySelector('shreddit-player')!
+    const root = host.attachShadow({ mode: 'open' })
+    root.innerHTML = '<video src="blob:reddit"></video>'
+    let finishOld!: (result: unknown) => void
+    const sendMessage = vi.fn().mockReturnValueOnce(new Promise(resolve => { finishOld = resolve }))
+      .mockResolvedValue({ status: 'no-track' })
+    vi.stubGlobal('browser', { runtime: { sendMessage } })
+    try {
+      vi.resetModules()
+      const { initVideoSubtitle } = await import('@/entrypoints/video/manager')
+      initVideoSubtitle()
+      host.setAttribute('src', 'https://v.redd.it/anothervideo1/HLSPlaylist.m3u8')
+      await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(2))
+      finishOld({ status: 'ready', url: 'https://v.redd.it/eflpgc6r0zxf1/wh_ben_en.vtt', data: 'WEBVTT', language: 'en' })
+      await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('[data-only-translate-video]')!.dataset.subtitleStatus).toBe('no-track'))
+      expect(mocks.overlayMount).not.toHaveBeenCalled()
+      expect(mocks.schedulers).toHaveLength(0)
+      expect(sendMessage.mock.calls.map(([request]) => request.videoId)).toEqual(['eflpgc6r0zxf1', 'anothervideo1'])
+    } finally {
+      host.remove()
+      vi.unstubAllGlobals()
+    }
   })
 
   it('automatically translates the post video and follows playback without re-enabling a disabled player', async () => {

@@ -85,6 +85,28 @@ describe('video subtitle overlay', () => {
     overlay.cleanup()
   })
 
+  it('keeps captions inside a Reddit shadow player when its host enters fullscreen', () => {
+    const host = document.createElement('shreddit-player')
+    document.body.append(host)
+    const root = host.attachShadow({ mode: 'open' })
+    root.innerHTML = '<video></video><div></div>'
+    const video = root.querySelector('video')!
+    video.currentTime = 1
+    const target = root.querySelector('div')!
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => host })
+    const overlay = new SubtitleOverlay()
+    try {
+      overlay.mount(video, target, true)
+      overlay.setSegments([makeSegment({ status: 'translated', translatedText: '译文' })])
+      const container = target.querySelector<HTMLElement>('#fr-subtitle-overlay')!
+      expect(container.style.position).toBe('fixed')
+      expect(container.textContent).toBe('Original译文')
+    } finally {
+      overlay.cleanup()
+      Reflect.deleteProperty(document, 'fullscreenElement')
+    }
+  })
+
   it('temporarily hides captions over the playback controls without moving them', () => {
     const target = document.createElement('div')
     const video = document.createElement('video')

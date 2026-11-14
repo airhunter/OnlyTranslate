@@ -16,6 +16,7 @@ import {
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 import { isXSubtitleRequest, isXVideoSubtitleHost, loadXSubtitle } from '@/entrypoints/video/xSubtitle'
+import { isRedditSubtitleRequest, isRedditVideoSubtitleHost, loadRedditSubtitle } from '@/entrypoints/video/redditSubtitle'
 import { YOUTUBE_PLAYER_PAGE } from '@/entrypoints/video/youtubeEmbed'
 import { prepareYouTubeEmbedRequest, PREPARE_YOUTUBE_EMBED_REQUEST } from '@/entrypoints/video/youtubeEmbedRequest'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
@@ -295,6 +296,12 @@ export default defineBackground({
             if (isXSubtitleRequest(message)) {
                 const senderUrl = URL.canParse(sender.url) ? new URL(sender.url) : undefined
                 if (senderUrl && isXVideoSubtitleHost(senderUrl.hostname)) return loadXSubtitle(message)
+                return Promise.resolve({ status: 'failed' })
+            }
+
+            if (isRedditSubtitleRequest(message)) {
+                const senderUrl = URL.canParse(sender.url) ? new URL(sender.url) : undefined
+                if (senderUrl && isRedditVideoSubtitleHost(senderUrl.hostname)) return loadRedditSubtitle(message)
                 return Promise.resolve({ status: 'failed' })
             }
 

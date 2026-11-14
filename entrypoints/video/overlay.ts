@@ -190,9 +190,15 @@ export class SubtitleOverlay {
 
     private fullscreenMode(): 'native' | 'player' | 'none' {
         if (!this.useNativeFullscreen) return 'none'
-        const fullscreen = document.fullscreenElement
+        let fullscreen = document.fullscreenElement
+        while (fullscreen?.shadowRoot?.fullscreenElement) fullscreen = fullscreen.shadowRoot.fullscreenElement
         if (fullscreen === this.video) return 'native'
-        return fullscreen?.contains(this.container) ? 'player' : 'none'
+        let node: Node | null = this.container
+        while (node) {
+            if (node === fullscreen) return 'player'
+            node = node.parentNode ?? (node instanceof ShadowRoot ? node.host : null)
+        }
+        return 'none'
     }
 
     private clearNativeTrack() {
