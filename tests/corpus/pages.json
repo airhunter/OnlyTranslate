@@ -1,10 +1,830 @@
 {
   "schemaVersion": 1,
   "pages": [
-    { "id": "teapaw-home", "name": "Teapaw 首页公告", "url": "https://teapaw.org/", "type": "首页", "source": "漏译反馈", "ready": "main" },
-    { "id": "josh-css-has", "name": "Josh Comeau · CSS :has()", "url": "https://www.joshwcomeau.com/css/has/", "type": "文章", "source": "旁注覆盖", "ready": "article" },
-    { "id": "lil-log-home", "name": "Lil’Log 博客首页", "url": "https://lilianweng.github.io/", "type": "首页", "source": "历史测试网址", "ready": "main" },
-    { "id": "ziggit-topic", "name": "Ziggit · export 讨论", "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822", "type": "论坛", "source": "虚拟化楼层反馈", "ready": ".topic-post", "focus": "#post_6" },
-    { "id": "python-appetite", "name": "Python 教程 · Whetting Your Appetite", "url": "https://docs.python.org/3/tutorial/appetite.html", "type": "文档", "source": "新增抽样", "ready": "main, [role=main]" }
+    {
+      "id": "teapaw-home",
+      "name": "Teapaw 首页公告",
+      "url": "https://teapaw.org/",
+      "type": "首页",
+      "source": "漏译反馈",
+      "ready": "main"
+    },
+    {
+      "id": "josh-css-has",
+      "name": "Josh Comeau · CSS :has()",
+      "url": "https://www.joshwcomeau.com/css/has/",
+      "type": "文章",
+      "source": "旁注覆盖",
+      "ready": "article"
+    },
+    {
+      "id": "lil-log-home",
+      "name": "Lil’Log 博客首页",
+      "url": "https://lilianweng.github.io/",
+      "type": "首页",
+      "source": "历史测试网址",
+      "ready": "main"
+    },
+    {
+      "id": "ziggit-topic",
+      "name": "Ziggit · export 讨论",
+      "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+      "type": "论坛",
+      "source": "虚拟化楼层反馈",
+      "ready": ".topic-post",
+      "focus": "#post_6"
+    },
+    {
+      "id": "python-appetite",
+      "name": "Python 教程 · Whetting Your Appetite",
+      "url": "https://docs.python.org/3/tutorial/appetite.html",
+      "type": "文档",
+      "source": "新增抽样",
+      "ready": "main, [role=main]"
+    },
+    {
+      "id": "corpus-75d0b93d7a22",
+      "name": "acl anthology paper",
+      "url": "https://aclanthology.org/2023.wmt-1.41/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/acl-anthology-paper.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-2a97aa07f5d3",
+      "name": "archive substack inline divs",
+      "url": "https://archive.md/myA7R",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/archive-substack-inline-divs.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-e05b207cd20b",
+      "name": "arstechnica header",
+      "url": "https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/arstechnica-header.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-651becd2dade",
+      "name": "arstechnica segmented body",
+      "url": "https://arstechnica.com/security/2026/08/a-segmented-story/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/arstechnica-segmented-body.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-a8ba778bdad1",
+      "name": "asterisk progress navigation",
+      "url": "https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/asterisk-progress-navigation.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-8caef4c5db97",
+      "name": "br separated azlyrics",
+      "url": "https://www.azlyrics.com/lyrics/nemesea/angelinthedark.html",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/br-separated-azlyrics.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-7ae35ae02bd0",
+      "name": "br separated blogspot",
+      "url": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/br-separated-blogspot.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-98192a1d1ccb",
+      "name": "br separated genius",
+      "url": "https://genius.com/Nemesea-angel-in-the-dark-lyrics",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/br-separated-genius.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-bfa3d0f3540b",
+      "name": "claude learning cards",
+      "url": "https://claude.nagdy.me/learn/getting-started/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/claude-learning-cards.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-fadb8ae3d7bf",
+      "name": "clayton ramsey blog title",
+      "url": "https://claytonwramsey.com/blog/mvt/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/clayton-ramsey-blog-title.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-6a782cd6e3bc",
+      "name": "cnn live story",
+      "url": "https://edition.cnn.com/2026/05/21/world/iran-live-updates",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/cnn-live-story.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-334402b19318",
+      "name": "decrypt article full",
+      "url": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/decrypt-article-full.json",
+        "tests/fixtures/translation-target/decrypt-article.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-e2520a78f09e",
+      "name": "decrypt no main",
+      "url": "https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/decrypt-no-main.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-c164595fef1e",
+      "name": "devin changelog",
+      "url": "https://docs.devin.ai/desktop/changelog",
+      "type": "文档",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/devin-changelog.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-3a062b69f719",
+      "name": "devto article header",
+      "url": "https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/devto-article-header.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-d83073df75d1",
+      "name": "exercism exercise instructions",
+      "url": "https://exercism.org/tracks/cpp/exercises/making-the-grade",
+      "type": "文档",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/exercism-exercise-instructions.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-c664c41f6b10",
+      "name": "forum topic list",
+      "url": "https://ziggit.dev/",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/forum-topic-list.json",
+        "docs/testing/fullpage-phase1-20261022.md",
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-765c2665888f",
+      "name": "genengnews figure paragraph",
+      "url": "https://www.genengnews.com/topics/bioprocessing/peptistar-began-operation-of-the-asahi-kasei-fo-md-system-at-manufacturing-scale/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/genengnews-figure-paragraph.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-117fb0a3b846",
+      "name": "github actions list",
+      "url": "https://github.com/HKUDS/nanobot/actions",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-actions-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-34d6b602a22b",
+      "name": "github commit list",
+      "url": "https://github.com/alchaincyf/huashu-design/commits/main/",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-commit-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-f77b3826fbd8",
+      "name": "github discussion list",
+      "url": "https://github.com/alchaincyf/huashu-design/discussions",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-discussion-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-79d09ed3e2f9",
+      "name": "github issue detail",
+      "url": "https://github.com/alchaincyf/huashu-design/issues/5256",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-issue-detail.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-cea4818d9020",
+      "name": "github issue list",
+      "url": "https://github.com/alchaincyf/huashu-design/issues",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-issue-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-9add7f2c4f1d",
+      "name": "github pr comment",
+      "url": "https://github.com/HKUDS/nanobot/pull/4005",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-pr-comment.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-eeb6ad9b394e",
+      "name": "github projects empty",
+      "url": "https://github.com/HKUDS/nanobot/projects",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-projects-empty.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-466e0b24d33b",
+      "name": "github projects list",
+      "url": "https://github.com/microsoft/vscode/projects",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-projects-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-a7ded0b7c536",
+      "name": "github pull list",
+      "url": "https://github.com/HKUDS/nanobot/pulls",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-pull-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-638846f7379e",
+      "name": "github readme list container",
+      "url": "https://github.com/HKUDS/nanobot",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-readme-list-container.json",
+        "tests/fixtures/translation-target/github-readme-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-ea8d6c944452",
+      "name": "github repository search",
+      "url": "https://github.com/search?q=openclaw&type=repositories",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-repository-search.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-f54eacc9a114",
+      "name": "github security",
+      "url": "https://github.com/HKUDS/nanobot/security",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/github-security.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-a1733bb75e1b",
+      "name": "hacker news item",
+      "url": "https://news.ycombinator.com/item?id=47555081",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/hacker-news-item.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-62f95ffa0970",
+      "name": "hidden expandable card",
+      "url": "https://ynarwal.github.io/how-llms-work/",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/hidden-expandable-card.json",
+        "tests/fixtures/translation-target/supplemental-content-card.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-2eb5bcc3ad88",
+      "name": "huggingface blog article",
+      "url": "https://huggingface.co/blog/ServiceNow/mosaicleaks",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/huggingface-blog-article.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-e34ebcec30d5",
+      "name": "intercom help article intro",
+      "url": "https://support.claude.com/en/articles/15400594-claude-cowork-june-2026-usage-promotion",
+      "type": "文档",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/intercom-help-article-intro.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-aac43df74935",
+      "name": "jacob gold post",
+      "url": "https://jacob.gold/posts/programmers-need-to-start-meditating-now/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/jacob-gold-post.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-96e060f55ffe",
+      "name": "liepin preserved newline jd full",
+      "url": "https://www.liepin.com/job/1985555579.shtml",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/liepin-preserved-newline-jd-full.json",
+        "tests/fixtures/translation-target/liepin-preserved-newline-jd-smart.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-d01eba4a3028",
+      "name": "lilianweng nested toc",
+      "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/lilianweng-nested-toc.json",
+        "tests/fixtures/translation-target/lilianweng-rendered-inline-math.json",
+        "docs/testing/fullpage-mode-comparison-20261019.md",
+        "docs/testing/fullpage-phase1-20261022.md",
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-e47b0472fdb6",
+      "name": "lobsters story comments full",
+      "url": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/lobsters-story-comments-full.json",
+        "tests/fixtures/translation-target/lobsters-story-comments.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-7f3d06456050",
+      "name": "mario inline links",
+      "url": "https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/mario-inline-links.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-c384290b377a",
+      "name": "mattstromawn inline links",
+      "url": "https://mattstromawn.com/writing/expansion-artifacts/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/mattstromawn-inline-links.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-a5a3dec7822a",
+      "name": "maxwell forbes sidenote",
+      "url": "https://maxwellforbes.com/posts/dont-try-to-reform-science/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/maxwell-forbes-sidenote.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-a938d6e7bb6c",
+      "name": "medium multi paragraph blockquote",
+      "url": "https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/medium-multi-paragraph-blockquote.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-e07714d3e513",
+      "name": "mempko article header",
+      "url": "https://blog.mempko.com/your-agentic-workflows-cache-keepalive-costs-8x-too-much-v2-the-interval-frontier/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/mempko-article-header.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-616526cb33fd",
+      "name": "metalstorm interview",
+      "url": "https://metalstorm.net/pub/interview.php?interview_id=344",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/metalstorm-interview.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-985539f3f2c2",
+      "name": "michelebologna linked title",
+      "url": "https://www.michelebologna.net/2026/ssh-port-22-fwknop-single-packet-authorization/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/michelebologna-linked-title.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-23e940dcc54d",
+      "name": "nature springer article",
+      "url": "https://www.nature.com/articles/s43856-026-01747-8",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/nature-springer-article.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-ac8ec612e519",
+      "name": "nxgoai article",
+      "url": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/nxgoai-article.json",
+        "tests/fixtures/translation-target/nxgoai-prose-root.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-54499be046ee",
+      "name": "paulgraham old essay",
+      "url": "https://paulgraham.com/earn.html",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/paulgraham-old-essay.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-399c08246550",
+      "name": "potown product full",
+      "url": "https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code",
+      "type": "商品",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/potown-product-full.json",
+        "tests/fixtures/translation-target/potown-product-smart.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-62c03957b06a",
+      "name": "primary heading introduction full",
+      "url": "https://www.ontario.ca/page/ministry-natural-resources",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/primary-heading-introduction-full.json",
+        "tests/fixtures/translation-target/primary-heading-introduction-smart.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-0638a05f43fe",
+      "name": "producthunt multiple launches",
+      "url": "https://www.producthunt.com/products/maritime",
+      "type": "商品",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/producthunt-multiple-launches.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-4fde41f07a3a",
+      "name": "producthunt product",
+      "url": "https://www.producthunt.com/products/omlx",
+      "type": "商品",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/producthunt-product.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-f46ab89cb748",
+      "name": "realpython alert",
+      "url": "https://realpython.com/claude-api-python/",
+      "type": "文档",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/realpython-alert.json",
+        "tests/fixtures/translation-target/realpython-table.json",
+        "tests/fixtures/translation-target/realpython-toc.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-4ec090bc4d43",
+      "name": "silvia sapora direct text",
+      "url": "https://silviasapora.github.io/blog/ml-interviews.html",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/silvia-sapora-direct-text.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-0f36e2f7a581",
+      "name": "simon willison list",
+      "url": "https://simonwillison.net/2026/May/21/datasette-agent/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/simon-willison-list.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-d929ec8dacd8",
+      "name": "substack comments",
+      "url": "https://newsletter.kentbeck.com/p/hey-n00b-we-didnt-hire-you-to-complete/comments",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/substack-comments.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-da0b689a4181",
+      "name": "substack emphasized intro paragraph",
+      "url": "https://newsletter.semianalysis.com/p/finding-miscompiles-for-fun-not-profit",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/substack-emphasized-intro-paragraph.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-976ec3f14b1d",
+      "name": "tds related articles",
+      "url": "https://towardsdatascience.com/i-reduced-my-pandas-runtime-by-95-heres-what-i-was-doing-wrong/",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/tds-related-articles.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-1beb33b06494",
+      "name": "tuc report stream",
+      "url": "https://www.tuc.org.uk/research-analysis/reports/work-intensification",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/tuc-report-stream.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-baad4878d33f",
+      "name": "wikipedia rich metadata",
+      "url": "https://en.wikipedia.org/wiki/Jordan",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/wikipedia-rich-metadata.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-1c43db8f225e",
+      "name": "wsj article header",
+      "url": "https://www.wsj.com/business/china-us-ai-model-costs-53a12e96",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/wsj-article-header.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-9ae12c7872d9",
+      "name": "xda discussion",
+      "url": "https://www.xda-developers.com/story-notepad-plus-plus/",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/xda-discussion.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-7ab41f948b65",
+      "name": "ynetnews article header",
+      "url": "https://www.ynetnews.com/business/article/rjeij9cgge",
+      "type": "文章",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "tests/fixtures/translation-target/ynetnews-article-header.json"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    },
+    {
+      "id": "corpus-926262871334",
+      "name": "ziggit.dev 18027",
+      "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+      "type": "论坛",
+      "source": "历史测试网址扩充",
+      "sourceFiles": [
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "addedAt": "2026-11-14",
+      "batch": "existing-test-urls-20261114"
+    }
   ]
 }

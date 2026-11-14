@@ -1,0 +1,1287 @@
+{
+  "checkedAt": "2026-11-14T07:08:01.772Z",
+  "ok": true,
+  "sourceHash": "5eaa130c3b0ed9376fead033ebb09a7a5eb71b55725e1a8727fb78dbfeccf2ae",
+  "humanHashes": {
+    "C:\\coding\\translates_project\\OnlyTranslate\\tests\\corpus\\decisions\\josh-css-has.json": "5276ad676aa9dd5c19a6b8d1439f6badc266cbf1d2d3025f8cb3b3266dda223e",
+    "C:\\coding\\translates_project\\OnlyTranslate\\tests\\corpus\\accepted-issues.json": "d916121d28826ae4454757f8c61c6fcb30604e4a3d7225e3cd48f3e6b3a74a3d"
+  },
+  "snapshots": [
+    {
+      "pageId": "corpus-75d0b93d7a22",
+      "snapshotId": "5af00339-8a8f-499f-8b91-05b629216bcc",
+      "htmlHash": "e462c8ed8ea565e073204e147529d4a963696798447ae158f5bc26ecb030997d",
+      "resources": 11,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-2a97aa07f5d3",
+      "snapshotId": "dc2d604c-7690-4745-863a-5d5b344d94ff",
+      "htmlHash": "d958098c478353dced9aeae527d2b070ad1e0945b632d49b26a082aa3d94a7e9",
+      "resources": 3,
+      "status": "blocked"
+    },
+    {
+      "pageId": "corpus-a8ba778bdad1",
+      "snapshotId": "1aff7658-1d19-4b03-9a2f-393fedd6de13",
+      "htmlHash": "55e37628b1ec49badf7730971274fd137b281443a3b788b84c797f1ac4cdf363",
+      "resources": 19,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-8caef4c5db97",
+      "snapshotId": "f8a4964e-9eb8-4738-95c4-72dec3dbfb30",
+      "htmlHash": "217957b42a4d6d015e08de9757206dae7448c84f963367b61cf6a65f2ebb1930",
+      "resources": 8,
+      "status": "blocked"
+    },
+    {
+      "pageId": "corpus-7ae35ae02bd0",
+      "snapshotId": "91c89e8e-681b-4820-81a9-4320a2a4e93d",
+      "htmlHash": "6792745e663e61399e9ce9e139308fe1298e42e92765394156ccae5e4e3214f5",
+      "resources": 32,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-bfa3d0f3540b",
+      "snapshotId": "2262dab5-dfa0-46a0-8182-d037c2a652a9",
+      "htmlHash": "4fd8358847912ae709379485ccec9dc2970ef7a5be2821f7b9b813abea643c23",
+      "resources": 6,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-fadb8ae3d7bf",
+      "snapshotId": "8b2ed85f-2089-450e-823a-c09beef7a279",
+      "htmlHash": "3987f63f6def86a19d74bf55ec8b6812c666d646ce623b5911b9b7127f7300cb",
+      "resources": 13,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-334402b19318",
+      "snapshotId": "8f1beff8-2b83-4901-b16e-460c05be94f8",
+      "htmlHash": "baf721d78228ffbb5d52920f1669964f7450b81068409130bee3649aa8419138",
+      "resources": 84,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-e2520a78f09e",
+      "snapshotId": "d54231bf-ad38-4d96-8894-829e28f017bc",
+      "htmlHash": "372be76b1903a4a182fc6ebb7648c17c9c6b1df752e7fb223e88a35607c7d6b5",
+      "resources": 66,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-c164595fef1e",
+      "snapshotId": "12141ede-7ef0-4408-aeed-6bbcc9727af6",
+      "htmlHash": "00904c19e020eb5bd3afbb1b9031f06ec2070cb53c0b1d6be6cf59f135a32479",
+      "resources": 17,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-3a062b69f719",
+      "snapshotId": "7430e39f-4d7a-4779-8401-250494c6ceb7",
+      "htmlHash": "0e4fd8c31f766551075817a981d9dbbcdeecb2dfb65fd5e9a229fe7c8d345ee7",
+      "resources": 35,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-d83073df75d1",
+      "snapshotId": "eba3bb6d-1b11-443f-8960-afc5277a0ee3",
+      "htmlHash": "b6a23533198d850fd7e14d9e3a730b6d6c960f43ba8657d97251f3c9a7120433",
+      "resources": 83,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-c664c41f6b10",
+      "snapshotId": "0818f21a-a5b3-4719-9fae-f19aee9deb7e",
+      "htmlHash": "207747f1f32d68c3f0dfe721d3b43f9bd7f226efb977c56cee8cf3a36e6ae5d4",
+      "resources": 177,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-765c2665888f",
+      "snapshotId": "399f1636-d276-4986-a6b4-d8d0cde0878f",
+      "htmlHash": "c780735ee521b044c9e24f5d4429a95a8a25a6d1db58ee52dc06e68950757ae7",
+      "resources": 49,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-117fb0a3b846",
+      "snapshotId": "54dee8c1-b31a-47a3-961f-1a0b0246039d",
+      "htmlHash": "fa18363e0a9d2f17995f5f8b797b431997603f896c775febd5255fd08b05e0dc",
+      "resources": 46,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-34d6b602a22b",
+      "snapshotId": "eaf85bc4-0920-486a-9b05-6028b6ecee70",
+      "htmlHash": "112ad2c58b8dd702a1a4fac5a05a359b3b1eee854673e836708bf4fa1ce970b9",
+      "resources": 42,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-cea4818d9020",
+      "snapshotId": "5ada5324-d2f0-495b-8cbd-4a93745829da",
+      "htmlHash": "c5b19aa692255857395a9df2c6c17699fd5ed69979cd9ee24549708d97f33e66",
+      "resources": 40,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-9add7f2c4f1d",
+      "snapshotId": "5a31a454-7a39-4ac4-b82f-bf53d1bbc73a",
+      "htmlHash": "266af539b4233590b09be70f14b33ea703ef6e9c5f03ced0a61d3d06a1efbba2",
+      "resources": 54,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-eeb6ad9b394e",
+      "snapshotId": "522ffb0b-38bf-4d97-8202-c975f2c890da",
+      "htmlHash": "6053c668316cf89ffe01ae9b7e53ab0bd967878dbfca87d6739cc194b58e0227",
+      "resources": 35,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-466e0b24d33b",
+      "snapshotId": "6b610a4d-6396-40f5-ad8d-dc44065eb507",
+      "htmlHash": "2f6361671a7d82cab89e222ef815f94410bcd1ba21e84917c40cb9175558a922",
+      "resources": 35,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-a7ded0b7c536",
+      "snapshotId": "d7306016-939d-4730-8fb8-a39fb3da08b3",
+      "htmlHash": "c6e35196a6b2ac063a73dc3cecf9fe84574f682c5f20fb848d118a6882a8a865",
+      "resources": 40,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-638846f7379e",
+      "snapshotId": "f1fc5b0b-e3e3-49d9-95c8-fe2a4cc6dc1f",
+      "htmlHash": "248845c8ee40d213c592575e6bf482901d5ac5fa8214c479f8fa6dd50559cdca",
+      "resources": 462,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-ea8d6c944452",
+      "snapshotId": "7e2d3fcb-7a61-4c56-af48-7c7863e0f3b3",
+      "htmlHash": "4d01a61173559ec5e9211c99ecdd02a036577fe4ff6ae3ce241b43aac6a2e67d",
+      "resources": 39,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-f54eacc9a114",
+      "snapshotId": "b3c6b90e-8564-4f71-be8d-de704b4877dc",
+      "htmlHash": "7472f3a2294aa9256c82bc8104b6ea172fff6234fdf26a7ff6d56d10a5fbaa3c",
+      "resources": 27,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-a1733bb75e1b",
+      "snapshotId": "490b3b77-acf9-46b4-9d9f-2aecd0c3e570",
+      "htmlHash": "4af3942a730dbd25c7b0145be16d3ae00b89edd77b8c0a62d7038e82cc5903b0",
+      "resources": 4,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-62f95ffa0970",
+      "snapshotId": "5c27448b-5407-418a-b839-a7e76932af99",
+      "htmlHash": "68944806d9ac06e15e1d164fdec27a4ab99c3915acd399bc2d4f69d03a2d638d",
+      "resources": 6,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-2eb5bcc3ad88",
+      "snapshotId": "9e1a8cd6-2957-4b34-8c00-2790a6286ecb",
+      "htmlHash": "c6e5d8a593dd5a841d0d989875d1851e8473a1cf90321b7889366c50bd197692",
+      "resources": 34,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-aac43df74935",
+      "snapshotId": "66722b67-05b1-4cfc-8991-2b3fc46ff6f6",
+      "htmlHash": "4aa61bdbd3c53235b0a6629bd69d6b56da35a3fc93a89321eed96d811fd6e6aa",
+      "resources": 4,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-96e060f55ffe",
+      "snapshotId": "8754244a-c2c4-4e47-aea1-e477c5050087",
+      "htmlHash": "954d6dedb71992ec560a7d9eae8db3804bc0c9b14906853b98fb52ef4ff74890",
+      "resources": 47,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-d01eba4a3028",
+      "snapshotId": "3bec1349-4994-4813-9941-ff224bc2ea51",
+      "htmlHash": "672bc905aeebed296a52af430bf2a310d939e2127efa3a141fc4d99c81b7a017",
+      "resources": 24,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-e47b0472fdb6",
+      "snapshotId": "04b9d48d-c051-4c3a-ae59-8ac443a1260c",
+      "htmlHash": "fde56306756408c101746b98823c789a8b73a366f0aa9bee7e8be1598349d4fa",
+      "resources": 25,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-7f3d06456050",
+      "snapshotId": "251b4abe-3e1d-4ffb-aaa6-fb79aa461a6d",
+      "htmlHash": "39803cc6c55e2fa2869879de527f1dba31a6bb1fb714bc6849618511dc081066",
+      "resources": 2,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-c384290b377a",
+      "snapshotId": "8f0c35fb-959e-4b0d-babb-8565036b0be5",
+      "htmlHash": "71eb7c00d2d4aba42516816327d92dd6cf7acaba3847978fa6edd2e881ac6182",
+      "resources": 15,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-a5a3dec7822a",
+      "snapshotId": "92109b0c-0c82-4ce0-a9e0-9763de343f5b",
+      "htmlHash": "c9bb02714e7f6fd6b5e540a5ca8fad750bd633de63e11939f0ce0a0820b0ecc5",
+      "resources": 9,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-e07714d3e513",
+      "snapshotId": "21badf33-13a3-4b07-aa4f-a98769bdeb4d",
+      "htmlHash": "7f4191f5968658d5f7d3a9203452032c6e1accd3c74a68e867afd7ca281a1c22",
+      "resources": 10,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-985539f3f2c2",
+      "snapshotId": "4eff3683-4b0a-431a-a6d5-824a7640f139",
+      "htmlHash": "a4a78b97bb6ddf0c46e000ecea8b4d3bc620580fcd656ae6c087669244cd5a71",
+      "resources": 8,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-23e940dcc54d",
+      "snapshotId": "ba13b2f9-5950-412b-9ec4-a16c29f39ebd",
+      "htmlHash": "e99eacc5388fb775961feef9023b0bcac407f1f1e09df795eb297e943ed745d3",
+      "resources": 21,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-ac8ec612e519",
+      "snapshotId": "f9bad244-22d8-4b9a-a2c7-69ef6130335f",
+      "htmlHash": "f8a30364f98dbf23f27c4f444931c2dd8eb7b96ef856dba06d4ccef65444a2e5",
+      "resources": 9,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-54499be046ee",
+      "snapshotId": "900f0937-9a68-4503-ad2a-f90972aacdd0",
+      "htmlHash": "7ab8ed74fbba5315fbc2844b807414f68b82c508f2492b092832b33d0e5bdac2",
+      "resources": 5,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-62c03957b06a",
+      "snapshotId": "5f5f168e-357b-4297-8a07-5aa414080be3",
+      "htmlHash": "be2b7c650333c48212c03ad5fb9af0e1d27317f8a40e387f96339b4e8412a942",
+      "resources": 21,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-4ec090bc4d43",
+      "snapshotId": "14b51745-52cc-4b75-80cb-bffeb1237181",
+      "htmlHash": "dbd62ae9ae4d56eaecacab919f4149967980e89a104fcc894399481544b82a7f",
+      "resources": 0,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-0f36e2f7a581",
+      "snapshotId": "9690580f-47b8-4d69-84de-1cd42a362ae1",
+      "htmlHash": "8467a76763c30e73480a58fb7e6240ea65b663e516cb80a2d4a1f2ae62b25bb2",
+      "resources": 7,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-d929ec8dacd8",
+      "snapshotId": "a52495cf-d0b7-4605-9c31-423eeb477017",
+      "htmlHash": "95a6600d927118c83448bdb70bbb422f53495b990ceb5f991c460922619628b3",
+      "resources": 43,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-da0b689a4181",
+      "snapshotId": "706ce14a-8a06-45bd-b3fe-4c196210dfce",
+      "htmlHash": "d91d4a43262d4387e27fbd219793f64b1f0a5b5f769b5da99a46959772496031",
+      "resources": 33,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-baad4878d33f",
+      "snapshotId": "2a780573-d478-4109-93fd-8a70b9aa315c",
+      "htmlHash": "5afb229abde27d68700a44e32be93c68bb2251f8efacdba78ac7de03b32e2e0f",
+      "resources": 90,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-9ae12c7872d9",
+      "snapshotId": "25249f34-90b6-41e9-a4b7-bdbcf5bfb93c",
+      "htmlHash": "49853ddcc1c97f7a717d6286cd739d9ade146d399a99432185d9da9b0f04bb20",
+      "resources": 73,
+      "status": "complete"
+    },
+    {
+      "pageId": "corpus-7ab41f948b65",
+      "snapshotId": "3594601c-d143-45e0-92d4-24c9868b3709",
+      "htmlHash": "211cf4fbd3c927d5b5c1ca0ea5fe26fc5a2e4d24c9287641ea4cd61ad2e3af6c",
+      "resources": 223,
+      "status": "baseline-incomplete"
+    },
+    {
+      "pageId": "corpus-926262871334",
+      "snapshotId": "0c3973bb-9222-4213-82fc-c0e781252ae0",
+      "htmlHash": "6a103eb0671c9e1412a55e1ef19d649dc3024dacf75029397e0449b17c9f9512",
+      "resources": 40,
+      "status": "complete"
+    },
+    {
+      "pageId": "teapaw-home",
+      "snapshotId": "a15d480469e97ea9cf14c64f",
+      "htmlHash": "a15d480469e97ea9cf14c64f32d76dbb118d065fb2868f8bb926c39bf84fd37e",
+      "resources": 25,
+      "status": "complete"
+    },
+    {
+      "pageId": "ziggit-topic",
+      "snapshotId": "fadc07a466e17f30175a8d31",
+      "htmlHash": "fadc07a466e17f30175a8d318340d08ad5c4a89afb0814b84ec8437c3d2eef78",
+      "resources": 39,
+      "status": "complete"
+    },
+    {
+      "pageId": "lil-log-home",
+      "snapshotId": "746df28629938d77d2402873",
+      "htmlHash": "746df28629938d77d24028733c30657116e976c552bbbbd2b1cb4e1087815b76",
+      "resources": 3,
+      "status": "complete"
+    },
+    {
+      "pageId": "josh-css-has",
+      "snapshotId": "f725f40a43c530131676b8de",
+      "htmlHash": "f725f40a43c530131676b8de27622477a9db6e0a2c49be1d9e56a2b63b936638",
+      "resources": 36,
+      "status": "complete"
+    },
+    {
+      "pageId": "python-appetite",
+      "snapshotId": "960bca572fcd880e7f5d3c27",
+      "htmlHash": "960bca572fcd880e7f5d3c27035cc79c891320841928ed71d7761969ca75cd6d",
+      "resources": 7,
+      "status": "complete"
+    }
+  ],
+  "checked": [
+    {
+      "id": "corpus-75d0b93d7a22",
+      "snapshotId": "5af00339-8a8f-499f-8b91-05b629216bcc",
+      "baselineRunId": "release-1794634140581-2f7b7e",
+      "candidateRunId": "candidate-1794634175707-b57516",
+      "htmlHash": "e462c8ed8ea565e073204e147529d4a963696798447ae158f5bc26ecb030997d",
+      "resourceCount": 11,
+      "images": {
+        "original": "dd0ea1919ae251f5634f0bc00266fba4ab54e1cd8bd0a7cd802ef73ff8ec786e",
+        "translated": "f2111a9356415144f1ee425d5aaa2ac05b6f8bf916b8c0991f21975d5b1c486a"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 131
+      }
+    },
+    {
+      "id": "corpus-a8ba778bdad1",
+      "snapshotId": "1aff7658-1d19-4b03-9a2f-393fedd6de13",
+      "baselineRunId": "release-1794634301417-e7f8b3",
+      "candidateRunId": "candidate-1794634347076-7c4d05",
+      "htmlHash": "55e37628b1ec49badf7730971274fd137b281443a3b788b84c797f1ac4cdf363",
+      "resourceCount": 19,
+      "images": {
+        "original": "ee88b92a1f806e8ae4db41ca67800e6481ca59ffaea8ed0d74976d155132b4c5",
+        "translated": "41fecf981ce9479b9d047b0b80696c8b44e79bf307ba031409adaeefb08d2353"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 189
+      }
+    },
+    {
+      "id": "corpus-7ae35ae02bd0",
+      "snapshotId": "91c89e8e-681b-4820-81a9-4320a2a4e93d",
+      "baselineRunId": "release-1794634431753-462b49",
+      "candidateRunId": "candidate-1794634476863-6304a5",
+      "htmlHash": "6792745e663e61399e9ce9e139308fe1298e42e92765394156ccae5e4e3214f5",
+      "resourceCount": 32,
+      "images": {
+        "original": "8b57346e9825f9e673f390b0e9be570927cc78af0204bf29ff25878bf951c7dd",
+        "translated": "c2531c32d000800035e1e25f178a522ed83968e0fb08e5946c2efde02840f033"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 217
+      }
+    },
+    {
+      "id": "corpus-bfa3d0f3540b",
+      "snapshotId": "2262dab5-dfa0-46a0-8182-d037c2a652a9",
+      "baselineRunId": "release-1794634514973-915fc2",
+      "candidateRunId": "candidate-1794634554798-4e75c4",
+      "htmlHash": "4fd8358847912ae709379485ccec9dc2970ef7a5be2821f7b9b813abea643c23",
+      "resourceCount": 6,
+      "images": {
+        "original": "78e62c8cda067f2e7d98449ab1d791c6cd5a89f4265a87e751851d93731f377a",
+        "translated": "ce7a2b9ea920182a311533811c4245d1ee95112a0a2039b84c64c4c43b0816e3"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 200
+      }
+    },
+    {
+      "id": "corpus-334402b19318",
+      "snapshotId": "8f1beff8-2b83-4901-b16e-460c05be94f8",
+      "baselineRunId": "release-1794634892448-eebd46",
+      "candidateRunId": "candidate-1794634941874-58ed84",
+      "htmlHash": "baf721d78228ffbb5d52920f1669964f7450b81068409130bee3649aa8419138",
+      "resourceCount": 84,
+      "images": {
+        "original": "22f1dc4c263dd431597fe943d305429d2aeb6ba2ac3c685c2d07c52ae960dd9d",
+        "translated": "4d39509dc3d27876133e07d18a5c989bf0dcf621460c1260b523f703f147f7f2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 530
+      }
+    },
+    {
+      "id": "corpus-e2520a78f09e",
+      "snapshotId": "d54231bf-ad38-4d96-8894-829e28f017bc",
+      "baselineRunId": "release-1794634970594-4d9aeb",
+      "candidateRunId": "candidate-1794635020163-227298",
+      "htmlHash": "372be76b1903a4a182fc6ebb7648c17c9c6b1df752e7fb223e88a35607c7d6b5",
+      "resourceCount": 66,
+      "images": {
+        "original": "54b1e4b84952febd9894fbc3187c185f114b7a608cb7ac2ad87bb545be131265",
+        "translated": "4f54bc9bd9b18a4f1d2e0b1d0e09f16eaf3491c95364a64e64ed8202b2a0812a"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 554
+      }
+    },
+    {
+      "id": "corpus-c164595fef1e",
+      "snapshotId": "12141ede-7ef0-4408-aeed-6bbcc9727af6",
+      "baselineRunId": "release-1794635058701-ca0dd7",
+      "candidateRunId": "candidate-1794635233062-bce89e",
+      "htmlHash": "00904c19e020eb5bd3afbb1b9031f06ec2070cb53c0b1d6be6cf59f135a32479",
+      "resourceCount": 17,
+      "images": {
+        "original": "3b456a5bf8bc0d4f671b8051e8bcfe5804445d42cb58ec7c5433e1ec7d523736",
+        "translated": "678134da9973b1c4c75c43145c69acf668e94595d254f94b7a5808a09c4192ba"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 38,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 3608
+      }
+    },
+    {
+      "id": "corpus-3a062b69f719",
+      "snapshotId": "7430e39f-4d7a-4779-8401-250494c6ceb7",
+      "baselineRunId": "release-1794635262142-89ca2d",
+      "candidateRunId": "candidate-1794635304496-b94989",
+      "htmlHash": "0e4fd8c31f766551075817a981d9dbbcdeecb2dfb65fd5e9a229fe7c8d345ee7",
+      "resourceCount": 35,
+      "images": {
+        "original": "424e666f60ddb577dfe33af7a2b3dee7b04a7c8df17d1dd9d41c46835cb13505",
+        "translated": "1b3a6620ac7c05b5bcd715b049126e3a1807418c9a6eaece39bcdb2269f694b4"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 363
+      }
+    },
+    {
+      "id": "corpus-c664c41f6b10",
+      "snapshotId": "0818f21a-a5b3-4719-9fae-f19aee9deb7e",
+      "baselineRunId": "release-1794635631805-b9ca53",
+      "candidateRunId": "candidate-1794635679654-84cd57",
+      "htmlHash": "207747f1f32d68c3f0dfe721d3b43f9bd7f226efb977c56cee8cf3a36e6ae5d4",
+      "resourceCount": 177,
+      "images": {
+        "original": "b6bbd1fffcaf239124c34abfd77de38cd17407adbcfca41386a42a734a81dde2",
+        "translated": "d818ae4f57d3f95f0945b8949ff86339490f1b5c60478df7862691558d54a09e"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 374
+      }
+    },
+    {
+      "id": "corpus-117fb0a3b846",
+      "snapshotId": "54dee8c1-b31a-47a3-961f-1a0b0246039d",
+      "baselineRunId": "release-1794635782767-01c318",
+      "candidateRunId": "candidate-1794635819988-576923",
+      "htmlHash": "fa18363e0a9d2f17995f5f8b797b431997603f896c775febd5255fd08b05e0dc",
+      "resourceCount": 46,
+      "images": {
+        "original": "d0466b3b3e3613f3f9c82e66709f4a7a76298ce61b1cb15d690b2fa743c67fe5",
+        "translated": "93409391d519f2f947e3f40910e8f9f088c3360b2a7e602322271b96a2aae6c7"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 355
+      }
+    },
+    {
+      "id": "corpus-34d6b602a22b",
+      "snapshotId": "eaf85bc4-0920-486a-9b05-6028b6ecee70",
+      "baselineRunId": "release-1794635850216-17093c",
+      "candidateRunId": "candidate-1794635890133-aa9f52",
+      "htmlHash": "112ad2c58b8dd702a1a4fac5a05a359b3b1eee854673e836708bf4fa1ce970b9",
+      "resourceCount": 42,
+      "images": {
+        "original": "f4a1ecd8e6b61c2b8f7cb8e42d17000dec025a36004d36259431d5a4c05389cf",
+        "translated": "7e5ed17eebbcb3a389ea943aa4f056817642213eb9285049d4773a85f7080b93"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 112
+      }
+    },
+    {
+      "id": "corpus-cea4818d9020",
+      "snapshotId": "5ada5324-d2f0-495b-8cbd-4a93745829da",
+      "baselineRunId": "release-1794635945868-58bbc5",
+      "candidateRunId": "candidate-1794635980652-2949eb",
+      "htmlHash": "c5b19aa692255857395a9df2c6c17699fd5ed69979cd9ee24549708d97f33e66",
+      "resourceCount": 40,
+      "images": {
+        "original": "830fffad19ec81c2bce351b7621bcf0812b03224e642f2456362c32dae56fe5d",
+        "translated": "7e057fa63d7753598b8a783837b4c1d54d1cef4e1b22cd7716f6d46ce107773a"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 139
+      }
+    },
+    {
+      "id": "corpus-9add7f2c4f1d",
+      "snapshotId": "5a31a454-7a39-4ac4-b82f-bf53d1bbc73a",
+      "baselineRunId": "release-1794636009671-791096",
+      "candidateRunId": "candidate-1794636047360-dc0191",
+      "htmlHash": "266af539b4233590b09be70f14b33ea703ef6e9c5f03ced0a61d3d06a1efbba2",
+      "resourceCount": 54,
+      "images": {
+        "original": "a0fab314f72983dbcc0e1e591caaf1b15e0eac8b260f2c64e6ff1bc8c656e278",
+        "translated": "a1b9383bead417c4f577481531765102b8132a3753c5d8bc929db58a8180f0e8"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 213
+      }
+    },
+    {
+      "id": "corpus-eeb6ad9b394e",
+      "snapshotId": "522ffb0b-38bf-4d97-8202-c975f2c890da",
+      "baselineRunId": "release-1794636073999-4cfe6c",
+      "candidateRunId": "candidate-1794636107900-7c9905",
+      "htmlHash": "6053c668316cf89ffe01ae9b7e53ab0bd967878dbfca87d6739cc194b58e0227",
+      "resourceCount": 35,
+      "images": {
+        "original": "945a38e15c59a090bdb82f60fd9b90dd10650bfd44004ec8806e70a9bbc1ec99",
+        "translated": "ebaebf3b8c80afe437fb39586291fc771a3b9e20c2dcde41a951a22219e55ab0"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 118
+      }
+    },
+    {
+      "id": "corpus-466e0b24d33b",
+      "snapshotId": "6b610a4d-6396-40f5-ad8d-dc44065eb507",
+      "baselineRunId": "release-1794636131716-473915",
+      "candidateRunId": "candidate-1794636168034-a1cedb",
+      "htmlHash": "2f6361671a7d82cab89e222ef815f94410bcd1ba21e84917c40cb9175558a922",
+      "resourceCount": 35,
+      "images": {
+        "original": "1bf843b5780fffceb92e5efa4f95dbece7b6cbcdada8f0c4eb882cf4a246c5a6",
+        "translated": "d6ee175577eaf3f0ef5468d9a5fecf2f227225411b2c7dfed6a3ceda8ab29d85"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 119
+      }
+    },
+    {
+      "id": "corpus-a7ded0b7c536",
+      "snapshotId": "d7306016-939d-4730-8fb8-a39fb3da08b3",
+      "baselineRunId": "release-1794636198222-187247",
+      "candidateRunId": "candidate-1794636232394-ca345f",
+      "htmlHash": "c6e35196a6b2ac063a73dc3cecf9fe84574f682c5f20fb848d118a6882a8a865",
+      "resourceCount": 40,
+      "images": {
+        "original": "2a30dfd8bf41daded681cfcba6a4c7941900b25aefca6ea00c3daaea22ff5011",
+        "translated": "3e77d94c861bc79a25a1bde984e72cc90255d60249c714f0583a19e26aa5aed9"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 362
+      }
+    },
+    {
+      "id": "corpus-638846f7379e",
+      "snapshotId": "f1fc5b0b-e3e3-49d9-95c8-fe2a4cc6dc1f",
+      "baselineRunId": "release-1794636262643-c3a9a7",
+      "candidateRunId": "candidate-1794636314756-b5f04d",
+      "htmlHash": "248845c8ee40d213c592575e6bf482901d5ac5fa8214c479f8fa6dd50559cdca",
+      "resourceCount": 462,
+      "images": {
+        "original": "54f2f545e2330141d782708f3958d1fce2276641bbb1821b75ba9fe6ded1a826",
+        "translated": "1ac97669a3c9ad63891b7b3857f2b550b5f3cef40fa02fb08fedbf8a544da0b5"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 5,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 727
+      }
+    },
+    {
+      "id": "corpus-ea8d6c944452",
+      "snapshotId": "7e2d3fcb-7a61-4c56-af48-7c7863e0f3b3",
+      "baselineRunId": "release-1794636339102-2c9e2e",
+      "candidateRunId": "candidate-1794636372496-6c4b5d",
+      "htmlHash": "4d01a61173559ec5e9211c99ecdd02a036577fe4ff6ae3ce241b43aac6a2e67d",
+      "resourceCount": 39,
+      "images": {
+        "original": "de40a2b05ebba28509471a88a6332a5256b232fef5950ab1360b47366e81cf80",
+        "translated": "0bca2a87f5e7dc020caaf0731272e0e76a47ed22b6fbab9090480ef61693a72b"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 5,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 277
+      }
+    },
+    {
+      "id": "corpus-f54eacc9a114",
+      "snapshotId": "b3c6b90e-8564-4f71-be8d-de704b4877dc",
+      "baselineRunId": "release-1794636399476-729444",
+      "candidateRunId": "candidate-1794636456004-3da051",
+      "htmlHash": "7472f3a2294aa9256c82bc8104b6ea172fff6234fdf26a7ff6d56d10a5fbaa3c",
+      "resourceCount": 27,
+      "images": {
+        "original": "1d313cd59d6bfd0232371f33d89ff29327da578e1afe1d4d658caec38bed8db7",
+        "translated": "5f73fbe3e815a98cda37fbb2fb29befb03d79eaf0c4b830261cdd39ba5095680"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 5,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 344
+      }
+    },
+    {
+      "id": "corpus-a1733bb75e1b",
+      "snapshotId": "490b3b77-acf9-46b4-9d9f-2aecd0c3e570",
+      "baselineRunId": "release-1794636481818-d52b35",
+      "candidateRunId": "candidate-1794636523841-0ee936",
+      "htmlHash": "4af3942a730dbd25c7b0145be16d3ae00b89edd77b8c0a62d7038e82cc5903b0",
+      "resourceCount": 4,
+      "images": {
+        "original": "25686fd05b437dfe38e0627bb860f6f3fa1ffe74cf409f7bd6750abf0f62b9db",
+        "translated": "7adcea3f61e9847a434c0839790d17d4c96be3180ecea78032695fc86533e3ce"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 829
+      }
+    },
+    {
+      "id": "corpus-2eb5bcc3ad88",
+      "snapshotId": "9e1a8cd6-2957-4b34-8c00-2790a6286ecb",
+      "baselineRunId": "release-1794636847424-1236c3",
+      "candidateRunId": "candidate-1794636891719-82f024",
+      "htmlHash": "c6e5d8a593dd5a841d0d989875d1851e8473a1cf90321b7889366c50bd197692",
+      "resourceCount": 34,
+      "images": {
+        "original": "e3dcdee1152f99dd877489f0f19ada7e99a16ba48fe5f74a5d72139c014aca57",
+        "translated": "68c7f6c91cc561131580dc1fcec68fba82a4018e882d7da13bf206c23fee5908"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 169
+      }
+    },
+    {
+      "id": "corpus-aac43df74935",
+      "snapshotId": "66722b67-05b1-4cfc-8991-2b3fc46ff6f6",
+      "baselineRunId": "release-1794636925681-906123",
+      "candidateRunId": "candidate-1794636958686-f18d7a",
+      "htmlHash": "4aa61bdbd3c53235b0a6629bd69d6b56da35a3fc93a89321eed96d811fd6e6aa",
+      "resourceCount": 4,
+      "images": {
+        "original": "a7ddb27e1d66a0dc3f30e893b9bef9756d34fb6ed36997f632a7f5b4a0c01842",
+        "translated": "91bf84b89a4c6bee56918bc798bd8e9bbbf516225e33f61434e70358e32f1a9c"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 25
+      }
+    },
+    {
+      "id": "corpus-e47b0472fdb6",
+      "snapshotId": "04b9d48d-c051-4c3a-ae59-8ac443a1260c",
+      "baselineRunId": "release-1794637572037-32eb50",
+      "candidateRunId": "candidate-1794637607559-3a72cc",
+      "htmlHash": "fde56306756408c101746b98823c789a8b73a366f0aa9bee7e8be1598349d4fa",
+      "resourceCount": 25,
+      "images": {
+        "original": "f08e7c278c6b63804420d825b737e1940c0ee4ec5ea30ef3585e099288a5d994",
+        "translated": "0c1b4e7779206a200f29974744eba72bb913e757905d1f0d97cced9a2a013fae"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 30,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 150
+      }
+    },
+    {
+      "id": "corpus-7f3d06456050",
+      "snapshotId": "251b4abe-3e1d-4ffb-aaa6-fb79aa461a6d",
+      "baselineRunId": "release-1794637630517-0504c7",
+      "candidateRunId": "candidate-1794637665403-e88b7e",
+      "htmlHash": "39803cc6c55e2fa2869879de527f1dba31a6bb1fb714bc6849618511dc081066",
+      "resourceCount": 2,
+      "images": {
+        "original": "87cd587c26069707e21b47f48344c17e0fdf21326f354595364bf11a5a333367",
+        "translated": "473328f5fc1913d596466f29beba08a245387121f81af1f1ce5012d3d6458c95"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 68
+      }
+    },
+    {
+      "id": "corpus-c384290b377a",
+      "snapshotId": "8f0c35fb-959e-4b0d-babb-8565036b0be5",
+      "baselineRunId": "release-1794637688683-c94e84",
+      "candidateRunId": "candidate-1794637724171-69f436",
+      "htmlHash": "71eb7c00d2d4aba42516816327d92dd6cf7acaba3847978fa6edd2e881ac6182",
+      "resourceCount": 15,
+      "images": {
+        "original": "0eda6bb4ac79528a918b549f80b054e6a836c1741bfe2caee68efa50db044099",
+        "translated": "8df8db1be4866e7c67ae3a8379fdf5e17ff4833207f8fd1a68f09ddf9fe4a1f6"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 85
+      }
+    },
+    {
+      "id": "corpus-a5a3dec7822a",
+      "snapshotId": "92109b0c-0c82-4ce0-a9e0-9763de343f5b",
+      "baselineRunId": "release-1794637749197-073b27",
+      "candidateRunId": "candidate-1794637786903-4afb31",
+      "htmlHash": "c9bb02714e7f6fd6b5e540a5ca8fad750bd633de63e11939f0ce0a0820b0ecc5",
+      "resourceCount": 9,
+      "images": {
+        "original": "7bde2ad55f892f246780c682e094edc34161289008ba945bd61ac312ec50872d",
+        "translated": "415cef93df7724d223d44192be716379162080c43ccfd588bece262d0e6adcea"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 128
+      }
+    },
+    {
+      "id": "corpus-985539f3f2c2",
+      "snapshotId": "4eff3683-4b0a-431a-a6d5-824a7640f139",
+      "baselineRunId": "release-1794637895988-1f4203",
+      "candidateRunId": "candidate-1794637933431-598789",
+      "htmlHash": "a4a78b97bb6ddf0c46e000ecea8b4d3bc620580fcd656ae6c087669244cd5a71",
+      "resourceCount": 8,
+      "images": {
+        "original": "c3220c02211aaf8ea4e450138d7089f76c3208f6b6b38af6c52bf0dfcbdd81c6",
+        "translated": "1a082cc2d94db2c053c43a83483e265b237d33f7526cb16f40dad627cf6ea11c"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 137
+      }
+    },
+    {
+      "id": "corpus-ac8ec612e519",
+      "snapshotId": "f9bad244-22d8-4b9a-a2c7-69ef6130335f",
+      "baselineRunId": "release-1794638031079-3f4412",
+      "candidateRunId": "candidate-1794638064250-99a8a2",
+      "htmlHash": "f8a30364f98dbf23f27c4f444931c2dd8eb7b96ef856dba06d4ccef65444a2e5",
+      "resourceCount": 9,
+      "images": {
+        "original": "5b97d490a73f0ee8aec42be677d9755ff2e58180a89d294fffe8cf926434060a",
+        "translated": "3ac5121382dda4e78477c7241824362e04ae971f94ca50f41b2cfaa46a83d0f9"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 62
+      }
+    },
+    {
+      "id": "corpus-54499be046ee",
+      "snapshotId": "900f0937-9a68-4503-ad2a-f90972aacdd0",
+      "baselineRunId": "release-1794638086932-e13c8f",
+      "candidateRunId": "candidate-1794638118586-cb9c22",
+      "htmlHash": "7ab8ed74fbba5315fbc2844b807414f68b82c508f2492b092832b33d0e5bdac2",
+      "resourceCount": 5,
+      "images": {
+        "original": "7615c35c5cb8ee40119323ac247f837d2312f7b45ef6eb2cf64498f5f97708de",
+        "translated": "98e249e9cab76dd5694756baf542b9e73f1a83f258d1c028a0138b92a9e3df4a"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 4
+      }
+    },
+    {
+      "id": "corpus-62c03957b06a",
+      "snapshotId": "5f5f168e-357b-4297-8a07-5aa414080be3",
+      "baselineRunId": "release-1794638157443-d6be1b",
+      "candidateRunId": "candidate-1794638188740-703a80",
+      "htmlHash": "be2b7c650333c48212c03ad5fb9af0e1d27317f8a40e387f96339b4e8412a942",
+      "resourceCount": 21,
+      "images": {
+        "original": "c9b80dd7ba43814ed647994152ded6498697b31a7714554aad942d44f9da0fac",
+        "translated": "38ade7222f5dc8e1ed2ce7a27d9065200d545e460e64299184c5622344a59d21"
+      },
+      "summary": {
+        "added": 1,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 240
+      }
+    },
+    {
+      "id": "corpus-4ec090bc4d43",
+      "snapshotId": "14b51745-52cc-4b75-80cb-bffeb1237181",
+      "baselineRunId": "release-1794638237833-88f217",
+      "candidateRunId": "candidate-1794638293321-f62e92",
+      "htmlHash": "dbd62ae9ae4d56eaecacab919f4149967980e89a104fcc894399481544b82a7f",
+      "resourceCount": 0,
+      "images": {
+        "original": "20b17a16356c2eb3513863cf45ac676652bf3a4c256b201f8b1b3b9b90a51e42",
+        "translated": "5bf4a791ba72753bbeef19591dbc34440f10c2bbe7c2a6a51f48f68116d80eba"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 294
+      }
+    },
+    {
+      "id": "corpus-0f36e2f7a581",
+      "snapshotId": "9690580f-47b8-4d69-84de-1cd42a362ae1",
+      "baselineRunId": "release-1794638316328-c453c7",
+      "candidateRunId": "candidate-1794638347103-5f4be7",
+      "htmlHash": "8467a76763c30e73480a58fb7e6240ea65b663e516cb80a2d4a1f2ae62b25bb2",
+      "resourceCount": 7,
+      "images": {
+        "original": "bc8a689f3fa4a7617210212cf9b966fd7fb86f7fa22a5478c050b43f461bd09d",
+        "translated": "7c30c0410d302525697a01076e0ba308f6e0966a32aa2c34453f97379f7a2d61"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 137
+      }
+    },
+    {
+      "id": "corpus-da0b689a4181",
+      "snapshotId": "706ce14a-8a06-45bd-b3fe-4c196210dfce",
+      "baselineRunId": "release-1794638659937-44424a",
+      "candidateRunId": "candidate-1794638690904-40846d",
+      "htmlHash": "d91d4a43262d4387e27fbd219793f64b1f0a5b5f769b5da99a46959772496031",
+      "resourceCount": 33,
+      "images": {
+        "original": "e7133d2be27aaf5c386541c03d830b27adb63d1940a01a65dc28b7e3fc171a64",
+        "translated": "3a7c22ba88a72199c0c3fdda33010a308078e34156ac76f0a84c75c627717779"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 70
+      }
+    },
+    {
+      "id": "corpus-baad4878d33f",
+      "snapshotId": "2a780573-d478-4109-93fd-8a70b9aa315c",
+      "baselineRunId": "release-1794639642333-032b99",
+      "candidateRunId": "candidate-1794638944544-7383ed",
+      "htmlHash": "5afb229abde27d68700a44e32be93c68bb2251f8efacdba78ac7de03b32e2e0f",
+      "resourceCount": 90,
+      "images": {
+        "original": "d27a123957019744525a07b401ff2dc5e9561a2a482a5306be8bd1987a21498b",
+        "translated": "9e61e7605d1ce4a031bb0ca73b3e0adfeaf3e2b90344846f05e8d79e4ac19e0c"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 10,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 4169
+      }
+    },
+    {
+      "id": "corpus-9ae12c7872d9",
+      "snapshotId": "25249f34-90b6-41e9-a4b7-bdbcf5bfb93c",
+      "baselineRunId": "release-1794638987474-a99314",
+      "candidateRunId": "candidate-1794639031070-1d98d4",
+      "htmlHash": "49853ddcc1c97f7a717d6286cd739d9ade146d399a99432185d9da9b0f04bb20",
+      "resourceCount": 73,
+      "images": {
+        "original": "008ebe12ef80644dab76f2da1b4f05668fe72b4659e4a757c74661c7576e2203",
+        "translated": "9ca3cf7038aa3f7b27444570277b209d2be202a384082ae31e45f841046110d5"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 6,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 1124
+      }
+    },
+    {
+      "id": "corpus-926262871334",
+      "snapshotId": "0c3973bb-9222-4213-82fc-c0e781252ae0",
+      "baselineRunId": "release-1794639381309-3625f4",
+      "candidateRunId": "candidate-1794639412807-bc3839",
+      "htmlHash": "6a103eb0671c9e1412a55e1ef19d649dc3024dacf75029397e0449b17c9f9512",
+      "resourceCount": 40,
+      "images": {
+        "original": "f571efe8bef3b3744057790e19b37f801b2ee6300f89b22087abb4b9da2db6e2",
+        "translated": "69f108cc2f32c84c3caf8bb5f817006163c05dc13f7de2ce8f76a949272e5072"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 107
+      }
+    },
+    {
+      "id": "teapaw-home",
+      "snapshotId": "a15d480469e97ea9cf14c64f",
+      "baselineRunId": "release-1794639475151-835acc",
+      "candidateRunId": "candidate-1794639422426-40248d",
+      "htmlHash": "a15d480469e97ea9cf14c64f32d76dbb118d065fb2868f8bb926c39bf84fd37e",
+      "resourceCount": 25,
+      "images": {
+        "original": "b1981f824711c22efafa82c8a3765572e9eb28913c617e8bd675bad7587bb741",
+        "translated": "b6c190c92352716b323743bbefda387625a9e5fb9ad311da0b7f0fe9e7dfde15"
+      },
+      "summary": {
+        "added": 17,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 68
+      }
+    },
+    {
+      "id": "ziggit-topic",
+      "snapshotId": "fadc07a466e17f30175a8d31",
+      "baselineRunId": "release-1794639505220-6a0789",
+      "candidateRunId": "candidate-1794639432974-3acc22",
+      "htmlHash": "fadc07a466e17f30175a8d318340d08ad5c4a89afb0814b84ec8437c3d2eef78",
+      "resourceCount": 39,
+      "images": {
+        "original": "4fcf9500365c71d5ebeb4c117c4cb1f5fc45b1ea39be65f29a0c884d25e08d00",
+        "translated": "57cb6a451041aa452cb785618e799a6689910c849479c7bddf1cebfde510c238"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 89
+      }
+    },
+    {
+      "id": "lil-log-home",
+      "snapshotId": "746df28629938d77d2402873",
+      "baselineRunId": "release-1794639535476-b85b5b",
+      "candidateRunId": "candidate-1794639442717-1f834b",
+      "htmlHash": "746df28629938d77d24028733c30657116e976c552bbbbd2b1cb4e1087815b76",
+      "resourceCount": 3,
+      "images": {
+        "original": "5b2232dbc6696e80f7029378432f69297e1302a74751d562ef3d6ef1d6ec63b6",
+        "translated": "2091b67a2ed1e2d51cdec61382dacca26013e9b318ee23e43c6516a17daa94b5"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 44
+      }
+    },
+    {
+      "id": "josh-css-has",
+      "snapshotId": "f725f40a43c530131676b8de",
+      "baselineRunId": "release-1794639565512-460d17",
+      "candidateRunId": "candidate-1794639454441-e6e9ac",
+      "htmlHash": "f725f40a43c530131676b8de27622477a9db6e0a2c49be1d9e56a2b63b936638",
+      "resourceCount": 36,
+      "images": {
+        "original": "114a9c4f2323b25b0d8f5c6c67c5132b464df294817576ee33271f5d2592e3d6",
+        "translated": "bfb31ea6c1a160ab9681c5515d4043d6b1a148eb3b6c3603aa3ae83ede416991"
+      },
+      "summary": {
+        "added": 20,
+        "removed": 9,
+        "suspected": 21,
+        "confirmed": 13,
+        "violations": 2,
+        "acceptedIssues": 2,
+        "blockingViolations": 0,
+        "totalBlocks": 495
+      }
+    },
+    {
+      "id": "python-appetite",
+      "snapshotId": "960bca572fcd880e7f5d3c27",
+      "baselineRunId": "release-1794639609962-e57e63",
+      "candidateRunId": "candidate-1794639464661-13676a",
+      "htmlHash": "960bca572fcd880e7f5d3c27035cc79c891320841928ed71d7761969ca75cd6d",
+      "resourceCount": 7,
+      "images": {
+        "original": "48c6dcef2a7b2566770f0eb2a3656252be15b6b2be2fd01d59929b8eb5c8aace",
+        "translated": "009e39311ac1463f7fa9e47fa8d219add248eb21fe814b2714eb98a405bb6d0a"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 84
+      }
+    }
+  ],
+  "errors": []
+}

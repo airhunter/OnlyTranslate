@@ -4,6 +4,7 @@ import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { homedir } from 'node:os'
 import { hash } from './model.mjs'
+import { collectorEntry } from './adapters/onlytranslate.mjs'
 const execute = promisify(execFile)
 export const command = async (name, args, options = {}) => (await execute(name, args, { encoding: 'utf8', maxBuffer: 96 * 1024 * 1024, timeout: 300000, ...options })).stdout
 export async function browserConfig(p, extension, purpose = 'replay') {
@@ -48,8 +49,8 @@ export async function buildCollector(p, sourceRoot, metadata, output) {
     await mkdir(join(sourceRoot, '.wxt'), { recursive: true })
     await writeFile(join(sourceRoot, '.wxt/tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ESNext', module: 'ESNext', moduleResolution: 'Bundler' } }))
   }
-  const entry = join(sourceRoot, 'output/reading-review-entry.ts')
-  const collector = await readFile(join(p.root, 'scripts/reading-review/collector.ts'), 'utf8')
+  const entry = join(dirname(output), 'reading-review-entry.ts')
+  const collector = await readFile(collectorEntry, 'utf8')
   await mkdir(dirname(entry), { recursive: true })
   await writeFile(entry, collector)
   await build({ configFile: false, resolve: { alias: { '@': sourceRoot } }, define: { 'process.env.NODE_ENV': JSON.stringify('production'), __REVIEW_BUILD__: JSON.stringify({ ...metadata, collectorHash: hash(collector) }) }, build: { outDir: dirname(output), emptyOutDir: false, copyPublicDir: false, lib: { entry, name: 'ReadingReview', formats: ['iife'], fileName: () => output.split(/[\\/]/).pop() } } })

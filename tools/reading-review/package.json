@@ -1,0 +1,24 @@
+{
+  "name": "@onlytranslate/reading-review",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "check": "node check.mjs",
+    "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "verify": "pnpm compile && pnpm test"
+  },
+  "dependencies": {
+    "happy-dom": "^20.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "typescript": "^5.7.3",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

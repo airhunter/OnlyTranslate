@@ -1,0 +1,9 @@
+export const pageReviewsDir:(decisionsDir:string)=>string
+export const pageReviewFile:(decisionsDir:string,pageId:string)=>string
+export function snapshotInputHash(snapshot:any):string
+export function reviewContextHash(pageId:string,snapshotId:string,decisions:any[],acceptedIssues:any[]):string
+export function validatePageReviews(history:any,pageId:string):any[]
+export function latestPageReviews(history:any[]):any[]
+export function pageReviewState(input:any):any
+export function createPageReview(input:any):any
+export function loadPageReviews(decisionsDir:string,pageId:string):Promise<any[]>

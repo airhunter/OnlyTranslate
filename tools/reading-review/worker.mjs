@@ -5,11 +5,14 @@ import { paths, readJson, writeJson, hash, validId } from './model.mjs'
 import { browserConfig, openBrowser, runBrowser, closeBrowser, command, buildCollector, fingerprintSources } from './driver.mjs'
 import { installCatalogue } from './catalogue.mjs'
 import { replayPayload as loadReplayPayload, replayCode } from './replay.mjs'
-import { saveCapturedSnapshot } from './archive.mjs'
+import { saveCapturedSnapshot, saveBaselineRun } from './archive.mjs'
 import { prepareReleaseInputs } from './release.mjs'
+import { translationCoverage } from './completion.mjs'
+import { extensionRoot } from './adapters/onlytranslate.mjs'
 
-const root = resolve(import.meta.dirname, '../..')
+const root = extensionRoot
 const p = paths(root)
+const completionRuleHash = hash(await readFile(new URL('./completion.mjs', import.meta.url)))
 const [action, pageId, jobId, requestedSnapshot] = process.argv.slice(2)
 if (!['capture', 'baseline', 'candidate'].includes(action) || !validId(pageId) || !validId(jobId)) throw new Error('无效任务')
 if(requestedSnapshot&&!validId(requestedSnapshot))throw new Error('无效快照编号')
@@ -87,7 +90,7 @@ async function baseline(snapshot) {
       await page.waitForTimeout(1500);
       return {...result,actualVersion};
     }`)
-    let observation, stable=0
+    let observation, covered, stable=0
     const started=Date.now()
     while(Date.now()-started<240000){
       observation=await runBrowser(browser,`async page=>{
@@ -100,21 +103,25 @@ async function baseline(snapshot) {
           return {items,unexpectedTargets,unexpectedHosts:unexpectedTargets.length,actualHosts:hosts.length,pending:document.querySelectorAll('.only-translate-loading').length,failures:document.querySelectorAll('.only-translate-failure,.only-translate-retry-wrapper').length,inserted:document.querySelectorAll('.only-translate-bilingual-text').length,attempted:items.filter(i=>i.attempted).length};
         });
       }`)
-      const done=observation.attempted===initial.targets.length&&observation.pending===0&&initial.targets.length>0
+      covered=translationCoverage(initial.targets,observation)
+      const done=covered.coverageComplete&&observation.pending===0
       stable=done?stable+1:0
-      await progress(`实翻 ${observation.attempted}/${initial.targets.length}，译文 ${observation.inserted}，处理中 ${observation.pending}，失败 ${observation.failures}`)
+      await progress(`实翻 ${observation.attempted}/${initial.targets.length}，原文覆盖 ${covered.coveredTargets}/${initial.targets.length}，译文 ${observation.inserted}，处理中 ${observation.pending}，失败 ${observation.failures}`)
       if(stable>=3)break
     }
     const complete=stable>=3&&observation.failures===0
-    await runBrowser(browser,`async page=>{await page.screenshot({path:${JSON.stringify(join(runFolder,'translated.png'))},fullPage:true,animations:'disabled',timeout:30000});return true;}`)
-    const html=await runBrowser(browser,'async page=>({html:await page.content()})')
-    await writeFile(join(runFolder,'translated.html'),html.html)
     const sourceTexts=new Map(snapshot.catalogue.texts.map(text=>[text.id,text.text]))
     const observedTargets=observation.unexpectedTargets.filter(target=>target.textIds.length).map(target=>({...target,text:target.textIds.map(id=>sourceTexts.get(id)||'').join(' '),observedText:target.text}))
     const result={schemaVersion:1,id:runId,pageId,snapshotId:snapshot.id,createdAt:new Date().toISOString(),kind:'baseline',build:initial.build,bundleHash:hash(bundle),status:complete?'complete':'incomplete',actualVersion:initial.actualVersion,
       targets:[...initial.targets.map((target,i)=>({...target,...observation.items[i],translationStatus:observation.items[i].translation?'inserted':'processed-without-insert'})),...observedTargets],elapsedMs:initial.elapsedMs,stats:initial.stats,
-      translation:{service:release.settings.service,targetLanguage:release.settings.to,elapsedMs:Date.now()-started,expected:initial.targets.length,actualHosts:observation.actualHosts,unexpectedHosts:observation.unexpectedHosts,attempted:observation.attempted,inserted:observation.inserted,pending:observation.pending,failures:observation.failures,complete}}
-    await writeJson(join(runFolder,'run.json'),result)
+      translation:{service:release.settings.service,targetLanguage:release.settings.to,elapsedMs:Date.now()-started,expected:initial.targets.length,actualHosts:observation.actualHosts,unexpectedHosts:observation.unexpectedHosts,attempted:observation.attempted,...covered,completionRule:'source-coverage-v1',completionRuleHash,inserted:observation.inserted,pending:observation.pending,failures:observation.failures,complete}}
+    await saveBaselineRun(runFolder,result,async()=>{
+      const html=await runBrowser(browser,'async page=>({html:await page.content()})')
+      await writeFile(join(runFolder,'translated.html'),html.html)
+      await progress('保存实翻页面及全页截图，目标和译文记录已落盘')
+      try { await runBrowser(browser,`async page=>{await page.screenshot({path:${JSON.stringify(join(runFolder,'translated.png'))},fullPage:true,animations:'disabled',timeout:60000});return true;}`) }
+      catch(error) { throw new Error('全页实翻截图失败，目标及译文已保留：'+error.message) }
+    })
     if(!complete)throw new Error('实翻未完整完成，已保留运行结果，不能作为合格基线')
     return {runId,pageId,snapshotId:snapshot.id}
   }finally{await closeBrowser(browser)}

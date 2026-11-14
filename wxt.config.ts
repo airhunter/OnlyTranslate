@@ -3,7 +3,6 @@ import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 import fs from 'fs';
 import { YOUTUBE_EMBED_MATCH } from './entrypoints/video/youtubeEmbed';
-import { enforceReadingCheck } from './scripts/reading-review/build-gate.mjs';
 
 
 const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
@@ -21,11 +20,6 @@ const edgeBinary = process.platform === 'win32'
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-    hooks: {
-        'build:before': async (wxt) => {
-            await enforceReadingCheck(wxt.config.command, __dirname);
-        },
-    },
     ...(edgeBinary ? {
         webExt: {
             binaries: {

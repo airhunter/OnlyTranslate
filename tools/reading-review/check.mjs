@@ -5,6 +5,9 @@ import { randomUUID } from 'node:crypto'
 import { paths, readJson, writeJson, jsonFiles, hash, validId, compare, summarize, acceptedIssuesPath, validateAcceptedIssues } from './model.mjs'
 import { browserConfig, openBrowser, closeBrowser, runBrowser, buildCollector, command, fingerprintSources } from './driver.mjs'
 import { replayPayload, replayCode } from './replay.mjs'
+import { pageReviewsDir, validatePageReviews, latestPageReviews, snapshotInputHash, reviewContextHash } from './page-reviews.mjs'
+import { coverage } from './model.mjs'
+import { extensionRoot } from './adapters/onlytranslate.mjs'
 
 const sha256 = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
 const requireValue = (condition, message) => { if (!condition) throw new Error(message) }
@@ -25,9 +28,11 @@ async function loadInputs(p, policyPath) {
   }
   requireValue(acceptedIssues.every(issue => pages.has(issue.pageId)), '已接受问题必须对应已登记页面')
   const groups = []
+  const decisionHistories = new Map()
   for (let index = 0; index < histories.length; index++) {
     const pageId = files[index + 2].split(/[\\/]/).pop().slice(0, -5), history = histories[index]
     requireValue(pages.has(pageId) && Array.isArray(history), '裁决文件必须对应已登记页面：' + pageId)
+    decisionHistories.set(pageId,history)
     const latest = new Map()
     for (const decision of history) {
       requireValue(validId(decision.snapshotId) && validId(decision.blockId) && sha256(decision.textHash), '裁决定位无效：' + pageId)
@@ -43,7 +48,21 @@ async function loadInputs(p, policyPath) {
     }
     for (const [snapshotId, decisions] of bySnapshot) groups.push({ pageId, snapshotId, decisions })
   }
-  return { groups, policy, acceptedIssues, digest: hash(JSON.stringify([files.map((file, i) => [file, hash(content[i])]), acceptedDocument])) }
+  const reviewFiles=(await jsonFiles(pageReviewsDir(p.decisions))).sort()
+  const reviewContent=await Promise.all(reviewFiles.map(file=>readFile(join(pageReviewsDir(p.decisions),file),'utf8')))
+  for(let index=0;index<reviewFiles.length;index++){
+    const pageId=reviewFiles[index].slice(0,-5)
+    requireValue(pages.has(pageId),'整页确认必须对应已登记页面：'+pageId)
+    const history=validatePageReviews(JSON.parse(reviewContent[index]),pageId)
+    for(const review of latestPageReviews(history).filter(r=>r.status==='confirmed')){
+      requireValue(review.specification===policy.annotationPolicyVersion,'整页确认规范版本需要用户复核：'+pageId)
+      let group=groups.find(g=>g.pageId===pageId&&g.snapshotId===review.snapshotId)
+      if(!group){group={pageId,snapshotId:review.snapshotId,decisions:[]};groups.push(group)}
+      group.pageReview=review
+    }
+  }
+  for(const group of groups)group.decisionHistory=decisionHistories.get(group.pageId)||[]
+  return { groups, policy, acceptedIssues, digest: hash(JSON.stringify([files.map((file, i) => [file, hash(content[i])]), acceptedDocument,reviewFiles.map((file,i)=>[file,hash(reviewContent[i])])])) }
 }
 
 function validateSnapshot(snapshot, group) {
@@ -69,6 +88,10 @@ function validateSnapshot(snapshot, group) {
     const block = blocks.get(decision.blockId)
     requireValue(block && hash(block.text) === decision.textHash, '人工裁决的原文定位或摘要失效：' + decision.blockId)
   }
+  if(group.pageReview){
+    requireValue(group.pageReview.htmlHash===snapshot.htmlHash&&group.pageReview.inputHash===snapshotInputHash(snapshot),'整页确认的快照或元数据已变化：'+group.pageId)
+    requireValue(group.pageReview.selectedTextIds.every(id=>texts.has(id)),'整页确认含未知原文定位：'+group.pageId)
+  }
 }
 
 async function createRunner(p, reportId) {
@@ -91,11 +114,11 @@ async function createRunner(p, reportId) {
 
 // Tests inject only a runner and isolated paths; the CLI always constructs a fresh real collector.
 export async function checkCorpus(options = {}) {
-  const root = resolve(options.root || fileURLToPath(new URL('../..', import.meta.url)))
+  const root = resolve(options.root || extensionRoot)
   const p = { ...paths(root, options.dataRoot), ...options.paths }
   const policyPath = options.policyPath || join(root, 'tests/corpus/check-policy.json')
   const id = 'check-' + Date.now() + '-' + randomUUID().slice(0, 8)
-  const report = { schemaVersion: 1, id, startedAt: new Date().toISOString(), ok: false, confirmed: 0, satisfied: 0, violations: 0, acceptedIssues: 0, blockingViolations: 0, pages: [], errors: [] }
+  const report = { schemaVersion: 1, id, startedAt: new Date().toISOString(), ok: false, confirmed: 0, satisfied: 0, violations: 0, acceptedIssues: 0, blockingViolations: 0, confirmedPages:0,pageReviewsSatisfied:0,pageReviewViolations:0,pages: [], errors: [] }
   const reportPath = join(p.data, 'checks', id, 'report.json')
   const log = options.log || console.log
   let inputs, runner
@@ -104,7 +127,8 @@ export async function checkCorpus(options = {}) {
     report.corpusHash = inputs.digest
     report.annotationPolicyVersion = inputs.policy.annotationPolicyVersion
     report.confirmed = inputs.groups.reduce((total, group) => total + group.decisions.length, 0)
-    requireValue(report.confirmed >= inputs.policy.minimumConfirmed, '没有足够的已确认人工要求，停止构建')
+    report.confirmedPages=inputs.groups.filter(group=>group.pageReview).length
+    requireValue(report.confirmed+report.confirmedPages >= inputs.policy.minimumConfirmed, '没有足够的已确认人工要求，停止构建')
     // Validate all required snapshots before starting Chromium; latest.json is deliberately unused.
     const samples = []
     for (const group of inputs.groups) {
@@ -114,6 +138,7 @@ export async function checkCorpus(options = {}) {
         const snapshotFile = join(p.snapshots, group.pageId, group.snapshotId, 'snapshot.json')
         const snapshot = await readJson(snapshotFile)
         validateSnapshot(snapshot, group)
+        if(group.pageReview)requireValue(group.pageReview.contextHash===reviewContextHash(group.pageId,group.snapshotId,group.decisionHistory,inputs.acceptedIssues),'逐块裁决或已接受限制更新，整页需要复核：'+group.pageId)
         // Check source and all archived resources even when using an injected test runner.
         await replayPayload(p, group.pageId, snapshot, '')
         item.htmlHash = snapshot.htmlHash
@@ -134,6 +159,17 @@ export async function checkCorpus(options = {}) {
           const compared = compare(snapshot, null, { ...result, snapshotId: snapshot.id }, group.decisions, inputs.acceptedIssues)
           const summary = summarize(compared)
           item.status = summary.blockingViolations ? 'violations' : summary.acceptedIssues ? 'accepted-known-issues' : 'passed'
+          if(group.pageReview){
+            requireValue(result.targets.every(t=>t.textIds.length>0),'整页结果含无原文锚点的目标，不能通过校验')
+            const expected=new Set(group.pageReview.selectedTextIds),actual=coverage(result)
+            const added=[...actual].filter(id=>!expected.has(id)),removed=[...expected].filter(id=>!actual.has(id))
+            const changed=new Set([...added,...removed])
+            const addedSet=new Set(added),removedSet=new Set(removed)
+            item.pageReview={reviewId:group.pageReview.id,addedTextIds:added,removedTextIds:removed,
+              changes:snapshot.catalogue.blocks.filter(b=>b.textIds.some(id=>changed.has(id))).map(b=>({blockId:b.id,text:b.text,added:b.textIds.filter(id=>addedSet.has(id)),removed:b.textIds.filter(id=>removedSet.has(id))}))}
+            if(changed.size){item.status='violations';report.pageReviewViolations++;log(`  [整页需复核] 新增 ${added.length} 个原文片段，减少 ${removed.length} 个`)}
+            else report.pageReviewsSatisfied++
+          }
           item.stats = result.stats
           item.elapsedMs = result.elapsedMs
           item.satisfied = summary.confirmed - summary.violations
@@ -164,7 +200,7 @@ export async function checkCorpus(options = {}) {
   finally {
     if (runner) try { await runner.close() } catch (error) { report.errors.push('关闭校验浏览器失败：' + error.message) }
   }
-  report.ok = !report.errors.length && report.confirmed > 0 && report.pages.length > 0 && report.pages.every(page => ['passed', 'accepted-known-issues'].includes(page.status))
+  report.ok = !report.errors.length && report.confirmed+report.confirmedPages > 0 && report.pages.length > 0 && report.pages.every(page => ['passed', 'accepted-known-issues'].includes(page.status))
   for (const item of report.pages) {
     if (item.runId && (report.errors.length || item.errors.length)) {
       await writeJson(join(p.runs, item.pageId, item.runId, 'validation.json'), { valid: false, reason: [...report.errors, ...item.errors].join('；'), checkedAt: new Date().toISOString() })
@@ -173,6 +209,7 @@ export async function checkCorpus(options = {}) {
   report.finishedAt = new Date().toISOString()
   await writeJson(reportPath, report)
   log(`人工要求 ${report.confirmed} 项，满足 ${report.satisfied} 项，未满足 ${report.violations} 项（已接受 ${report.acceptedIssues} 项，仍阻断 ${report.blockingViolations} 项）；${report.ok ? '发布检查通过' + (report.acceptedIssues ? '（含已接受的已知限制）' : '') : '未通过，禁止正式构建'}`)
+  if(report.confirmedPages)log(`整页确认 ${report.confirmedPages} 页，目标一致 ${report.pageReviewsSatisfied} 页，需复核 ${report.pageReviewViolations} 页`)
   for (const error of [...report.errors, ...report.pages.flatMap(page => page.errors)]) log(error)
   log('报告：' + reportPath)
   return { ...report, reportPath }

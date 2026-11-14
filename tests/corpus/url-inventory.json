@@ -1,0 +1,1724 @@
+{
+  "schemaVersion": 1,
+  "batch": "existing-test-urls-20261114",
+  "createdAt": "2026-11-14",
+  "discovery": [
+    "tests/fixtures/translation-target/*.json:url",
+    "docs/testing/*.md:markdown-links"
+  ],
+  "pages": [
+    {
+      "url": "https://aclanthology.org/2023.wmt-1.41/",
+      "sources": [
+        "tests/fixtures/translation-target/acl-anthology-paper.json"
+      ],
+      "names": [
+        "generic smart scope ignores hidden citation modals on paper pages"
+      ],
+      "id": "corpus-75d0b93d7a22",
+      "name": "acl anthology paper",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://archive.md/myA7R",
+      "sources": [
+        "tests/fixtures/translation-target/archive-substack-inline-divs.json"
+      ],
+      "names": [
+        "archive snapshots keep Substack inline-link div paragraphs"
+      ],
+      "id": "corpus-2a97aa07f5d3",
+      "name": "archive substack inline divs",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/",
+      "sources": [
+        "tests/fixtures/translation-target/arstechnica-header.json"
+      ],
+      "names": [
+        "Ars Technica profile keeps article header title targets"
+      ],
+      "id": "corpus-e05b207cd20b",
+      "name": "arstechnica header",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://arstechnica.com/security/2026/08/a-segmented-story/",
+      "sources": [
+        "tests/fixtures/translation-target/arstechnica-segmented-body.json"
+      ],
+      "names": [
+        "Ars Technica profile keeps body blocks across advertising segments"
+      ],
+      "id": "corpus-651becd2dade",
+      "name": "arstechnica segmented body",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/story",
+      "sources": [
+        "tests/fixtures/translation-target/article-sibling-title.json",
+        "tests/fixtures/translation-target/generic-article-with-tags.json"
+      ],
+      "names": [
+        "generic article keeps leading title when title and body are siblings",
+        "generic article keeps body and skips tag cluster"
+      ],
+      "id": "corpus-ab116c15d8ac",
+      "name": "article sibling title",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet",
+      "sources": [
+        "tests/fixtures/translation-target/asterisk-progress-navigation.json"
+      ],
+      "names": [
+        "Asterisk profile skips dynamic progress chapter navigation while keeping article headings"
+      ],
+      "id": "corpus-a8ba778bdad1",
+      "name": "asterisk progress navigation",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.azlyrics.com/lyrics/nemesea/angelinthedark.html",
+      "sources": [
+        "tests/fixtures/translation-target/br-separated-azlyrics.json"
+      ],
+      "names": [
+        "splits AZLyrics-style br-separated lyrics into line targets"
+      ],
+      "id": "corpus-8caef4c5db97",
+      "name": "br separated azlyrics",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+      "sources": [
+        "tests/fixtures/translation-target/br-separated-blogspot.json"
+      ],
+      "names": [
+        "splits Blogspot-style br-separated prose into complete paragraph targets"
+      ],
+      "id": "corpus-7ae35ae02bd0",
+      "name": "br separated blogspot",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://genius.com/Nemesea-angel-in-the-dark-lyrics",
+      "sources": [
+        "tests/fixtures/translation-target/br-separated-genius.json"
+      ],
+      "names": [
+        "splits Genius-style br-separated lyrics around excluded header blocks"
+      ],
+      "id": "corpus-98192a1d1ccb",
+      "name": "br separated genius",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://claude.nagdy.me/learn/getting-started/",
+      "sources": [
+        "tests/fixtures/translation-target/claude-learning-cards.json"
+      ],
+      "names": [
+        "Claude learning profile includes right-rail comparison cards without generic asides"
+      ],
+      "id": "corpus-bfa3d0f3540b",
+      "name": "claude learning cards",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://claytonwramsey.com/blog/mvt/",
+      "sources": [
+        "tests/fixtures/translation-target/clayton-ramsey-blog-title.json"
+      ],
+      "names": [
+        "Clayton Ramsey blog keeps the page-header title outside main content"
+      ],
+      "id": "corpus-fadb8ae3d7bf",
+      "name": "clayton ramsey blog title",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://edition.cnn.com/2026/05/21/world/iran-live-updates",
+      "sources": [
+        "tests/fixtures/translation-target/cnn-live-story.json"
+      ],
+      "names": [
+        "heavy CNN-like live story keeps live content and skips side rail"
+      ],
+      "id": "corpus-6a782cd6e3bc",
+      "name": "cnn live story",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/customer-stories",
+      "sources": [
+        "tests/fixtures/translation-target/compound-card-flow.json"
+      ],
+      "names": [
+        "full page keeps text from compound fixed-height linked cards available without merging the logo and footer"
+      ],
+      "id": "corpus-80f6f3e8b50b",
+      "name": "compound card flow",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+      "sources": [
+        "tests/fixtures/translation-target/decrypt-article-full.json",
+        "tests/fixtures/translation-target/decrypt-article.json"
+      ],
+      "names": [
+        "Decrypt article profile applies in full-page scope",
+        "Decrypt article keeps article content and skips reading rail"
+      ],
+      "id": "corpus-334402b19318",
+      "name": "decrypt article full",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test",
+      "sources": [
+        "tests/fixtures/translation-target/decrypt-no-main.json"
+      ],
+      "names": [
+        "Decrypt article profile keeps headings and paragraphs when the page has no main element"
+      ],
+      "id": "corpus-e2520a78f09e",
+      "name": "decrypt no main",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://docs.devin.ai/desktop/changelog",
+      "sources": [
+        "tests/fixtures/translation-target/devin-changelog.json"
+      ],
+      "names": [
+        "Devin changelog translates release notes without metadata labels"
+      ],
+      "id": "corpus-c164595fef1e",
+      "name": "devin changelog",
+      "type": "文档",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj",
+      "sources": [
+        "tests/fixtures/translation-target/devto-article-header.json"
+      ],
+      "names": [
+        "DEV.to article keeps the main title with the separately detected article body"
+      ],
+      "id": "corpus-3a062b69f719",
+      "name": "devto article header",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://reading-regression.example/interactive-examples",
+      "sources": [
+        "tests/fixtures/translation-target/editor-metadata-inline-code-full.json",
+        "tests/fixtures/translation-target/editor-metadata-inline-code.json"
+      ],
+      "names": [
+        "Full page still includes editor labels and article metadata",
+        "Smart reading distinguishes editor chrome and article metadata while preserving inline-code list prose"
+      ],
+      "id": "corpus-38c0dfcc240f",
+      "name": "editor metadata inline code full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://exercism.org/tracks/cpp/exercises/making-the-grade",
+      "sources": [
+        "tests/fixtures/translation-target/exercism-exercise-instructions.json"
+      ],
+      "names": [
+        "Exercism exercise keeps instructions after the separately detected introduction"
+      ],
+      "id": "corpus-d83073df75d1",
+      "name": "exercism exercise instructions",
+      "type": "文档",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://ziggit.dev/",
+      "sources": [
+        "tests/fixtures/translation-target/forum-topic-list.json",
+        "docs/testing/fullpage-phase1-20261022.md",
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "names": [
+        "forum-like topic lists keep titles and excerpts while skipping metadata"
+      ],
+      "id": "corpus-c664c41f6b10",
+      "name": "forum topic list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/full-page-interface",
+      "sources": [
+        "tests/fixtures/translation-target/full-page-interface-smart.json",
+        "tests/fixtures/translation-target/full-page-interface.json"
+      ],
+      "names": [
+        "smart mode keeps its reading scope when full page adds interface text",
+        "full page covers interface text and short controls while protecting inputs and closed content"
+      ],
+      "id": "corpus-c9e2323bc354",
+      "name": "full page interface smart",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.genengnews.com/topics/bioprocessing/peptistar-began-operation-of-the-asahi-kasei-fo-md-system-at-manufacturing-scale/",
+      "sources": [
+        "tests/fixtures/translation-target/genengnews-figure-paragraph.json"
+      ],
+      "names": [
+        "GEN article keeps prose after embedded figures"
+      ],
+      "id": "corpus-765c2665888f",
+      "name": "genengnews figure paragraph",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/heavy-news-page",
+      "sources": [
+        "tests/fixtures/translation-target/generic-heavy-ui-article.json"
+      ],
+      "names": [
+        "generic heavy UI article keeps the story and skips interface noise"
+      ],
+      "id": "corpus-6e023f207afd",
+      "name": "generic heavy ui article",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/reports/inline-block-paragraphs",
+      "sources": [
+        "tests/fixtures/translation-target/generic-inline-div-paragraph.json"
+      ],
+      "names": [
+        "generic article keeps inline-only div paragraphs as whole targets"
+      ],
+      "id": "corpus-1dc4c6b57b84",
+      "name": "generic inline div paragraph",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/articles/sibling-reading-regions",
+      "sources": [
+        "tests/fixtures/translation-target/generic-leading-reading-siblings.json"
+      ],
+      "names": [
+        "generic smart scope recovers leading reading siblings before dense body"
+      ],
+      "id": "corpus-c6d02295169a",
+      "name": "generic leading reading siblings",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot/actions",
+      "sources": [
+        "tests/fixtures/translation-target/github-actions-list.json"
+      ],
+      "names": [
+        "GitHub Actions lists keep run titles and skip operational metadata"
+      ],
+      "id": "corpus-117fb0a3b846",
+      "name": "github actions list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/alchaincyf/huashu-design/commits/main/",
+      "sources": [
+        "tests/fixtures/translation-target/github-commit-list.json"
+      ],
+      "names": [
+        "GitHub commit lists keep messages and skip attribution and SHA metadata"
+      ],
+      "id": "corpus-34d6b602a22b",
+      "name": "github commit list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/alchaincyf/huashu-design/discussions",
+      "sources": [
+        "tests/fixtures/translation-target/github-discussion-list.json"
+      ],
+      "names": [
+        "GitHub discussion lists keep titles and skip author and category metadata"
+      ],
+      "id": "corpus-f77b3826fbd8",
+      "name": "github discussion list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/alchaincyf/huashu-design/issues/5256",
+      "sources": [
+        "tests/fixtures/translation-target/github-issue-detail.json"
+      ],
+      "names": [
+        "GitHub issue details keep titles and Markdown while skipping React metadata"
+      ],
+      "id": "corpus-79d09ed3e2f9",
+      "name": "github issue detail",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/alchaincyf/huashu-design/issues",
+      "sources": [
+        "tests/fixtures/translation-target/github-issue-list.json"
+      ],
+      "names": [
+        "GitHub issue lists keep titles and skip metadata"
+      ],
+      "id": "corpus-cea4818d9020",
+      "name": "github issue list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot/pull/4005",
+      "sources": [
+        "tests/fixtures/translation-target/github-pr-comment.json"
+      ],
+      "names": [
+        "GitHub PR comments keep markdown blocks as individual targets"
+      ],
+      "id": "corpus-9add7f2c4f1d",
+      "name": "github pr comment",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot/projects",
+      "sources": [
+        "tests/fixtures/translation-target/github-projects-empty.json"
+      ],
+      "names": [
+        "GitHub empty Projects pages keep the empty state and skip repository UI"
+      ],
+      "id": "corpus-eeb6ad9b394e",
+      "name": "github projects empty",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/microsoft/vscode/projects",
+      "sources": [
+        "tests/fixtures/translation-target/github-projects-list.json"
+      ],
+      "names": [
+        "GitHub Projects lists keep project titles and descriptions without metadata"
+      ],
+      "id": "corpus-466e0b24d33b",
+      "name": "github projects list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot/pulls",
+      "sources": [
+        "tests/fixtures/translation-target/github-pull-list.json"
+      ],
+      "names": [
+        "GitHub pull request lists keep titles and skip review state metadata"
+      ],
+      "id": "corpus-a7ded0b7c536",
+      "name": "github pull list",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot",
+      "sources": [
+        "tests/fixtures/translation-target/github-readme-list-container.json",
+        "tests/fixtures/translation-target/github-readme-list.json"
+      ],
+      "names": [
+        "GitHub README markdown lists split when the list container is selected first",
+        "GitHub README markdown lists translate each list item"
+      ],
+      "id": "corpus-638846f7379e",
+      "name": "github readme list container",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/search?q=openclaw&type=repositories",
+      "sources": [
+        "tests/fixtures/translation-target/github-repository-search.json"
+      ],
+      "names": [
+        "GitHub repository search keeps result descriptions"
+      ],
+      "id": "corpus-ea8d6c944452",
+      "name": "github repository search",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/HKUDS/nanobot/security",
+      "sources": [
+        "tests/fixtures/translation-target/github-security.json"
+      ],
+      "names": [
+        "GitHub Security keeps policy prose and skips link-style action buttons"
+      ],
+      "id": "corpus-f54eacc9a114",
+      "name": "github security",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.google.com/search?q=recent+book+in+uk&udm=50",
+      "sources": [
+        "tests/fixtures/translation-target/google-ai-mode-inline-answer-full.json",
+        "tests/fixtures/translation-target/google-ai-mode-inline-answer-smart.json"
+      ],
+      "names": [
+        "Google AI Mode full-page translation keeps inline answer fragments in whole paragraphs",
+        "Google AI Mode smart translation keeps inline answer fragments in whole paragraphs"
+      ],
+      "id": "corpus-ee976265cf9f",
+      "name": "google ai mode inline answer full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "account-dependent-generated-answer",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://news.ycombinator.com/item?id=47555081",
+      "sources": [
+        "tests/fixtures/translation-target/hacker-news-item.json"
+      ],
+      "names": [
+        "Hacker News item keeps the current story and comment containers without metadata"
+      ],
+      "id": "corpus-a1733bb75e1b",
+      "name": "hacker news item",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/live/weather-updates",
+      "sources": [
+        "tests/fixtures/translation-target/heavy-live-like-page.json"
+      ],
+      "names": [
+        "heavy live-like page keeps live story content and skips interface rails"
+      ],
+      "id": "corpus-f19e6e4c72f3",
+      "name": "heavy live like page",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://ynarwal.github.io/how-llms-work/",
+      "sources": [
+        "tests/fixtures/translation-target/hidden-expandable-card.json",
+        "tests/fixtures/translation-target/supplemental-content-card.json"
+      ],
+      "names": [
+        "smart mode does not translate hidden expandable card detail text",
+        "smart mode supplements content cards outside the primary article root"
+      ],
+      "id": "corpus-62f95ffa0970",
+      "name": "hidden expandable card",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://huggingface.co/blog/ServiceNow/mosaicleaks",
+      "sources": [
+        "tests/fixtures/translation-target/huggingface-blog-article.json"
+      ],
+      "names": [
+        "Hugging Face blog profile keeps article text without header metadata"
+      ],
+      "id": "corpus-2eb5bcc3ad88",
+      "name": "huggingface blog article",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://support.claude.com/en/articles/15400594-claude-cowork-june-2026-usage-promotion",
+      "sources": [
+        "tests/fixtures/translation-target/intercom-help-article-intro.json"
+      ],
+      "names": [
+        "Intercom help articles include the title metadata and intro paragraphs"
+      ],
+      "id": "corpus-e34ebcec30d5",
+      "name": "intercom help article intro",
+      "type": "文档",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://jacob.gold/posts/programmers-need-to-start-meditating-now/",
+      "sources": [
+        "tests/fixtures/translation-target/jacob-gold-post.json"
+      ],
+      "names": [
+        "Jacob Gold posts keep each custom content child as a separate translation target"
+      ],
+      "id": "corpus-aac43df74935",
+      "name": "jacob gold post",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.liepin.com/job/1985555579.shtml",
+      "sources": [
+        "tests/fixtures/translation-target/liepin-preserved-newline-jd-full.json",
+        "tests/fixtures/translation-target/liepin-preserved-newline-jd-smart.json"
+      ],
+      "names": [
+        "Liepin single-text-node JD is completely collected in full mode",
+        "Liepin single-text-node JD is completely collected in smart mode"
+      ],
+      "id": "corpus-96e060f55ffe",
+      "name": "liepin preserved newline jd full",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+      "sources": [
+        "tests/fixtures/translation-target/lilianweng-nested-toc.json",
+        "tests/fixtures/translation-target/lilianweng-rendered-inline-math.json",
+        "docs/testing/fullpage-mode-comparison-20261019.md",
+        "docs/testing/fullpage-phase1-20261022.md",
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "names": [
+        "lilianweng nested table of contents keeps every list item",
+        "lilianweng rendered inline math keeps the complete surrounding paragraph"
+      ],
+      "id": "corpus-d01eba4a3028",
+      "name": "lilianweng nested toc",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+      "sources": [
+        "tests/fixtures/translation-target/lobsters-story-comments-full.json",
+        "tests/fixtures/translation-target/lobsters-story-comments.json"
+      ],
+      "names": [
+        "Lobsters full scope keeps the story title and nested comments",
+        "Lobsters story translates its linked title and nested comment prose"
+      ],
+      "id": "corpus-e47b0472fdb6",
+      "name": "lobsters story comments full",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/",
+      "sources": [
+        "tests/fixtures/translation-target/mario-inline-links.json"
+      ],
+      "names": [
+        "generic article keeps paragraphs that contain multiple inline links"
+      ],
+      "id": "corpus-7f3d06456050",
+      "name": "mario inline links",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://mattstromawn.com/writing/expansion-artifacts/",
+      "sources": [
+        "tests/fixtures/translation-target/mattstromawn-inline-links.json"
+      ],
+      "names": [
+        "generic article keeps Matt Strom-Awn paragraphs with popular linked subjects"
+      ],
+      "id": "corpus-c384290b377a",
+      "name": "mattstromawn inline links",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://maxwellforbes.com/posts/dont-try-to-reform-science/",
+      "sources": [
+        "tests/fixtures/translation-target/maxwell-forbes-sidenote.json"
+      ],
+      "names": [
+        "Maxwell Forbes wide sidenotes stay separate from article paragraphs"
+      ],
+      "id": "corpus-a5a3dec7822a",
+      "name": "maxwell forbes sidenote",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903",
+      "sources": [
+        "tests/fixtures/translation-target/medium-multi-paragraph-blockquote.json"
+      ],
+      "names": [
+        "Medium multi-paragraph blockquotes keep paragraph-aligned translation targets"
+      ],
+      "id": "corpus-a938d6e7bb6c",
+      "name": "medium multi paragraph blockquote",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://blog.mempko.com/your-agentic-workflows-cache-keepalive-costs-8x-too-much-v2-the-interval-frontier/",
+      "sources": [
+        "tests/fixtures/translation-target/mempko-article-header.json"
+      ],
+      "names": [
+        "Mempko keeps the article title and excerpt as separate translation targets"
+      ],
+      "id": "corpus-e07714d3e513",
+      "name": "mempko article header",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://metalstorm.net/pub/interview.php?interview_id=344",
+      "sources": [
+        "tests/fixtures/translation-target/metalstorm-interview.json"
+      ],
+      "names": [
+        "translates Metal Storm interview prose separated by br elements"
+      ],
+      "id": "corpus-616526cb33fd",
+      "name": "metalstorm interview",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.michelebologna.net/2026/ssh-port-22-fwknop-single-packet-authorization/",
+      "sources": [
+        "tests/fixtures/translation-target/michelebologna-linked-title.json"
+      ],
+      "names": [
+        "linked article title is kept with the Michele Bologna post body"
+      ],
+      "id": "corpus-985539f3f2c2",
+      "name": "michelebologna linked title",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://partner.microsoft.com/en-us/dashboard/microsoftedge/87c50666-1955-428b-b1f0-993ff97e2a7c/properties",
+      "sources": [
+        "tests/fixtures/translation-target/microsoft-partner-center-properties-full.json",
+        "tests/fixtures/translation-target/microsoft-partner-center-properties-smart.json"
+      ],
+      "names": [
+        "Microsoft Partner Center properties profile keeps static form copy in full scope",
+        "Microsoft Partner Center properties profile keeps static form copy in smart scope"
+      ],
+      "id": "corpus-94e054ae4aab",
+      "name": "microsoft partner center properties full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.nature.com/articles/s43856-026-01747-8",
+      "sources": [
+        "tests/fixtures/translation-target/nature-springer-article.json"
+      ],
+      "names": [
+        "Nature Springer article keeps abstract and summary prose"
+      ],
+      "id": "corpus-23e940dcc54d",
+      "name": "nature springer article",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/noisy-name-readable-prose",
+      "sources": [
+        "tests/fixtures/translation-target/noisy-name-readable-prose.json"
+      ],
+      "names": [
+        "Noisy class names do not override readable prose evidence"
+      ],
+      "id": "corpus-0fc6a2c26b17",
+      "name": "noisy name readable prose",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+      "sources": [
+        "tests/fixtures/translation-target/nxgoai-article.json",
+        "tests/fixtures/translation-target/nxgoai-prose-root.json"
+      ],
+      "names": [
+        "NXGOAI profile keeps prose article paragraphs as individual targets",
+        "NXGOAI profile keeps prose paragraphs when the prose container is the content root"
+      ],
+      "id": "corpus-ac8ec612e519",
+      "name": "nxgoai article",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://paulgraham.com/earn.html",
+      "sources": [
+        "tests/fixtures/translation-target/paulgraham-old-essay.json"
+      ],
+      "names": [
+        "recognizes Paul Graham old table essay body"
+      ],
+      "id": "corpus-54499be046ee",
+      "name": "paulgraham old essay",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code",
+      "sources": [
+        "tests/fixtures/translation-target/potown-product-full.json",
+        "tests/fixtures/translation-target/potown-product-smart.json"
+      ],
+      "names": [
+        "PoTown full keeps its existing page-wide scope including cart labels",
+        "PoTown smart recovers product reading copy inside the cart form"
+      ],
+      "id": "corpus-399c08246550",
+      "name": "potown product full",
+      "type": "商品",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.ontario.ca/page/ministry-natural-resources",
+      "sources": [
+        "tests/fixtures/translation-target/primary-heading-introduction-full.json",
+        "tests/fixtures/translation-target/primary-heading-introduction-smart.json"
+      ],
+      "names": [
+        "full keeps the page introduction and its action available",
+        "smart recovers nested prose immediately after the page title outside its selected reading root"
+      ],
+      "id": "corpus-62c03957b06a",
+      "name": "primary heading introduction full",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.producthunt.com/products/maritime",
+      "sources": [
+        "tests/fixtures/translation-target/producthunt-multiple-launches.json"
+      ],
+      "names": [
+        "Product Hunt profile includes the current launch on products with multiple launches"
+      ],
+      "id": "corpus-0638a05f43fe",
+      "name": "producthunt multiple launches",
+      "type": "商品",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.producthunt.com/products/omlx",
+      "sources": [
+        "tests/fixtures/translation-target/producthunt-product.json"
+      ],
+      "names": [
+        "Product Hunt product profile keeps product copy and comments instead of the promoted article"
+      ],
+      "id": "corpus-4fde41f07a3a",
+      "name": "producthunt product",
+      "type": "商品",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.quora.com/Does-corruption-exist-in-Japan/answer/Ken-Hower?qv_src=email",
+      "sources": [
+        "tests/fixtures/translation-target/quora-answer-comments.json"
+      ],
+      "names": [
+        "Quora answer includes question title and comment bodies without author controls"
+      ],
+      "id": "corpus-f7ef39d4a2a8",
+      "name": "quora answer comments",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.quora.com/Why-is-Xi-Jinping-not-bad/answer/1LittleGranny64?qv_src=email",
+      "sources": [
+        "tests/fixtures/translation-target/quora-short-answer-comment-heavy.json"
+      ],
+      "names": [
+        "Quora short answer stays in smart translation when comments outweigh the answer"
+      ],
+      "id": "corpus-cf321da8c723",
+      "name": "quora short answer comment heavy",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://reading-blocks.example/garden",
+      "sources": [
+        "tests/fixtures/translation-target/reading-block-context.json"
+      ],
+      "names": [
+        "Smart reading blocks use nearby labels and comment context while leaving promotion and recommendations out"
+      ],
+      "id": "corpus-612540305ee7",
+      "name": "reading block context",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://ordinary-blocks.example/garden",
+      "sources": [
+        "tests/fixtures/translation-target/reading-blocks-neutral.json"
+      ],
+      "names": [
+        "B+ reads neutral outside containers and uses immediate prose neighbours without collecting unrelated UI"
+      ],
+      "id": "corpus-fbf383d2a3aa",
+      "name": "reading blocks neutral",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://realpython.com/claude-api-python/",
+      "sources": [
+        "tests/fixtures/translation-target/realpython-alert.json",
+        "tests/fixtures/translation-target/realpython-table.json",
+        "tests/fixtures/translation-target/realpython-toc.json"
+      ],
+      "names": [
+        "Real Python keeps alert translations on the paragraph instead of the wrapper",
+        "Real Python keeps article table cells as individual targets",
+        "Real Python keeps table-of-contents links as individual targets"
+      ],
+      "id": "corpus-f46ab89cb748",
+      "name": "realpython alert",
+      "type": "文档",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.reddit.com/r/odinlang/",
+      "sources": [
+        "tests/fixtures/translation-target/reddit-feed-card.json"
+      ],
+      "names": [
+        "Reddit feed cards keep visible content and skip overlay links"
+      ],
+      "id": "corpus-7b4a2f3e946c",
+      "name": "reddit feed card",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.reddit.com/r/PinoyProgrammer/comments/1u4tuvb/im_beginning_to_believe_made_a_basic_game_in_c/",
+      "sources": [
+        "tests/fixtures/translation-target/reddit-multimedia-post.json"
+      ],
+      "names": [
+        "Reddit multimedia post translates text without selecting the player"
+      ],
+      "id": "corpus-e3ab073b36af",
+      "name": "reddit multimedia post",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.reddit.com/r/digitalnomad/comments/1t3d0e0/china/",
+      "sources": [
+        "tests/fixtures/translation-target/reddit-post-comment.json"
+      ],
+      "names": [
+        "Reddit smart mode keeps post and comment bodies"
+      ],
+      "id": "corpus-a46da6f88ffa",
+      "name": "reddit post comment",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.reddit.com/r/PinoyProgrammer/comments/1s950b7/claude-pro/",
+      "sources": [
+        "tests/fixtures/translation-target/reddit-slotted-post-body.json"
+      ],
+      "names": [
+        "Reddit smart mode keeps slotted post text body"
+      ],
+      "id": "corpus-6a597fb52ed2",
+      "name": "reddit slotted post body",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/semantic-article-with-comments",
+      "sources": [
+        "tests/fixtures/translation-target/semantic-article-with-comments.json"
+      ],
+      "names": [
+        "semantic article heading does not pull competing comments into the content root"
+      ],
+      "id": "corpus-248bb3af307d",
+      "name": "semantic article with comments",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/discussion/empty",
+      "sources": [
+        "tests/fixtures/translation-target/semantic-discussion-empty-full.json",
+        "tests/fixtures/translation-target/semantic-discussion-empty.json"
+      ],
+      "names": [
+        "full scope keeps the linked title of a discussion without comments",
+        "generic empty discussion keeps only its primary heading without falling back to navigation"
+      ],
+      "id": "corpus-f2e84b77457d",
+      "name": "semantic discussion empty full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/discussion/semantic-heading",
+      "sources": [
+        "tests/fixtures/translation-target/semantic-discussion-role-heading.json"
+      ],
+      "names": [
+        "generic discussion with a semantic heading keeps the title and separate comments"
+      ],
+      "id": "corpus-598dbe5cae5b",
+      "name": "semantic discussion role heading",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/discussion/short",
+      "sources": [
+        "tests/fixtures/translation-target/semantic-discussion-short-full.json",
+        "tests/fixtures/translation-target/semantic-discussion-short.json"
+      ],
+      "names": [
+        "full scope keeps a sparse discussion title and prose",
+        "generic short discussion keeps its linked primary heading without long metadata"
+      ],
+      "id": "corpus-795ff5705328",
+      "name": "semantic discussion short full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://shop.example.org/products/keyboard",
+      "sources": [
+        "tests/fixtures/translation-target/semantic-product-form-smart.json"
+      ],
+      "names": [
+        "semantic product form recovery works without a site profile and respects form and scope boundaries"
+      ],
+      "id": "corpus-f0f182f1b1b6",
+      "name": "semantic product form smart",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/short-copy-cards",
+      "sources": [
+        "tests/fixtures/translation-target/short-copy-fixed-height.json"
+      ],
+      "names": [
+        "full page keeps ordinary short card labels and fixed-height title copy available for translation"
+      ],
+      "id": "corpus-87f86fe28ad6",
+      "name": "short copy fixed height",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://silviasapora.github.io/blog/ml-interviews.html",
+      "sources": [
+        "tests/fixtures/translation-target/silvia-sapora-direct-text.json"
+      ],
+      "names": [
+        "Silvia Sapora article keeps unwrapped section prose"
+      ],
+      "id": "corpus-4ec090bc4d43",
+      "name": "silvia sapora direct text",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://simonwillison.net/2026/May/21/datasette-agent/",
+      "sources": [
+        "tests/fixtures/translation-target/simon-willison-list.json"
+      ],
+      "names": [
+        "Simon Willison profile keeps article list items with inline links"
+      ],
+      "id": "corpus-0f36e2f7a581",
+      "name": "simon willison list",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/notifications",
+      "sources": [
+        "tests/fixtures/translation-target/single-control-notification.json"
+      ],
+      "names": [
+        "full page keeps long messages in single-control notification wrappers available for translation"
+      ],
+      "id": "corpus-253fb0dc49b3",
+      "name": "single control notification",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/component-navigation",
+      "sources": [
+        "tests/fixtures/translation-target/slot-fallback-menu.json"
+      ],
+      "names": [
+        "full page keeps all six navigation labels including slot fallback text available"
+      ],
+      "id": "corpus-57eba2e48969",
+      "name": "slot fallback menu",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://newsletter.kentbeck.com/p/hey-n00b-we-didnt-hire-you-to-complete/comments",
+      "sources": [
+        "tests/fixtures/translation-target/substack-comments.json"
+      ],
+      "names": [
+        "Substack comments keep single and multi-paragraph comment bodies"
+      ],
+      "id": "corpus-d929ec8dacd8",
+      "name": "substack comments",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://newsletter.semianalysis.com/p/finding-miscompiles-for-fun-not-profit",
+      "sources": [
+        "tests/fixtures/translation-target/substack-emphasized-intro-paragraph.json"
+      ],
+      "names": [
+        "Substack emphasized intro paragraphs are translated as body text"
+      ],
+      "id": "corpus-da0b689a4181",
+      "name": "substack emphasized intro paragraph",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://towardsdatascience.com/i-reduced-my-pandas-runtime-by-95-heres-what-i-was-doing-wrong/",
+      "sources": [
+        "tests/fixtures/translation-target/tds-related-articles.json"
+      ],
+      "names": [
+        "TDS supplements related article cards outside the article root"
+      ],
+      "id": "corpus-976ec3f14b1d",
+      "name": "tds related articles",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://reading-blocks.example/",
+      "sources": [
+        "tests/fixtures/translation-target/teapaw-home-generic.json"
+      ],
+      "names": [
+        "Smart mode finds Teapaw-shaped announcements without a site profile"
+      ],
+      "id": "corpus-612dd0cd423e",
+      "name": "teapaw home generic",
+      "type": "首页",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://teapaw.org/",
+      "sources": [
+        "tests/fixtures/translation-target/teapaw-home.json",
+        "tests/corpus/pages.json"
+      ],
+      "names": [
+        "Teapaw smart mode includes visible homepage announcements as separate targets",
+        "Teapaw 首页公告"
+      ],
+      "id": "teapaw-home",
+      "name": "Teapaw 首页公告",
+      "type": "首页",
+      "status": "existing",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.threads.com/",
+      "sources": [
+        "tests/fixtures/translation-target/threads-feed.json",
+        "tests/fixtures/translation-target/threads-no-lang.json"
+      ],
+      "names": [
+        "Threads feed and replies select source text without native controls or metadata",
+        "Threads smart mode includes posts and replies without lang and excludes all page chrome"
+      ],
+      "id": "corpus-81658ed309e9",
+      "name": "threads feed",
+      "type": "首页",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.threads.com/@mediaite/post/De3FHG9mzGJ",
+      "sources": [
+        "tests/fixtures/translation-target/threads-inline-links-full.json",
+        "tests/fixtures/translation-target/threads-inline-links-smart.json"
+      ],
+      "names": [
+        "Threads Full Page keeps its existing inner source target without smart link promotion",
+        "Threads smart mode owns the source row including adjacent short links"
+      ],
+      "id": "corpus-095adf498c2c",
+      "name": "threads inline links full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.threads.com/@example/post/sample",
+      "sources": [
+        "tests/fixtures/translation-target/threads-no-lang-full.json",
+        "tests/fixtures/translation-target/threads-post-full.json"
+      ],
+      "names": [
+        "Threads full mode remains limited to post and reply text without lang",
+        "Threads full translation keeps individual post and reply paragraphs"
+      ],
+      "id": "corpus-7d0b420e8eed",
+      "name": "threads no lang full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://example.com/topics",
+      "sources": [
+        "tests/fixtures/translation-target/topic-cluster-full.json",
+        "tests/fixtures/translation-target/topic-cluster-smart-fallback.json"
+      ],
+      "names": [
+        "full mode does not enable smart filtering",
+        "smart mode falls back when filtering removes every node"
+      ],
+      "id": "corpus-a568131e50e6",
+      "name": "topic cluster full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "synthetic-fixture-url",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.tuc.org.uk/research-analysis/reports/work-intensification",
+      "sources": [
+        "tests/fixtures/translation-target/tuc-report-stream.json"
+      ],
+      "names": [
+        "TUC report keeps all parallel report stream sections"
+      ],
+      "id": "corpus-1beb33b06494",
+      "name": "tuc report stream",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Jordan",
+      "sources": [
+        "tests/fixtures/translation-target/wikipedia-rich-metadata.json"
+      ],
+      "names": [
+        "Wikipedia keeps rich metadata paragraphs as complete translation targets"
+      ],
+      "id": "corpus-baad4878d33f",
+      "name": "wikipedia rich metadata",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.wsj.com/business/china-us-ai-model-costs-53a12e96",
+      "sources": [
+        "tests/fixtures/translation-target/wsj-article-header.json"
+      ],
+      "names": [
+        "WSJ article header supplements the main headline outside the article body"
+      ],
+      "id": "corpus-1c43db8f225e",
+      "name": "wsj article header",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://twitter.com/example/status/123",
+      "sources": [
+        "tests/fixtures/translation-target/x-legacy-posts-full.json",
+        "tests/fixtures/translation-target/x-legacy-posts-smart.json"
+      ],
+      "names": [
+        "X full recognizes only post/reply bodies (legacy-posts)",
+        "X smart recognizes only post/reply bodies (legacy-posts)"
+      ],
+      "id": "corpus-d0ec59649a13",
+      "name": "x legacy posts full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.x.com/",
+      "sources": [
+        "tests/fixtures/translation-target/x-no-body-full.json",
+        "tests/fixtures/translation-target/x-no-body-smart.json"
+      ],
+      "names": [
+        "X full recognizes only post/reply bodies (no-body)",
+        "X smart recognizes only post/reply bodies (no-body)"
+      ],
+      "id": "corpus-2305fb89f10c",
+      "name": "x no body full",
+      "type": "首页",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://x.com/BranitezSports/status/2113847887033667664",
+      "sources": [
+        "tests/fixtures/translation-target/x-public-posts-full.json",
+        "tests/fixtures/translation-target/x-public-posts-smart.json"
+      ],
+      "names": [
+        "X full recognizes only post/reply bodies (public-posts)",
+        "X smart recognizes only post/reply bodies (public-posts)"
+      ],
+      "id": "corpus-7ce5c86a18fe",
+      "name": "x public posts full",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "login-or-platform-gate",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.xda-developers.com/story-notepad-plus-plus/",
+      "sources": [
+        "tests/fixtures/translation-target/xda-discussion.json"
+      ],
+      "names": [
+        "XDA smart mode translates thread summary, top post, and comment bodies outside the article"
+      ],
+      "id": "corpus-9ae12c7872d9",
+      "name": "xda discussion",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.ynetnews.com/business/article/rjeij9cgge",
+      "sources": [
+        "tests/fixtures/translation-target/ynetnews-article-header.json"
+      ],
+      "names": [
+        "Ynetnews article keeps title and subtitle outside article body"
+      ],
+      "id": "corpus-7ab41f948b65",
+      "name": "ynetnews article header",
+      "type": "文章",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+      "sources": [
+        "tests/fixtures/translation-target/ziggit-topic-thread-full.json",
+        "tests/fixtures/translation-target/ziggit-topic-thread.json",
+        "docs/testing/fullpage-phase1-20261022.md",
+        "tests/corpus/pages.json"
+      ],
+      "names": [
+        "Ziggit full page includes visible post controls while keeping duplicate and code protection",
+        "Ziggit topic threads translate cooked reply paragraphs with inline code",
+        "Ziggit · export 讨论"
+      ],
+      "id": "ziggit-topic",
+      "name": "Ziggit · export 讨论",
+      "type": "论坛",
+      "status": "existing",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/mengxi-ream/read-frog/blob/fcb00beb21a9d674c0262346fbc422fbbf317c03/src/utils/providers/translation-only-gate.ts",
+      "sources": [
+        "docs/testing/fullpage-mode-comparison-20261019.md"
+      ],
+      "names": [],
+      "id": "corpus-ebfc6a010e29",
+      "name": "github.com translation-only-gate.ts",
+      "type": "论坛",
+      "status": "skipped",
+      "reason": "implementation-reference-not-test-page",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://lilianweng.github.io/",
+      "sources": [
+        "docs/testing/fullpage-phase1-20261022.md",
+        "docs/testing/fullpage-real-comparison-20261019.md",
+        "tests/corpus/pages.json"
+      ],
+      "names": [
+        "Lil’Log 博客首页"
+      ],
+      "id": "lil-log-home",
+      "name": "Lil’Log 博客首页",
+      "type": "首页",
+      "status": "existing",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+      "sources": [
+        "docs/testing/fullpage-real-comparison-20261019.md"
+      ],
+      "names": [],
+      "id": "corpus-926262871334",
+      "name": "ziggit.dev 18027",
+      "type": "论坛",
+      "status": "queued",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://rsvp.withgoogle.com/events/devfest-in-siliconvalley-2025",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-b0d3bbd01fe8",
+      "name": "rsvp.withgoogle.com devfest-in-siliconvalley-2025",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://github.com/react/react",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-3d9501686f55",
+      "name": "github.com react",
+      "type": "论坛",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-9994933cb8c2",
+      "name": "developer.mozilla.org Using_shadow_DOM",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://material-web.dev/components/button/",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-82cf16b845b2",
+      "name": "material-web.dev button",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://lit.dev/docs/components/shadow-dom/",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-8e09f692e6d0",
+      "name": "lit.dev shadow-dom",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sources": [
+        "docs/testing/shadow-dom-audit.md"
+      ],
+      "names": [],
+      "id": "corpus-0424974c6853",
+      "name": "youtube.com watch",
+      "type": "文章",
+      "status": "skipped",
+      "reason": "shadow-dom-state-not-preserved-by-current-html-archive",
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://www.joshwcomeau.com/css/has/",
+      "sources": [
+        "tests/corpus/pages.json"
+      ],
+      "names": [
+        "Josh Comeau · CSS :has()"
+      ],
+      "id": "josh-css-has",
+      "name": "Josh Comeau · CSS :has()",
+      "type": "文章",
+      "status": "existing",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    },
+    {
+      "url": "https://docs.python.org/3/tutorial/appetite.html",
+      "sources": [
+        "tests/corpus/pages.json"
+      ],
+      "names": [
+        "Python 教程 · Whetting Your Appetite"
+      ],
+      "id": "python-appetite",
+      "name": "Python 教程 · Whetting Your Appetite",
+      "type": "文档",
+      "status": "existing",
+      "reason": null,
+      "addedAt": "2026-11-14"
+    }
+  ]
+}

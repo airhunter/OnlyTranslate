@@ -5,12 +5,17 @@ import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { paths, readJson, writeJson, validId, compare, summarize, validateDecision, acceptedIssuesPath, validateAcceptedIssues } from './model.mjs'
 import { previewHtml, rewriteCss } from './preview.mjs'
+import { loadPageReviews, pageReviewState, createPageReview, pageReviewFile } from './page-reviews.mjs'
+import { replayPayload } from './replay.mjs'
+import { fingerprintSources } from './driver.mjs'
+import { fileURLToPath } from 'node:url'
+import { extensionRoot } from './adapters/onlytranslate.mjs'
 
 export async function startServer(options = {}) {
-  const root=options.root || resolve(import.meta.dirname,'../..'), p={...paths(root,options.dataRoot),...options.paths}
+  const root=options.root || extensionRoot, p={...paths(root,options.dataRoot),...options.paths}
   for(const dir of [p.data,p.snapshots,p.runs,p.jobs,p.assets,p.decisions])await mkdir(dir,{recursive:true})
   const port=options.port ?? Number(process.env.ONLYTRANSLATE_REVIEW_PORT || 4188)
-  const staticRoot=join(root,'scripts/reading-review/ui')
+  const staticRoot=fileURLToPath(new URL('./ui/',import.meta.url))
   const jobs=new Map(), queue=[], pinTasks=new Map()
   let busy=false, closing=false, child=null, base, mutation=Promise.resolve()
   const mutate = work => { const next=mutation.then(work);mutation=next.catch(()=>{});return next }
@@ -25,7 +30,7 @@ export async function startServer(options = {}) {
     busy=true
     const job=jobs.get(id);job.status='running';await writeJson(join(p.jobs,id+'.json'),job)
     const log=[]
-    child=spawn(process.execPath,[join(root,'scripts/reading-review/worker.mjs'),job.type,job.pageId,id,...(job.snapshotId?[job.snapshotId]:[])],{cwd:root,env:{...process.env,ONLYTRANSLATE_REVIEW_DATA:p.data},windowsHide:true,stdio:['ignore','pipe','pipe']})
+    child=spawn(process.execPath,[fileURLToPath(new URL('./worker.mjs',import.meta.url)),job.type,job.pageId,id,...(job.snapshotId?[job.snapshotId]:[])],{cwd:root,env:{...process.env,ONLYTRANSLATE_REVIEW_DATA:p.data},windowsHide:true,stdio:['ignore','pipe','pipe']})
     for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{log.push(chunk.toString());if(log.length>100)log.shift()})
     let finished=false
     const finish=async(error)=>{
@@ -90,7 +95,11 @@ export async function startServer(options = {}) {
     const decisions=await readJson(join(p.decisions,pageId+'.json'),[])
     const acceptedIssues=validateAcceptedIssues(await readJson(acceptedIssuesPath(p.decisions),{schemaVersion:1,issues:[]}))
     const blocks=snapshot?compare(snapshot,before,after,decisions,acceptedIssues):[]
-    return {page,snapshot,snapshots,runs,before,after,baselineSelection:selection,blocks,summary:summarize(blocks),decisions}
+    const policy=await readJson(resolve(p.decisions,'../check-policy.json'),{annotationPolicyVersion:null})
+    const reviewHistory=await loadPageReviews(p.decisions,pageId)
+    const pageReview=pageReviewState({snapshot,run:after,history:reviewHistory,decisions,acceptedIssues,specification:policy.annotationPolicyVersion})
+    const changed=new Set([...pageReview.addedTextIds,...pageReview.removedTextIds])
+    return {page,snapshot,snapshots,runs,before,after,baselineSelection:selection,blocks:blocks.map(b=>({...b,pageReviewChanged:b.textIds.some(id=>changed.has(id))})),summary:summarize(blocks),decisions,pageReview}
   }
   const send=(response,status,value,type='application/json; charset=utf-8')=>{response.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(type.startsWith('application/json')?JSON.stringify(value):value)}
   async function body(request){let text='';for await(const part of request){text+=part;if(text.length>2*1024*1024)throw new Error('请求过大')}return JSON.parse(text||'{}')}
@@ -136,6 +145,39 @@ export async function startServer(options = {}) {
           await writeJson(join(p.snapshots,d.page.id,d.snapshot.id,'comparison.json'),next)
           return send(response,200,next)
         })
+        const whole=/^\/api\/page-reviews\/([^/]+)$/.exec(path)
+        if(whole)return await mutate(async()=>{
+          if(!['confirmed','revoked'].includes(input.status)||!validId(input.snapshotId))throw new Error('无效整页确认请求')
+          const query=new URLSearchParams({snapshot:input.snapshotId})
+          let d=await detail(whole[1],query)
+          if(d.snapshot?.pageId!==d.page.id)throw new Error('整页确认的快照页面身份不匹配')
+          const conflict=message=>{const error=new Error(message);error.status=409;throw error}
+          const verify=()=>{
+            if(!Object.hasOwn(input,'expectedReviewId')||input.expectedReviewId!==d.pageReview.latestReviewId)conflict('整页确认已在其他窗口更新，请刷新后复核')
+            if(input.status==='confirmed'&&(input.runId!==d.after?.id||input.inputHash!==d.pageReview.inputHash||input.coverageHash!==d.pageReview.coverageHash||input.contextHash!==d.pageReview.contextHash))conflict('页面、目标或逐块裁决已变化，请刷新后确认')
+          }
+          verify()
+          if(input.status==='confirmed'){
+            if(!d.pageReview.canConfirm)throw new Error(d.pageReview.reason)
+            await replayPayload(p,d.page.id,d.snapshot,'')
+            if(await fingerprintSources(root)!==d.after.build.sourceHash)conflict('识别源码已更新，请先运行当前版再确认')
+            d=await detail(whole[1],query);verify()
+          }
+          const history=await loadPageReviews(p.decisions,d.page.id)
+          const latest=history.findLast(r=>r.snapshotId===d.snapshot.id)
+          if((latest?.id||null)!==input.expectedReviewId)conflict('整页确认记录已变化，请刷新后复核')
+          let record
+          if(input.status==='revoked'){
+            if(!latest||latest.status!=='confirmed')throw new Error('当前快照没有可撤销的整页确认')
+            record={...latest,id:randomUUID(),revision:(history.at(-1)?.revision||0)+1,status:'revoked',previousReviewId:latest.id,recordedAt:new Date().toISOString()}
+          }else{
+            const policy=await readJson(resolve(p.decisions,'../check-policy.json'))
+            const acceptedIssues=validateAcceptedIssues(await readJson(acceptedIssuesPath(p.decisions),{schemaVersion:1,issues:[]}))
+            record=createPageReview({snapshot:d.snapshot,run:d.after,history,decisions:d.decisions,acceptedIssues,specification:policy.annotationPolicyVersion})
+          }
+          await writeJson(pageReviewFile(p.decisions,d.page.id),[...history,record])
+          return send(response,201,record)
+        })
         const match=/^\/api\/decisions\/([^/]+)$/.exec(path)
         if(match)return await mutate(async()=>{
           const batch=Object.hasOwn(input,'decisions'),items=batch?input.decisions:[input]
@@ -163,7 +205,7 @@ export async function startServer(options = {}) {
       if(path==='/favicon.ico'){response.writeHead(204);return response.end()}
       if(path==='/api/state'){
         const manifest=await readJson(p.manifest),pages=[]
-        for(const item of manifest.pages){const d=await detail(item.id);pages.push({...item,snapshotId:d.snapshot?.id,resourceWarnings:d.snapshot?.omittedAssets||0,summary:d.summary,before:d.before?{id:d.before.id,status:d.before.status,targets:d.before.targets.length,translation:d.before.translation}:null,after:d.after?{id:d.after.id,targets:d.after.targets.length}:null})}
+        for(const item of manifest.pages){const d=await detail(item.id);pages.push({...item,snapshotId:d.snapshot?.id,resourceWarnings:d.snapshot?.omittedAssets||0,summary:d.summary,pageReview:d.pageReview,before:d.before?{id:d.before.id,status:d.before.status,targets:d.before.targets.length,translation:d.before.translation}:null,after:d.after?{id:d.after.id,targets:d.after.targets.length}:null})}
         const currentJobs=await Promise.all([...jobs.keys()].map(id=>readJson(join(p.jobs,id+'.json'))))
         return send(response,200,{pages,jobs:currentJobs.reverse(),release:await readJson(p.release),dataRoot:p.data,decisionsRoot:p.decisions})
       }

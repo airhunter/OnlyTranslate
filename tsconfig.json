@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noUncheckedIndexedAccess": false
   },
-  "exclude": ["**/node_modules", ".output", "output"]
+  "exclude": ["**/node_modules", ".output", "output", "tools/reading-review"]
 }

@@ -69,9 +69,15 @@ pnpm zip:all
 
 ## 正式发布
 
-所有正式 `build`／`zip`（包括 Chrome、Edge、Firefox，以及直接运行 WXT 的命令）都会在构建前自动执行人工验证集检查。开发服务和热更新不受影响；正式构建即使使用 development mode 也不能跳过。可先运行 `pnpm test:reading` 查看报告，完整说明见 [识文评审台流程](docs/testing/reading-review.md)。
+所有正式构建必须使用根目录的 `pnpm build`／`pnpm zip` 及其 Edge、Firefox 变体。仓库级 `scripts/build-extension.mjs` 先执行独立评审工具的人工验证集检查，通过后才调用 WXT；`zip:all` 和 release-it 继续经过这些入口。正式入口即使指定 development mode 也不能跳过校验。可先运行 `pnpm test:reading` 查看报告，完整说明见 [识文评审台流程](docs/testing/reading-review.md)。
+
+扩展运行代码和 WXT 配置不依赖评审工具，开发服务及热更新不受影响。直接执行底层 `wxt build`／`wxt zip` 只构建扩展，不执行人工验证；它们不是正式交付入口，不得用于绕过质量门禁。工程边界见 [评审工具工程说明](tools/reading-review/README.md)。
+
+正式入口固定本仓库和 `wxt.config.ts`，仅允许浏览器（chrome / edge / firefox）与模式（production / development）参数；不能通过位置目录、`-c/--config`、入口过滤或其他未知参数改变被校验对象。非法或重复参数在启动校验与构建之前即失败。
 
 检查只使用本地已归档快照和本次源码，不调用翻译接口。未经明确接受的未满足裁决、快照或资源缺失、定位或规范版本失效、没有有效人工要求、回放异常都阻断构建。报告保存在配置数据目录的 `checks/<检查ID>/report.json`；缺少本地数据时先恢复对应快照和资源，不得通过清空标注或修改预期绕过。算法修复和产品口径调整仍分别遵守原有讨论、回归与用户确认流程。
+
+用户保存的整页识文目标确认同样参与检查，包括无逐块标注的页面。相同快照的覆盖不变无需重复确认；覆盖变化或确认上下文失效时阻断，交用户复核。逐块裁决和已接受限制继续单独检查，整页确认不能豁免它们或完整性错误。
 
 用户可以明确接受个别已知限制并允许发布，记录在 `tests/corpus/accepted-issues.json`，原内容裁决保持不变。例外精确绑定快照、原文、裁决修订和已接受的原文覆盖结果；不能豁免其他失败或数据完整性错误。报告必须分别列出满足项、已接受的未满足项和仍阻断项；含例外的发布检查通过不等于算法全部满足要求。撤销时追加同 ID、更高 revision 的 `revoked` 记录，不删除原确认历史。
 

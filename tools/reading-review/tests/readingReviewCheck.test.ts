@@ -3,9 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
-import { checkCorpus } from '../../scripts/reading-review/check.mjs'
-import { enforceReadingCheck } from '../../scripts/reading-review/build-gate.mjs'
-import { hash, writeJson } from '../../scripts/reading-review/model.mjs'
+import { checkCorpus } from '../check.mjs'
+import { hash, writeJson } from '../model.mjs'
 
 const folders: string[] = []
 afterEach(async () => {
@@ -35,7 +34,7 @@ async function fixture() {
   const build = { sourceHash: hash('current-sources'), commit: 'test-commit' }
   const replay = vi.fn(async () => ({ build, targets: [{ textIds: ['t1'] }, { textIds: ['t2'] }], stats: { scannedElements: 3 } }))
   const runner = { build, replay, bundleHash: hash('bundle'), unchanged: vi.fn(async () => true), close: vi.fn(async () => {}) }
-  const options = { root: resolve('.'), dataRoot: data, paths: { manifest: join(corpus, 'pages.json'), decisions: join(corpus, 'decisions') }, policyPath: join(corpus, 'check-policy.json'), log: () => {}, createRunner: vi.fn(async () => runner) }
+  const options = { root: resolve(import.meta.dirname, '../../..'), dataRoot: data, paths: { manifest: join(corpus, 'pages.json'), decisions: join(corpus, 'decisions') }, policyPath: join(corpus, 'check-policy.json'), log: () => {}, createRunner: vi.fn(async () => runner) }
   return { folder, data, corpus, snapshot, snapshotPath, historyPath, decision, runner, options }
 }
 
@@ -199,24 +198,5 @@ describe('saved human decisions as a build requirement', () => {
       return true
     })
     expect((await checkCorpus(f.options)).errors[0]).toContain('快照元数据发生变化')
-  })
-})
-
-describe('WXT build gate', () => {
-  it('skips only serve and propagates failures for every formal command', async () => {
-    const run = vi.fn(async () => { throw new Error('人工要求未通过') })
-    await enforceReadingCheck('serve', 'root', run)
-    expect(run).not.toHaveBeenCalled()
-    for (const command of ['build', 'zip', 'unknown']) await expect(enforceReadingCheck(command, 'root', run)).rejects.toThrow('人工要求未通过')
-  })
-  it('launches the child process and accepts only a zero exit status', async () => {
-    const folder = await mkdtemp(join(tmpdir(), 'reading-review-gate-'))
-    folders.push(folder)
-    // The fixture CLI exits unsuccessfully; real production uses the same child exit handling.
-    await mkdir(join(folder, 'scripts/reading-review'), { recursive: true })
-    await writeFile(join(folder, 'scripts/reading-review/check.mjs'), "console.error('missing corpus');process.exitCode=1")
-    await expect(enforceReadingCheck('build', folder)).rejects.toThrow('正式构建已停止')
-    await writeFile(join(folder, 'scripts/reading-review/check.mjs'), 'process.exitCode=0')
-    await expect(enforceReadingCheck('build', folder)).resolves.toBeUndefined()
   })
 })

@@ -3,10 +3,10 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtemp, rm, readFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { compare, summarize, validateDecision, writeJson, hash } from '../../scripts/reading-review/model.mjs'
-import { previewHtml } from '../../scripts/reading-review/preview.mjs'
-import { startServer } from '../../scripts/reading-review/server.mjs'
-import { readDrafts, groupDrafts, editDraft, clearSubmitted } from '../../scripts/reading-review/ui/drafts.mjs'
+import { compare, summarize, validateDecision, writeJson, hash } from '../model.mjs'
+import { previewHtml } from '../preview.mjs'
+import { startServer } from '../server.mjs'
+import { readDrafts, groupDrafts, editDraft, clearSubmitted } from '../ui/drafts.mjs'
 
 const snapshot = { id: 'snapshot-1', pageId: 'sample', url: 'https://example.org/story', assets: [], catalogue: { blocks: [
   { id: 'e1', text: 'An article title.', textIds: ['t1'], visible: true },
@@ -18,6 +18,20 @@ const cleanups: (()=>Promise<unknown>)[] = []
 afterEach(async()=>{for(const cleanup of cleanups.splice(0).reverse())await cleanup()})
 
 describe('reading review coverage and decisions',()=>{
+  it('serves its UI from the tool project when corpus inputs live in another directory',async()=>{
+    const folder=await mkdtemp(join(tmpdir(),'reading-tool-boundary-'))
+    cleanups.push(()=>rm(folder,{recursive:true,force:true}))
+    const corpus=join(folder,'corpus')
+    await writeJson(join(corpus,'pages.json'),{schemaVersion:1,pages:[]})
+    await writeJson(join(corpus,'release.json'),{tag:'test'})
+    const app=await startServer({root:folder,port:0,dataRoot:join(folder,'data'),paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}})
+    cleanups.push(()=>app.close())
+    const html=await fetch(app.base+'/'),js=await fetch(app.base+'/app.js'),css=await fetch(app.base+'/style.css')
+    expect([html.status,js.status,css.status]).toEqual([200,200,200])
+    expect(await html.text()).toContain('识文评审台')
+    expect(await js.text()).toContain('/api/')
+    expect(await css.text()).toContain('.topbar')
+  })
   it('treats parent/child segmentation as the same source coverage',()=>{
     const result=compare(snapshot,run([['t1','t2','t3']]),run([['t1'],['t2','t3']]))
     expect(summarize(result)).toMatchObject({added:0,removed:0})
@@ -73,7 +87,7 @@ describe('reading review local API',()=>{
     await writeJson(join(data,'snapshots/sample/latest.json'),{id:sample.id})
     await writeJson(join(data,'snapshots/sample',sample.id,'snapshot.json'),sample)
     await writeJson(join(data,'runs/sample/current/run.json'),{id:'current',kind:'candidate',snapshotId:sample.id,status:'complete',createdAt:'2026-11-14',targets:[]})
-    const app=await startServer({root:resolve('.'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}})
+    const app=await startServer({root:resolve(import.meta.dirname, '../../..'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}})
     cleanups.push(()=>app.close())
     const result=await(await fetch(app.base+'/api/pages/sample')).json()
     expect(result.summary).toMatchObject({confirmed:1,violations:1,acceptedIssues:1,blockingViolations:0})
@@ -91,7 +105,7 @@ describe('reading review local API',()=>{
     await saveRun('base-old','baseline','2026-01-01')
     await saveRun('base-current','baseline','2026-01-02')
     await saveRun('test-old','candidate','2026-01-01')
-    const options={root:resolve('.'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}}
+    const options={root:resolve(import.meta.dirname, '../../..'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}}
     let app=await startServer(options)
     const get=async(query='')=>(await(await fetch(app.base+'/api/pages/sample'+query)).json())
     expect((await get()).before.id).toBe('base-current')
@@ -125,7 +139,7 @@ describe('reading review local API',()=>{
     await writeJson(join(corpus,'release.json'),{tag:'test'})
     await writeJson(join(data,'snapshots/sample/latest.json'),{id:snapshot.id})
     await writeJson(join(data,'snapshots/sample',snapshot.id,'snapshot.json'),snapshot)
-    const app=await startServer({root:resolve('.'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}})
+    const app=await startServer({root:resolve(import.meta.dirname, '../../..'),port:0,dataRoot:data,paths:{manifest:join(corpus,'pages.json'),release:join(corpus,'release.json'),decisions:join(corpus,'decisions')}})
     cleanups.push(()=>app.close())
     const headers={'Content-Type':'application/json','X-Reading-Review':'1'}
     const input={blockId:'e2',snapshotId:snapshot.id,verdict:'translate',note:'由测试模拟，未写入正式标注'}

@@ -3,13 +3,37 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { saveCapturedSnapshot } from '../../scripts/reading-review/archive.mjs'
-import { prepareReleaseInputs } from '../../scripts/reading-review/release.mjs'
-import { hash, readJson, validId, writeJson } from '../../scripts/reading-review/model.mjs'
+import { saveCapturedSnapshot, saveBaselineRun } from '../archive.mjs'
+import { prepareReleaseInputs } from '../release.mjs'
+import { hash, readJson, validId, writeJson } from '../model.mjs'
 
 const fake = vi.hoisted(() => ({ command: vi.fn() }))
-vi.mock('../../scripts/reading-review/driver.mjs', () => ({ command: fake.command }))
+vi.mock('../driver.mjs', () => ({ command: fake.command }))
 const folders: string[] = []
+
+it('preserves the real translations and incomplete status when full-page screenshot capture fails', async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'reading-artifact-')); folders.push(folder)
+  const result = {status:'complete',targets:[{textIds:['t1'],translation:'实际译文'}],translation:{complete:true,pending:0,failures:0}}
+  await expect(saveBaselineRun(folder,result,async()=>{
+    expect((await readJson(join(folder,'run.json'))).status).toBe('incomplete')
+    await writeFile(join(folder,'translated.html'),'<p>原文和实际译文</p>')
+    throw new Error('full-page screenshot failed')
+  })).rejects.toThrow('screenshot failed')
+  const saved = await readJson(join(folder,'run.json'))
+  expect(saved.status).toBe('incomplete')
+  expect(saved.targets).toEqual(result.targets)
+  expect(saved.translation).toEqual(result.translation)
+  expect(saved.artifacts).toEqual({status:'failed',error:'full-page screenshot failed'})
+  expect(await readFile(join(folder,'translated.html'),'utf8')).toContain('实际译文')
+})
+
+it.each(['complete','incomplete'])('does not promote translation status %s merely because artifacts succeeded', async status => {
+  const folder = await mkdtemp(join(tmpdir(), 'reading-artifact-')); folders.push(folder)
+  await saveBaselineRun(folder,{status},async()=>{
+    expect((await readJson(join(folder,'run.json'))).status).toBe('incomplete')
+  })
+  expect(await readJson(join(folder,'run.json'))).toEqual({status,artifacts:{status:'complete'}})
+})
 afterEach(async () => { for (const folder of folders.splice(0)) await rm(folder, { recursive: true, force: true }) })
 
 async function archiveFixture() {

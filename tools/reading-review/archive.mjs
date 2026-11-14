@@ -3,6 +3,18 @@ import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { hash, writeJson, validId } from './model.mjs'
 
+export async function saveBaselineRun(folder, result, captureArtifacts) {
+  const file = join(folder, 'run.json')
+  // A screenshot failure must not discard already observed targets and translations.
+  await writeJson(file, { ...result, status: 'incomplete', artifacts: { status: 'pending' } })
+  try { await captureArtifacts() }
+  catch (error) {
+    await writeJson(file, { ...result, status: 'incomplete', artifacts: { status: 'failed', error: error.message } })
+    throw error
+  }
+  await writeJson(file, { ...result, artifacts: { status: 'complete' } })
+}
+
 export async function saveCapturedSnapshot(p, pageInfo, captured, screenshot) {
   if (!validId(pageInfo.id)) throw new Error('无效页面 ID')
   // Every capture is a new rendering state, even if HTML happens to be identical.

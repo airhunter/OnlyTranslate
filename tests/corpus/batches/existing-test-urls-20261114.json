@@ -1,0 +1,5213 @@
+{
+  "schemaVersion": 1,
+  "batch": "existing-test-urls-20261114",
+  "startedAt": "2026-11-14T05:28:35.894Z",
+  "finishedAt": "2026-11-14T07:03:33.685Z",
+  "updatedAt": "2026-11-14T06:57:48.532Z",
+  "commit": "7adaf68581e0b6b5964adf8ea777a9e49c8ff29a",
+  "sourceHash": "5eaa130c3b0ed9376fead033ebb09a7a5eb71b55725e1a8727fb78dbfeccf2ae",
+  "release": {
+    "tag": "v1.15.0",
+    "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+    "asset": "OnlyTranslate-v1.15.0-chrome.zip",
+    "sha256": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+    "verifiedFrom": "https://github.com/airhunter/OnlyTranslate/releases/tag/v1.15.0",
+    "settings": {
+      "service": "microsoft",
+      "from": "en",
+      "to": "zh-Hans",
+      "display": 1,
+      "translationScope": "smart",
+      "useCache": false
+    }
+  },
+  "summary": {
+    "discovered": 111,
+    "existing": 5,
+    "plannedNew": 64,
+    "skipped": 42,
+    "attempted": 69,
+    "counts": {
+      "complete": 41,
+      "blocked": 2,
+      "capture-failed": 16,
+      "baseline-incomplete": 10
+    },
+    "paired": 41,
+    "newPairs": 36,
+    "changedPages": 5,
+    "addedBlocks": 38,
+    "removedBlocks": 44,
+    "insertedTranslations": 4060
+  },
+  "pages": [
+    {
+      "id": "corpus-75d0b93d7a22",
+      "url": "https://aclanthology.org/2023.wmt-1.41/",
+      "name": "acl anthology paper",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "5af00339-8a8f-499f-8b91-05b629216bcc",
+      "htmlHash": "e462c8ed8ea565e073204e147529d4a963696798447ae158f5bc26ecb030997d",
+      "title": "Large Language Models Effectively Leverage Document-level Context for Literary Translation, but Critical Errors Persist - ACL Anthology",
+      "finalUrl": "https://aclanthology.org/2023.wmt-1.41/",
+      "blocks": 131,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634140581-2f7b7e",
+      "baseline": {
+        "targets": 34,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 18857,
+          "expected": 34,
+          "actualHosts": 34,
+          "unexpectedHosts": 0,
+          "attempted": 34,
+          "inserted": 27,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634175707-b57516",
+      "candidate": {
+        "targets": 34,
+        "stats": {
+          "scannedElements": 244,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 84,
+          "skippedSubtrees": 22,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 131
+      },
+      "scanBefore": 249,
+      "scanAfter": 244,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-2a97aa07f5d3",
+      "url": "https://archive.md/myA7R",
+      "name": "archive substack inline divs",
+      "status": "blocked",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\b7a037b8088c910f.js\n",
+          "at": "2026-11-14T05:30:38.533Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "dc2d604c-7690-4745-863a-5d5b344d94ff",
+      "htmlHash": "d958098c478353dced9aeae527d2b070ad1e0945b632d49b26a082aa3d94a7e9",
+      "title": "archive.li",
+      "finalUrl": "https://archive.li/myA7R",
+      "blocks": 7,
+      "resourceWarnings": 1,
+      "baselineError": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\b7a037b8088c910f.js\n",
+      "candidateRunId": "candidate-1794634245937-7ca2e4",
+      "candidate": {
+        "targets": 7,
+        "stats": {
+          "scannedElements": 134,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 46,
+          "skippedSubtrees": 3,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "previousStatus": "baseline-incomplete",
+      "error": "已核对归档正文：这是 CAPTCHA / request for access 验证页，不是目标文章",
+      "qualityEvidence": "One more step; Please complete the security check to access archive.li"
+    },
+    {
+      "id": "corpus-e05b207cd20b",
+      "url": "https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/",
+      "name": "arstechnica header",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\bf76dd3887eccbf9.js\n",
+          "at": "2026-11-14T05:31:02.670Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：405",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-30-56-419Z.log",
+          "line": "[    1186ms] [ERROR] Failed to load resource: the server responded with a status of 405 () @ https://arstechnica.com/tech-policy/2026/05/citing-gandalf-pope-leo-says-we-must-disarm-ai/:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-651becd2dade",
+      "url": "https://arstechnica.com/security/2026/08/a-segmented-story/",
+      "name": "arstechnica segmented body",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\981b3c32b3f03ccc.js\n",
+          "at": "2026-11-14T05:31:12.730Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：405",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-31-08-217Z.log",
+          "line": "[     685ms] [ERROR] Failed to load resource: the server responded with a status of 405 () @ https://arstechnica.com/security/2026/08/a-segmented-story/:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-a8ba778bdad1",
+      "url": "https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet",
+      "name": "asterisk progress navigation",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "1aff7658-1d19-4b03-9a2f-393fedd6de13",
+      "htmlHash": "55e37628b1ec49badf7730971274fd137b281443a3b788b84c797f1ac4cdf363",
+      "title": "The Mystery in the Medicine Cabinet—Asterisk",
+      "finalUrl": "https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet",
+      "blocks": 189,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634301417-e7f8b3",
+      "baseline": {
+        "targets": 98,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 28095,
+          "expected": 98,
+          "actualHosts": 98,
+          "unexpectedHosts": 0,
+          "attempted": 98,
+          "inserted": 98,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634347076-7c4d05",
+      "candidate": {
+        "targets": 98,
+        "stats": {
+          "scannedElements": 467,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 294,
+          "skippedSubtrees": 25,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 189
+      },
+      "scanBefore": 471,
+      "scanAfter": 467,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-8caef4c5db97",
+      "url": "https://www.azlyrics.com/lyrics/nemesea/angelinthedark.html",
+      "name": "br separated azlyrics",
+      "status": "blocked",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "f8a4964e-9eb8-4738-95c4-72dec3dbfb30",
+      "htmlHash": "217957b42a4d6d015e08de9757206dae7448c84f963367b61cf6a65f2ebb1930",
+      "title": "AZLyrics - request for access",
+      "finalUrl": "https://b.azlyrics.com/?u=/lyrics/nemesea/angelinthedark.html",
+      "blocks": 7,
+      "resourceWarnings": 1,
+      "baselineRunId": "release-1794634373364-00cd66",
+      "baseline": {
+        "targets": 3,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 18245,
+          "expected": 3,
+          "actualHosts": 3,
+          "unexpectedHosts": 0,
+          "attempted": 3,
+          "inserted": 3,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634406651-4355ce",
+      "candidate": {
+        "targets": 3,
+        "stats": {
+          "scannedElements": 71,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 17,
+          "skippedSubtrees": 7,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 7
+      },
+      "scanBefore": 76,
+      "scanAfter": 71,
+      "previousStatus": "complete",
+      "error": "已核对归档正文：这是 CAPTCHA / request for access 验证页，不是目标文章",
+      "qualityEvidence": "AZLyrics - request for access; Our systems have detected unusual activity from your IP address",
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-7ae35ae02bd0",
+      "url": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+      "name": "br separated blogspot",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "91c89e8e-681b-4820-81a9-4320a2a4e93d",
+      "htmlHash": "6792745e663e61399e9ce9e139308fe1298e42e92765394156ccae5e4e3214f5",
+      "title": "command center: Less is exponentially more",
+      "finalUrl": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+      "blocks": 217,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634431753-462b49",
+      "baseline": {
+        "targets": 109,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 26573,
+          "expected": 109,
+          "actualHosts": 109,
+          "unexpectedHosts": 0,
+          "attempted": 109,
+          "inserted": 107,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634476863-6304a5",
+      "candidate": {
+        "targets": 109,
+        "stats": {
+          "scannedElements": 931,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 386,
+          "skippedSubtrees": 20,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 217
+      },
+      "scanBefore": 936,
+      "scanAfter": 931,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-98192a1d1ccb",
+      "url": "https://genius.com/Nemesea-angel-in-the-dark-lyrics",
+      "name": "br separated genius",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\a7c5b16c195e92b5.js\n",
+          "at": "2026-11-14T05:34:50.492Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-34-46-206Z.log",
+          "line": "[     244ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://genius.com/Nemesea-angel-in-the-dark-lyrics:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-bfa3d0f3540b",
+      "url": "https://claude.nagdy.me/learn/getting-started/",
+      "name": "claude learning cards",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "2262dab5-dfa0-46a0-8182-d037c2a652a9",
+      "htmlHash": "4fd8358847912ae709379485ccec9dc2970ef7a5be2821f7b9b813abea643c23",
+      "title": "Getting Started — claude.nagdy.me",
+      "finalUrl": "https://claude.nagdy.me/learn/getting-started/",
+      "blocks": 200,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634514973-915fc2",
+      "baseline": {
+        "targets": 77,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 23642,
+          "expected": 77,
+          "actualHosts": 77,
+          "unexpectedHosts": 0,
+          "attempted": 77,
+          "inserted": 77,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634554798-4e75c4",
+      "candidate": {
+        "targets": 77,
+        "stats": {
+          "scannedElements": 527,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 118,
+          "skippedSubtrees": 99,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 200
+      },
+      "scanBefore": 528,
+      "scanAfter": 527,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-fadb8ae3d7bf",
+      "url": "https://claytonwramsey.com/blog/mvt/",
+      "name": "clayton ramsey blog title",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T05:40:39.963Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "8b2ed85f-2089-450e-823a-c09beef7a279",
+      "htmlHash": "3987f63f6def86a19d74bf55ec8b6812c666d646ce623b5911b9b7127f7300cb",
+      "title": "We're not done with point clouds",
+      "finalUrl": "https://claytonwramsey.com/blog/mvt/",
+      "blocks": 61,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794634847123-08b8e2",
+      "candidate": {
+        "targets": 51,
+        "stats": {
+          "scannedElements": 630,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 189,
+          "skippedSubtrees": 17,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794634580910-5d5580",
+          "status": "incomplete",
+          "targets": 53,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 249464,
+            "expected": 51,
+            "actualHosts": 40,
+            "unexpectedHosts": 2,
+            "attempted": 38,
+            "inserted": 38,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-6a782cd6e3bc",
+      "url": "https://edition.cnn.com/2026/05/21/world/iran-live-updates",
+      "name": "cnn live story",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\9441bae2c0c7b170.js\n",
+          "at": "2026-11-14T05:41:00.073Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：404",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-40-55-462Z.log",
+          "line": "[    1243ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://edition.cnn.com/2026/05/21/world/iran-live-updates:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-334402b19318",
+      "url": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+      "name": "decrypt article full",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "8f1beff8-2b83-4901-b16e-460c05be94f8",
+      "htmlHash": "baf721d78228ffbb5d52920f1669964f7450b81068409130bee3649aa8419138",
+      "title": "OpenAI GPT Image 2 vs Google Nano Banana 2: Which AI Image Generator Is Best? - Decrypt",
+      "finalUrl": "https://decrypt.co/366408/openai-gpt-image-2-vs-google-nano-banana-2-review",
+      "blocks": 530,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634892448-eebd46",
+      "baseline": {
+        "targets": 146,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 33384,
+          "expected": 146,
+          "actualHosts": 146,
+          "unexpectedHosts": 0,
+          "attempted": 146,
+          "inserted": 146,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794634941874-58ed84",
+      "candidate": {
+        "targets": 146,
+        "stats": {
+          "scannedElements": 1875,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 701,
+          "skippedSubtrees": 220,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 530
+      },
+      "scanBefore": 1876,
+      "scanAfter": 1875,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-e2520a78f09e",
+      "url": "https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test",
+      "name": "decrypt no main",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "d54231bf-ad38-4d96-8894-829e28f017bc",
+      "htmlHash": "372be76b1903a4a182fc6ebb7648c17c9c6b1df752e7fb223e88a35607c7d6b5",
+      "title": "Claude Opus 4.7 Is Here: Anthropic’s Latest Model Delivers, But It’s a Token Eating Machine - Decrypt",
+      "finalUrl": "https://decrypt.co/364621/claude-opus-47-review-benchmarks-coding-test",
+      "blocks": 554,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794634970594-4d9aeb",
+      "baseline": {
+        "targets": 163,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 33999,
+          "expected": 163,
+          "actualHosts": 163,
+          "unexpectedHosts": 0,
+          "attempted": 163,
+          "inserted": 163,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635020163-227298",
+      "candidate": {
+        "targets": 163,
+        "stats": {
+          "scannedElements": 1854,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 693,
+          "skippedSubtrees": 214,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 554
+      },
+      "scanBefore": 1855,
+      "scanAfter": 1854,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-c164595fef1e",
+      "url": "https://docs.devin.ai/desktop/changelog",
+      "name": "devin changelog",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "12141ede-7ef0-4408-aeed-6bbcc9727af6",
+      "htmlHash": "00904c19e020eb5bd3afbb1b9031f06ec2070cb53c0b1d6be6cf59f135a32479",
+      "title": "Devin Desktop changelog - Devin Docs",
+      "finalUrl": "https://docs.devin.ai/desktop/changelog",
+      "blocks": 3608,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635058701-ca0dd7",
+      "baseline": {
+        "targets": 995,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 139913,
+          "expected": 995,
+          "actualHosts": 995,
+          "unexpectedHosts": 0,
+          "attempted": 995,
+          "inserted": 989,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635233062-bce89e",
+      "candidate": {
+        "targets": 995,
+        "stats": {
+          "scannedElements": 8064,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 5194,
+          "skippedSubtrees": 2376,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 38,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 3608
+      },
+      "scanBefore": 8064,
+      "scanAfter": 8064,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-3a062b69f719",
+      "url": "https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj",
+      "name": "devto article header",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "7430e39f-4d7a-4779-8401-250494c6ceb7",
+      "htmlHash": "0e4fd8c31f766551075817a981d9dbbcdeecb2dfb65fd5e9a229fe7c8d345ee7",
+      "title": "Nobody Argued For Your Stack - DEV Community",
+      "finalUrl": "https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj",
+      "blocks": 363,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635262142-89ca2d",
+      "baseline": {
+        "targets": 74,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 23365,
+          "expected": 74,
+          "actualHosts": 74,
+          "unexpectedHosts": 0,
+          "attempted": 74,
+          "inserted": 74,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635304496-b94989",
+      "candidate": {
+        "targets": 74,
+        "stats": {
+          "scannedElements": 1603,
+          "unselectedStrongOutsideBlocks": 2,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 536,
+          "skippedSubtrees": 253,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 363
+      },
+      "scanBefore": 1604,
+      "scanAfter": 1603,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-d83073df75d1",
+      "url": "https://exercism.org/tracks/cpp/exercises/making-the-grade",
+      "name": "exercism exercise instructions",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T05:53:11.204Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "eba3bb6d-1b11-443f-8960-afc5277a0ee3",
+      "htmlHash": "b6a23533198d850fd7e14d9e3a730b6d6c960f43ba8657d97251f3c9a7120433",
+      "title": "Exercism 上C++中的成绩评定",
+      "finalUrl": "https://exercism.org/zh-CN/tracks/cpp/exercises/making-the-grade",
+      "blocks": 279,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794635601145-ffd8ff",
+      "candidate": {
+        "targets": 34,
+        "stats": {
+          "scannedElements": 379,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 99,
+          "skippedSubtrees": 63,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794635330329-ee8177",
+          "status": "incomplete",
+          "targets": 34,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 251380,
+            "expected": 34,
+            "actualHosts": 5,
+            "unexpectedHosts": 0,
+            "attempted": 5,
+            "inserted": 1,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-c664c41f6b10",
+      "url": "https://ziggit.dev/",
+      "name": "forum topic list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "0818f21a-a5b3-4719-9fae-f19aee9deb7e",
+      "htmlHash": "207747f1f32d68c3f0dfe721d3b43f9bd7f226efb977c56cee8cf3a36e6ae5d4",
+      "title": "Ziggit - A Zig community",
+      "finalUrl": "https://ziggit.dev/",
+      "blocks": 374,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635631805-b9ca53",
+      "baseline": {
+        "targets": 102,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 26651,
+          "expected": 102,
+          "actualHosts": 102,
+          "unexpectedHosts": 0,
+          "attempted": 102,
+          "inserted": 99,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635679654-84cd57",
+      "candidate": {
+        "targets": 102,
+        "stats": {
+          "scannedElements": 4658,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 1496,
+          "skippedSubtrees": 406,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 374
+      },
+      "scanBefore": 4664,
+      "scanAfter": 4658,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-765c2665888f",
+      "url": "https://www.genengnews.com/topics/bioprocessing/peptistar-began-operation-of-the-asahi-kasei-fo-md-system-at-manufacturing-scale/",
+      "name": "genengnews figure paragraph",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\b1dfe8e20729bb38.js\n",
+          "at": "2026-11-14T05:55:47.935Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "399f1636-d276-4986-a6b4-d8d0cde0878f",
+      "htmlHash": "c780735ee521b044c9e24f5d4429a95a8a25a6d1db58ee52dc06e68950757ae7",
+      "title": "Peptistar Began Operation of the Asahi Kasei FO-MD System at Manufacturing Scale",
+      "finalUrl": "https://www.genengnews.com/topics/bioprocessing/peptistar-began-operation-of-the-asahi-kasei-fo-md-system-at-manufacturing-scale/",
+      "blocks": 163,
+      "resourceWarnings": 0,
+      "baselineError": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\b1dfe8e20729bb38.js\n",
+      "candidateRunId": "candidate-1794635757061-0a7684",
+      "candidate": {
+        "targets": 11,
+        "stats": {
+          "scannedElements": 293,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 88,
+          "skippedSubtrees": 42,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": []
+    },
+    {
+      "id": "corpus-117fb0a3b846",
+      "url": "https://github.com/HKUDS/nanobot/actions",
+      "name": "github actions list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "54dee8c1-b31a-47a3-961f-1a0b0246039d",
+      "htmlHash": "fa18363e0a9d2f17995f5f8b797b431997603f896c775febd5255fd08b05e0dc",
+      "title": "All Workflow Runs · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot/actions",
+      "blocks": 355,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635782767-01c318",
+      "baseline": {
+        "targets": 64,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 18488,
+          "expected": 63,
+          "actualHosts": 64,
+          "unexpectedHosts": 1,
+          "attempted": 63,
+          "inserted": 64,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635819988-576923",
+      "candidate": {
+        "targets": 63,
+        "stats": {
+          "scannedElements": 3060,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 825,
+          "skippedSubtrees": 510,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 355
+      },
+      "scanBefore": 3061,
+      "scanAfter": 3060,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-34d6b602a22b",
+      "url": "https://github.com/alchaincyf/huashu-design/commits/main/",
+      "name": "github commit list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "eaf85bc4-0920-486a-9b05-6028b6ecee70",
+      "htmlHash": "112ad2c58b8dd702a1a4fac5a05a359b3b1eee854673e836708bf4fa1ce970b9",
+      "title": "Commits · alchaincyf/huashu-design · GitHub",
+      "finalUrl": "https://github.com/alchaincyf/huashu-design/commits/main/",
+      "blocks": 112,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635850216-17093c",
+      "baseline": {
+        "targets": 2,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 20605,
+          "expected": 2,
+          "actualHosts": 2,
+          "unexpectedHosts": 0,
+          "attempted": 2,
+          "inserted": 2,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635890133-aa9f52",
+      "candidate": {
+        "targets": 2,
+        "stats": {
+          "scannedElements": 289,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 48,
+          "skippedSubtrees": 44,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 112
+      },
+      "scanBefore": 294,
+      "scanAfter": 289,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-f77b3826fbd8",
+      "url": "https://github.com/alchaincyf/huashu-design/discussions",
+      "name": "github discussion list",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\363e255852b69009.js\n",
+          "at": "2026-11-14T05:58:30.740Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：404",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-58-23-792Z.log",
+          "line": "[     554ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://github.com/alchaincyf/huashu-design/discussions:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-79d09ed3e2f9",
+      "url": "https://github.com/alchaincyf/huashu-design/issues/5256",
+      "name": "github issue detail",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\51be602de4fadd05.js\n",
+          "at": "2026-11-14T05:58:40.791Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：404",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T05-58-36-712Z.log",
+          "line": "[     520ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://github.com/alchaincyf/huashu-design/issues/5256:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-cea4818d9020",
+      "url": "https://github.com/alchaincyf/huashu-design/issues",
+      "name": "github issue list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "5ada5324-d2f0-495b-8cbd-4a93745829da",
+      "htmlHash": "c5b19aa692255857395a9df2c6c17699fd5ed69979cd9ee24549708d97f33e66",
+      "title": "Issues · alchaincyf/huashu-design · GitHub",
+      "finalUrl": "https://github.com/alchaincyf/huashu-design/issues",
+      "blocks": 139,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794635945868-58bbc5",
+      "baseline": {
+        "targets": 3,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 17252,
+          "expected": 3,
+          "actualHosts": 3,
+          "unexpectedHosts": 0,
+          "attempted": 3,
+          "inserted": 3,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794635980652-2949eb",
+      "candidate": {
+        "targets": 3,
+        "stats": {
+          "scannedElements": 453,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 68,
+          "skippedSubtrees": 95,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 139
+      },
+      "scanBefore": 459,
+      "scanAfter": 453,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-9add7f2c4f1d",
+      "url": "https://github.com/HKUDS/nanobot/pull/4005",
+      "name": "github pr comment",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "5a31a454-7a39-4ac4-b82f-bf53d1bbc73a",
+      "htmlHash": "266af539b4233590b09be70f14b33ea703ef6e9c5f03ced0a61d3d06a1efbba2",
+      "title": "Add GitAgent Protocol support (agent.yaml + SOUL.md) by shreyas-lyzr · Pull Request #4005 · HKUDS/nanobot · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot/pull/4005",
+      "blocks": 213,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636009671-791096",
+      "baseline": {
+        "targets": 11,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 19874,
+          "expected": 11,
+          "actualHosts": 11,
+          "unexpectedHosts": 0,
+          "attempted": 11,
+          "inserted": 11,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636047360-dc0191",
+      "candidate": {
+        "targets": 11,
+        "stats": {
+          "scannedElements": 289,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 0,
+          "skippedSubtrees": 0,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 213
+      },
+      "scanBefore": 293,
+      "scanAfter": 289,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-eeb6ad9b394e",
+      "url": "https://github.com/HKUDS/nanobot/projects",
+      "name": "github projects empty",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "522ffb0b-38bf-4d97-8202-c975f2c890da",
+      "htmlHash": "6053c668316cf89ffe01ae9b7e53ab0bd967878dbfca87d6739cc194b58e0227",
+      "title": "Projects · HKUDS/nanobot · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot/projects",
+      "blocks": 118,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636073999-4cfe6c",
+      "baseline": {
+        "targets": 2,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 17815,
+          "expected": 2,
+          "actualHosts": 2,
+          "unexpectedHosts": 0,
+          "attempted": 2,
+          "inserted": 2,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636107900-7c9905",
+      "candidate": {
+        "targets": 2,
+        "stats": {
+          "scannedElements": 176,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 58,
+          "skippedSubtrees": 31,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 118
+      },
+      "scanBefore": 177,
+      "scanAfter": 176,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-466e0b24d33b",
+      "url": "https://github.com/microsoft/vscode/projects",
+      "name": "github projects list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "6b610a4d-6396-40f5-ad8d-dc44065eb507",
+      "htmlHash": "2f6361671a7d82cab89e222ef815f94410bcd1ba21e84917c40cb9175558a922",
+      "title": "Projects · microsoft/vscode · GitHub",
+      "finalUrl": "https://github.com/microsoft/vscode/projects",
+      "blocks": 119,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636131716-473915",
+      "baseline": {
+        "targets": 1,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 18908,
+          "expected": 1,
+          "actualHosts": 1,
+          "unexpectedHosts": 0,
+          "attempted": 1,
+          "inserted": 1,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636168034-a1cedb",
+      "candidate": {
+        "targets": 1,
+        "stats": {
+          "scannedElements": 188,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 65,
+          "skippedSubtrees": 30,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 119
+      },
+      "scanBefore": 189,
+      "scanAfter": 188,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-a7ded0b7c536",
+      "url": "https://github.com/HKUDS/nanobot/pulls",
+      "name": "github pull list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "d7306016-939d-4730-8fb8-a39fb3da08b3",
+      "htmlHash": "c6e35196a6b2ac063a73dc3cecf9fe84574f682c5f20fb848d118a6882a8a865",
+      "title": "Pull requests · HKUDS/nanobot · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot/pulls",
+      "blocks": 362,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636198222-187247",
+      "baseline": {
+        "targets": 26,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 17587,
+          "expected": 25,
+          "actualHosts": 26,
+          "unexpectedHosts": 1,
+          "attempted": 25,
+          "inserted": 25,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636232394-ca345f",
+      "candidate": {
+        "targets": 25,
+        "stats": {
+          "scannedElements": 426,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 0,
+          "skippedSubtrees": 0,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 362
+      },
+      "scanBefore": 430,
+      "scanAfter": 426,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-638846f7379e",
+      "url": "https://github.com/HKUDS/nanobot",
+      "name": "github readme list container",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "f1fc5b0b-e3e3-49d9-95c8-fe2a4cc6dc1f",
+      "htmlHash": "248845c8ee40d213c592575e6bf482901d5ac5fa8214c479f8fa6dd50559cdca",
+      "title": "GitHub - HKUDS/nanobot: Your lightweight open-source personal agent. · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot",
+      "blocks": 727,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636262643-c3a9a7",
+      "baseline": {
+        "targets": 161,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 34650,
+          "expected": 161,
+          "actualHosts": 161,
+          "unexpectedHosts": 0,
+          "attempted": 161,
+          "inserted": 160,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636314756-b5f04d",
+      "candidate": {
+        "targets": 161,
+        "stats": {
+          "scannedElements": 0,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 0,
+          "skippedSubtrees": 0,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 5,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 727
+      },
+      "scanBefore": 0,
+      "scanAfter": 0,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-ea8d6c944452",
+      "url": "https://github.com/search?q=openclaw&type=repositories",
+      "name": "github repository search",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "7e2d3fcb-7a61-4c56-af48-7c7863e0f3b3",
+      "htmlHash": "4d01a61173559ec5e9211c99ecdd02a036577fe4ff6ae3ce241b43aac6a2e67d",
+      "title": "Repository search results · GitHub",
+      "finalUrl": "https://github.com/search?q=openclaw&type=repositories",
+      "blocks": 277,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636339102-2c9e2e",
+      "baseline": {
+        "targets": 1,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 17432,
+          "expected": 1,
+          "actualHosts": 1,
+          "unexpectedHosts": 0,
+          "attempted": 1,
+          "inserted": 1,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636372496-6c4b5d",
+      "candidate": {
+        "targets": 1,
+        "stats": {
+          "scannedElements": 1319,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 492,
+          "skippedSubtrees": 197,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 5,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 277
+      },
+      "scanBefore": 1320,
+      "scanAfter": 1319,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-f54eacc9a114",
+      "url": "https://github.com/HKUDS/nanobot/security",
+      "name": "github security",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "b3c6b90e-8564-4f71-be8d-de704b4877dc",
+      "htmlHash": "7472f3a2294aa9256c82bc8104b6ea172fff6234fdf26a7ff6d56d10a5fbaa3c",
+      "title": "Overview · HKUDS/nanobot · GitHub",
+      "finalUrl": "https://github.com/HKUDS/nanobot/security",
+      "blocks": 344,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636399476-729444",
+      "baseline": {
+        "targets": 189,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 37774,
+          "expected": 184,
+          "actualHosts": 189,
+          "unexpectedHosts": 5,
+          "attempted": 184,
+          "inserted": 182,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636456004-3da051",
+      "candidate": {
+        "targets": 184,
+        "stats": {
+          "scannedElements": 527,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 95,
+          "skippedSubtrees": 106,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 5,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 344
+      },
+      "scanBefore": 527,
+      "scanAfter": 527,
+      "differenceBlocks": [
+        {
+          "id": "e955",
+          "added": [],
+          "removed": [
+            "t389",
+            "t390",
+            "t391"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "4c5107c50461307398819f1ade5fcbeb0b7a89dc583402ddd4d437c51d54a7c4"
+        },
+        {
+          "id": "e969",
+          "added": [],
+          "removed": [
+            "t393"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "3b7507e1b42cb776edd28cd23550380c9816cb03f00268e1542681690eb208b5"
+        },
+        {
+          "id": "e981",
+          "added": [],
+          "removed": [
+            "t395",
+            "t396",
+            "t397",
+            "t398",
+            "t399",
+            "t400",
+            "t401"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "85509137d041c263a871c2f7ca50e02ac1f0fedd0462ac0ed098f79c22a15269"
+        },
+        {
+          "id": "e996",
+          "added": [],
+          "removed": [
+            "t403",
+            "t404",
+            "t405",
+            "t406",
+            "t407"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "81853d80e6bf8ff63c8f79dbb6ac245ee270520c2c3962fb2406513579f14a30"
+        },
+        {
+          "id": "e1018",
+          "added": [],
+          "removed": [
+            "t413",
+            "t414",
+            "t415"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "6a2f7350434940896d896167d22a601edcef739f7e6e0c8250781cc023342cf5"
+        }
+      ]
+    },
+    {
+      "id": "corpus-a1733bb75e1b",
+      "url": "https://news.ycombinator.com/item?id=47555081",
+      "name": "hacker news item",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "490b3b77-acf9-46b4-9d9f-2aecd0c3e570",
+      "htmlHash": "4af3942a730dbd25c7b0145be16d3ae00b89edd77b8c0a62d7038e82cc5903b0",
+      "title": "The risk of AI isn't making us lazy, but making \"lazy\" look productive | Hacker News",
+      "finalUrl": "https://news.ycombinator.com/item?id=47555081",
+      "blocks": 829,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636481818-d52b35",
+      "baseline": {
+        "targets": 90,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 25675,
+          "expected": 90,
+          "actualHosts": 90,
+          "unexpectedHosts": 0,
+          "attempted": 90,
+          "inserted": 90,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636523841-0ee936",
+      "candidate": {
+        "targets": 90,
+        "stats": {
+          "scannedElements": 3688,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 2332,
+          "skippedSubtrees": 314,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 829
+      },
+      "scanBefore": 3692,
+      "scanAfter": 3688,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-62f95ffa0970",
+      "url": "https://ynarwal.github.io/how-llms-work/",
+      "name": "hidden expandable card",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T06:13:33.032Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "5c27448b-5407-418a-b839-a7e76932af99",
+      "htmlHash": "68944806d9ac06e15e1d164fdec27a4ab99c3915acd399bc2d4f69d03a2d638d",
+      "title": "How LLMs Work — A Visual Deep Dive",
+      "finalUrl": "https://ynarwal.github.io/how-llms-work/",
+      "blocks": 325,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794636820664-082d33",
+      "candidate": {
+        "targets": 169,
+        "stats": {
+          "scannedElements": 1646,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 579,
+          "skippedSubtrees": 95,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794636554066-7672ce",
+          "status": "incomplete",
+          "targets": 170,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 250480,
+            "expected": 169,
+            "actualHosts": 161,
+            "unexpectedHosts": 1,
+            "attempted": 160,
+            "inserted": 159,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-2eb5bcc3ad88",
+      "url": "https://huggingface.co/blog/ServiceNow/mosaicleaks",
+      "name": "huggingface blog article",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "9e1a8cd6-2957-4b34-8c00-2790a6286ecb",
+      "htmlHash": "c6e5d8a593dd5a841d0d989875d1851e8473a1cf90321b7889366c50bd197692",
+      "title": "MosaicLeaks: Can your research agent keep a secret?",
+      "finalUrl": "https://huggingface.co/blog/ServiceNow/mosaicleaks",
+      "blocks": 169,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636847424-1236c3",
+      "baseline": {
+        "targets": 92,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 25952,
+          "expected": 92,
+          "actualHosts": 92,
+          "unexpectedHosts": 0,
+          "attempted": 92,
+          "inserted": 90,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636891719-82f024",
+      "candidate": {
+        "targets": 92,
+        "stats": {
+          "scannedElements": 479,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 426,
+          "skippedSubtrees": 63,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 169
+      },
+      "scanBefore": 479,
+      "scanAfter": 479,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-e34ebcec30d5",
+      "url": "https://support.claude.com/en/articles/15400594-claude-cowork-june-2026-usage-promotion",
+      "name": "intercom help article intro",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\469e12f0efd703df.js\n",
+          "at": "2026-11-14T06:15:05.539Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：404",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-15-01-076Z.log",
+          "line": "[    1177ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://support.claude.com/en/articles/15400594-claude-cowork-june-2026-usage-promotion:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-aac43df74935",
+      "url": "https://jacob.gold/posts/programmers-need-to-start-meditating-now/",
+      "name": "jacob gold post",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "66722b67-05b1-4cfc-8991-2b3fc46ff6f6",
+      "htmlHash": "4aa61bdbd3c53235b0a6629bd69d6b56da35a3fc93a89321eed96d811fd6e6aa",
+      "title": "Programmers need to start meditating now | Jake Gold",
+      "finalUrl": "https://jacob.gold/posts/programmers-need-to-start-meditating-now/",
+      "blocks": 25,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794636925681-906123",
+      "baseline": {
+        "targets": 9,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 17123,
+          "expected": 9,
+          "actualHosts": 9,
+          "unexpectedHosts": 0,
+          "attempted": 9,
+          "inserted": 9,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794636958686-f18d7a",
+      "candidate": {
+        "targets": 9,
+        "stats": {
+          "scannedElements": 21,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 22,
+          "skippedSubtrees": 2,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 25
+      },
+      "scanBefore": 21,
+      "scanAfter": 21,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-96e060f55ffe",
+      "url": "https://www.liepin.com/job/1985555579.shtml",
+      "name": "liepin preserved newline jd full",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T06:20:39.048Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "8754244a-c2c4-4e47-aea1-e477c5050087",
+      "htmlHash": "954d6dedb71992ec560a7d9eae8db3804bc0c9b14906853b98fb52ef4ff74890",
+      "title": "【上海 Senior Delivery Consultant, Evinova China招聘】-阿斯利康上海招聘信息-猎聘",
+      "finalUrl": "https://www.liepin.com/job/1985555579.shtml",
+      "blocks": 276,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794637245949-7b61ec",
+      "candidate": {
+        "targets": 54,
+        "stats": {
+          "scannedElements": 2148,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 376,
+          "skippedSubtrees": 87,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794636981788-0a49db",
+          "status": "incomplete",
+          "targets": 54,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 248313,
+            "expected": 54,
+            "actualHosts": 21,
+            "unexpectedHosts": 0,
+            "attempted": 21,
+            "inserted": 19,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-d01eba4a3028",
+      "url": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+      "name": "lilianweng nested toc",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T06:25:38.393Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "3bec1349-4994-4813-9941-ff224bc2ea51",
+      "htmlHash": "672bc905aeebed296a52af430bf2a310d939e2127efa3a141fc4d99c81b7a017",
+      "title": "Scaling Laws, Carefully | Lil'Log",
+      "finalUrl": "https://lilianweng.github.io/posts/2026-06-24-scaling-laws/",
+      "blocks": 289,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794637548458-72a545",
+      "candidate": {
+        "targets": 235,
+        "stats": {
+          "scannedElements": 3918,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 504,
+          "skippedSubtrees": 369,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794637272961-113f32",
+          "status": "incomplete",
+          "targets": 235,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 250635,
+            "expected": 235,
+            "actualHosts": 183,
+            "unexpectedHosts": 0,
+            "attempted": 183,
+            "inserted": 182,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-e47b0472fdb6",
+      "url": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+      "name": "lobsters story comments full",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "04b9d48d-c051-4c3a-ae59-8ac443a1260c",
+      "htmlHash": "fde56306756408c101746b98823c789a8b73a366f0aa9bee7e8be1598349d4fa",
+      "title": "There's No Limit to How Bad Code Can Get | Lobsters",
+      "finalUrl": "https://lobste.rs/s/rfn2mn/there_s_no_limit_how_bad_code_can_get",
+      "blocks": 150,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794637572037-32eb50",
+      "baseline": {
+        "targets": 88,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 21480,
+          "expected": 61,
+          "actualHosts": 88,
+          "unexpectedHosts": 27,
+          "attempted": 61,
+          "coveredTargets": 61,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 61,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794637607559-3a72cc",
+      "candidate": {
+        "targets": 61,
+        "stats": {
+          "scannedElements": 927,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 391,
+          "skippedSubtrees": 123,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 30,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 150
+      },
+      "scanBefore": 928,
+      "scanAfter": 927,
+      "differenceBlocks": [
+        {
+          "id": "e77",
+          "added": [],
+          "removed": [
+            "t21"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "47e810633ba6921489d376f8f72f19556dec5348af86f33b5f1e950688c9c779"
+        },
+        {
+          "id": "e78",
+          "added": [],
+          "removed": [
+            "t22"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e98",
+          "added": [],
+          "removed": [
+            "t27"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "f73b626b2ea8d7803809efa28def2046de2cded46b8a1e13f7f7f181b26c087a"
+        },
+        {
+          "id": "e99",
+          "added": [],
+          "removed": [
+            "t28"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e119",
+          "added": [],
+          "removed": [
+            "t34"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "9bc18f694aaea5036e04849163a483d027f4fe99eb69f3956b5c185a20652493"
+        },
+        {
+          "id": "e120",
+          "added": [],
+          "removed": [
+            "t35"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e143",
+          "added": [],
+          "removed": [
+            "t42"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "47e810633ba6921489d376f8f72f19556dec5348af86f33b5f1e950688c9c779"
+        },
+        {
+          "id": "e144",
+          "added": [],
+          "removed": [
+            "t43"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e157",
+          "added": [],
+          "removed": [
+            "t46"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+        },
+        {
+          "id": "e163",
+          "added": [],
+          "removed": [
+            "t47"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "6f9d854a2b942d95f8eb1d395c275883f1286c88594db10322eedb49236d12bc"
+        },
+        {
+          "id": "e164",
+          "added": [],
+          "removed": [
+            "t48"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e201",
+          "added": [],
+          "removed": [
+            "t63"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"
+        },
+        {
+          "id": "e207",
+          "added": [],
+          "removed": [
+            "t64"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "3265966db656d7be66e45d17cdd7e209b98490aaf80f3e38d9a644c0035d5e96"
+        },
+        {
+          "id": "e208",
+          "added": [],
+          "removed": [
+            "t65"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e226",
+          "added": [],
+          "removed": [
+            "t68"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "197417e2e793e7c25fa573a9ec636e8c0ead6f6d2222d1f302c4d9629cee3306"
+        },
+        {
+          "id": "e227",
+          "added": [],
+          "removed": [
+            "t69"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e319",
+          "added": [],
+          "removed": [
+            "t106"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "7c0d992f60b5782d2d7424115088636639a0ec2dad3091124f7746d74343f2d1"
+        },
+        {
+          "id": "e320",
+          "added": [],
+          "removed": [
+            "t107"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e339",
+          "added": [],
+          "removed": [
+            "t112"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "a3f3a47d051405c332471b6fd5550c9eabb0c94b9d72bd9a462b3a54445582f2"
+        },
+        {
+          "id": "e340",
+          "added": [],
+          "removed": [
+            "t113"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e397",
+          "added": [],
+          "removed": [
+            "t134"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "c84e1f3e420f2190904c97bec3a590da68880ee44921ffac64cb1d6fa37277a0"
+        },
+        {
+          "id": "e398",
+          "added": [],
+          "removed": [
+            "t135"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e454",
+          "added": [],
+          "removed": [
+            "t146"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "b9483869e223173a3946f9ce75265df2b9470b57fedc93e5cf9e81cd0b2c2c14"
+        },
+        {
+          "id": "e455",
+          "added": [],
+          "removed": [
+            "t147"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e474",
+          "added": [],
+          "removed": [
+            "t151"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "8bca55d4327e006f102506c8336058147b512fbff511ba69e74df01503fba820"
+        },
+        {
+          "id": "e475",
+          "added": [],
+          "removed": [
+            "t152"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        },
+        {
+          "id": "e489",
+          "added": [],
+          "removed": [
+            "t158"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3"
+        },
+        {
+          "id": "e495",
+          "added": [],
+          "removed": [
+            "t159"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "3625f831e273b1a56c3a7d5c86082373043c276d058462d151a3bd86d08782ac"
+        },
+        {
+          "id": "e491",
+          "added": [],
+          "removed": [
+            "t160"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "1fb9f4097256db2d7b1e13aff79cee44339891a31c556b9cf6093885773b3618"
+        },
+        {
+          "id": "e496",
+          "added": [],
+          "removed": [
+            "t161"
+          ],
+          "assessment": "pending-user-review",
+          "textHash": "127eafdde719108278855588840c782ca78cbd465e395b4b071c783469892886"
+        }
+      ]
+    },
+    {
+      "id": "corpus-7f3d06456050",
+      "url": "https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/",
+      "name": "mario inline links",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "251b4abe-3e1d-4ffb-aaa6-fb79aa461a6d",
+      "htmlHash": "39803cc6c55e2fa2869879de527f1dba31a6bb1fb714bc6849618511dc081066",
+      "title": "Thoughts on slowing the fuck down",
+      "finalUrl": "https://mariozechner.at/posts/2026-03-25-thoughts-on-slowing-the-fuck-down/",
+      "blocks": 68,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794637630517-0504c7",
+      "baseline": {
+        "targets": 59,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 21165,
+          "expected": 59,
+          "actualHosts": 59,
+          "unexpectedHosts": 0,
+          "attempted": 59,
+          "coveredTargets": 59,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 59,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794637665403-e88b7e",
+      "candidate": {
+        "targets": 59,
+        "stats": {
+          "scannedElements": 182,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 92,
+          "skippedSubtrees": 0,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 68
+      },
+      "scanBefore": 183,
+      "scanAfter": 182,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-c384290b377a",
+      "url": "https://mattstromawn.com/writing/expansion-artifacts/",
+      "name": "mattstromawn inline links",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "8f0c35fb-959e-4b0d-babb-8565036b0be5",
+      "htmlHash": "71eb7c00d2d4aba42516816327d92dd6cf7acaba3847978fa6edd2e881ac6182",
+      "title": "Expansion artifacts || Matt Ström-Awn, designer-leader",
+      "finalUrl": "https://mattstromawn.com/writing/expansion-artifacts/",
+      "blocks": 85,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794637688683-c94e84",
+      "baseline": {
+        "targets": 49,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 21134,
+          "expected": 46,
+          "actualHosts": 49,
+          "unexpectedHosts": 3,
+          "attempted": 46,
+          "coveredTargets": 46,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 46,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794637724171-69f436",
+      "candidate": {
+        "targets": 46,
+        "stats": {
+          "scannedElements": 312,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 111,
+          "skippedSubtrees": 22,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 85
+      },
+      "scanBefore": 318,
+      "scanAfter": 312,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-a5a3dec7822a",
+      "url": "https://maxwellforbes.com/posts/dont-try-to-reform-science/",
+      "name": "maxwell forbes sidenote",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "92109b0c-0c82-4ce0-a9e0-9763de343f5b",
+      "htmlHash": "c9bb02714e7f6fd6b5e540a5ca8fad750bd633de63e11939f0ce0a0820b0ecc5",
+      "title": "The PhD Metagame: Don't Try to Reform Science - Maxwell Forbes",
+      "finalUrl": "https://maxwellforbes.com/posts/dont-try-to-reform-science/",
+      "blocks": 128,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794637749197-073b27",
+      "baseline": {
+        "targets": 79,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 21833,
+          "expected": 64,
+          "actualHosts": 79,
+          "unexpectedHosts": 15,
+          "attempted": 64,
+          "coveredTargets": 64,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 64,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794637786903-4afb31",
+      "candidate": {
+        "targets": 64,
+        "stats": {
+          "scannedElements": 568,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 178,
+          "skippedSubtrees": 44,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 128
+      },
+      "scanBefore": 573,
+      "scanAfter": 568,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-a938d6e7bb6c",
+      "url": "https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903",
+      "name": "medium multi paragraph blockquote",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\17553888de110a74.js\n",
+          "at": "2026-11-14T06:29:57.871Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-29-55-033Z.log",
+          "line": "[     316ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://medium.com/@sebastiancarlos/the-tech-market-situation-is-crazy-ec49ea772903:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-e07714d3e513",
+      "url": "https://blog.mempko.com/your-agentic-workflows-cache-keepalive-costs-8x-too-much-v2-the-interval-frontier/",
+      "name": "mempko article header",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\dd9ab45f6b337a0b.js\n",
+          "at": "2026-11-14T06:30:56.143Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "21badf33-13a3-4b07-aa4f-a98769bdeb4d",
+      "htmlHash": "7f4191f5968658d5f7d3a9203452032c6e1accd3c74a68e867afd7ca281a1c22",
+      "title": "Your Agentic Workflow's Cache Keepalive Costs 8x Too Much (v2: the interval frontier)",
+      "finalUrl": "https://blog.mempko.com/your-agentic-workflows-cache-keepalive-costs-8x-too-much-v2-the-interval-frontier/",
+      "blocks": 133,
+      "resourceWarnings": 0,
+      "baselineError": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\dd9ab45f6b337a0b.js\n",
+      "candidateRunId": "candidate-1794637862819-10fa40",
+      "candidate": {
+        "targets": 107,
+        "stats": {
+          "scannedElements": 457,
+          "unselectedStrongOutsideBlocks": 3,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 232,
+          "skippedSubtrees": 12,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": []
+    },
+    {
+      "id": "corpus-616526cb33fd",
+      "url": "https://metalstorm.net/pub/interview.php?interview_id=344",
+      "name": "metalstorm interview",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\4e175dcebb1035ff.js\n",
+          "at": "2026-11-14T06:31:14.238Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-31-11-607Z.log",
+          "line": "[     241ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://metalstorm.net/pub/interview.php?interview_id=344:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-985539f3f2c2",
+      "url": "https://www.michelebologna.net/2026/ssh-port-22-fwknop-single-packet-authorization/",
+      "name": "michelebologna linked title",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "4eff3683-4b0a-431a-a6d5-824a7640f139",
+      "htmlHash": "a4a78b97bb6ddf0c46e000ecea8b4d3bc620580fcd656ae6c087669244cd5a71",
+      "title": "Why I close SSH port 22 entirely (and what I use instead) · Michele Bologna",
+      "finalUrl": "https://www.michelebologna.net/2026/ssh-port-22-fwknop-single-packet-authorization/",
+      "blocks": 137,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794637895988-1f4203",
+      "baseline": {
+        "targets": 63,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 21651,
+          "expected": 63,
+          "actualHosts": 63,
+          "unexpectedHosts": 0,
+          "attempted": 63,
+          "coveredTargets": 63,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 63,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794637933431-598789",
+      "candidate": {
+        "targets": 63,
+        "stats": {
+          "scannedElements": 785,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 158,
+          "skippedSubtrees": 150,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 137
+      },
+      "scanBefore": 786,
+      "scanAfter": 785,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-23e940dcc54d",
+      "url": "https://www.nature.com/articles/s43856-026-01747-8",
+      "name": "nature springer article",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\e4dbf027b532f36d.js\n",
+          "at": "2026-11-14T06:33:20.897Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "ba13b2f9-5950-412b-9ec4-a16c29f39ebd",
+      "htmlHash": "e99eacc5388fb775961feef9023b0bcac407f1f1e09df795eb297e943ed745d3",
+      "title": "In vitro development of the Autonomous Colonoscope Robot System (ACRS) for fully automated colonoscope insertion | Communications Medicine",
+      "finalUrl": "https://www.nature.com/articles/s43856-026-01747-8",
+      "blocks": 724,
+      "resourceWarnings": 0,
+      "baselineError": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\e4dbf027b532f36d.js\n",
+      "candidateRunId": "candidate-1794638007724-743a04",
+      "candidate": {
+        "targets": 126,
+        "stats": {
+          "scannedElements": 791,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 760,
+          "skippedSubtrees": 137,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": []
+    },
+    {
+      "id": "corpus-ac8ec612e519",
+      "url": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+      "name": "nxgoai article",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "f9bad244-22d8-4b9a-a2c7-69ef6130335f",
+      "htmlHash": "f8a30364f98dbf23f27c4f444931c2dd8eb7b96ef856dba06d4ccef65444a2e5",
+      "title": "Roundtables: Can AI Learn to Understand the World? | NXGOAI",
+      "finalUrl": "https://nxgoai.com/blog/roundtables-can-ai-learn-to-understand-the-world-207216",
+      "blocks": 62,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638031079-3f4412",
+      "baseline": {
+        "targets": 26,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 16401,
+          "expected": 26,
+          "actualHosts": 26,
+          "unexpectedHosts": 0,
+          "attempted": 26,
+          "coveredTargets": 26,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 26,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638064250-99a8a2",
+      "candidate": {
+        "targets": 26,
+        "stats": {
+          "scannedElements": 193,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 70,
+          "skippedSubtrees": 17,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 62
+      },
+      "scanBefore": 194,
+      "scanAfter": 193,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-54499be046ee",
+      "url": "https://paulgraham.com/earn.html",
+      "name": "paulgraham old essay",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "900f0937-9a68-4503-ad2a-f90972aacdd0",
+      "htmlHash": "7ab8ed74fbba5315fbc2844b807414f68b82c508f2492b092832b33d0e5bdac2",
+      "title": "How to Earn a Billion Dollars",
+      "finalUrl": "https://paulgraham.com/earn.html",
+      "blocks": 4,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638086932-e13c8f",
+      "baseline": {
+        "targets": 37,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 16754,
+          "expected": 37,
+          "actualHosts": 37,
+          "unexpectedHosts": 0,
+          "attempted": 37,
+          "coveredTargets": 37,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 37,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638118586-cb9c22",
+      "candidate": {
+        "targets": 37,
+        "stats": {
+          "scannedElements": 415,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 164,
+          "skippedSubtrees": 0,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 4
+      },
+      "scanBefore": 420,
+      "scanAfter": 415,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-399c08246550",
+      "url": "https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code",
+      "name": "potown product full",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\bd52b62680919516.js\n",
+          "at": "2026-11-14T06:35:31.689Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-35-26-539Z.log",
+          "line": "[    1520ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-62c03957b06a",
+      "url": "https://www.ontario.ca/page/ministry-natural-resources",
+      "name": "primary heading introduction full",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "5f5f168e-357b-4297-8a07-5aa414080be3",
+      "htmlHash": "be2b7c650333c48212c03ad5fb9af0e1d27317f8a40e387f96339b4e8412a942",
+      "title": "Ministry of Natural Resources | ontario.ca",
+      "finalUrl": "https://www.ontario.ca/page/ministry-natural-resources",
+      "blocks": 240,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638157443-d6be1b",
+      "baseline": {
+        "targets": 25,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 16858,
+          "expected": 25,
+          "actualHosts": 25,
+          "unexpectedHosts": 0,
+          "attempted": 25,
+          "coveredTargets": 25,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 25,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638188740-703a80",
+      "candidate": {
+        "targets": 26,
+        "stats": {
+          "scannedElements": 756,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 216,
+          "skippedSubtrees": 47,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 1,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 240
+      },
+      "scanBefore": 761,
+      "scanAfter": 756,
+      "differenceBlocks": [
+        {
+          "id": "e921",
+          "added": [
+            "t205"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "342f7a1e0a5c65a3765280a1bd5c123aa4bb1c844e005de3992916e439bea2bd"
+        }
+      ]
+    },
+    {
+      "id": "corpus-0638a05f43fe",
+      "url": "https://www.producthunt.com/products/maritime",
+      "name": "producthunt multiple launches",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\7d921daf201f6010.js\n",
+          "at": "2026-11-14T06:36:40.082Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-36-36-888Z.log",
+          "line": "[     271ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.producthunt.com/products/maritime:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-4fde41f07a3a",
+      "url": "https://www.producthunt.com/products/omlx",
+      "name": "producthunt product",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\ec2e4e8ce5c67c02.js\n",
+          "at": "2026-11-14T06:36:48.141Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-36-45-403Z.log",
+          "line": "[     257ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.producthunt.com/products/omlx:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-f46ab89cb748",
+      "url": "https://realpython.com/claude-api-python/",
+      "name": "realpython alert",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\297c3224fa23eaac.js\n",
+          "at": "2026-11-14T06:36:56.178Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-36-53-276Z.log",
+          "line": "[     372ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://realpython.com/claude-api-python/:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-4ec090bc4d43",
+      "url": "https://silviasapora.github.io/blog/ml-interviews.html",
+      "name": "silvia sapora direct text",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "14b51745-52cc-4b75-80cb-bffeb1237181",
+      "htmlHash": "dbd62ae9ae4d56eaecacab919f4149967980e89a104fcc894399481544b82a7f",
+      "title": "ML Job Interviews: The Ultimate Guide – Silvia Sapora",
+      "finalUrl": "https://silviasapora.github.io/blog/ml-interviews.html",
+      "blocks": 294,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638237833-88f217",
+      "baseline": {
+        "targets": 227,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 39890,
+          "expected": 227,
+          "actualHosts": 227,
+          "unexpectedHosts": 0,
+          "attempted": 227,
+          "coveredTargets": 227,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 212,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638293321-f62e92",
+      "candidate": {
+        "targets": 227,
+        "stats": {
+          "scannedElements": 692,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 346,
+          "skippedSubtrees": 2,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 294
+      },
+      "scanBefore": 693,
+      "scanAfter": 692,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-0f36e2f7a581",
+      "url": "https://simonwillison.net/2026/May/21/datasette-agent/",
+      "name": "simon willison list",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "9690580f-47b8-4d69-84de-1cd42a362ae1",
+      "htmlHash": "8467a76763c30e73480a58fb7e6240ea65b663e516cb80a2d4a1f2ae62b25bb2",
+      "title": "Datasette Agent",
+      "finalUrl": "https://simonwillison.net/2026/May/21/datasette-agent/",
+      "blocks": 137,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638316328-c453c7",
+      "baseline": {
+        "targets": 32,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 16908,
+          "expected": 32,
+          "actualHosts": 32,
+          "unexpectedHosts": 0,
+          "attempted": 32,
+          "coveredTargets": 32,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 32,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638347103-5f4be7",
+      "candidate": {
+        "targets": 32,
+        "stats": {
+          "scannedElements": 365,
+          "unselectedStrongOutsideBlocks": 3,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 120,
+          "skippedSubtrees": 7,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 137
+      },
+      "scanBefore": 370,
+      "scanAfter": 365,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-d929ec8dacd8",
+      "url": "https://newsletter.kentbeck.com/p/hey-n00b-we-didnt-hire-you-to-complete/comments",
+      "name": "substack comments",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T06:43:50.118Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "a52495cf-d0b7-4605-9c31-423eeb477017",
+      "htmlHash": "95a6600d927118c83448bdb70bbb422f53495b990ceb5f991c460922619628b3",
+      "title": "Comments - Hey, N00b, We Didn't Hire You to Complete Tasks",
+      "finalUrl": "https://newsletter.kentbeck.com/p/hey-n00b-we-didnt-hire-you-to-complete/comments",
+      "blocks": 167,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794638636789-a954f5",
+      "candidate": {
+        "targets": 41,
+        "stats": {
+          "scannedElements": 3064,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 796,
+          "skippedSubtrees": 178,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794638372555-2257fb",
+          "status": "incomplete",
+          "targets": 41,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 248595,
+            "expected": 41,
+            "actualHosts": 30,
+            "unexpectedHosts": 0,
+            "attempted": 30,
+            "coveredTargets": 30,
+            "completedByCoveringHost": 0,
+            "coverageComplete": false,
+            "completionRule": "source-coverage-v1",
+            "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+            "inserted": 30,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-da0b689a4181",
+      "url": "https://newsletter.semianalysis.com/p/finding-miscompiles-for-fun-not-profit",
+      "name": "substack emphasized intro paragraph",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "706ce14a-8a06-45bd-b3fe-4c196210dfce",
+      "htmlHash": "d91d4a43262d4387e27fbd219793f64b1f0a5b5f769b5da99a46959772496031",
+      "title": "Finding Miscompiles for Fun, Not Profit - by Justin Lebar",
+      "finalUrl": "https://newsletter.semianalysis.com/p/finding-miscompiles-for-fun-not-profit",
+      "blocks": 70,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638659937-44424a",
+      "baseline": {
+        "targets": 35,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 16733,
+          "expected": 35,
+          "actualHosts": 35,
+          "unexpectedHosts": 0,
+          "attempted": 35,
+          "coveredTargets": 35,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 35,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794638690904-40846d",
+      "candidate": {
+        "targets": 35,
+        "stats": {
+          "scannedElements": 567,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 172,
+          "skippedSubtrees": 32,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 70
+      },
+      "scanBefore": 568,
+      "scanAfter": 567,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-976ec3f14b1d",
+      "url": "https://towardsdatascience.com/i-reduced-my-pandas-runtime-by-95-heres-what-i-was-doing-wrong/",
+      "name": "tds related articles",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\81d601ddd4ac7ce6.js\n",
+          "at": "2026-11-14T06:45:02.514Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-44-59-444Z.log",
+          "line": "[     496ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://towardsdatascience.com/i-reduced-my-pandas-runtime-by-95-heres-what-i-was-doing-wrong/:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-1beb33b06494",
+      "url": "https://www.tuc.org.uk/research-analysis/reports/work-intensification",
+      "name": "tuc report stream",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\c29577cadf641cc5.js\n",
+          "at": "2026-11-14T06:45:12.574Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：403",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-45-07-574Z.log",
+          "line": "[     484ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://www.tuc.org.uk/research-analysis/reports/work-intensification:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-baad4878d33f",
+      "url": "https://en.wikipedia.org/wiki/Jordan",
+      "name": "wikipedia rich metadata",
+      "status": "complete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\7d69ddf5222a8ad3.js\n",
+          "at": "2026-11-14T06:48:47.587Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "2a780573-d478-4109-93fd-8a70b9aa315c",
+      "htmlHash": "5afb229abde27d68700a44e32be93c68bb2251f8efacdba78ac7de03b32e2e0f",
+      "title": "Jordan - Wikipedia",
+      "finalUrl": "https://en.wikipedia.org/wiki/Jordan",
+      "blocks": 4169,
+      "resourceWarnings": 0,
+      "candidateRunId": "candidate-1794638944544-7383ed",
+      "candidate": {
+        "targets": 724,
+        "stats": {
+          "scannedElements": 20108,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 8570,
+          "skippedSubtrees": 1056,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "previousBaselineError": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-release run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\7d69ddf5222a8ad3.js\n",
+      "baselineRunId": "release-1794639642333-032b99",
+      "baseline": {
+        "targets": 727,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 102965,
+          "expected": 724,
+          "actualHosts": 727,
+          "unexpectedHosts": 3,
+          "attempted": 724,
+          "coveredTargets": 724,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 685,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 10,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 4169
+      },
+      "scanBefore": 20113,
+      "scanAfter": 20108,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-1c43db8f225e",
+      "url": "https://www.wsj.com/business/china-us-ai-model-costs-53a12e96",
+      "name": "wsj article header",
+      "status": "capture-failed",
+      "attempts": [
+        {
+          "stage": "capture",
+          "error": "Command failed: C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js --yes --package @playwright/cli playwright-cli -s=rr-138b8cc-capture run-code --filename C:\\coding\\translates_project\\OnlyTranslate\\output\\playwright\\reading-review\\a49a7f4b3d5daeb4.js\n",
+          "at": "2026-11-14T06:49:15.775Z"
+        }
+      ],
+      "stage": "capture",
+      "error": "采集时主页面响应错误：401",
+      "networkEvidence": [
+        {
+          "log": "console-2026-11-14T06-49-12-546Z.log",
+          "line": "[     564ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.wsj.com/business/china-us-ai-model-costs-53a12e96:1"
+        }
+      ]
+    },
+    {
+      "id": "corpus-9ae12c7872d9",
+      "url": "https://www.xda-developers.com/story-notepad-plus-plus/",
+      "name": "xda discussion",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "25249f34-90b6-41e9-a4b7-bdbcf5bfb93c",
+      "htmlHash": "49853ddcc1c97f7a717d6286cd739d9ade146d399a99432185d9da9b0f04bb20",
+      "title": "Notepad++ and Don Ho: A story of software, activism, and defiance",
+      "finalUrl": "https://www.xda-developers.com/story-notepad-plus-plus/",
+      "blocks": 1124,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794638987474-a99314",
+      "baseline": {
+        "targets": 111,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 28751,
+          "expected": 111,
+          "actualHosts": 111,
+          "unexpectedHosts": 0,
+          "attempted": 111,
+          "coveredTargets": 111,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 111,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794639031070-1d98d4",
+      "candidate": {
+        "targets": 111,
+        "stats": {
+          "scannedElements": 754,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 294,
+          "skippedSubtrees": 86,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 6,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 1124
+      },
+      "scanBefore": 755,
+      "scanAfter": 754,
+      "differenceBlocks": []
+    },
+    {
+      "id": "corpus-7ab41f948b65",
+      "url": "https://www.ynetnews.com/business/article/rjeij9cgge",
+      "name": "ynetnews article header",
+      "status": "baseline-incomplete",
+      "attempts": [
+        {
+          "stage": "baseline",
+          "error": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+          "at": "2026-11-14T06:55:51.720Z"
+        }
+      ],
+      "stage": "done",
+      "snapshotId": "3594601c-d143-45e0-92d4-24c9868b3709",
+      "htmlHash": "211cf4fbd3c927d5b5c1ca0ea5fe26fc5a2e4d24c9287641ea4cd61ad2e3af6c",
+      "title": "Immunai uses AI to hunt for cancer, autoimmune targets in $15M Boehringer deal",
+      "finalUrl": "https://www.ynetnews.com/business/article/rjeij9cgge",
+      "blocks": 1842,
+      "resourceWarnings": 0,
+      "baselineError": "实翻未完整完成，已保留运行结果，不能作为合格基线",
+      "candidateRunId": "candidate-1794639359683-eb1251",
+      "candidate": {
+        "targets": 20,
+        "stats": {
+          "scannedElements": 15483,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 7891,
+          "skippedSubtrees": 1629,
+          "budgetExceeded": false,
+          "profileFastPathUsed": true,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "incompleteBaselineRuns": [
+        {
+          "id": "release-1794639086295-a2a3cb",
+          "status": "incomplete",
+          "targets": 20,
+          "translation": {
+            "service": "microsoft",
+            "targetLanguage": "zh-Hans",
+            "elapsedMs": 255434,
+            "expected": 20,
+            "actualHosts": 19,
+            "unexpectedHosts": 0,
+            "attempted": 19,
+            "coveredTargets": 19,
+            "completedByCoveringHost": 0,
+            "coverageComplete": false,
+            "completionRule": "source-coverage-v1",
+            "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+            "inserted": 19,
+            "pending": 0,
+            "failures": 0,
+            "complete": false
+          },
+          "build": {
+            "kind": "release",
+            "tag": "v1.15.0",
+            "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+            "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+            "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+            "settings": {
+              "service": "microsoft",
+              "from": "en",
+              "to": "zh-Hans",
+              "display": 1,
+              "translationScope": "smart",
+              "useCache": false
+            },
+            "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+          },
+          "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+        }
+      ]
+    },
+    {
+      "id": "corpus-926262871334",
+      "url": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+      "name": "ziggit.dev 18027",
+      "status": "complete",
+      "attempts": [],
+      "stage": "done",
+      "snapshotId": "0c3973bb-9222-4213-82fc-c0e781252ae0",
+      "htmlHash": "6a103eb0671c9e1412a55e1ef19d649dc3024dacf75029397e0449b17c9f9512",
+      "title": "Panic on attempting to access union payload - Help - Ziggit",
+      "finalUrl": "https://ziggit.dev/t/panic-on-attempting-to-access-union-payload/18027",
+      "blocks": 107,
+      "resourceWarnings": 0,
+      "baselineRunId": "release-1794639381309-3625f4",
+      "baseline": {
+        "targets": 15,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 10991,
+          "expected": 15,
+          "actualHosts": 15,
+          "unexpectedHosts": 0,
+          "attempted": 15,
+          "coveredTargets": 15,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 15,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidateRunId": "candidate-1794639412807-bc3839",
+      "candidate": {
+        "targets": 15,
+        "stats": {
+          "scannedElements": 1504,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 229,
+          "skippedSubtrees": 99,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 1,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 107
+      },
+      "scanBefore": 1505,
+      "scanAfter": 1504,
+      "differenceBlocks": []
+    },
+    {
+      "id": "teapaw-home",
+      "url": "https://teapaw.org/",
+      "name": "Teapaw 首页公告",
+      "status": "complete",
+      "reusedSnapshot": true,
+      "snapshotId": "a15d480469e97ea9cf14c64f",
+      "htmlHash": "a15d480469e97ea9cf14c64f32d76dbb118d065fb2868f8bb926c39bf84fd37e",
+      "title": "teapaw.org — Nitter replacement | teapawt",
+      "baselineRunId": "release-1794639475151-835acc",
+      "candidateRunId": "candidate-1794639422426-40248d",
+      "baseline": {
+        "targets": 8,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 11264,
+          "expected": 8,
+          "actualHosts": 8,
+          "unexpectedHosts": 0,
+          "attempted": 8,
+          "coveredTargets": 8,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 8,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidate": {
+        "targets": 15,
+        "stats": {
+          "scannedElements": 194,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 89,
+          "skippedSubtrees": 8,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 17,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 68
+      },
+      "scanBefore": 195,
+      "scanAfter": 194,
+      "previousBaselineRunId": "release-1794406600722-b5903f",
+      "baselineRepeatSummary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 5,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 68
+      },
+      "reusedBaseline": false,
+      "differenceBlocks": [
+        {
+          "id": "e27",
+          "added": [
+            "t2"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "0db0ffa6954aaa2d55a7323e9c740f3870d4fb8fe05013283ca4e379dc929ee3"
+        },
+        {
+          "id": "e28",
+          "added": [
+            "t3"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "5669f35cba7caf4cef1081fd5a23953e042230980794ae1b5423dd47d2eb2001"
+        },
+        {
+          "id": "e29",
+          "added": [
+            "t4",
+            "t6"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "afdcc47e81ee6e6ed7a15d3ec0ee07b372e5f1a049e0df00d051febc1a26c244"
+        },
+        {
+          "id": "e30",
+          "added": [
+            "t5"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "79fc4610f120564c8ec09694bcc69497e266fb654278bf3d78c25821c56c53ac"
+        },
+        {
+          "id": "e31",
+          "added": [
+            "t7",
+            "t9",
+            "t11",
+            "t13"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "8c1b2278d699112b79cf1b6fcd13093e90e430a1c88e9ccf0db50986b1e71e06"
+        },
+        {
+          "id": "e32",
+          "added": [
+            "t8"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "d1634be01717ef667c96da236e59444a029a31bd08e4edf30fbef60e56447b0b"
+        },
+        {
+          "id": "e33",
+          "added": [
+            "t10"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "7f0348c1e2dd94ac9ec3186b851adf0d5b02842b605b4ebc87a12d57e3d6d9ad"
+        },
+        {
+          "id": "e34",
+          "added": [
+            "t12"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "36b3b5c2a8f5e4916d11dcd73d037128f2e913898aa111929975ed83264e2976"
+        },
+        {
+          "id": "e63",
+          "added": [
+            "t30"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "dbb42b3caf6b643bcb281cfc5b1824f19f03c740b30ab7a10cfa33638c452429"
+        },
+        {
+          "id": "e64",
+          "added": [
+            "t31",
+            "t33",
+            "t35",
+            "t37",
+            "t39",
+            "t41",
+            "t43"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "a64252bd0d75a2bdcf507a3fe5fb8ef2542841ffd60ba72382ac59cd18d77e03"
+        },
+        {
+          "id": "e65",
+          "added": [
+            "t32"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "dbcac8add308467580b7de6dca2e1718d4e5c8fe98575e27bd0c40cad97414dc"
+        },
+        {
+          "id": "e66",
+          "added": [
+            "t34"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "a9c6806093289df0f65cc8820dbd31176cea7260a419a1333d495b329b9a0cd1"
+        },
+        {
+          "id": "e67",
+          "added": [
+            "t36"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "f71ed3385d3108910302b767b4b004187949d4b0e5e4217e73373eb5f7044ac9"
+        },
+        {
+          "id": "e68",
+          "added": [
+            "t38"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "e870447c5a616a596fecf62b5687887184f87a0d9bf22d2d5e032aff0685c38d"
+        },
+        {
+          "id": "e69",
+          "added": [
+            "t40"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "e608ecf5be249d731cef5e74a35b36c358e4db969e7e599cbb59e51306fe904e"
+        },
+        {
+          "id": "e70",
+          "added": [
+            "t42"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "d312dcead8fc7231ee31d230cc8cf7abfbee7215da635aacf4e1a1745c1555d5"
+        },
+        {
+          "id": "e71",
+          "added": [
+            "t44"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "1d17893335c32e1aede2b0b3c79c5c33a85e47e908b2cd48a32371979e5f6fa9"
+        }
+      ]
+    },
+    {
+      "id": "ziggit-topic",
+      "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822",
+      "name": "Ziggit · export 讨论",
+      "status": "complete",
+      "reusedSnapshot": true,
+      "snapshotId": "fadc07a466e17f30175a8d31",
+      "htmlHash": "fadc07a466e17f30175a8d318340d08ad5c4a89afb0814b84ec8437c3d2eef78",
+      "title": "What is the exact semantic of export - Explain - Ziggit",
+      "baselineRunId": "release-1794639505220-6a0789",
+      "candidateRunId": "candidate-1794639432974-3acc22",
+      "baseline": {
+        "targets": 11,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 11056,
+          "expected": 11,
+          "actualHosts": 11,
+          "unexpectedHosts": 0,
+          "attempted": 11,
+          "coveredTargets": 11,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 11,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidate": {
+        "targets": 11,
+        "stats": {
+          "scannedElements": 1539,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 225,
+          "skippedSubtrees": 119,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 89
+      },
+      "scanBefore": 1540,
+      "scanAfter": 1539,
+      "previousBaselineRunId": "release-1794406767840-90d77e",
+      "baselineRepeatSummary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 2,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 89
+      },
+      "reusedBaseline": false,
+      "differenceBlocks": []
+    },
+    {
+      "id": "lil-log-home",
+      "url": "https://lilianweng.github.io/",
+      "name": "Lil’Log 博客首页",
+      "status": "complete",
+      "reusedSnapshot": true,
+      "snapshotId": "746df28629938d77d2402873",
+      "htmlHash": "746df28629938d77d24028733c30657116e976c552bbbbd2b1cb4e1087815b76",
+      "title": "Lil'Log",
+      "baselineRunId": "release-1794639535476-b85b5b",
+      "candidateRunId": "candidate-1794639442717-1f834b",
+      "baseline": {
+        "targets": 22,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 10908,
+          "expected": 22,
+          "actualHosts": 22,
+          "unexpectedHosts": 0,
+          "attempted": 22,
+          "coveredTargets": 22,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 22,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidate": {
+        "targets": 22,
+        "stats": {
+          "scannedElements": 240,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 71,
+          "skippedSubtrees": 46,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 44
+      },
+      "scanBefore": 246,
+      "scanAfter": 240,
+      "previousBaselineRunId": "release-1794406727677-5f33e7",
+      "baselineRepeatSummary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 0,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 44
+      },
+      "reusedBaseline": false,
+      "differenceBlocks": []
+    },
+    {
+      "id": "josh-css-has",
+      "url": "https://www.joshwcomeau.com/css/has/",
+      "name": "Josh Comeau · CSS :has()",
+      "status": "complete",
+      "reusedSnapshot": true,
+      "snapshotId": "f725f40a43c530131676b8de",
+      "htmlHash": "f725f40a43c530131676b8de27622477a9db6e0a2c49be1d9e56a2b63b936638",
+      "title": "The Undeniable Utility Of CSS :has • Josh W. Comeau",
+      "baselineRunId": "release-1794639565512-460d17",
+      "candidateRunId": "candidate-1794639454441-e6e9ac",
+      "baseline": {
+        "targets": 112,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 22073,
+          "expected": 111,
+          "actualHosts": 112,
+          "unexpectedHosts": 1,
+          "attempted": 111,
+          "coveredTargets": 111,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 111,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidate": {
+        "targets": 120,
+        "stats": {
+          "scannedElements": 1626,
+          "unselectedStrongOutsideBlocks": 1,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 582,
+          "skippedSubtrees": 225,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 20,
+        "removed": 9,
+        "suspected": 21,
+        "confirmed": 13,
+        "violations": 2,
+        "acceptedIssues": 2,
+        "blockingViolations": 0,
+        "totalBlocks": 495
+      },
+      "scanBefore": 1711,
+      "scanAfter": 1626,
+      "previousBaselineRunId": "release-1794408848422-a3be7f",
+      "baselineRepeatSummary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 33,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 495
+      },
+      "reusedBaseline": false,
+      "differenceBlocks": [
+        {
+          "id": "e195",
+          "added": [
+            "t58"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "685b100332e1d6af6da3e462fc1de19e576bb7afdb41e6820fc452788fc014f1"
+        },
+        {
+          "id": "e197",
+          "added": [
+            "t59",
+            "t60",
+            "t61"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "93c418842e6d5077fb08988dda18e63beb33c6717e33f50146133407eb5ec557"
+        },
+        {
+          "id": "e199",
+          "added": [
+            "t62"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "7d33f2b1287cb0b3e2e89aa34342dcd699e538e062cd7d2627692b9018e79e66"
+        },
+        {
+          "id": "e216",
+          "added": [],
+          "removed": [
+            "t71"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "827ed462-3100-4459-8865-1fa676e708e7",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e498",
+          "added": [],
+          "removed": [
+            "t211"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "33215559-0d3f-44ec-b1cd-d364a32698c2",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e1015",
+          "added": [
+            "t491",
+            "t492",
+            "t493"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "eecc1c25c02cc5c0e49a50fae7dc0afb05576b288782948db0c252f1a6d2630b"
+        },
+        {
+          "id": "e1018",
+          "added": [
+            "t494",
+            "t495"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "66df8165b027c88a7834fdef9e10d96ae2dcafc8bf705622aea825c84b1d57a9"
+        },
+        {
+          "id": "e1052",
+          "added": [
+            "t512",
+            "t513",
+            "t514",
+            "t515",
+            "t516",
+            "t520"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "a285ea83fc784ff48f744d78459763ad618adcaa9d76fd9d378809b03f210d36"
+        },
+        {
+          "id": "e1055",
+          "added": [
+            "t517",
+            "t518",
+            "t519"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "8cbf3c063f966d8dd11ea1c5af59ad958a810cf9bd4f1164abf11e9221eb6c94"
+        },
+        {
+          "id": "e1075",
+          "added": [
+            "t534",
+            "t535",
+            "t536",
+            "t537",
+            "t538"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "b9e0c5d688e0ab2ff3214b2bc65f01e8a4c407d4969f4c383c8509229d5e8a3a"
+        },
+        {
+          "id": "e1084",
+          "added": [
+            "t539",
+            "t540",
+            "t541",
+            "t542",
+            "t543"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "1f9962185972d96098408992ec2b4c44d5d1ffe580d74faabbae9e67410374a9"
+        },
+        {
+          "id": "e1087",
+          "added": [
+            "t544",
+            "t545",
+            "t546",
+            "t547",
+            "t548"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "c583d5be2451998e9e1936a94182e422d2db64b366148cc8ba73fb661e9a91c1"
+        },
+        {
+          "id": "e1625",
+          "added": [
+            "t842"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "b7aa077a8964d8e3bc717e247e3cbce42cd52371fc0422d74d19069ade86a318"
+        },
+        {
+          "id": "e1627",
+          "added": [
+            "t843",
+            "t844",
+            "t845",
+            "t846",
+            "t847"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "a3defbdd52e33acce44ec663d97f9ad2c57fe996c82fa0bbeb8249fa34df3a31"
+        },
+        {
+          "id": "e1630",
+          "added": [
+            "t848",
+            "t852"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "41584b4072ee27b791702b7b9073e34254dab0c79d437d1f87584d2a7482bdc5"
+        },
+        {
+          "id": "e1631",
+          "added": [
+            "t849",
+            "t850",
+            "t851"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "7ec18838bf0eafca0e4a55770ab390f42a362de3b667a63956c149a08edc15ae"
+        },
+        {
+          "id": "e1640",
+          "added": [
+            "t853"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "830a73a3c9733b79a4cd16b81bccd24cec9fd9c0369f14da1811a201c6b95bd0"
+        },
+        {
+          "id": "e1641",
+          "added": [
+            "t854",
+            "t855",
+            "t856"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "2f7ec8407f2b81703e0787d50f905f298e3e4183199d1c171c6be825cea67c12"
+        },
+        {
+          "id": "e1779",
+          "added": [],
+          "removed": [
+            "t942"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "7d9c0155-85dd-4e01-9d2d-2a07a76669f2",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e1976",
+          "added": [],
+          "removed": [
+            "t1032"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "b40a650d-7623-4923-88e8-87b6d613503e",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e2157",
+          "added": [],
+          "removed": [
+            "t1114"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "0ad70f0c-f584-488d-8978-d29d776a34fc",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e2358",
+          "added": [],
+          "removed": [
+            "t1200"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "9bc05f56-de1e-4dc0-b682-b456ccbc99cd",
+          "textHash": "b3649776d8ad09f414379c2934bd90188913c162ad20363371dd319cc6b0165c"
+        },
+        {
+          "id": "e2866",
+          "added": [
+            "t1456"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "19f6d532fd82a4fcb2731e93e96920b8901c3931e3b835e070c8b62ece2d0687"
+        },
+        {
+          "id": "e2868",
+          "added": [
+            "t1457"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "d2331ce334d2e348de85c0ceb3c3f1841276916b1752ed71b14f24ba73bdbc1d"
+        },
+        {
+          "id": "e2869",
+          "added": [
+            "t1458"
+          ],
+          "removed": [],
+          "assessment": "pending-user-review",
+          "textHash": "6c555f47ba705a06f2713c5a153a5df6e19ef90fd84bb3c80a066185f698ce0d"
+        },
+        {
+          "id": "e2975",
+          "added": [
+            "t1523",
+            "t1524",
+            "t1525",
+            "t1526",
+            "t1527"
+          ],
+          "removed": [],
+          "assessment": "existing-user-decision",
+          "verdict": "translate",
+          "decisionId": "c45d6506-96e4-4ecc-8961-1797e698c23b",
+          "textHash": "6ae6ee86c071d22a0d33aaa4e5270b5cb7594ec64e29bdaf657aa54bb02b4be4"
+        },
+        {
+          "id": "e3277",
+          "added": [],
+          "removed": [
+            "t1758"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "4f660147-cd7d-41af-a307-edf0d4db929a",
+          "textHash": "103e2a9f3f94ffe026e35d59dfdf47a05659b033382560b4bafaea6f9223effb"
+        },
+        {
+          "id": "e3278",
+          "added": [],
+          "removed": [
+            "t1759"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "84aab139-a15e-4544-8861-4e6871e6aebe",
+          "textHash": "7595b85235381cfda521fa6cc1e44f3de2f68c85b81623dba3c2d9d0cd8786fa"
+        },
+        {
+          "id": "e3280",
+          "added": [],
+          "removed": [
+            "t1760"
+          ],
+          "assessment": "existing-user-decision",
+          "verdict": "exclude",
+          "decisionId": "753d8dff-d1e8-436e-8828-8c53d7efd390",
+          "textHash": "30b747f538ea267dec6b6b89e547c3358b557bb76f3cbabef4a2225595862a3a"
+        }
+      ]
+    },
+    {
+      "id": "python-appetite",
+      "url": "https://docs.python.org/3/tutorial/appetite.html",
+      "name": "Python 教程 · Whetting Your Appetite",
+      "status": "complete",
+      "reusedSnapshot": true,
+      "snapshotId": "960bca572fcd880e7f5d3c27",
+      "htmlHash": "960bca572fcd880e7f5d3c27035cc79c891320841928ed71d7761969ca75cd6d",
+      "title": "1. Whetting Your Appetite — Python 3.15.2 documentation",
+      "baselineRunId": "release-1794639609962-e57e63",
+      "candidateRunId": "candidate-1794639464661-13676a",
+      "baseline": {
+        "targets": 17,
+        "translation": {
+          "service": "microsoft",
+          "targetLanguage": "zh-Hans",
+          "elapsedMs": 11162,
+          "expected": 17,
+          "actualHosts": 17,
+          "unexpectedHosts": 0,
+          "attempted": 17,
+          "coveredTargets": 17,
+          "completedByCoveringHost": 0,
+          "coverageComplete": true,
+          "completionRule": "source-coverage-v1",
+          "completionRuleHash": "2ad45ccf177eb8b8f93a32d6ca4bd868e1ba32667cc77b6614c938ae97a6ba6f",
+          "inserted": 17,
+          "pending": 0,
+          "failures": 0,
+          "complete": true
+        },
+        "build": {
+          "kind": "release",
+          "tag": "v1.15.0",
+          "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+          "assetHash": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+          "sourceArchiveHash": "225c160ffae34403ed485ab0bba43081d4c3142f6a67e68f8d08538633ca6e26",
+          "settings": {
+            "service": "microsoft",
+            "from": "en",
+            "to": "zh-Hans",
+            "display": 1,
+            "translationScope": "smart",
+            "useCache": false
+          },
+          "collectorHash": "9ca5ad8c26aa3b34676a547aa63df976fc0c05dfb208c8ade911ae902ab355d0"
+        },
+        "bundleHash": "314ffa5a843e65bbc08b44041df446aead6affb9594581847e70a24e78c49750"
+      },
+      "candidate": {
+        "targets": 17,
+        "stats": {
+          "scannedElements": 84,
+          "unselectedStrongOutsideBlocks": 0,
+          "budgetDeferredReadingSubtrees": 0,
+          "classifiedElements": 31,
+          "skippedSubtrees": 5,
+          "budgetExceeded": false,
+          "profileFastPathUsed": false,
+          "openShadowRoots": 0
+        },
+        "bundleHash": "844797d92f07ead584f4d81cbe48a6bdde8a8559b05e89dd10de1871385521e2"
+      },
+      "summary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 84
+      },
+      "scanBefore": 85,
+      "scanAfter": 84,
+      "previousBaselineRunId": "release-1794406809997-fd7a26",
+      "baselineRepeatSummary": {
+        "added": 0,
+        "removed": 0,
+        "suspected": 3,
+        "confirmed": 0,
+        "violations": 0,
+        "acceptedIssues": 0,
+        "blockingViolations": 0,
+        "totalBlocks": 84
+      },
+      "reusedBaseline": false,
+      "differenceBlocks": []
+    }
+  ]
+}
