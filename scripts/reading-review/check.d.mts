@@ -1,0 +1,1 @@
+export function checkCorpus(options?: { root?: string; dataRoot?: string; paths?: Record<string, string>; policyPath?: string; log?: (message: string) => void; createRunner?: (...args: any[]) => Promise<any> }): Promise<any>

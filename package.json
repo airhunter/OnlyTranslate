@@ -21,6 +21,8 @@
     "test:content": "vitest run tests/utils/proseSignals.test.ts tests/utils/preservedNewlineTargets.test.ts tests/utils/autoTranslateTargetFixtures.test.ts tests/utils/autoTranslateTarget.test.ts tests/utils/contentDetector.test.ts tests/utils/contentFilter.test.ts tests/utils/contentUnitClassifier.test.ts tests/utils/translationTarget.test.ts tests/utils/siteProfiles.test.ts tests/utils/quoraProfile.test.ts",
     "test:input-page": "node scripts/serve-input-translation-test.mjs",
     "benchmark:translation": "node scripts/benchmark-translation.mjs",
+    "review:reading": "node scripts/reading-review/server.mjs",
+    "test:reading": "node scripts/reading-review/check.mjs",
     "verify": "pnpm compile && pnpm test",
     "release": "GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token)} release-it",
     "release:check": "node scripts/check-release-readiness.mjs"

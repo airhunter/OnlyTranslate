@@ -1,0 +1,8 @@
+{
+  "tag": "v1.15.0",
+  "commit": "65d20abd7af0aa55ae59ee57b515692bd941ca22",
+  "asset": "OnlyTranslate-v1.15.0-chrome.zip",
+  "sha256": "d6bd44f605667f1fe6b890bb4a9694eb0705c2877299b9d2404d6d85f25d868c",
+  "verifiedFrom": "https://github.com/airhunter/OnlyTranslate/releases/tag/v1.15.0",
+  "settings": { "service": "microsoft", "from": "en", "to": "zh-Hans", "display": 1, "translationScope": "smart", "useCache": false }
+}

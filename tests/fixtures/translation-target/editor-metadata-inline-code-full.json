@@ -1,0 +1,8 @@
+{
+  "name": "Full page still includes editor labels and article metadata",
+  "url": "https://reading-regression.example/interactive-examples",
+  "scope": "full",
+  "html": "editor-metadata-inline-code.html",
+  "include": ["article-title", "ordinary-playground", "editor-label", "updated-label", "updated-value", "hits-label"],
+  "exclude": ["category-code", "code-only", "source-code", "protected-copy"]
+}

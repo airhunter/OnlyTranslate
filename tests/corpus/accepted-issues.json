@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "issues": [
+    {
+      "id": "josh-newsletter-title",
+      "revision": 1,
+      "status": "accepted",
+      "pageId": "josh-css-has",
+      "snapshotId": "f725f40a43c530131676b8de",
+      "htmlHash": "f725f40a43c530131676b8de27622477a9db6e0a2c49be1d9e56a2b63b936638",
+      "blockId": "e1331",
+      "textHash": "0cdc64d518de20dac0c52bce72009842fd08e4f44e44de1ab4fe80ba469e4098",
+      "decisionId": "ed15fae5-9324-4084-b7fa-e1f235bf450e",
+      "specification": 1,
+      "expectedVerdict": "translate",
+      "acceptedSelectedTextIds": [],
+      "reviewer": "user",
+      "confirmedAt": "2026-11-14",
+      "reason": "用户明确选择保留原裁决，登记为已接受的已知限制，不阻断发布。当前规则方案难以可靠地区分推广旁注与阅读内容，暂不继续修复；接受这个订阅推广旁注标题当前未收录的结果，不将其计为算法已修复。"
+    },
+    {
+      "id": "josh-newsletter-body",
+      "revision": 1,
+      "status": "accepted",
+      "pageId": "josh-css-has",
+      "snapshotId": "f725f40a43c530131676b8de",
+      "htmlHash": "f725f40a43c530131676b8de27622477a9db6e0a2c49be1d9e56a2b63b936638",
+      "blockId": "e1333",
+      "textHash": "8e02e2acb59b20bd4f8e0f67ea23a544559ce863a1543da7722aaa7f482ed336",
+      "decisionId": "3f5129b4-d2c0-4bd4-9269-08740a1064f6",
+      "specification": 1,
+      "expectedVerdict": "translate",
+      "acceptedSelectedTextIds": [],
+      "reviewer": "user",
+      "confirmedAt": "2026-11-14",
+      "reason": "用户明确选择保留原裁决，登记为已接受的已知限制，不阻断发布。当前规则方案难以可靠地区分推广旁注与阅读内容，暂不继续修复；接受这个课程预告及 newsletter 招募正文当前未收录的结果，不将其计为算法已修复。"
+    }
+  ]
+}

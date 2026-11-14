@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "pages": [
+    { "id": "teapaw-home", "name": "Teapaw 首页公告", "url": "https://teapaw.org/", "type": "首页", "source": "漏译反馈", "ready": "main" },
+    { "id": "josh-css-has", "name": "Josh Comeau · CSS :has()", "url": "https://www.joshwcomeau.com/css/has/", "type": "文章", "source": "旁注覆盖", "ready": "article" },
+    { "id": "lil-log-home", "name": "Lil’Log 博客首页", "url": "https://lilianweng.github.io/", "type": "首页", "source": "历史测试网址", "ready": "main" },
+    { "id": "ziggit-topic", "name": "Ziggit · export 讨论", "url": "https://ziggit.dev/t/what-is-the-exact-semantic-of-export/15822", "type": "论坛", "source": "虚拟化楼层反馈", "ready": ".topic-post", "focus": "#post_6" },
+    { "id": "python-appetite", "name": "Python 教程 · Whetting Your Appetite", "url": "https://docs.python.org/3/tutorial/appetite.html", "type": "文档", "source": "新增抽样", "ready": "main, [role=main]" }
+  ]
+}

@@ -784,6 +784,98 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(rescannedTargets).not.toContain(quote)
   })
 
+  it.each([
+    '<span style="display:none">Private hidden message</span>',
+    '<span style="visibility:hidden">Private hidden message</span>',
+    '<span role="menuitem">Private hidden message</span>',
+    '<span class="sr-only">Private hidden message</span>',
+    '<span role="dialog">Private hidden message</span>',
+    '<span role="complementary">Private hidden message</span>',
+    '<span role="contentinfo">Private hidden message</span>',
+    '<span role="NAVIGATION">Private hidden message</span>',
+    '<span data-fr-translated="true">Private hidden message</span>',
+    '<svg><foreignObject><span role="menuitem">Private hidden message</span></foreignObject></svg>',
+    '<svg><g style="display:none"><text>Private hidden message</text></g></svg>',
+    '<span><div role="navigation">Private hidden message</div></span>',
+    '<span><span style="display:none">Private hidden message</span></span>'
+  ])('does not aggregate unsafe descendants into an inline-code list target: %s', async unsafe => {
+    document.body.innerHTML = `<main><article><h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><div id="unsafe-copy">Sets the <code>value</code> parameter ${unsafe}</div></li></ul>
+    </article></main>`
+    const result = resolveAutoTranslateTarget('smart')
+    const copy = document.querySelector('#unsafe-copy')!
+    expect(result.nodes).not.toContain(copy)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the', '设置'))
+    for (const node of result.nodes) await handleBilingualTranslation(node as HTMLElement, false)
+    expect(vi.mocked(translateText).mock.calls.map(args => args[0]).join(' ')).not.toContain('Private hidden message')
+    expect(Array.from(document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).map(node => node.textContent).join(' ')).not.toContain('Private hidden message')
+    const dynamic = document.createElement('ul')
+    dynamic.innerHTML = `<li><div id="dynamic-unsafe-copy">Sets the <code>value</code> parameter ${unsafe}</div></li>`
+    document.querySelector('article')!.append(dynamic)
+    const dynamicNodes = collectDynamicTranslationNodes(dynamic, result.contentRoot, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })
+    expect(dynamicNodes).not.toContain(dynamic.querySelector('#dynamic-unsafe-copy'))
+    expect(dynamicNodes.map(node => getTranslatableTextWithProtectedInline(node).text).join(' ')).not.toContain('Private hidden message')
+  })
+
+  it('keeps ordinary inline SVG graphics in a list explanation without relaxing protected descendants', async () => {
+    document.body.innerHTML = `<main><article><h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><div id="svg-copy">Sets the <code>value</code> parameter <svg viewBox="0 0 10 10"><g><path d="M0 0L10 10"></path></g></svg></div></li></ul>
+    </article></main>`
+    const result = resolveAutoTranslateTarget('smart')
+    const copy = document.querySelector<HTMLElement>('#svg-copy')!, icon = copy.querySelector('svg')!
+    expect(result.nodes).toContain(copy)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the', '设置'))
+    await handleBilingualTranslation(copy, false)
+    expect(copy.querySelector('svg')).toBe(icon)
+    expect(copy.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('value')
+    const dynamic = document.createElement('ul')
+    dynamic.innerHTML = '<li><div id="dynamic-svg-copy">Sets the <code>value</code> parameter <svg><path d="M0 0L1 1"></path></svg></div></li>'
+    document.querySelector('article')!.append(dynamic)
+    expect(collectDynamicTranslationNodes(dynamic, result.contentRoot, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })).toContain(dynamic.querySelector('#dynamic-svg-copy'))
+  })
+
+  it('translates short list prose as one target while preserving its inline code', async () => {
+    document.body.innerHTML = `<main><article>
+      <h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><span aria-hidden="true">→</span><div id="list-copy">Sets the <code id="original-category">category</code> data attribute to <code>"sci-fi"</code>, and</div></li></ul>
+    </article></main>`
+    const copy = document.querySelector<HTMLElement>('#list-copy')!
+    const sourceCode = copy.querySelector('code')!
+    expect(resolveAutoTranslateTarget('smart').nodes).toContain(copy)
+    expect(getTranslatableTextWithProtectedInline(copy).protectedInlines).toHaveLength(2)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the ', '设置 ').replace(' data attribute to ', ' 属性为 '))
+    await handleBilingualTranslation(copy, false)
+    const translated = copy.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!
+    expect(translated.textContent).toContain('设置')
+    expect(Array.from(translated.querySelectorAll('code')).map(code => code.textContent)).toEqual(['category', '"sci-fi"'])
+    expect(translated.querySelector('#original-category')).toBeNull()
+    expect(copy.querySelector('code')).toBe(sourceCode)
+    expect(sourceCode.textContent).toBe('category')
+  })
+
+  it('applies editor and metadata purpose checks to dynamic blocks without dropping inline-code prose', () => {
+    document.body.innerHTML = `<main><article>
+      <h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+    </article></main>`
+    const initial = resolveAutoTranslateTarget('smart')
+    const inserted = document.createElement('div')
+    inserted.innerHTML = `<div><header><p id="new-editor-label">Code Playground</p><button>Format code</button><button>Reset code</button></header><div><pre>const value = 1;</pre><textarea>const value = 1;</textarea></div></div>
+      <div><h3 id="new-updated-label">Last updated on</h3><p id="new-updated-value">September 9th, 2024</p></div>
+      <ul><li><div id="new-list-copy">Sets the <code>category</code> data attribute to <code>"sci-fi"</code>, and</div></li></ul>`
+    document.querySelector('article')!.append(inserted)
+    const nodes = collectDynamicTranslationNodes(inserted, initial.contentRoot, 'smart', {
+      siteCompatMode: 'smart', scanContext: createScanContext()
+    })
+    expect(nodes).toContain(inserted.querySelector('#new-list-copy'))
+    for (const id of ['new-editor-label', 'new-updated-label', 'new-updated-value']) {
+      expect(nodes.some(node => node.contains(inserted.querySelector('#' + id)))).toBe(false)
+    }
+  })
+
   it('translates Maxwell Forbes sidenotes separately without merging them into paragraph text', async () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://maxwellforbes.com/posts/dont-try-to-reform-science/'),

@@ -340,8 +340,20 @@ function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
 
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return true;
     if (element.closest('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]')) return true;
+    if (isCodeEditorToolbar(element)) return true;
 
     return false;
+}
+
+function isCodeEditorToolbar(element: Element): boolean {
+    const header = element.closest('header');
+    if (!header || header.querySelector('h1, h2, h3, h4, h5, h6')) return false;
+    if (getNormalizedText(header).length > 180 || header.querySelectorAll('button').length < 2) return false;
+    const editor = header.parentElement;
+    if (!editor || editor.matches('article, main, body')) return false;
+    // A short title beside editor actions is UI; nearby article headings are not.
+    return Array.from(editor.children).some(child => child !== header
+        && child.querySelector('textarea') && child.querySelector('pre'));
 }
 
 function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
@@ -356,7 +368,32 @@ function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
     if (/^no\s+(repl(?:y|ies)|views?|comments?|likes?|votes?)$/i.test(text)
         && element.matches('a, h2, [role="heading"][aria-level="2"]')) return true;
     if (/^\d+[smhdw]\s*(ago)?$/i.test(text)) return true;
+    if (isArticleMetadataField(element)) return true;
 
+    return false;
+}
+
+function isArticleMetadataField(element: Element): boolean {
+    const article = element.closest('article, [role="article"]');
+    if (!article) return false;
+    for (let field: Element | null = element, depth = 0; field && field !== article && depth < 3; field = field.parentElement, depth++) {
+        const children = Array.from(field.children);
+        if (children.length < 2 || children.length > 4) continue;
+        const label = children.find(child => child.matches('h3, h4, dt, label'));
+        if (!label) continue;
+        const labelText = getNormalizedText(label);
+        if (!/^(?:last updated(?: on)?|# of hits|hit count|page views)\s*:?$/i.test(labelText)) continue;
+        if (getNormalizedText(field).length > 180) continue;
+        const value = children.find(child => child !== label && child.matches('p, time, dd, span'));
+        if (/^last updated(?: on)?\s*:?$/i.test(labelText) && value) {
+            const date = value.getAttribute('datetime') || getNormalizedText(value);
+            if (/^(?:(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})$/i.test(date)) return true;
+        }
+        if (/^(?:# of hits|hit count|page views)\s*:?$/i.test(labelText)) {
+            if (value && /^\d[\d,.]*$/.test(getNormalizedText(value))) return true;
+            if (Array.from(field.querySelectorAll('button[aria-label]')).some(button => /\b(hit counter|people have visited|page views)\b/i.test(button.getAttribute('aria-label') ?? ''))) return true;
+        }
+    }
     return false;
 }
 
