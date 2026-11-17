@@ -2,7 +2,7 @@
 
 > 强大而克制，只做一件事——翻译。
 
-[English](./README_EN.md) | 中文 | [官方网站](https://onlytranslate.top/)
+[English](./README_EN.md) | 中文 | [日本語](./README_JA.md) | [官方网站](https://onlytranslate.top/)
 
 只译是一款支持 Chrome、Edge 和 Firefox 的开源双语阅读浏览器扩展：支持网页正文、视频字幕、本地 EPUB 电子书，以及本地和在线 PDF 文档的翻译，并尽量保留原内容的结构与阅读节奏。无需注册只译账号，也不绑定订阅；翻译服务由你自己选择。
 

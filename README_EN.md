@@ -2,7 +2,7 @@
 
 > Focused, capable, and intentionally quiet. It does one thing well: translation.
 
-[中文](./README.md) | English | [Official website](https://onlytranslate.top/)
+[中文](./README.md) | English | [日本語](./README_JA.md) | [Official website](https://onlytranslate.top/)
 
 OnlyTranslate is an open-source bilingual reading extension for Chrome, Edge, and Firefox. It translates web content, video subtitles, local EPUB ebooks, and local or online PDFs while preserving the original structure and reading flow as much as possible. No OnlyTranslate account or subscription is required, and you choose the translation service.
 
