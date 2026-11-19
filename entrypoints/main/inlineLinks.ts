@@ -1,4 +1,4 @@
-import { isExcludedFromTranslatableText, isProtectedInlineElement } from './dom';
+import { getTranslatableTextWithProtectedInline, isExcludedFromTranslatableText, isProtectedInlineElement } from './dom';
 import { siteProfiles } from './siteProfiles';
 import type { InlineLinkPolicy } from './siteProfiles/types';
 import { getMainDomain } from '@/entrypoints/utils/domain';
@@ -11,7 +11,8 @@ export type InlineLinkResolver = (node: Element) => InlineLinkPolicy | false;
 const UI_SELECTOR = 'button, [role="button"], time, nav, [role="navigation"], [contenteditable="true"]';
 const EXCLUDED_SELECTOR = 'script, style, noscript, template, iframe, [hidden], [aria-hidden="true"], .only-translate-bilingual-content, .only-translate-loading, .only-translate-retry-wrapper';
 
-function copyLinkLabel(node: Node, parent: Node): void {
+function copyLinkLabel(node: Node, parent: Node, excludeElement?: (node: Element) => boolean): void {
+    if (node instanceof Element && excludeElement?.(node)) return;
     if (node instanceof Text) {
         parent.appendChild(document.createTextNode(node.data));
     } else if (node instanceof Element && node.matches('span, br')) {
@@ -21,10 +22,10 @@ function copyLinkLabel(node: Node, parent: Node): void {
         for (const name of ['class', 'dir', 'aria-hidden', 'hidden', 'translate']) {
             if (node.hasAttribute(name)) label.setAttribute(name, node.getAttribute(name)!);
         }
-        node.childNodes.forEach(child => copyLinkLabel(child, label));
+        node.childNodes.forEach(child => copyLinkLabel(child, label, excludeElement));
         parent.appendChild(label);
     } else if (node instanceof Element && !node.matches('script, style, template')) {
-        node.childNodes.forEach(child => copyLinkLabel(child, parent));
+        node.childNodes.forEach(child => copyLinkLabel(child, parent, excludeElement));
     }
 }
 
@@ -44,7 +45,7 @@ export function preserveInlineLink(node: Element, resolve: InlineLinkResolver): 
 
 // Build only local, minimal inline markup; service output is always treated as text.
 // Classes keep the site's theme/hover colors, while our class constrains layout/font.
-export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineLinkResolver): PreparedTranslationOnly {
+export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineLinkResolver, excludeElement?: (node: Element) => boolean): PreparedTranslationOnly {
     const draft = document.createElement('span');
     const preserved = new Set<Element>();
     const collect = (node: Node, parent: Node): void => {
@@ -52,7 +53,7 @@ export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineL
             parent.appendChild(document.createTextNode(node.data));
             return;
         }
-        if (!(node instanceof Element) || node.matches(`${EXCLUDED_SELECTOR}, ${UI_SELECTOR}`) || isExcludedFromTranslatableText(node)) return;
+        if (!(node instanceof Element) || node.matches(`${EXCLUDED_SELECTOR}, ${UI_SELECTOR}`) || isExcludedFromTranslatableText(node) || excludeElement?.(node)) return;
         const policy = resolve(node);
         if (policy) {
             const link = document.createElement('a');
@@ -69,8 +70,11 @@ export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineL
                 link.style.textDecoration = node.style.textDecoration;
             }
             if (policy === 'preserve') {
-                node.childNodes.forEach(child => copyLinkLabel(child, link));
+                node.childNodes.forEach(child => copyLinkLabel(child, link, excludeElement));
                 preserved.add(link);
+            } else if (excludeElement) {
+                link.textContent = getTranslatableTextWithProtectedInline(node, excludeElement).text
+                    .replace(/__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g, '');
             } else link.textContent = node.textContent;
             parent.appendChild(link);
             return;

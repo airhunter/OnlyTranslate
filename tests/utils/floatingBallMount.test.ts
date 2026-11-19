@@ -69,7 +69,9 @@ describe('floating ball mounting', () => {
     mountFloatingBall()
 
     const trigger = document.querySelector<HTMLButtonElement>('[data-testid="floating-ball-trigger"]')
-    trigger?.click()
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    Object.defineProperty(click, 'isTrusted', { value: true })
+    trigger?.dispatchEvent(click)
 
     await vi.waitFor(() => expect(mockSendMessage).toHaveBeenCalledWith({
       type: 'openPdfReader',

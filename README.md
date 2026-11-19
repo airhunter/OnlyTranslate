@@ -127,12 +127,14 @@ corepack pnpm dev
 # 类型检查与完整测试
 corepack pnpm verify
 
-# 构建与打包三个浏览器版本
+# 构建 Chrome 版本，打包 Chrome、Edge 和 Firefox
 corepack pnpm build
 corepack pnpm zip:all
 ```
 
 项目在 `package.json` 中声明了 pnpm 版本。建议使用 `corepack pnpm ...`，确保脚本使用项目声明的包管理器版本和本地依赖。
+
+正式发布流程见 [发布说明](RELEASE.md)。
 
 开发模式请在 Chrome 开发者模式中加载 `.output/chrome-mv3-dev`；生产构建请加载 `.output/chrome-mv3`，不要混用两个输出目录。
 

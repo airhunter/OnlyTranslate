@@ -1,0 +1,10 @@
+{
+  "name": "Smart reading blocks use nearby labels and comment context while leaving promotion and recommendations out",
+  "url": "https://reading-blocks.example/garden",
+  "scope": "smart",
+  "html": "reading-block-context.html",
+  "note": "产品口径变更：评论正文仍需强正文证据，单句短回复排除。",
+  "include": ["note-title", "note-body", "substantial-comment"],
+  "exclude": ["note-button", "promo", "recommendation", "labelled-recommendation", "unlabelled-short", "comment", "plain-offer-title", "plain-offer", "membership-title", "membership-copy"],
+  "textExcludes": ["complete roundup of offers", "arrange their tools", "prepare a new garden", "Open every day", "unlimited design templates", "private library of planting plans"]
+}

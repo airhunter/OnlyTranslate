@@ -65,6 +65,18 @@ const HN_ITEM_FIXTURE = `
 `
 
 describe('site profile registry', () => {
+  it('excludes Asterisk article footer modules in smart mode and its fallback, without changing full mode or prose', () => {
+    document.body.innerHTML = `<main class="post"><section class="content"><p id="prose" class="seealso">Further reading is discussed in this paragraph.</p></section><section class="prev_next"><div class="prev"><a><strong id="previous">Previous</strong></a></div><div class="next"><a id="next">Next article</a></div></section><section class="seealso"><h2 id="related">Further Reading</h2></section></main><section class="seealso"><p id="outside">Outside the article template.</p></section>`
+    const profile = siteProfiles.find(profile => profile.id === 'asterisk')!
+    for (const mode of ['smart', 'full'] as const) {
+      for (const id of ['previous', 'next', 'related']) {
+        expect(profile.skipTarget?.(document.getElementById(id)!, { mode, scope: 'smart', contentRoot: document.body })).toMatchObject({ policy: 'hard-skip', reason: 'asterisk-article-footer' })
+      }
+    }
+    for (const id of ['prose', 'outside']) expect(profile.skipTarget?.(document.getElementById(id)!, { mode: 'smart', scope: 'smart', contentRoot: document.body })).toBe(false)
+    expect(profile.skipTarget?.(document.getElementById('related')!, { mode: 'full', scope: 'full', contentRoot: document.body })).toBe(false)
+  })
+
   it('registers migrated select profiles by domain', () => {
     expect(selectCompatFn['github.com']).toBeTypeOf('function')
     expect(selectCompatFn['reddit.com']).toBeTypeOf('function')

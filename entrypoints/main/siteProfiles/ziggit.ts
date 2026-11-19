@@ -3,6 +3,10 @@ import {
     TRANSLATED_ATTR
 } from '@/entrypoints/main/translationTarget/constants';
 import type { SiteProfile } from './types';
+import { isElementSelfHidden } from '@/entrypoints/utils/domVisibility';
+
+const TOPIC_TITLE = '#topic-title h1[data-topic-id] > a.fancy-title[href]';
+const STICKY_HEADING = 'header.d-header h1.header-title';
 
 const COOKED_TEXT_SELECTOR = [
     '.cooked > p',
@@ -43,9 +47,27 @@ const UI_SELECTOR = [
 export const ziggitProfile: SiteProfile = {
     id: 'ziggit',
     domains: ['ziggit.dev'],
-    supplemental: (root) => getCookedTextTargets(root),
-    expandTarget: (node) => getCookedTextTargets(node),
-    allowTarget: (node) => {
+    smartMutationAttributes: ['data-topic-id', 'href'],
+    supplemental: (root, context) => {
+        const titles = context.mode === 'smart' ? [...root.querySelectorAll(TOPIC_TITLE)].filter(isTopicTitle) : [];
+        return [...getCookedTextTargets(root), ...titles];
+    },
+    expandTarget: (node, context) => {
+        const targets = getCookedTextTargets(node);
+        const title = context.scope === 'smart' ? getDynamicTopicTitle(node) : null;
+        return title ? [...targets, title] : targets;
+    },
+    ariaHiddenAncestor: (node) => {
+        // Style mutations can be reported on the heading or nested markup.
+        const title = node.matches('#topic-title h1[data-topic-id]')
+            ? node.querySelector(':scope > a.fancy-title[href]')
+            : node.closest('a.fancy-title[href]');
+        return title && isTopicTitle(title) ? title.parentElement : null;
+    },
+    allowTarget: (node, context) => {
+        if (context.scope === 'smart' && isTopicTitle(node)) {
+            return { role: 'title', reason: 'ziggit-topic-title' };
+        }
         if (!isCookedTextTarget(node)) return false;
         return {
             role: 'paragraph',
@@ -54,6 +76,9 @@ export const ziggitProfile: SiteProfile = {
         };
     },
     skipTarget: (node, context) => {
+        if (context.scope === 'smart' && isStickyTopicTitle(node)) {
+            return { policy: 'hard-skip', role: 'ui', reason: 'ziggit-sticky-topic-title' };
+        }
         const excluded = context.scope === 'full' ? '.sr-only, .cooked-selection-barrier' : UI_SELECTOR;
         if (node.matches(excluded) || node.closest(excluded)) {
             return { policy: 'hard-skip', role: 'ui', reason: 'ziggit-ui' };
@@ -64,6 +89,49 @@ export const ziggitProfile: SiteProfile = {
         return false;
     }
 };
+
+function topicId(url: URL): string | undefined {
+    const segments = url.pathname.replace(/\/$/, '').split('/').slice(1);
+    if (segments.shift() !== 't') return undefined;
+    if (segments.length > 1 && !/^\d+$/.test(segments[0])) segments.shift();
+    return segments.length && segments.length <= 2 && segments.every(segment => /^\d+$/.test(segment))
+        ? segments[0] : undefined;
+}
+
+function matchesCurrentTopic(link: Element, id: string | null): boolean {
+    if (location.hostname !== 'ziggit.dev' || !id || !link.getAttribute('href')) return false;
+    try {
+        const page = new URL(location.href);
+        const target = new URL(link.getAttribute('href')!, page);
+        return target.origin === page.origin && topicId(page) === id && topicId(target) === id;
+    } catch {
+        return false;
+    }
+}
+
+function isTopicTitle(node: Element): boolean {
+    if (!node.matches(TOPIC_TITLE) || !node.textContent?.trim()
+        || node.closest('.notranslate, [translate="no"]')
+        || !matchesCurrentTopic(node, node.parentElement?.getAttribute('data-topic-id') ?? null)) return false;
+
+    // The exception is only for the parent heading. The text extractor would
+    // otherwise include hidden text nested inside the title link.
+    return Array.from(node.querySelectorAll('*')).every(child => !child.textContent?.trim()
+        || (!child.matches('.sr-only, .notranslate, [translate="no"]') && !isElementSelfHidden(child)));
+}
+
+function isStickyTopicTitle(node: Element): boolean {
+    const link = node.closest(STICKY_HEADING)?.querySelector('a.topic-link[data-topic-id][href]');
+    return Boolean(link && matchesCurrentTopic(link, link.getAttribute('data-topic-id')));
+}
+
+function getDynamicTopicTitle(node: Element): Element | null {
+    if (isTopicTitle(node)) return node;
+    const region = node.closest('#topic-title')
+        ?? (node.matches('.regular.ember-view') ? node.querySelector(':scope > #topic-title') : null);
+    const title = region?.querySelector(TOPIC_TITLE);
+    return title && (node.contains(title) || title.contains(node)) && isTopicTitle(title) ? title : null;
+}
 
 function getCookedTextTargets(root: ParentNode): Element[] {
     const candidates = [

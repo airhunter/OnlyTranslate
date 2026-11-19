@@ -1,0 +1,10 @@
+{
+  "name": "B+ reads neutral outside containers and uses immediate prose neighbours without collecting unrelated UI",
+  "url": "https://ordinary-blocks.example/garden",
+  "scope": "smart",
+  "html": "reading-blocks-neutral.html",
+  "contentRoot": "#primary",
+  "include": ["neutral-title", "neutral-div", "weak-neighbour", "neutral-paragraph", "neutral-noisy-name", "unlabelled-long-note"],
+  "exclude": ["neutral-action", "unrelated-weak", "cookie-copy", "neutral-recommendation", "neutral-promo", "neutral-newsletter", "neutral-copyright", "neutral-source", "neutral-login", "neutral-billboard", "neutral-linked-summary", "neutral-bio", "neutral-suggested", "neutral-author-stats", "neutral-posted", "neutral-sponsor", "neutral-terms"],
+  "textExcludes": ["Manage account", "personalised experience", "several products", "premium planning service", "tell you about my newsletter"]
+}

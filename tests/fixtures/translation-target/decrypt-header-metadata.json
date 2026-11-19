@@ -1,0 +1,9 @@
+{
+  "name": "Decrypt smart mode keeps names and descriptive captions while excluding approved header metadata",
+  "url": "https://decrypt.co/123456/example-article",
+  "scope": "smart",
+  "html": "decrypt-header-metadata.html",
+  "include": ["story-title", "author", "editor", "article-copy", "explanatory-caption", "mixed-caption", "secondary-credit", "body-caption", "other-clock"],
+  "exclude": ["byline", "author-row", "editor-row", "read-time", "image-credit"],
+  "textExcludes": ["By Alex Morgan", "Edited by Kai Rivera", "12 min read"]
+}

@@ -34,7 +34,15 @@ export const asteriskProfile: SiteProfile = {
             reason: 'asterisk-article-target'
         };
     },
-    skipTarget: (node) => {
+    skipTarget: (node, context) => {
+        if (context.scope === 'smart' && node.closest('.post > section.prev_next, .post > section.seealso')) {
+            return {
+                policy: 'hard-skip',
+                role: 'ui',
+                reason: 'asterisk-article-footer'
+            };
+        }
+
         if (isAsteriskProgressNavigation(node)) {
             return {
                 policy: 'hard-skip',

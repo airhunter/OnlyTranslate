@@ -1,3 +1,4 @@
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 import {
     getCachedContentUnitDecision,
     isLikelyReadingCandidate,
@@ -32,6 +33,8 @@ export interface ContentUnitDecision {
     kind?: ContentUnitKind;
     confidence: number;
     reasons: string[];
+    documentTitle?: boolean;
+    requiresReadingContext?: boolean;
 }
 
 interface UnitMetrics {
@@ -52,6 +55,9 @@ interface CollectReadingUnitsOptions {
     candidateOnly?: boolean;
     pruneUiSubtrees?: boolean;
     includeRoot?: boolean;
+    isExtraCandidate?: (element: Element) => boolean;
+    selectReadingBlock?: (element: Element) => Element[] | undefined;
+    coveredTargets?: ReadonlySet<Element>;
 }
 
 const READABLE_CONTAINER_PATTERN = /\b(article|content|story|post|body|entry|main|prose|markdown|readme|docs?|document)\b/i;
@@ -66,13 +72,18 @@ const META_PATTERN = /\b(meta|metadata|filename|file-name|information|informatio
 const STAT_TEXT_PATTERN = /^(replies|views|activity|latest|hot|categories|docs|tags|topics|users?|likes?|votes?|share|reply|more|sign up|log in)$/i;
 const FILE_META_TEXT_PATTERN = /^(?:\d+\s*[x×]\s*\d+|\d+(?:\.\d+)?\s*(?:kb|mb|gb))$/i;
 
-export function classifyContentUnit(element: Element): ContentUnitDecision {
+export function classifyContentUnit(element: Element, allowedPageTranslateRoot?: Element): ContentUnitDecision {
     const metrics = getUnitMetrics(element);
     if (metrics.textLength === 0) return neutral('empty');
 
-    if (isStructuralUi(element, metrics)) return skip('ui', 0.98, 'structural-ui');
+    if (isStructuralUi(element, metrics, allowedPageTranslateRoot)) return skip('ui', 0.98, 'structural-ui');
     if (metrics.proseEvidence.strength !== 'strong' && isMetadataElement(element, metrics)) return skip('metadata', 0.92, 'metadata-signal');
     if (isNoiseElement(element, metrics)) return skip('noise', 0.9, 'noise-signal');
+    if (metrics.proseEvidence.strength !== 'strong' && metrics.textLength < 80
+        && UI_PATTERN.test(getStructuralHint(element))) {
+        return { ...skip('ui', 0.98, 'weak-ui-name'), requiresReadingContext: true };
+    }
+    if (isDocumentTitleHeading(element, metrics)) return { ...allow('title', 0.95, 'document-title-heading'), documentTitle: true };
 
     const forumTopicScore = scoreForumTopic(element, metrics);
     if (forumTopicScore >= 6) {
@@ -113,9 +124,26 @@ export function collectHighConfidenceReadingUnits(
     const result: Element[] = [];
 
     for (const element of iterateReadingUnitCandidates(root, options)) {
-        if (result.some(parent => parent.contains(element))) continue;
+        const covered = result.some(parent => parent.contains(element));
+        if (covered && !options.isExtraCandidate?.(element)) continue;
 
-        if (!tryUseScanBudget(options.scanContext, options.scanBudget)) break;
+        if (!tryUseScanBudget(options.scanContext, options.scanBudget)) {
+            // Count the disjoint unvisited roots, without walking their descendants.
+            let deferred = 1;
+            for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
+                for (let sibling = current.nextElementSibling; sibling; sibling = sibling.nextElementSibling) deferred++;
+                if (current.parentNode === root) break;
+            }
+            if (options.scanContext) options.scanContext.stats.budgetDeferredReadingSubtrees += deferred;
+            break;
+        }
+
+        const readingBlock = options.selectReadingBlock?.(element);
+        if (readingBlock) {
+            result.push(...readingBlock.filter(target => !result.includes(target)));
+            continue;
+        }
+        if (covered) continue;
 
         const decision = getCachedContentUnitDecision(options.scanContext, element, classifyContentUnit);
         if (decision.action === 'skip') continue;
@@ -131,6 +159,7 @@ function* iterateReadingUnitCandidates(
     root: ParentNode,
     options: CollectReadingUnitsOptions
 ): Generator<Element> {
+    if (root instanceof Element && options.coveredTargets?.has(root)) return;
     if (options.includeRoot !== false && root instanceof Element && shouldVisitReadingCandidate(root, options)) {
         yield root;
     }
@@ -142,6 +171,8 @@ function* iterateReadingUnitCandidates(
             acceptNode: (node) => {
                 if (!(node instanceof Element)) return NodeFilter.FILTER_SKIP;
                 markScannedElement(options.scanContext);
+
+                if (options.coveredTargets?.has(node)) return NodeFilter.FILTER_REJECT;
 
                 if (options.pruneUiSubtrees && isObviousUiSubtree(options.scanContext, node)) {
                     markSkippedSubtree(options.scanContext);
@@ -163,7 +194,16 @@ function* iterateReadingUnitCandidates(
 
 function shouldVisitReadingCandidate(element: Element, options: CollectReadingUnitsOptions): boolean {
     if (!options.candidateOnly) return true;
-    return isLikelyReadingCandidate(element);
+    return isLikelyReadingCandidate(element) || Boolean(options.isExtraCandidate?.(element));
+}
+
+function isDocumentTitleHeading(element: Element, metrics: UnitMetrics): boolean {
+    const selector = 'h1, [role="heading"][aria-level="1"]';
+    if (!element.matches(selector) || !looksLikeTitleText(metrics.text)) return false;
+    if (metrics.buttonCount || metrics.linkCount > 1) return false;
+    const title = element.ownerDocument.title.replace(/\s+/g, ' ').trim().toLowerCase();
+    const text = metrics.text.toLowerCase();
+    return title === text || title.startsWith(text + ' ');
 }
 
 function scoreTitle(element: Element, metrics: UnitMetrics): number {
@@ -306,7 +346,7 @@ function scoreForumExcerpt(element: Element, metrics: UnitMetrics): number {
     return score;
 }
 
-function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
+function isStructuralUi(element: Element, metrics: UnitMetrics, allowedPageTranslateRoot?: Element): boolean {
     const tag = element.tagName.toLowerCase();
     if (['nav', 'footer', 'form', 'dialog'].includes(tag)) return true;
     if (tag === 'aside' && !isInReadableContainer(element)) return true;
@@ -316,14 +356,21 @@ function isStructuralUi(element: Element, metrics: UnitMetrics): boolean {
     if (role === 'button' && !isRichReadingControl(element, metrics)) return true;
 
     if (element.closest('nav, footer, form, dialog, [role="navigation"], [role="menu"], [role="toolbar"], [role="tablist"]')) return true;
-    if (element.closest('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]')) return true;
-
-    const hint = getStructuralHint(element);
-    const text = metrics.text;
-    if (metrics.proseEvidence.strength === 'strong') return false;
-    if (UI_PATTERN.test(hint) && text.length < 80) return true;
+    if (element.closest(withPageTranslateOverride('[hidden], [aria-hidden="true"], .notranslate, [translate="no"]', element, allowedPageTranslateRoot))) return true;
+    if (isCodeEditorToolbar(element)) return true;
 
     return false;
+}
+
+function isCodeEditorToolbar(element: Element): boolean {
+    const header = element.closest('header');
+    if (!header || header.querySelector('h1, h2, h3, h4, h5, h6')) return false;
+    if (getNormalizedText(header).length > 180 || header.querySelectorAll('button').length < 2) return false;
+    const editor = header.parentElement;
+    if (!editor || editor.matches('article, main, body')) return false;
+    // A short title beside editor actions is UI; nearby article headings are not.
+    return Array.from(editor.children).some(child => child !== header
+        && child.querySelector('textarea') && child.querySelector('pre'));
 }
 
 function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
@@ -338,7 +385,32 @@ function isMetadataElement(element: Element, metrics: UnitMetrics): boolean {
     if (/^no\s+(repl(?:y|ies)|views?|comments?|likes?|votes?)$/i.test(text)
         && element.matches('a, h2, [role="heading"][aria-level="2"]')) return true;
     if (/^\d+[smhdw]\s*(ago)?$/i.test(text)) return true;
+    if (isArticleMetadataField(element)) return true;
 
+    return false;
+}
+
+function isArticleMetadataField(element: Element): boolean {
+    const article = element.closest('article, [role="article"]');
+    if (!article) return false;
+    for (let field: Element | null = element, depth = 0; field && field !== article && depth < 3; field = field.parentElement, depth++) {
+        const children = Array.from(field.children);
+        if (children.length < 2 || children.length > 4) continue;
+        const label = children.find(child => child.matches('h3, h4, dt, label'));
+        if (!label) continue;
+        const labelText = getNormalizedText(label);
+        if (!/^(?:last updated(?: on)?|# of hits|hit count|page views)\s*:?$/i.test(labelText)) continue;
+        if (getNormalizedText(field).length > 180) continue;
+        const value = children.find(child => child !== label && child.matches('p, time, dd, span'));
+        if (/^last updated(?: on)?\s*:?$/i.test(labelText) && value) {
+            const date = value.getAttribute('datetime') || getNormalizedText(value);
+            if (/^(?:(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})$/i.test(date)) return true;
+        }
+        if (/^(?:# of hits|hit count|page views)\s*:?$/i.test(labelText)) {
+            if (value && /^\d[\d,.]*$/.test(getNormalizedText(value))) return true;
+            if (Array.from(field.querySelectorAll('button[aria-label]')).some(button => /\b(hit counter|people have visited|page views)\b/i.test(button.getAttribute('aria-label') ?? ''))) return true;
+        }
+    }
     return false;
 }
 

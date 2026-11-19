@@ -34,6 +34,11 @@ import { resolveConfiguredTranslationModel } from '@/entrypoints/utils/modelSele
 import { isVideoFastModeEffective } from './fastMode'
 import { isXVideoSubtitleHost, type XSubtitleResult } from './xSubtitle'
 import { getYouTubeVideoId, isOnlyTranslateYouTubeEmbed } from './youtubeEmbed'
+import { isRedditVideoSubtitleHost } from './redditSubtitle'
+import {
+    getRedditVideoContextKey, getRedditVideoMountTarget, getRedditVideoRequest,
+    isRedditVideoForCurrentPost, watchRedditVideoPlayers, setRedditNativeSubtitleHidden,
+} from './redditVideoPlayer'
 import {
     getXVideoContextKey, getXVideoRequest, isXVideoForCurrentPost, mountXVideoFullscreen, watchXVideoPlayers,
 } from './xVideoPlayer'
@@ -68,17 +73,18 @@ let consecutiveQualityTimeouts = 0
 let statusHintTimer: number | null = null
 let lastVisibleStatus: VisibleSubtitleStatus | null = null
 const lastStatusHintAt = new Map<VisibleSubtitleStatus, number>()
-const xVideoPlayers = new Map<HTMLVideoElement, { button: HTMLButtonElement; cleanupFullscreen?: () => void }>()
-let xPlayerWatchAttached = false
-let activeXPlayer: { video: HTMLVideoElement; button: HTMLButtonElement; contextKey: string } | null = null
+const inlineVideoPlayers = new Map<HTMLVideoElement, { button: HTMLButtonElement; cleanupFullscreen?: () => void }>()
+let inlinePlayerWatchAttached = false
+let activeInlinePlayer: { video: HTMLVideoElement; button: HTMLButtonElement; contextKey: string } | null = null
 
 export function initVideoSubtitle() {
     if (!config.enableVideoSubtitle) return
-    if (isXVideoSubtitleHost(window.location.hostname)) {
-        if (!xPlayerWatchAttached) {
-            xPlayerWatchAttached = true
+    if (isInlineVideoHost()) {
+        if (!inlinePlayerWatchAttached) {
+            inlinePlayerWatchAttached = true
             subtitleEnabled = false
-            watchXVideoPlayers(mountXVideoButton, unmountXVideoButton, syncXVideoPlayers, activateXPlayer)
+            const watch = isRedditVideoSubtitleHost(location.hostname) ? watchRedditVideoPlayers : watchXVideoPlayers
+            watch(mountInlineVideoButton, unmountInlineVideoButton, syncInlineVideoPlayers, activateInlinePlayer)
         }
         return
     }
@@ -93,6 +99,14 @@ export function initVideoSubtitle() {
         }, true)
     }
     requestYouTubeSubtitle()
+}
+
+function isInlineVideoHost(): boolean {
+    return isXVideoSubtitleHost(location.hostname) || isRedditVideoSubtitleHost(location.hostname)
+}
+
+function getInlineVideoContextKey(video: HTMLVideoElement): string {
+    return isRedditVideoSubtitleHost(location.hostname) ? getRedditVideoContextKey(video) : getXVideoContextKey(video)
 }
 
 function isEmbeddedYouTubePlayer(): boolean {
@@ -176,7 +190,7 @@ function setSubtitleLoadStatus(status: SubtitleLoadStatus) {
 async function handleSubtitleData(
     url: string,
     rawData: string,
-    xTrack?: { video: HTMLVideoElement; language?: string },
+    playerTrack?: { video: HTMLVideoElement; language?: string },
 ) {
     if (!isSubtitleTrackForPage(url)) return
     const trackKey = buildSubtitleTrackKey(url)
@@ -190,10 +204,10 @@ async function handleSubtitleData(
     const parsed = parseSubtitleData(url, rawData)
     if (!parsed?.cues.length) {
         clearProcessingTrack(trackKey)
-        setSubtitleLoadStatus(parsed && xTrack ? 'no-track' : 'failed')
+        setSubtitleLoadStatus(parsed && playerTrack ? 'no-track' : 'failed')
         return
     }
-    const sourceLanguage = xTrack?.language ?? parsed.sourceLanguage
+    const sourceLanguage = playerTrack?.language ?? parsed.sourceLanguage
     const segments = buildSubtitleSegments(parsed.cues, sourceLanguage)
     if (!segments.length) {
         clearProcessingTrack(trackKey)
@@ -201,7 +215,7 @@ async function handleSubtitleData(
         return
     }
 
-    const video = xTrack?.video ?? findVideo()
+    const video = playerTrack?.video ?? findVideo()
     if (!video) {
         clearProcessingTrack(trackKey)
         setSubtitleLoadStatus('failed')
@@ -249,7 +263,7 @@ async function handleSubtitleData(
     currentCacheSession = cacheSession
     currentCacheRuntimeSignature = cacheRuntimeSignature
 
-    overlay.mount(video, findMountTarget(video), Boolean(xTrack))
+    overlay.mount(video, findMountTarget(video), Boolean(playerTrack))
     overlay.setSegments(currentSegments)
     hideNativeSubtitle()
     mountQuickButton()
@@ -595,22 +609,24 @@ function resumeCurrentSession() {
 }
 
 function requestCurrentVideoSubtitle() {
-    if (activeXPlayer) void requestXVideoSubtitle(activeXPlayer)
+    if (activeInlinePlayer) void requestInlineVideoSubtitle(activeInlinePlayer)
     else requestYouTubeSubtitle()
 }
 
-async function requestXVideoSubtitle(player: NonNullable<typeof activeXPlayer>) {
+async function requestInlineVideoSubtitle(player: NonNullable<typeof activeInlinePlayer>) {
     const generation = sessionGeneration
     setSubtitleLoadStatus('loading')
     let result: XSubtitleResult | undefined
     try {
-        result = await browser.runtime.sendMessage(getXVideoRequest(player.video))
+        const request = isRedditVideoSubtitleHost(location.hostname)
+            ? getRedditVideoRequest(player.video) : getXVideoRequest(player.video)
+        result = request ? await browser.runtime.sendMessage(request) : { status: 'no-track' }
     } catch {
         // The extension may have been reloaded while the request was in progress.
     }
-    if (generation !== sessionGeneration || activeXPlayer !== player || !subtitleEnabled) return
-    checkActiveXPlayer()
-    if (activeXPlayer !== player) return
+    if (generation !== sessionGeneration || activeInlinePlayer !== player || !subtitleEnabled) return
+    checkActiveInlinePlayer()
+    if (activeInlinePlayer !== player) return
     if (result?.status === 'ready') {
         await handleSubtitleData(result.url, result.data, { video: player.video, language: result.language })
     } else {
@@ -618,65 +634,69 @@ async function requestXVideoSubtitle(player: NonNullable<typeof activeXPlayer>) 
     }
 }
 
-function checkActiveXPlayer() {
-    if (!activeXPlayer) return
-    const { video, button, contextKey } = activeXPlayer
-    if (video.isConnected && button.isConnected && getXVideoContextKey(video) === contextKey) return
+function checkActiveInlinePlayer() {
+    if (!activeInlinePlayer) return
+    const { video, button, contextKey } = activeInlinePlayer
+    if (video.isConnected && button.isConnected && getInlineVideoContextKey(video) === contextKey) return
     beginNewSession()
-    activeXPlayer = null
+    activeInlinePlayer = null
     subtitleEnabled = false
     renderQuickButton(button, 'idle', false)
 }
 
-function syncXVideoPlayers() {
-    checkActiveXPlayer()
-    if (activeXPlayer) return
-    const videos = [...xVideoPlayers.keys()]
+function syncInlineVideoPlayers() {
+    checkActiveInlinePlayer()
+    if (activeInlinePlayer) return
+    const videos = [...inlineVideoPlayers.keys()]
     const video = videos.find(candidate => !candidate.paused && !candidate.ended)
-        ?? videos.find(isXVideoForCurrentPost)
-    if (video) activateXPlayer(video)
+        ?? videos.find(isRedditVideoSubtitleHost(location.hostname) ? isRedditVideoForCurrentPost : isXVideoForCurrentPost)
+    if (video) activateInlinePlayer(video)
 }
 
-function activateXPlayer(video: HTMLVideoElement) {
-    checkActiveXPlayer()
-    const button = xVideoPlayers.get(video)?.button
-    if (!button || !video.isConnected || activeXPlayer?.video === video) return
-    const previous = activeXPlayer?.button
+function activateInlinePlayer(video: HTMLVideoElement) {
+    checkActiveInlinePlayer()
+    const button = inlineVideoPlayers.get(video)?.button
+    if (!button || !video.isConnected || activeInlinePlayer?.video === video) return
+    const previous = activeInlinePlayer?.button
     beginNewSession()
     if (previous) renderQuickButton(previous, 'idle', false)
-    activeXPlayer = { video, button, contextKey: getXVideoContextKey(video) }
+    activeInlinePlayer = { video, button, contextKey: getInlineVideoContextKey(video) }
     subtitleEnabled = true
     requestCurrentVideoSubtitle()
 }
 
-function mountXVideoButton(video: HTMLVideoElement) {
-    const parent = video.parentElement
-    if (!parent || video.matches('.gif') || xVideoPlayers.get(video)?.button.parentElement === parent) return
-    unmountXVideoButton(video)
+function mountInlineVideoButton(video: HTMLVideoElement) {
+    const parent = isRedditVideoSubtitleHost(location.hostname) ? getRedditVideoMountTarget(video) : video.parentElement
+    if (!parent || video.matches('.gif') || inlineVideoPlayers.get(video)?.button.parentElement === parent) return
+    unmountInlineVideoButton(video)
     const button = createQuickButton(() => {
-        checkActiveXPlayer()
-        if (activeXPlayer?.video === video) {
+        checkActiveInlinePlayer()
+        if (activeInlinePlayer?.video === video) {
             if (subtitleEnabled && subtitleLoadStatus === 'failed') resumeCurrentSession()
             else toggleCurrentSession()
             return
         }
-        activateXPlayer(video)
+        activateInlinePlayer(video)
     })
     button.dataset.onlyTranslateVideo = ''
-    button.style.cssText += ';position:absolute;top:8px;right:8px;height:30px;background:rgba(0,0,0,.78);border-radius:6px;z-index:2'
+    button.style.cssText += ';position:absolute;top:8px;right:8px;height:30px;background:rgba(0,0,0,.78);border-radius:6px;z-index:2;pointer-events:auto'
     if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative'
     parent.append(button)
-    const player: NonNullable<ReturnType<typeof xVideoPlayers.get>> = { button }
-    xVideoPlayers.set(video, player)
+    const player: NonNullable<ReturnType<typeof inlineVideoPlayers.get>> = { button }
+    inlineVideoPlayers.set(video, player)
     renderQuickButton(button, 'idle', false)
-    player.cleanupFullscreen = mountXVideoFullscreen(video, parent, button, () => activateXPlayer(video))
+    if (!isRedditVideoSubtitleHost(location.hostname)) {
+        player.cleanupFullscreen = mountXVideoFullscreen(video, parent, button, () => activateInlinePlayer(video))
+    }
 }
 
-function unmountXVideoButton(video: HTMLVideoElement) {
-    const player = xVideoPlayers.get(video)
+function unmountInlineVideoButton(video: HTMLVideoElement) {
+    const player = inlineVideoPlayers.get(video)
     player?.cleanupFullscreen?.()
+    const parent = player?.button.parentElement
     player?.button.remove()
-    xVideoPlayers.delete(video)
+    if (parent?.hasAttribute('data-onlytranslate-reddit-ui')) parent.remove()
+    inlineVideoPlayers.delete(video)
 }
 
 function toggleCurrentSession() {
@@ -726,7 +746,7 @@ function mountQuickButton() {
 }
 
 function getActiveQuickButton(): HTMLButtonElement | null {
-    return activeXPlayer?.button ?? document.querySelector<HTMLButtonElement>(`#${QUICK_BTN_ID}`)
+    return activeInlinePlayer?.button ?? document.querySelector<HTMLButtonElement>(`#${QUICK_BTN_ID}`)
 }
 
 function updateQuickButton() {
@@ -770,7 +790,7 @@ function getQuickButtonStatusText(status: VisibleSubtitleStatus): string {
     if (status === 'loading' || status === 'fetching') return t('video.subtitleLoading')
     if (status === 'waiting-cc') return t('video.subtitleWaitingCc')
     if (status === 'no-track') return t('video.subtitleNoTrack')
-    if (status === 'failed') return t(activeXPlayer ? 'video.subtitleRetryLoad' : 'video.subtitleLoadFailed')
+    if (status === 'failed') return t(activeInlinePlayer ? 'video.subtitleRetryLoad' : 'video.subtitleLoadFailed')
     if (status === 'translation-failed') return t('video.subtitleTranslationFailed')
     if (status === 'starting') return t('video.subtitleTranslationStarting')
     if (status === 'catching-up') {
@@ -780,7 +800,7 @@ function getQuickButtonStatusText(status: VisibleSubtitleStatus): string {
     }
     if (status === 'buffered') return t('video.subtitleTranslationBuffered')
     if (status === 'ready') return t('video.subtitleReady')
-    return t(activeXPlayer || isXVideoSubtitleHost(window.location.hostname) ? 'video.subtitleButton' : 'video.subtitleButtonOn')
+    return t(activeInlinePlayer || isInlineVideoHost() ? 'video.subtitleButton' : 'video.subtitleButtonOn')
 }
 
 function getFastModeTitleSuffix(status: VisibleSubtitleStatus): string {
@@ -867,10 +887,15 @@ function createStatusHint(): HTMLSpanElement {
 }
 
 function ensureStatusHint(button: HTMLButtonElement): HTMLElement | null {
-    const existing = document.getElementById(STATUS_HINT_ID)
+    const existing = button.parentElement?.querySelector<HTMLElement>(`#${STATUS_HINT_ID}`)
     const hint = existing ?? createStatusHint()
     if (hint.parentElement !== button.parentElement) button.parentElement?.append(hint)
     return hint.isConnected ? hint : null
+}
+
+function getStatusHint(): HTMLElement | null {
+    return getActiveQuickButton()?.parentElement?.querySelector<HTMLElement>(`#${STATUS_HINT_ID}`)
+        ?? document.getElementById(STATUS_HINT_ID)
 }
 
 function positionStatusHint(button: HTMLButtonElement, hint: HTMLElement) {
@@ -896,7 +921,7 @@ function handleVisibleStatusChange(
     if (now - previousShownAt < STATUS_HINT_COOLDOWN_MS) return
     lastStatusHintAt.set(status, now)
 
-    const hint = document.getElementById(STATUS_HINT_ID)
+    const hint = getStatusHint()
     if (!hint) return
     positionStatusHint(button, hint)
     hint.hidden = false
@@ -916,7 +941,7 @@ function hideStatusHint() {
         window.clearTimeout(statusHintTimer)
         statusHintTimer = null
     }
-    const hint = document.getElementById(STATUS_HINT_ID)
+    const hint = getStatusHint()
     if (!hint) return
     hint.hidden = true
     hint.textContent = ''
@@ -935,7 +960,7 @@ function showForcedFastModeHint() {
 
 function resetStatusHintState() {
     hideStatusHint()
-    document.getElementById(STATUS_HINT_ID)?.remove()
+    getStatusHint()?.remove()
     lastVisibleStatus = null
     lastStatusHintAt.clear()
 }
@@ -980,6 +1005,7 @@ function findVideo(): HTMLVideoElement | null {
 }
 
 function findMountTarget(video: HTMLVideoElement): HTMLElement {
+    if (isRedditVideoSubtitleHost(location.hostname)) return getRedditVideoMountTarget(video) ?? document.body
     const platform = detectPlatform(window.location.hostname)
     if (platform.containerSelector) {
         const container = document.querySelector<HTMLElement>(platform.containerSelector)
@@ -989,6 +1015,7 @@ function findMountTarget(video: HTMLVideoElement): HTMLElement {
 }
 
 function hideNativeSubtitle() {
+    if (currentVideo && isRedditVideoSubtitleHost(location.hostname)) setRedditNativeSubtitleHidden(currentVideo, true)
     const selector = detectPlatform(window.location.hostname).hideNativeSelector
     if (!selector) return
     document.querySelectorAll<HTMLElement>(selector).forEach(element => {
@@ -1000,6 +1027,7 @@ function hideNativeSubtitle() {
 }
 
 function restoreNativeSubtitle() {
+    if (currentVideo && isRedditVideoSubtitleHost(location.hostname)) setRedditNativeSubtitleHidden(currentVideo, false)
     const selector = detectPlatform(window.location.hostname).hideNativeSelector
     if (!selector) return
     document.querySelectorAll<HTMLElement>(selector).forEach(element => {

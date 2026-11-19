@@ -1,0 +1,15 @@
+{
+  "name": "Keeps article prose while excluding independent signup modules and invitations",
+  "url": "https://independent-reading.invalid/guide",
+  "scope": "smart",
+  "html": "newsletter-modules.html",
+  "include": ["body", "ending"],
+  "exclude": ["email-label", "subscribe", "standalone", "semantic-only", "mutual-one", "mutual-two", "offer"],
+  "textExcludes": [
+    "Email address",
+    "Subscribe",
+    "a complete collection of special offers",
+    "the latest offers and exclusive updates",
+    "Our planning service gives your entire team"
+  ]
+}

@@ -1,4 +1,5 @@
 import { keepSelectorCompatFn, selectCompatFn, textExcludeCompatFn, type SelectCompatContext } from "@/entrypoints/main/compat";
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 import { getMainDomain } from "@/entrypoints/utils/domain";
 import type { ContentUnitDecision } from "@/entrypoints/utils/contentUnitClassifier";
 import {
@@ -491,7 +492,7 @@ export function collectPreservedNewlineTextTargets(node: Node, options: GrabAllN
     const source = host.firstChild;
     const text = source.data;
     if (text.length <= 3072 || !text.includes('\n')) return null;
-    if (host.closest(preservedNewlineExcludedSelector) || shouldSkipDirectTextHost(host, host.tagName.toLowerCase())) return null;
+    if (host.closest(withPageTranslateOverride(preservedNewlineExcludedSelector, host, options.scanContext?.allowedPageTranslateRoot)) || shouldSkipDirectTextHost(host, host.tagName.toLowerCase())) return null;
     if (hasContentFilterSkip(host, options) || hasContentFilterSkipSelfAncestor(host, options)) return null;
     if (isJSONContent(host) || isMainlyNumericContent(host) || getProseEvidence(host).strength === 'none') return null;
     try {
@@ -1032,8 +1033,8 @@ function isDirectTextRunNode(node: ChildNode): boolean {
     return inlineSet.has(tag) && isSafeInlineRunElement(node, tag);
 }
 
-function isSafeInlineRunElement(node: Element, tag: string): boolean {
-    if (skipSet.has(tag)) return false;
+function isSafeInlineRunElement(node: Element, tag: string, allowProtectedCode = false): boolean {
+    if (skipSet.has(tag) && !(allowProtectedCode && tag === 'code' && isProtectedInlineElement(node))) return false;
     if (node.classList?.contains(translationContentClass)) return false;
     if (node.classList?.contains('notranslate')) return false;
     if (node.getAttribute?.('translate') === 'no') return false;
@@ -1474,6 +1475,20 @@ function isInlineElement(node: Element, tag: string): boolean {
 
 function isInlineOnlyReadableBlock(node: Element, tag: string, scanContext?: ScanContext): boolean {
     if (tag !== 'div') return false;
+    // A list item may wrap a short explanation and protected inline code in a div.
+    // Select the whole explanation without making code itself translatable.
+    if (node.parentElement?.matches('li, dd') && node.querySelector('code')
+        && Array.from(node.childNodes).filter(child => child instanceof Text).map(child => child.textContent).join('').trim().length >= 3) {
+        return Array.from(node.querySelectorAll('*')).every(child => {
+            const childTag = child.tagName.toLowerCase();
+            const role = child.getAttribute('role')?.toLowerCase() ?? '';
+            const svgGraphic = child.namespaceURI === 'http://www.w3.org/2000/svg' && childTag !== 'foreignobject';
+            return (childTag === 'code' || inlineSet.has(childTag) || svgGraphic)
+                && !skipAriaRoles.has(role) && !['dialog', 'complementary', 'contentinfo'].includes(role)
+                && !child.classList.contains('sr-only') && child.getAttribute(translatedAttr) !== 'true'
+                && isSafeInlineRunElement(child, childTag, true);
+        });
+    }
     return getCachedProseEvidence(scanContext, node).strength === 'strong'
         && isInlineOnlyElement(node);
 }

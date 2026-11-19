@@ -1,0 +1,9 @@
+{
+  "name": "Approved Blogger adaptation excludes the followers widget rather than matching its heading text",
+  "url": "https://another-author.blogspot.com/workshop",
+  "scope": "smart",
+  "html": "blogger-followers-widget.html",
+  "include": ["post-body", "ordinary-followers"],
+  "exclude": ["followers-title"],
+  "textExcludes": ["People reading this blog"]
+}

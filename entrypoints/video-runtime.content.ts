@@ -6,7 +6,7 @@ type RuntimeWindow = Window & { __onlyTranslateVideoRuntime?: boolean }
 export default defineContentScript({
   registration: 'runtime',
   matches: ['*://*.youtube.com/*', '*://*.youtubekids.com/*', '*://*.udemy.com/*', '*://*.coursera.org/*', '*://*.khanacademy.org/*',
-    '*://*.x.com/*', '*://*.twitter.com/*', '*://*.teapaw.org/*', '*://*.teapawt.org/*'],
+    '*://*.x.com/*', '*://*.twitter.com/*', '*://*.teapaw.org/*', '*://*.teapawt.org/*', '*://*.reddit.com/*'],
   runAt: 'document_end',
   async main() {
     const runtimeWindow = window as RuntimeWindow

@@ -11,6 +11,7 @@
     }"
     :data-position="currentDisplayPosition"
     :style="positionStyle"
+    @transitionend.self="updateStatusPosition"
   >
     <div
       class="floating-toolbar floating-toolbar--detached"
@@ -128,16 +129,35 @@
           fill="currentColor"
         ></path>
       </svg>
-      <span v-if="isTranslating" class="check-mark" aria-hidden="true"></span>
+      <span v-if="pageStatus.phase === 'translated'" class="check-mark" aria-hidden="true"></span>
+      <span v-else-if="pageStatus.phase === 'pending'" class="translation-progress" aria-hidden="true"></span>
       <span v-if="showShortcutTooltip" class="shortcut-tooltip">
         {{ shortcutTip }}
       </span>
       <span ref="rippleContainer" class="ripple-container" aria-hidden="true"></span>
     </button>
+    <div
+      v-if="statusMessage"
+      ref="statusHint"
+      class="page-translation-message"
+      :class="{ 'page-translation-message--above': statusAbove }"
+      :style="{ maxHeight: statusMaxHeight }"
+    >
+      <span role="status">{{ t(statusMessage) }}</span>
+      <button
+        type="button"
+        class="page-translation-message-close"
+        :aria-label="t('selection.close')"
+        @click.stop="dismissStatusMessage"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { canRestorePage, pageTranslationMessage, type PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus';
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import type { PropType, CSSProperties } from 'vue';
 import { config } from '@/entrypoints/utils/config';
@@ -208,7 +228,13 @@ const draggedY = ref<number | null>(props.offsetY ?? null);
 const isToolbarOpen = ref(false);
 const isServiceMenuOpen = ref(false);
 const isDragging = ref(false);
-const isTranslating = ref(false);
+const pageStatus = ref<PageTranslationStatus>({ phase: 'idle' });
+const isTranslating = computed(() => canRestorePage(pageStatus.value));
+const statusHint = ref<HTMLElement | null>(null);
+const statusMessage = ref<ReturnType<typeof pageTranslationMessage>>(null);
+const statusAbove = ref(false);
+const statusMaxHeight = ref<string>();
+let statusTimer: ReturnType<typeof setTimeout> | undefined;
 const isAnimating = ref(false);
 const showShortcutTooltip = ref(false);
 const shortcutTip = ref(t('runtime.shortcutTip', { shortcut: 'Alt+T' }));
@@ -224,9 +250,9 @@ const availableServiceOptions = ref<ServiceOption[]>([]);
 const currentDisplayPosition = computed(() => internalPosition.value);
 const primaryActionLabel = computed(() => props.pdfSource
   ? t('pdf.openCurrent')
-  : isTranslating.value
-    ? t('runtime.floatingToolbar.restore')
-    : t('runtime.floatingToolbar.translate'));
+  : pageStatus.value.phase === 'pending'
+    ? t('runtime.pageTranslation.pending')
+    : isTranslating.value ? t('runtime.floatingToolbar.restore') : t('runtime.floatingToolbar.translate'));
 const getServiceLabel = (serviceValue: string) => {
   const customProvider = config.customProviders?.find(provider => provider.id === serviceValue);
   if (customProvider?.name) return customProvider.name;
@@ -271,6 +297,18 @@ const clampVerticalOffset = (offsetY: number) => {
   return Math.max(8, Math.min(offsetY, maxY - 8));
 };
 
+const updateStatusPosition = () => {
+  if (!floatingBall.value || !statusHint.value) return;
+
+  const gap = 8;
+  const rect = floatingBall.value.getBoundingClientRect();
+  const above = Math.max(0, rect.top - 2 * gap);
+  const below = Math.max(0, window.innerHeight - rect.bottom - 2 * gap);
+  const height = statusHint.value.scrollHeight;
+  statusAbove.value = height > below && above > below;
+  statusMaxHeight.value = `${statusAbove.value ? above : below}px`;
+};
+
 const updatePositionStyle = () => {
   if (isDragging.value) return;
 
@@ -294,6 +332,7 @@ const updatePositionStyle = () => {
   }
 
   positionStyle.value = style;
+  void nextTick(updateStatusPosition);
 };
 
 const toggleToolbar = () => {
@@ -420,24 +459,29 @@ const triggerAnimation = (type: 'translate' | 'restore') => {
   }, 500);
 };
 
-const setTranslationState = (nextState: boolean) => {
-  if (isTranslating.value === nextState) return;
-  isTranslating.value = nextState;
-  triggerAnimation(nextState ? 'translate' : 'restore');
-  props.onTranslationToggle(nextState);
+const dismissStatusMessage = () => {
+  clearTimeout(statusTimer);
+  statusTimer = undefined;
+  statusMessage.value = null;
 };
 
-const syncTranslationState = (nextState: boolean) => {
-  if (isTranslating.value === nextState) return;
-  isTranslating.value = nextState;
-  triggerAnimation(nextState ? 'translate' : 'restore');
+const syncTranslationState = (next: PageTranslationStatus, showWarning = true) => {
+  if (next.phase === 'translated' && pageStatus.value.phase !== 'translated') triggerAnimation('translate');
+  if (next.phase === 'idle' && isTranslating.value) triggerAnimation('restore');
+  pageStatus.value = next;
+
+  dismissStatusMessage();
+  if (!showWarning || !('source' in next) || next.source !== 'manual') return;
+
+  const message = pageTranslationMessage(next);
+  if (!message) return;
+  statusMessage.value = message;
+  void nextTick(updateStatusPosition);
+  statusTimer = setTimeout(dismissStatusMessage, 5000);
 };
 
-const toggleTranslation = () => {
-  setTranslationState(!isTranslating.value);
-};
-
-const togglePrimaryTranslation = () => {
+const togglePrimaryTranslation = (event: MouseEvent) => {
+  if (!event.isTrusted) return;
   if (suppressNextClick.value) {
     suppressNextClick.value = false;
     return;
@@ -446,15 +490,7 @@ const togglePrimaryTranslation = () => {
     openPdfReader();
     return;
   }
-  toggleTranslation();
-};
-
-const toggleTranslationFromExternal = () => {
-  if (props.pdfSource) {
-    openPdfReader();
-    return;
-  }
-  toggleTranslation();
+  props.onTranslationToggle(true);
 };
 
 const openPdfReader = () => {
@@ -507,6 +543,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  dismissStatusMessage();
   window.removeEventListener('resize', updatePositionStyle);
   document.removeEventListener('mousemove', drag);
   document.removeEventListener('mouseup', stopDrag);
@@ -525,15 +562,67 @@ watch(() => props.offsetY, (newOffsetY) => {
   updatePositionStyle();
 });
 
-defineExpose({
-  isTranslating,
-  setTranslationState,
-  syncTranslationState,
-  toggleTranslationFromExternal
-});
+defineExpose({ syncTranslationState });
 </script>
 
 <style scoped>
+.translation-progress {
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  border: 2px solid transparent;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: page-translation-spin 0.8s linear infinite;
+}
+@keyframes page-translation-spin { to { transform: rotate(360deg); } }
+.page-translation-message {
+  position: absolute;
+  top: calc(100% + 8px);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 36px));
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #202937;
+  color: white;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.page-translation-message--above {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+.page-translation-message-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: 18px/1 system-ui, sans-serif;
+}
+.page-translation-message-close:hover {
+  background: #ffffff24;
+}
+.fr-floating-ball[data-position='right'] .page-translation-message { right: 0; }
+.fr-floating-ball[data-position='left'] .page-translation-message { left: 0; }
+@media (prefers-reduced-motion: reduce) { .translation-progress { animation: none; } }
+
 .fr-floating-ball {
   position: fixed;
   z-index: 9999;

@@ -23,7 +23,8 @@ const icon = {
 export function insertFailedTip(
   node: HTMLElement,
   errMsg: string,
-  spinner: HTMLElement
+  spinner: HTMLElement,
+  retry?: () => void
 ) {
   spinner?.remove(); // 取消转圈动画
 
@@ -35,7 +36,7 @@ export function insertFailedTip(
   const retryBtn = document.createElement("span");
   retryBtn.innerText = t("runtime.retry");
   retryBtn.classList.add("only-translate-retry");
-  retryBtn.addEventListener("click", handleRetryClick(node, wrapper));
+  retryBtn.addEventListener("click", handleRetryClick(node, wrapper, retry));
 
   // 添加失败标记
   node.classList.add("only-translate-failure");
@@ -60,13 +61,17 @@ export function showExtensionReloadedTip() {
 }
 
 // 处理重试按钮点击事件
-function handleRetryClick(node: HTMLElement, wrapper: HTMLElement) {
+function handleRetryClick(node: HTMLElement, wrapper: HTMLElement, retry?: () => void) {
   return (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
 
     wrapper.remove(); // 移除错误提示元素，重新翻译
     node.classList.remove("only-translate-failure"); // 移除失败标记
+    if (retry) {
+      retry();
+      return;
+    }
 
     // 根据当前配置的翻译模式决定使用哪种翻译方式
     if (config.display === styles.bilingualTranslation) {

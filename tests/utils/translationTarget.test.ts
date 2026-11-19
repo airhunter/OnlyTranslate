@@ -25,6 +25,11 @@ vi.mock('element-plus', () => ({
 
 import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect'
 import { collectDomTextUnits } from '@/entrypoints/main/translationTarget/unitizer'
+import { getReadingBlockTargets } from '@/entrypoints/main/translationTarget/readingBlocks'
+import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
+import { siteProfiles } from '@/entrypoints/main/siteProfiles'
+import { decideTranslationTarget } from '@/entrypoints/main/translationTarget/decision'
+import { readFileSync } from 'node:fs'
 
 describe('translationTarget', () => {
   const originalLocation = window.location
@@ -197,5 +202,144 @@ describe('translationTarget', () => {
     expect(ids).toContain('body-paragraph')
     expect(ids).not.toContain('byline-authors')
     expect(ids).not.toContain('timestamp')
+  })
+})
+
+describe('reading list context', () => {
+  const first = 'Keep a local copy of the working configuration so every administrator can inspect the settings before the next upgrade.'
+  const second = 'Record changes in a shared log so another volunteer can reproduce the result and explain differences during a later review.'
+  const originalLocation = window.location
+
+  function arrange(items: string, lead = 'Consider these approaches') {
+    document.body.innerHTML = `<main id="root"><p>The guide explains how the community can prepare for the next season and share its equipment.</p></main>
+      <aside><strong>Practical advice</strong><p id="list-lead">${lead}</p><ol>${items}</ol></aside>`
+    return { lead: document.querySelector('#list-lead')!, root: document.querySelector('#root')! }
+  }
+
+  beforeEach(() => {
+    document.body.innerHTML = ''
+    Object.defineProperty(window, 'location', { value: originalLocation, configurable: true })
+  })
+
+  it.each([
+    ['https://unadapted.example/guide', `<li>${first}</li><li>${second}</li>`, 'Consider these approaches'],
+    ['https://another.invalid/notes', `<li><div>${first}</div></li><li><div>${second}</div></li>`, '留意下面几种做法'],
+    ['https://unadapted.example/reference', `<li><div><code>:focus</code> ${first}</div></li><li><div>${second}</div></li>`, 'Consider these approaches'],
+    ['https://www.joshwcomeau.com/css/has/', `<li><p>${first}</p></li><li><p>${second}</p></li>`, 'There are two approaches involving <code>:has</code> to consider:']
+  ])('uses independent reading items on %s without a site selector', (url, items, text) => {
+    Object.defineProperty(window, 'location', { value: new URL(url), configurable: true })
+    const { lead, root } = arrange(items, text)
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).toContain(lead)
+  })
+
+  it.each([
+    ['bare pre', `<li><pre>${first}</pre></li><li><pre>${second}</pre></li>`],
+    ['editable descendants', `<li><div contenteditable="true">${first}</div></li><li><div contenteditable="plaintext-only">${second}</div></li>`],
+    ['linked controls', `<li><a href="/one">${first}</a></li><li><a href="/two">${second}</a></li>`],
+    ['checkbox options', `<li><input type="checkbox">${first}</li><li><input type="checkbox">${second}</li>`],
+  ])('does not treat %s as two reading items', (_name, items) => {
+    const { lead, root } = arrange(items)
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).not.toContain(lead)
+  })
+
+  // A single independent reading unit now supplies context; hidden/metadata/code
+  // siblings add no evidence and do not invalidate the valid unit.
+  it.each([
+    ['one item with two paragraphs', `<li><p>${first}</p><p>${second}</p></li>`],
+    ['one hidden item', `<li>${first}</li><li hidden>${second}</li>`],
+    ['one hidden descendant', `<li>${first}</li><li><p>More<span hidden>${second}</span></p></li>`],
+    ['protected code', `<li>${first}</li><li><p><code>const explanation = "${second}";</code></p></li>`],
+    ['metadata', `<li>${first}</li><li><p class="metadata">${second}</p></li>`]
+  ])('uses valid remaining context with %s', (_name, items) => {
+    const { lead, root } = arrange(items)
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).toContain(lead)
+  })
+
+  it('uses remaining readable prose without borrowing protected contents', () => {
+    const { lead, root } = arrange(`<li>${first}<pre>command --help</pre></li><li>${second}<div contenteditable="true">Editor</div></li>`)
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).toContain(lead)
+  })
+
+  it('does not borrow list evidence from an inherited editable region', () => {
+    const { lead, root } = arrange(`<li>${first}</li><li>${second}</li>`)
+    lead.parentElement!.setAttribute('contenteditable', 'true')
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).not.toContain(lead)
+  })
+
+  it('keeps promotional lists excluded even when the prose is long', () => {
+    const { lead, root } = arrange(`<li>${first}</li><li>${second}</li>`)
+    lead.parentElement!.insertAdjacentHTML('beforeend', '<a href="/offer">Buy now</a>')
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).not.toContain(lead)
+  })
+
+  it('does not take context from an ARIA menu', () => {
+    const { lead, root } = arrange(`<li>${first}</li><li>${second}</li>`)
+    lead.nextElementSibling!.setAttribute('role', 'menu')
+    expect(getReadingBlockTargets(lead, createScanContext(), root)).not.toContain(lead)
+  })
+
+  it.each(['supplemental', 'dynamic'] as const)('charges list evidence to the %s budget', budget => {
+    const { lead, root } = arrange(`<li><div>${first}</div></li><li><div>${second}</div></li>`)
+    const context = createScanContext({ supplementalBudget: 3, dynamicBudget: 3 })
+    expect(getReadingBlockTargets(lead, context, root, budget)).not.toContain(lead)
+    expect(context.budgetUsage[budget]).toBe(3)
+    expect(context.budgetUsage[budget === 'dynamic' ? 'supplemental' : 'dynamic']).toBe(0)
+    expect(context.stats.budgetExceeded).toBe(true)
+    expect(context.stats.budgetDeferredReadingSubtrees).toBeGreaterThan(0)
+  })
+})
+
+describe('explicitly approved metadata adaptations', () => {
+  const originalLocation = window.location
+  const cases = [
+    { profile: 'blogger', fixture: 'blogger-followers-widget.html', url: 'https://another-author.blogspot.com/workshop', target: '#followers-title', text: 'People reading this blog' },
+    { profile: 'claude-nagdy', fixture: 'claude-course-metadata.html', url: 'https://claude.nagdy.me/learn/shared-workspace/', target: '#level-line', text: 'Intermediate' }
+  ]
+
+  function render(sample: typeof cases[number], url = sample.url) {
+    Object.defineProperty(window, 'location', { value: new URL(url), configurable: true })
+    document.body.innerHTML = readFileSync('tests/fixtures/translation-target/' + sample.fixture, 'utf8')
+    return document.querySelector(sample.target)!
+  }
+
+  it.each(cases)('demonstrates the actual exclusion added by $profile', sample => {
+    const profile = siteProfiles.find(profile => profile.id === sample.profile)!
+    const currentSkip = profile.skipTarget!
+    profile.skipTarget = (node, context) => currentSkip(node, { ...context, scope: 'full' })
+    try {
+      render(sample)
+      const oldText = resolveAutoTranslationTarget('smart').nodes.map(node => node.textContent).join(' ')
+      expect(oldText).toContain(sample.text)
+    } finally { profile.skipTarget = currentSkip }
+    render(sample)
+    const newText = resolveAutoTranslationTarget('smart').nodes.map(node => node.textContent).join(' ')
+    expect(newText).not.toContain(sample.text)
+    Object.defineProperty(window, 'location', { value: originalLocation, configurable: true })
+  })
+
+  it.each(cases)('keeps $profile exclusions in smart fallback but leaves full unchanged', sample => {
+    const node = render(sample)
+    for (const mode of ['smart', 'full'] as const) {
+      const decision = decideTranslationTarget({ node, source: 'grab-node' }, { scope: 'smart', mode, contentRoot: document.body })
+      expect(decision.policy).toBe('hard-skip')
+    }
+    expect(decideTranslationTarget({ node, source: 'grab-node' }, { scope: 'full', mode: 'full', contentRoot: document.body }).policy).toBe('allow')
+    Object.defineProperty(window, 'location', { value: originalLocation, configurable: true })
+  })
+
+  it.each(['https://other.nagdy.me/learn/shared-workspace/', 'https://claude.nagdy.me/projects/shared-workspace/'])('does not apply course metadata exclusion to %s', url => {
+    const node = render(cases[1], url)
+    const profile = siteProfiles.find(profile => profile.id === 'claude-nagdy')!
+    expect(profile.skipTarget!(node, { scope: 'smart', mode: 'smart', contentRoot: document.body })).toBe(false)
+    Object.defineProperty(window, 'location', { value: originalLocation, configurable: true })
+  })
+
+  it('keeps a readable sentence even when it is styled like a course badge', () => {
+    const row = render(cases[1])
+    row.children[0].textContent = 'Keep a copy before upgrading.'
+    row.children[1].textContent = '20 minutes'
+    const profile = siteProfiles.find(profile => profile.id === 'claude-nagdy')!
+    expect(profile.skipTarget!(row, { scope: 'smart', mode: 'smart', contentRoot: document.body })).toBe(false)
+    Object.defineProperty(window, 'location', { value: originalLocation, configurable: true })
   })
 })

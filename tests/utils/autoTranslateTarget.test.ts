@@ -74,10 +74,12 @@ import { translateText } from '@/entrypoints/utils/translateApi'
 import { resolveTranslationDirection, shouldTranslateText } from '@/entrypoints/utils/translationDirection'
 import { cache } from '@/entrypoints/utils/cache'
 import { invalidateContentFilterCache } from '@/entrypoints/utils/contentFilter'
+import { PAGE_TRANSLATION_STATUS_MESSAGE, readPageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
 
 describe('resolveAutoTranslateTarget behavior', () => {
   const originalLocation = window.location
   const originalDocumentLocation = document.location
+  const realMutationObserver = window.MutationObserver
 
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -245,7 +247,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(introduction.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
   })
 
-  it('recovers unlabelled title introductions without treating navigation, forms or promotion as prose', () => {
+  it.each([undefined, 1])('recovers unlabelled title introductions without including UI (supplemental budget %s)', supplementalBudget => {
     const url = new URL('https://example.org/public-programs')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
     document.body.innerHTML = `
@@ -259,11 +261,23 @@ describe('resolveAutoTranslateTarget behavior', () => {
       <section translate="no"><h1>Protected introduction</h1><div><p id="protected-intro">This introductory paragraph must stay untranslated because its author explicitly requested that it be protected.</p></div></section>
     `
     const root = document.querySelector('#reading-root')!
-    const targets = collectTranslationTargets(root, { mode: 'smart', scope: 'smart', contentRoot: root }, { includeSupplemental: true })
+    const scanContext = createScanContext({ supplementalBudget })
+    const targets = collectTranslationTargets(root, {
+      mode: 'smart', scope: 'smart', contentRoot: root, grabOptions: { scanContext }
+    }, { includeSupplemental: true })
       .map(decision => decision.target)
-    expect(targets).toContain(document.querySelector('#unlabelled-intro'))
+    if (supplementalBudget === 1) {
+      expect(scanContext.stats.budgetExceeded).toBe(true)
+      expect(scanContext.stats.budgetDeferredReadingSubtrees).toBeGreaterThan(0)
+    }
+    // A genuinely exhausted budget records deferred work; it must not trigger an unbudgeted rescue scan.
+    if (supplementalBudget === undefined) expect(targets).toContain(document.querySelector('#unlabelled-intro'))
     const text = targets.map(node => getTranslatableText(node)).join(' ')
-    expect(text).not.toMatch(/Apply now|unrelated introduction|mailing list|must stay hidden|must stay untranslated/)
+    // Aside is a weak region signal; this sample contains readable prose and no
+    // control/promotion evidence. Other interface/protected samples remain excluded.
+    if (supplementalBudget === undefined) expect(targets).toContain(document.querySelector('#aside-intro'))
+    expect(text).not.toMatch(/Apply now|mailing list|must stay hidden|must stay untranslated/)
+    for (const tag of ['nav', 'form', 'dialog']) expect(targets).not.toContain(document.querySelector(`#${tag}-intro`))
   })
 
   it('uses the source text color for a bilingual translation of an Apple dark store card', async () => {
@@ -775,6 +789,98 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     const rescannedTargets = resolveAutoTranslateTarget('smart').nodes
     expect(rescannedTargets).not.toContain(quote)
+  })
+
+  it.each([
+    '<span style="display:none">Private hidden message</span>',
+    '<span style="visibility:hidden">Private hidden message</span>',
+    '<span role="menuitem">Private hidden message</span>',
+    '<span class="sr-only">Private hidden message</span>',
+    '<span role="dialog">Private hidden message</span>',
+    '<span role="complementary">Private hidden message</span>',
+    '<span role="contentinfo">Private hidden message</span>',
+    '<span role="NAVIGATION">Private hidden message</span>',
+    '<span data-fr-translated="true">Private hidden message</span>',
+    '<svg><foreignObject><span role="menuitem">Private hidden message</span></foreignObject></svg>',
+    '<svg><g style="display:none"><text>Private hidden message</text></g></svg>',
+    '<span><div role="navigation">Private hidden message</div></span>',
+    '<span><span style="display:none">Private hidden message</span></span>'
+  ])('does not aggregate unsafe descendants into an inline-code list target: %s', async unsafe => {
+    document.body.innerHTML = `<main><article><h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><div id="unsafe-copy">Sets the <code>value</code> parameter ${unsafe}</div></li></ul>
+    </article></main>`
+    const result = resolveAutoTranslateTarget('smart')
+    const copy = document.querySelector('#unsafe-copy')!
+    expect(result.nodes).not.toContain(copy)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the', '设置'))
+    for (const node of result.nodes) await handleBilingualTranslation(node as HTMLElement, false)
+    expect(vi.mocked(translateText).mock.calls.map(args => args[0]).join(' ')).not.toContain('Private hidden message')
+    expect(Array.from(document.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).map(node => node.textContent).join(' ')).not.toContain('Private hidden message')
+    const dynamic = document.createElement('ul')
+    dynamic.innerHTML = `<li><div id="dynamic-unsafe-copy">Sets the <code>value</code> parameter ${unsafe}</div></li>`
+    document.querySelector('article')!.append(dynamic)
+    const dynamicNodes = collectDynamicTranslationNodes(dynamic, result.contentRoot, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })
+    expect(dynamicNodes).not.toContain(dynamic.querySelector('#dynamic-unsafe-copy'))
+    expect(dynamicNodes.map(node => getTranslatableTextWithProtectedInline(node).text).join(' ')).not.toContain('Private hidden message')
+  })
+
+  it('keeps ordinary inline SVG graphics in a list explanation without relaxing protected descendants', async () => {
+    document.body.innerHTML = `<main><article><h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><div id="svg-copy">Sets the <code>value</code> parameter <svg viewBox="0 0 10 10"><g><path d="M0 0L10 10"></path></g></svg></div></li></ul>
+    </article></main>`
+    const result = resolveAutoTranslateTarget('smart')
+    const copy = document.querySelector<HTMLElement>('#svg-copy')!, icon = copy.querySelector('svg')!
+    expect(result.nodes).toContain(copy)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the', '设置'))
+    await handleBilingualTranslation(copy, false)
+    expect(copy.querySelector('svg')).toBe(icon)
+    expect(copy.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)?.textContent).toContain('value')
+    const dynamic = document.createElement('ul')
+    dynamic.innerHTML = '<li><div id="dynamic-svg-copy">Sets the <code>value</code> parameter <svg><path d="M0 0L1 1"></path></svg></div></li>'
+    document.querySelector('article')!.append(dynamic)
+    expect(collectDynamicTranslationNodes(dynamic, result.contentRoot, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })).toContain(dynamic.querySelector('#dynamic-svg-copy'))
+  })
+
+  it('translates short list prose as one target while preserving its inline code', async () => {
+    document.body.innerHTML = `<main><article>
+      <h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+      <ul><li><span aria-hidden="true">→</span><div id="list-copy">Sets the <code id="original-category">category</code> data attribute to <code>"sci-fi"</code>, and</div></li></ul>
+    </article></main>`
+    const copy = document.querySelector<HTMLElement>('#list-copy')!
+    const sourceCode = copy.querySelector('code')!
+    expect(resolveAutoTranslateTarget('smart').nodes).toContain(copy)
+    expect(getTranslatableTextWithProtectedInline(copy).protectedInlines).toHaveLength(2)
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace('Sets the ', '设置 ').replace(' data attribute to ', ' 属性为 '))
+    await handleBilingualTranslation(copy, false)
+    const translated = copy.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)!
+    expect(translated.textContent).toContain('设置')
+    expect(Array.from(translated.querySelectorAll('code')).map(code => code.textContent)).toEqual(['category', '"sci-fi"'])
+    expect(translated.querySelector('#original-category')).toBeNull()
+    expect(copy.querySelector('code')).toBe(sourceCode)
+    expect(sourceCode.textContent).toBe('category')
+  })
+
+  it('applies editor and metadata purpose checks to dynamic blocks without dropping inline-code prose', () => {
+    document.body.innerHTML = `<main><article>
+      <h1>Interactive examples</h1>
+      <p>This article explains the behavior of selectors through detailed examples and ordinary reading content.</p>
+    </article></main>`
+    const initial = resolveAutoTranslateTarget('smart')
+    const inserted = document.createElement('div')
+    inserted.innerHTML = `<div><header><p id="new-editor-label">Code Playground</p><button>Format code</button><button>Reset code</button></header><div><pre>const value = 1;</pre><textarea>const value = 1;</textarea></div></div>
+      <div><h3 id="new-updated-label">Last updated on</h3><p id="new-updated-value">September 9th, 2024</p></div>
+      <ul><li><div id="new-list-copy">Sets the <code>category</code> data attribute to <code>"sci-fi"</code>, and</div></li></ul>`
+    document.querySelector('article')!.append(inserted)
+    const nodes = collectDynamicTranslationNodes(inserted, initial.contentRoot, 'smart', {
+      siteCompatMode: 'smart', scanContext: createScanContext()
+    })
+    expect(nodes).toContain(inserted.querySelector('#new-list-copy'))
+    for (const id of ['new-editor-label', 'new-updated-label', 'new-updated-value']) {
+      expect(nodes.some(node => node.contains(inserted.querySelector('#' + id)))).toBe(false)
+    }
   })
 
   it('translates Maxwell Forbes sidenotes separately without merging them into paragraph text', async () => {
@@ -1665,7 +1771,10 @@ describe('resolveAutoTranslateTarget behavior', () => {
       expect(paragraph.getAttribute(TRANSLATED_ATTR)).toBe('true')
       expect(collectDynamicTranslationNodes(paragraph, document.body, 'full')).toEqual([])
       expect(paragraph.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
-      expect(sendMessage).not.toHaveBeenCalled()
+      expect(sendMessage.mock.calls.map(([message]) => message)).toEqual([
+        { type: PAGE_TRANSLATION_STATUS_MESSAGE, phase: 'pending' },
+        { type: PAGE_TRANSLATION_STATUS_MESSAGE, phase: 'empty' }
+      ])
 
       restoreOriginalContent()
       expect(paragraph.hasAttribute(TRANSLATED_ATTR)).toBe(false)
@@ -2233,7 +2342,7 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(texts).not.toContain('Log Event: Pinging Server West-2 for redundancy check. Filter Verdict: Hide. (Low Stakes, High Technicality).')
   })
 
-  it('recovers readable article segments around ads without collecting related or author blocks', () => {
+  it('recovers readable article segments without treating section names as purpose declarations', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://segmented-article.example/story'),
       configurable: true
@@ -2280,8 +2389,12 @@ describe('resolveAutoTranslateTarget behavior', () => {
 
     expect(ids).toEqual(expect.arrayContaining(['opening', 'section-title', 'middle-copy', 'ending-quote']))
     expect(ids).not.toContain('advertisement')
-    expect(ids).not.toContain('related-copy')
-    expect(ids).not.toContain('author-copy')
+    // No destination link, recommendation label or control establishes this
+    // module's purpose. A class name alone cannot veto its readable paragraph.
+    expect(ids).toContain('related-copy')
+    // This is a full paragraph in the article; no author identity field, link or
+    // control supplies metadata evidence beyond the container's class name.
+    expect(ids).toContain('author-copy')
   })
 
   it('unwraps direct text wrappers that are discarded during target collection', () => {
@@ -2801,6 +2914,131 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(ids).toContain('download')
   })
 
+  describe('ACL Anthology paper metadata', () => {
+    beforeEach(() => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://aclanthology.org/2023.wmt-1.41/'), configurable: true
+      })
+      document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/acl-paper-metadata.html', 'utf8')
+    })
+
+    it('keeps abstract links and excludes authors and citations through smart fallback', () => {
+      const decisions = collectTranslationTargets(document.body, {
+        mode: 'full', scope: 'smart', contentRoot: document.body, grabOptions: { siteCompatMode: 'full' }
+      }, { fallback: true, includeSupplemental: false })
+      const targets = decisions.map(decision => decision.target)
+      expect(targets.filter(target => target.contains(document.getElementById('paper-title')))).toHaveLength(1)
+      expect(targets.filter(target => target.contains(document.getElementById('abstract-link')))).toHaveLength(1)
+      expect(targets.some(target => target.contains(document.getElementById('citation-title')))).toBe(false)
+      const text = targets.map(getTranslatableText).join(' ')
+      expect(text).toContain('Abstract')
+      expect(text).not.toContain('Alex Morgan')
+      expect(text).not.toContain('Anthology ID')
+    })
+
+    it('retains authors and citations in explicit full-page mode', () => {
+      const targets = resolveAutoTranslateTarget('full').nodes
+      expect(targets.some(target => target.contains(document.getElementById('citation-title')))).toBe(true)
+      expect(targets.map(getTranslatableText).join(' ')).toContain('Alex Morgan')
+    })
+
+    it('keeps the same markup outside ACL under the ordinary smart rules', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://example.test/paper'), configurable: true
+      })
+      const text = resolveAutoTranslateTarget('smart').nodes.map(getTranslatableText).join(' ')
+      expect(text).toContain('Alex Morgan')
+    })
+
+    it('keeps dynamically added abstract text while ignoring a citation update', () => {
+      const initial = resolveAutoTranslateTarget('smart')
+      document.getElementById('paper-metadata')!.insertAdjacentHTML('beforeend', '<dd id="new-citation"><a href="/new/">A new bibliographic record</a></dd>')
+      const citation = document.getElementById('new-citation')!
+      expect(collectDynamicTranslationNodes(citation, initial.contentRoot, 'smart', initial.grabOptions)).toEqual([])
+      document.querySelector('.acl-abstract')!.insertAdjacentHTML('beforeend', '<p id="abstract-update">This additional paragraph reports a new result from the experiment. The authors verified the measurement separately.</p>')
+      const paragraph = document.getElementById('abstract-update')!
+      expect(collectDynamicTranslationNodes(paragraph, initial.contentRoot, 'smart', initial.grabOptions)).toContain(paragraph)
+    })
+  })
+
+  describe('Decrypt article header metadata', () => {
+    beforeEach(() => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://decrypt.co/123456/example-article'), configurable: true
+      })
+      document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/decrypt-header-metadata.html', 'utf8')
+    })
+
+    it.each([false, true])('keeps names in smart fallback with grouped bylines: %s', grouped => {
+      if (grouped) {
+        const byline = document.getElementById('byline')!
+        const wrapper = document.createElement('span')
+        byline.before(wrapper)
+        wrapper.append(byline, document.getElementById('editor-row')!)
+      }
+      const targets = collectTranslationTargets(document.body, {
+        scope: 'smart', mode: 'full', contentRoot: document.body, grabOptions: { siteCompatMode: 'full' }
+      }, { fallback: true, includeSupplemental: false }).map(decision => decision.target)
+      expect(targets).toContain(document.getElementById('author'))
+      expect(targets).toContain(document.getElementById('editor'))
+      expect(targets).toContain(document.getElementById('explanatory-caption'))
+      const text = targets.map(getTranslatableText).join(' ')
+      for (const excluded of ['By Alex Morgan', 'Edited by Kai Rivera', '12 min read']) expect(text).not.toContain(excluded)
+      expect(targets).not.toContain(document.getElementById('image-credit'))
+    })
+
+    it('collects inserted byline names without collecting their metadata labels', () => {
+      const header = document.getElementById('article-header')!
+      const fields = header.querySelector('#byline')!.parentElement!
+      fields.remove()
+      const initial = resolveAutoTranslateTarget('smart')
+      header.append(fields)
+      for (const siteCompatMode of ['smart', 'full'] as const) {
+        for (const root of [fields, fields.querySelector('#byline')!, fields.querySelector('#author-row')!, fields.querySelector('#author')!]) {
+          const targets = collectDynamicTranslationNodes(root, initial.contentRoot, 'smart', { ...initial.grabOptions, siteCompatMode })
+          expect(targets.map(target => target.id), siteCompatMode + ' / ' + (root.id || 'metadata fields')).toContain('author')
+          const text = targets.map(getTranslatableText).join(' ')
+          for (const excluded of ['By Alex Morgan', 'Edited by Kai Rivera', '12 min read']) expect(text).not.toContain(excluded)
+        }
+      }
+      expect(collectDynamicTranslationNodes(fields.querySelector('#read-time')!, initial.contentRoot, 'smart', initial.grabOptions)).toEqual([])
+      expect(collectDynamicTranslationNodes(header.querySelector('#image-credit')!, initial.contentRoot, 'smart', initial.grabOptions)).toEqual([])
+    })
+
+    it('retains visible header metadata in explicit full-page mode', () => {
+      const targets = resolveAutoTranslateTarget('full').nodes
+      expect(targets.some(target => target.contains(document.getElementById('image-credit')))).toBe(true)
+      const text = targets.map(getTranslatableText).join(' ')
+      for (const expected of ['By Alex Morgan', 'Edited by Kai Rivera', '12 min read', 'Image created by Decrypt using AI']) {
+        expect(text).toContain(expected)
+      }
+    })
+
+    it.each(['nav', 'footer'])('keeps Decrypt byline expansion out of dynamic %s updates', tag => {
+      const region = document.createElement(tag)
+      region.innerHTML = '<span>New interface text</span>'
+      document.querySelector('main')!.append(region)
+      const contentRoot = document.querySelector('.post-content')!
+      expect(collectDynamicTranslationNodes(region.firstElementChild!, contentRoot, 'smart', { siteCompatMode: 'smart' })).toEqual([])
+    })
+  })
+
+  it('skips dynamically inserted Asterisk article footer modules while retaining new article prose', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://asteriskmag.com/issues/15/a-different-article'), configurable: true
+    })
+    document.body.innerHTML = '<main class="post essay"><section class="content"><p>This article explains the evidence in complete sentences. Additional findings are discussed below.</p></section></main>'
+    const initial = resolveAutoTranslateTarget('smart')
+    const root = document.querySelector('main')!
+    root.insertAdjacentHTML('beforeend', '<section class="prev_next"><a id="previous-article"><strong id="previous-label">Previous</strong>Another detailed article about scientific research</a></section><section class="seealso"><h2 id="related-title">Further Reading</h2></section>')
+    for (const node of root.querySelectorAll('section.prev_next, section.seealso, #previous-article, #previous-label, #related-title')) {
+      expect(collectDynamicTranslationNodes(node, initial.contentRoot, 'smart', initial.grabOptions)).toEqual([])
+    }
+    document.querySelector('.content')!.insertAdjacentHTML('beforeend', '<p id="new-prose">This new paragraph explains the experimental method in full. It remains part of the article rather than a navigation module.</p>')
+    const prose = document.getElementById('new-prose')!
+    expect(collectDynamicTranslationNodes(prose, initial.contentRoot, 'smart', initial.grabOptions)).toContain(prose)
+  })
+
   it('skips Asterisk dynamic progress chapter navigation while keeping article headings', () => {
     Object.defineProperty(window, 'location', {
       value: new URL('https://asteriskmag.com/issues/14/the-mystery-in-the-medicine-cabinet'),
@@ -2967,6 +3205,349 @@ describe('resolveAutoTranslateTarget behavior', () => {
     )
 
     expect(dynamicNodes).toEqual([])
+  })
+
+  describe('manual page opt-out and visible translation status', () => {
+    class VisibleObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ target, isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+
+    const protectedCopy = [
+      'Leave this region untranslated.', 'Leave this inline label unchanged.',
+      'Private draft.', 'Private editable body.', 'Private CSS-hidden text.',
+      'Leave this class-protected text unchanged.'
+    ]
+
+    function setup() {
+      document.documentElement.setAttribute('translate', 'no')
+      document.body.innerHTML = `
+        <main>
+          <h1>A public questionnaire</h1>
+          <p id="intro">Please read the survey instructions. <span translate="no">${protectedCopy[1]}</span> <span style="display:none">${protectedCopy[4]}</span></p>
+          <p translate="no">${protectedCopy[0]}</p>
+          <p class="notranslate">${protectedCopy[5]}</p>
+          <form>
+            <fieldset><legend>How satisfied are you with this service?</legend>
+              <input id="rating" type="radio" checked><label for="rating">Very satisfied</label>
+              <textarea id="draft">${protectedCopy[2]}</textarea>
+              <div contenteditable="true">${protectedCopy[3]}</div>
+            </fieldset>
+          </form>
+        </main>`
+      vi.stubGlobal('IntersectionObserver', VisibleObserver)
+      vi.stubGlobal('MutationObserver', realMutationObserver)
+    }
+
+    function cleanup() {
+      restoreOriginalContent()
+      document.documentElement.removeAttribute('translate')
+      document.documentElement.classList.remove('notranslate')
+      vi.unstubAllGlobals()
+    }
+
+    it.each([1, 0])('keeps local protections in manual full-page mode and expires on restore (display %s)', async display => {
+      setup()
+      mockConfig.display = display
+      vi.mocked(translateText).mockImplementation(async text => text.replace(/[a-zA-Z][a-zA-Z ]+/g, part =>
+        part.includes('ONLY') || part.includes('TRANSLATE') || part.includes('INLINE') || part.includes('SLOT') ? part : '测试译文'))
+      try {
+        autoTranslateEnglishPage('full')
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'empty', source: 'auto', reason: 'page-opt-out' }))
+        expect(translateText).not.toHaveBeenCalled()
+
+        autoTranslateEnglishPage('full', true)
+        await vi.waitFor(() => {
+          expect(readPageTranslationStatus()).toEqual({ phase: 'translated' })
+          expect(document.querySelector('legend')?.textContent).toContain('测试译文')
+        })
+        expect(document.querySelector('label')?.textContent).toContain('测试译文')
+        expect((document.querySelector('#rating') as HTMLInputElement).checked).toBe(true)
+        expect((document.querySelector('#draft') as HTMLTextAreaElement).value).toBe('Private draft.')
+        expect(document.querySelector('[contenteditable]')?.textContent).toBe(protectedCopy[3])
+        for (const copy of protectedCopy) {
+          expect(vi.mocked(translateText).mock.calls.some(([text]) => text.includes(copy))).toBe(false)
+          expect(document.body.textContent).toContain(copy)
+        }
+        expect(document.documentElement.getAttribute('translate')).toBe('no')
+
+        const late = document.createElement('p')
+        late.textContent = 'A new public survey note.'
+        document.querySelector('main')!.append(late)
+        await vi.waitFor(() => expect(late.textContent).toContain('测试译文'), { timeout: 1500 })
+
+        restoreOriginalContent()
+        vi.mocked(translateText).mockClear()
+        autoTranslateEnglishPage('full')
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'empty', source: 'auto', reason: 'page-opt-out' }))
+        expect(translateText).not.toHaveBeenCalled()
+        expect(late.textContent).toBe('A new public survey note.')
+      } finally { cleanup() }
+    })
+
+    it('only overrides the document element and keeps the selected smart scope', async () => {
+      setup()
+      const root = document.documentElement
+      try {
+        document.body.setAttribute('translate', 'no')
+        expect((await resolveAutoTranslationTargetAsync('full', { allowedPageTranslateRoot: root })).nodes).toEqual([])
+        document.body.removeAttribute('translate')
+        root.classList.add('notranslate')
+        expect((await resolveAutoTranslationTargetAsync('full', { allowedPageTranslateRoot: root })).nodes).toEqual([])
+        root.classList.remove('notranslate')
+        const result = await resolveAutoTranslationTargetAsync('smart', { allowedPageTranslateRoot: root })
+        expect(result.nodes.some(node => node.matches('h1, #intro'))).toBe(true)
+        expect(result.nodes.some(node => node.closest('form'))).toBe(false)
+        expect(root.getAttribute('translate')).toBe('no')
+      } finally {
+        document.body.removeAttribute('translate')
+        cleanup()
+      }
+    })
+
+    it.each(['visible', 'unchanged', 'failed'])('reports status based on what reached the DOM (%s)', async outcome => {
+      setup()
+      document.documentElement.removeAttribute('translate')
+      document.body.innerHTML = '<p id="copy">This is a line of English content.</p>'
+      let finish!: () => void
+      vi.mocked(translateText).mockImplementation(text => new Promise((resolve, reject) => {
+        finish = () => outcome === 'failed' ? reject(new Error('provider down'))
+          : resolve(outcome === 'visible' ? '这是测试译文。' : text)
+      }))
+      try {
+        autoTranslateEnglishPage('full', true)
+        await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
+        expect(document.getElementById('copy')?.hasAttribute(TRANSLATED_ATTR)).toBe(true)
+        expect(readPageTranslationStatus()).toEqual({ phase: 'pending', source: 'manual' })
+        finish()
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual(outcome === 'visible' ? { phase: 'translated' }
+          : outcome === 'failed' ? { phase: 'failed', source: 'manual' } : { phase: 'empty', source: 'manual', reason: 'no-output' }))
+        expect(Boolean(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`))).toBe(outcome === 'visible')
+      } finally { cleanup() }
+    })
+
+    it('keeps the guarded page options and status after retrying a provider failure', async () => {
+      setup()
+      document.body.innerHTML = '<p id="retry">Please answer this question. <span translate="no">Local protected text</span></p>'
+      vi.mocked(translateText).mockRejectedValueOnce(new Error('temporary provider failure')).mockResolvedValue('这是重试后显示的译文。')
+      try {
+        autoTranslateEnglishPage('full', true)
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'failed', source: 'manual' }))
+        const [, , , retry] = mockInsertFailedTip.mock.calls[0]!
+        expect(retry).toBeTypeOf('function')
+        retry()
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'translated' }))
+        expect(document.getElementById('retry')?.textContent).toContain('这是重试后显示的译文。')
+        expect(vi.mocked(translateText).mock.calls).toHaveLength(2)
+        expect(vi.mocked(translateText).mock.calls.every(([text]) => !text.includes('Local protected text'))).toBe(true)
+        restoreOriginalContent()
+        retry()
+        expect(vi.mocked(translateText).mock.calls).toHaveLength(2)
+      } finally { cleanup() }
+    })
+
+    it('drops in-flight results when an automatic run encounters a late root opt-out', async () => {
+      setup()
+      document.documentElement.removeAttribute('translate')
+      document.body.innerHTML = '<p>Answer this public question.</p>'
+      let resolve!: (text: string) => void
+      vi.mocked(translateText).mockImplementation(() => new Promise(done => { resolve = done }))
+      try {
+        autoTranslateEnglishPage('full')
+        await vi.waitFor(() => expect(resolve).toBeTypeOf('function'))
+        document.documentElement.setAttribute('translate', 'no')
+        resolve('不应显示这条译文。')
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'empty', source: 'auto', reason: 'page-opt-out' }))
+        expect(document.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+        expect(translateText).toHaveBeenCalledTimes(1)
+      } finally { cleanup() }
+    })
+
+    it('clears the success state after the only visible translation is removed', async () => {
+      setup()
+      document.body.innerHTML = '<p id="visible-copy">Answer this public question.</p>'
+      vi.mocked(translateText).mockResolvedValue('请回答此问题。')
+      try {
+        autoTranslateEnglishPage('full', true)
+        await vi.waitFor(() => expect(readPageTranslationStatus()).toEqual({ phase: 'translated' }))
+        document.getElementById('visible-copy')!.remove()
+        await vi.waitFor(() => expect(readPageTranslationStatus().phase).toBe('empty'))
+      } finally { cleanup() }
+    })
+  })
+
+  describe('Ziggit topic heading', () => {
+    const url = 'https://ziggit.dev/t/a-compiler-question/12345/6?source=test#post_6'
+    const title = 'A question about the Zig compiler'
+    const mainTopic = () => document.querySelector<HTMLAnchorElement>('#main-topic')!
+    const topicHeading = () => mainTopic().parentElement!
+    class RecordingIntersectionObserver {
+      static observed = new Set<Element>()
+      static immediate = true
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        RecordingIntersectionObserver.observed.add(target)
+        if (RecordingIntersectionObserver.immediate) {
+          this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+        }
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    const startSession = (immediate = true) => {
+      RecordingIntersectionObserver.observed.clear()
+      RecordingIntersectionObserver.immediate = immediate
+      vi.stubGlobal('IntersectionObserver', RecordingIntersectionObserver)
+      vi.stubGlobal('MutationObserver', realMutationObserver)
+      vi.mocked(translateText).mockResolvedValue('关于 Zig 编译器的问题')
+      autoTranslateEnglishPage('smart')
+      return vi.waitFor(() => expect(RecordingIntersectionObserver.observed).toContain(document.getElementById('post-text')))
+    }
+    const titleRequests = () => vi.mocked(translateText).mock.calls.filter(([source]) => source === title).length
+    beforeEach(() => {
+      Object.defineProperty(window, 'location', { value: new URL(url), configurable: true })
+      Object.defineProperty(document, 'location', { value: new URL(url), configurable: true })
+      document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/ziggit-topic-heading.html', 'utf8')
+    })
+
+    it.each([
+      ['link', 'aria-hidden', 'true'],
+      ['topic', 'aria-hidden', 'true'],
+      ['shell', 'aria-hidden', 'true'],
+      ['heading', 'hidden', ''],
+      ['heading', 'style', 'display:none'],
+      ['heading', 'style', 'visibility:hidden'],
+      ['shell', 'style', 'display:none'],
+      ['link', 'translate', 'no'],
+      ['link', 'href', '/t/a-different-question/54321'],
+      ['link', 'href', 'https://example.com/t/a-compiler-question/12345'],
+    ])('keeps protection on %s with %s=%s', (where, key, value) => {
+      const element = { link: mainTopic(), heading: topicHeading(), topic: document.getElementById('topic-title')!, shell: document.getElementById('topic-shell')! }[where]!
+      element.setAttribute(key, value)
+      const result = resolveAutoTranslateTarget('smart')
+      expect(result.nodes.some(node => node.contains(mainTopic()))).toBe(false)
+      expect(result.nodes.some(node => node.contains(document.getElementById('sticky-topic')))).toBe(false)
+    })
+
+    it('keeps the regular ARIA visibility check for explicit full-page mode and other sites', () => {
+      expect(resolveAutoTranslateTarget('full').nodes.some(node => node.contains(mainTopic()))).toBe(false)
+      Object.defineProperty(window, 'location', { value: new URL('https://example.test/t/a-compiler-question/12345'), configurable: true })
+      expect(resolveAutoTranslateTarget('smart').nodes.some(node => node.contains(mainTopic()))).toBe(false)
+    })
+
+    it('collects the heading once after insertion, from a link, heading, title container or topic shell', () => {
+      const shell = document.getElementById('topic-shell')!
+      shell.remove()
+      const initial = resolveAutoTranslateTarget('smart')
+      document.body.append(shell)
+      for (const root of [mainTopic(), topicHeading(), document.getElementById('topic-title')!, shell]) {
+        const nodes = collectDynamicTranslationNodes(root, initial.contentRoot, 'smart', initial.grabOptions)
+        expect(nodes.filter(node => node.contains(mainTopic()))).toEqual([mainTopic()])
+        expect(nodes.some(node => node.contains(document.getElementById('sticky-topic')))).toBe(false)
+      }
+      topicHeading().style.display = 'none'
+      expect(collectDynamicTranslationNodes(topicHeading(), initial.contentRoot, 'smart', initial.grabOptions)).not.toContain(mainTopic())
+      topicHeading().style.display = 'block'
+      expect(collectDynamicTranslationNodes(topicHeading(), initial.contentRoot, 'smart', initial.grabOptions)).toContain(mainTopic())
+    })
+
+    it.each(['hidden', 'aria-hidden="true"', 'style="display:none"', 'translate="no"'])(
+      'keeps the title exception from including protected descendant text (%s)', attribute => {
+        mainTopic().innerHTML = `A visible heading<span ${attribute}>A protected label.</span>`
+        expect(resolveAutoTranslateTarget('smart').nodes.some(node => node.contains(mainTopic()))).toBe(false)
+      }
+    )
+
+    it('observes CSS restoration under the ARIA-hidden heading and translates it once as the sticky copy appears on scroll', async () => {
+      const waitForScan = () => new Promise(resolve => setTimeout(resolve, 230))
+      const heading = topicHeading()
+      const sticky = document.querySelector<HTMLElement>('header.d-header')!
+      heading.style.display = 'none'
+      sticky.style.display = 'none'
+      try {
+        await startSession()
+        heading.style.color = 'green'
+        await waitForScan()
+        expect(titleRequests()).toBe(0)
+        heading.style.display = 'block'
+        await vi.waitFor(() => {
+          expect(titleRequests()).toBe(1)
+          expect(heading.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+        }, { timeout: 2000 })
+        window.scrollTo(0, 500)
+        sticky.style.display = 'block'
+        await waitForScan()
+        expect(titleRequests()).toBe(1)
+        expect(sticky.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+        expect(heading.getAttribute('aria-hidden')).toBe('true')
+      } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+    })
+
+    it.each(['data-topic-id', 'href'])('rescans when a valid topic identity is restored via %s', async attribute => {
+      const node = attribute === 'href' ? mainTopic() : topicHeading()
+      const original = node.getAttribute(attribute)!
+      node.removeAttribute(attribute)
+      try {
+        await startSession()
+        expect(titleRequests()).toBe(0)
+        node.setAttribute(attribute, original)
+        await vi.waitFor(() => expect(titleRequests()).toBe(1), { timeout: 2000 })
+      } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+    })
+
+    it('rescans visible title markup after consecutive style changes on a nested span', async () => {
+      mainTopic().innerHTML = `<span style="display:none">${title}</span>`
+      const nested = mainTopic().querySelector('span')!
+      try {
+        await startSession()
+        nested.style.color = 'blue'
+        await new Promise(resolve => setTimeout(resolve, 220))
+        expect(titleRequests()).toBe(0)
+        nested.style.display = 'inline'
+        await vi.waitFor(() => expect(titleRequests()).toBe(1), { timeout: 2000 })
+      } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+    })
+
+    it.each(['hidden', 'href', 'reparent', 'dialog'])('discards a pending title response when the target changes %s', async change => {
+      let finishTitle: ((value: string) => void) | undefined
+      const target = mainTopic()
+      try {
+        const started = startSession()
+        vi.mocked(translateText).mockImplementation(source => source === title
+          ? new Promise<string>(resolve => { finishTitle = resolve })
+          : Promise.resolve('帖子译文'))
+        await started
+        await vi.waitFor(() => expect(finishTitle).toBeTypeOf('function'))
+        if (change === 'hidden') target.hidden = true
+        else if (change === 'href') target.setAttribute('href', '/t/foreign-topic/54321')
+        else if (change === 'dialog') document.getElementById('topic-title')!.setAttribute('role', 'dialog')
+        else document.querySelector('.header-title')!.append(target)
+        finishTitle!('不应插入的译文')
+        await vi.waitFor(() => expect(target.hasAttribute(TRANSLATED_ATTR)).toBe(false), { timeout: 2000 })
+        expect(target.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+        expect(titleRequests()).toBe(1)
+      } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+    })
+
+    it.each(['hidden', 'href'])('drops an offscreen title that changes %s before its queued request', async attribute => {
+      const target = mainTopic()
+      const original = target.getAttribute(attribute)
+      try {
+        await startSession(false)
+        expect(RecordingIntersectionObserver.observed).toContain(target)
+        target.setAttribute(attribute, attribute === 'hidden' ? '' : '/t/foreign-topic/54321')
+        await vi.waitFor(() => expect(translateText).toHaveBeenCalled(), { timeout: 2500 })
+        expect(titleRequests()).toBe(0)
+        expect(target.hasAttribute(TRANSLATED_ATTR)).toBe(false)
+        if (original === null) target.removeAttribute(attribute)
+        else target.setAttribute(attribute, original)
+        await vi.waitFor(() => expect(titleRequests()).toBe(1), { timeout: 2500 })
+      } finally { restoreOriginalContent(); vi.unstubAllGlobals() }
+    })
   })
 
   it('collects Ziggit reply paragraphs inserted outside the initial post content root', () => {
@@ -3629,6 +4210,49 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(nodes).toHaveLength(0)
   })
 
+  it.each([
+    { url: 'https://reading-blocks.example/', insideRoot: false },
+    { url: 'https://teapaw.org/', insideRoot: false },
+    { url: 'https://teapaw.org/', insideRoot: true }
+  ])('collects an inserted reading note on $url (inside root: $insideRoot)', ({ url, insideRoot }) => {
+    Object.defineProperty(window, 'location', {
+      value: new URL(url),
+      configurable: true
+    })
+    document.body.innerHTML = '<main id="reading-root"><p>The current article describes how the new system handles incoming requests.</p></main>'
+    const contentRoot = document.querySelector('#reading-root')!
+    const note = document.createElement('aside')
+    note.innerHTML = `
+      <strong id="new-note-title">Compatibility note</strong>
+      <div><p id="new-note-body">Older clients can continue using the same configuration because the migration preserves existing connection settings.</p></div>
+      <button id="new-note-button">Dismiss</button>
+    `
+    const container = insideRoot ? contentRoot : document.body
+    container.append(note)
+
+    const nodes = collectDynamicTranslationNodes(note, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })
+    expect(nodes.map(node => node.id)).toEqual(['new-note-title', 'new-note-body'])
+
+    const title = note.querySelector('#new-note-title')!
+    title.setAttribute('data-fr-translated', 'true')
+    note.querySelector('#new-note-body')!.setAttribute('data-fr-translated', 'true')
+    const translation = document.createElement('span')
+    translation.className = BILINGUAL_CONTENT_CLASS
+    translation.textContent = '兼容性说明。'.repeat(20)
+    title.append(translation)
+    const followUp = document.createElement('p')
+    followUp.textContent = 'The same connection settings also remain available when an administrator reinstalls the service.'
+    note.append(followUp)
+
+    expect(collectDynamicTranslationNodes(followUp, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })).toEqual([followUp])
+  })
+
   it('drops batched dynamic UI outside the smart content root before deep scanning', () => {
     const scanContext = createScanContext()
     document.body.innerHTML = `
@@ -3659,6 +4283,157 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(scanRoot).toBeNull()
     expect(nodes).toHaveLength(0)
     expect(scanContext.stats.classifiedElements).toBeLessThanOrEqual(1)
+  })
+
+  it('collects neutral paragraphs added outside the smart root and includes their adjacent short label', () => {
+    Object.defineProperty(window, 'location', {
+      value: new URL('https://ordinary-blocks.example/'),
+      configurable: true
+    })
+    document.body.innerHTML = '<main id="primary"><p>The main guide describes the planting calendar and the equipment used by our volunteers.</p></main>'
+    const contentRoot = document.querySelector('#primary')!
+    const group = document.createElement('div')
+    group.innerHTML = `
+      <strong id="late-neutral-title">Watering guidance</strong>
+      <div id="late-neutral-body">Record each watering day so the next volunteer can check the soil before adding more water to the garden beds.</div>
+      <p id="late-neutral-support">Use a little more water if the soil is dry before the next visit</p>
+      <button id="late-neutral-action">Manage account</button>
+    `
+    document.body.append(group)
+    const nodes = collectDynamicTranslationNodes(group, contentRoot, 'smart', {
+      siteCompatMode: 'smart',
+      scanContext: createScanContext()
+    })
+    expect(nodes.map(node => node.id)).toEqual(['late-neutral-title', 'late-neutral-body', 'late-neutral-support'])
+  })
+
+  it('collects an inserted list introduction from independent reading items', () => {
+    Object.defineProperty(window, 'location', { value: new URL('https://unadapted.example/workshop'), configurable: true })
+    document.body.innerHTML = '<main id="content-root"><p>The guide explains how volunteers prepare shared equipment and review changes before another team arrives.</p></main>'
+    const root = document.querySelector('#content-root')!
+    const note = document.createElement('aside')
+    note.innerHTML = `<strong>Practical advice</strong><p id="late-list-lead">Consider these approaches</p><ol>
+      <li><div>Keep a local copy of the working configuration so every administrator can inspect the settings before the next upgrade.</div></li>
+      <li><p>Record changes in a shared log so another volunteer can reproduce the result and explain differences during a later review.</p></li>
+    </ol>`
+    document.body.append(note)
+    const context = createScanContext()
+    const nodes = collectDynamicTranslationNodes(note, root, 'smart', { siteCompatMode: 'smart', scanContext: context })
+    expect(nodes.map(node => node.id)).toContain('late-list-lead')
+    expect(context.budgetUsage.dynamic).toBeGreaterThan(0)
+    expect(context.budgetUsage.supplemental).toBe(0)
+  })
+
+  it.each([
+    ['heading', 'h1'], ['wrapper', 'h1'],
+    ['heading', 'span role="heading" aria-level="1"'], ['wrapper', 'span role="heading" aria-level="1"']
+  ])('collects a semantic page title outside main for a dynamic %s root (%s)', (kind, headingTag) => {
+    Object.defineProperty(window, 'location', { value: new URL('https://unadapted.example/shared-tools'), configurable: true })
+    document.title = 'Building shared tools • Workshop notes'
+    document.body.innerHTML = '<main><p>The guide explains how volunteers prepare shared equipment and review changes before another team arrives.</p></main>'
+    const main = document.querySelector('main')!, wrapper = document.createElement('div')
+    wrapper.innerHTML = `<${headingTag} id="late-heading">Building shared <code>tools</code></${headingTag.split(' ')[0]}>`
+    document.body.prepend(wrapper)
+    const heading = wrapper.firstElementChild!
+    const nodes = collectDynamicTranslationNodes(kind === 'heading' ? heading : wrapper, main, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })
+    expect(nodes).toContain(heading)
+    expect(heading.querySelector('code')?.textContent).toBe('tools')
+  })
+
+  it.each([
+    ['https://another-author.blogspot.com/workshop', 'blogger-followers-widget.html', '#followers-title'],
+    ['https://claude.nagdy.me/learn/shared-workspace/', 'claude-course-metadata.html', '#level-line']
+  ])('keeps the approved adaptation in dynamic scans on %s', (url, fixture, selector) => {
+    Object.defineProperty(window, 'location', { value: new URL(url), configurable: true })
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/' + fixture, 'utf8')
+    const node = document.querySelector(selector)!, main = document.querySelector('main')!
+    const nodes = collectDynamicTranslationNodes(node, main, 'smart', { siteCompatMode: 'smart', scanContext: createScanContext() })
+    expect(nodes.some(target => target === node || target.contains(node))).toBe(false)
+  })
+
+  it.each(['title text', 'title replacement', 'head replacement', 'competing heading removal'])('rechecks untranslated headings after %s without rescanning unrelated head content', async change => {
+    vi.useFakeTimers()
+    class ImmediateIntersectionObserver {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) { this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver) }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return [] }
+    }
+    class CapturingMutationObserver {
+      static instances: CapturingMutationObserver[] = []
+      readonly targets: Node[] = []
+      readonly options: MutationObserverInit[] = []
+      disconnect = vi.fn()
+      constructor(readonly callback: MutationCallback) { CapturingMutationObserver.instances.push(this) }
+      observe(target: Node, options: MutationObserverInit) { this.targets.push(target); this.options.push(options) }
+      takeRecords() { return [] }
+      notify(records: Partial<MutationRecord>[]) { this.callback(records as MutationRecord[], this as unknown as MutationObserver) }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver)
+    vi.stubGlobal('MutationObserver', CapturingMutationObserver)
+    const originalHead = document.head
+    document.title = 'Loading'
+    document.body.innerHTML = `<div><h1 id="late-heading">Building shared <code>tools</code></h1></div>
+      ${change === 'competing heading removal' ? '<h1 id="other-heading">Other title</h1>' : ''}
+      <main><p>Keep a local copy of the working configuration so every administrator can inspect the settings before the next upgrade.</p></main>`
+    vi.mocked(translateText).mockImplementation(async origin => origin.replace(/[A-Za-z]+/g, '正文'))
+    const heading = document.querySelector('#late-heading')!
+    try {
+      autoTranslateEnglishPage('smart')
+      await vi.runAllTimersAsync()
+      expect(heading.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      const rootObserver = CapturingMutationObserver.instances.find(observer => observer.targets.includes(document.documentElement))!
+      const titleObserver = CapturingMutationObserver.instances.find(observer => observer.targets.includes(document.querySelector('title')!))!
+      expect(rootObserver.options[rootObserver.targets.indexOf(document.head)]).toEqual({ childList: true })
+      const calls = vi.mocked(translateText).mock.calls.length
+      rootObserver.notify([{ type: 'childList', target: document.head, addedNodes: [] as unknown as NodeList }])
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(calls)
+      // A matching metadata value that changes again before the scan must not leave cached permission.
+      if (change === 'title text') {
+        document.title = 'Building shared tools • Workshop notes'
+        titleObserver.notify([{ type: 'characterData', target: document.querySelector('title')!.firstChild! }])
+        document.title = 'Unrelated page'
+        titleObserver.notify([{ type: 'characterData', target: document.querySelector('title')!.firstChild! }])
+        await vi.runAllTimersAsync()
+        expect(heading.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+      }
+      if (change === 'competing heading removal') {
+        document.title = 'Building shared tools • Workshop notes'
+        titleObserver.notify([{ type: 'characterData', target: document.querySelector('title')!.firstChild! }])
+        const other = document.querySelector('#other-heading')!
+        other.remove()
+        CapturingMutationObserver.instances.find(observer => observer.targets.includes(document.body))!.notify([
+          { type: 'childList', target: document.body, addedNodes: [] as unknown as NodeList, removedNodes: [other] as unknown as NodeList }
+        ])
+      } else if (change === 'title replacement' || change === 'head replacement') {
+        const replacement = document.createElement(change === 'head replacement' ? 'head' : 'title')
+        if (change === 'head replacement') replacement.innerHTML = '<title>Building shared tools • Workshop notes</title>'
+        else replacement.textContent = 'Building shared tools • Workshop notes'
+        const old = change === 'head replacement' ? document.head : document.querySelector('title')!
+        old.replaceWith(replacement)
+        rootObserver.notify([{ type: 'childList', target: change === 'head replacement' ? document.documentElement : document.head, addedNodes: [replacement] as unknown as NodeList }])
+        expect(titleObserver.targets).toContain(document.querySelector('title'))
+      } else {
+        document.title = 'Building shared tools • Workshop notes'
+        titleObserver.notify([{ type: 'characterData', target: document.querySelector('title')!.firstChild! }])
+      }
+      await vi.runAllTimersAsync()
+      expect(heading.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).not.toBeNull()
+      const completedCalls = vi.mocked(translateText).mock.calls.length
+      document.title = 'Another page title'
+      titleObserver.notify([{ type: 'characterData', target: document.querySelector('title')!.firstChild! }])
+      await vi.runAllTimersAsync()
+      expect(translateText).toHaveBeenCalledTimes(completedCalls)
+      restoreOriginalContent()
+      expect(titleObserver.disconnect).toHaveBeenCalled()
+    } finally {
+      restoreOriginalContent()
+      if (document.head !== originalHead) document.head.replaceWith(originalHead)
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
   })
 
   it('keeps dynamic readable paragraphs inside heavy content roots within the dynamic budget', () => {

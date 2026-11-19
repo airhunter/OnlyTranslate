@@ -1,9 +1,12 @@
+import type { PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus';
+
 type SendResponse = (response?: unknown) => void;
 type RuntimeMessageHandler = (message: unknown, sender: unknown, sendResponse: SendResponse) => boolean;
 
 interface RuntimeLike {
     onMessage: {
         addListener(handler: RuntimeMessageHandler): void;
+        removeListener?(handler: RuntimeMessageHandler): void;
     };
 }
 
@@ -15,11 +18,10 @@ export interface PageTranslationLifecycleConfig {
 
 export interface PageTranslationLifecycleOptions {
     config: PageTranslationLifecycleConfig;
-    document: Document;
     runtime: RuntimeLike;
-    autoTranslateEnglishPage: (scope?: string) => void;
+    autoTranslateEnglishPage: (scope?: string, manual?: boolean) => void;
     restoreOriginalContent: () => void;
-    onPageTranslationStateChange?: (isTranslated: boolean) => void;
+    getPageTranslationStatus: () => PageTranslationStatus;
 }
 
 export interface PageTranslationLifecycle {
@@ -33,26 +35,11 @@ interface ContextMenuTranslateMessage {
 }
 
 export function setupPageTranslationLifecycle(options: PageTranslationLifecycleOptions): PageTranslationLifecycle {
-    let isFullPageTranslating = false;
-
-    const toggleHandler = () => {
-        if (options.config.disableFloatingBall !== true) return;
-
-        isFullPageTranslating = !isFullPageTranslating;
-        if (isFullPageTranslating) {
-            options.autoTranslateEnglishPage();
-        } else {
-            options.restoreOriginalContent();
-        }
-    };
-
-    options.document.addEventListener('onlytranslate-toggle-translation', toggleHandler);
-
     if (options.config.autoTranslate) {
         options.autoTranslateEnglishPage();
     }
 
-    options.runtime.onMessage.addListener((message: unknown, _sender: unknown, sendResponse: SendResponse) => {
+    const handleMessage: RuntimeMessageHandler = (message, _sender, sendResponse) => {
         if (!isContextMenuTranslateMessage(message)) return false;
 
         if (options.config.on === false) {
@@ -62,9 +49,8 @@ export function setupPageTranslationLifecycle(options: PageTranslationLifecycleO
 
         if (message.action === 'fullPage') {
             try {
-                options.autoTranslateEnglishPage(message.scope);
-                options.onPageTranslationStateChange?.(true);
-                sendResponse({ status: 'success', action: 'translated' });
+                options.autoTranslateEnglishPage(message.scope, true);
+                sendResponse({ status: 'success', action: 'started' });
             } catch (error) {
                 sendResponse({
                     status: 'error',
@@ -76,23 +62,23 @@ export function setupPageTranslationLifecycle(options: PageTranslationLifecycleO
 
         if (message.action === 'restore') {
             options.restoreOriginalContent();
-            options.onPageTranslationStateChange?.(false);
             sendResponse({ status: 'success', action: 'restored' });
             return true;
         }
 
         if (message.action === 'getStatus') {
-            const hasTranslatedNodes = options.document.querySelectorAll('[data-fr-translated="true"]').length > 0;
-            sendResponse({ status: 'success', isTranslated: hasTranslatedNodes });
+            const pageTranslation = options.getPageTranslationStatus();
+            sendResponse({ status: 'success', isTranslated: pageTranslation.phase === 'translated', pageTranslation });
             return true;
         }
 
         return false;
-    });
+    };
+    options.runtime.onMessage.addListener(handleMessage);
 
     return {
         dispose() {
-            options.document.removeEventListener('onlytranslate-toggle-translation', toggleHandler);
+            options.runtime.onMessage.removeListener?.(handleMessage);
         }
     };
 }

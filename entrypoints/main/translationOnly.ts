@@ -53,6 +53,12 @@ export function hasTranslationOnlyRecord(host: HTMLElement): boolean {
     return translationOnlyRecords.has(host);
 }
 
+export function hasVisibleTranslationOnlyChange(host: HTMLElement): boolean {
+    const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
+    return Boolean(translationOnlyRecords.get(host)?.texts.some(part =>
+        normalize(part.original) !== normalize(part.translated) && normalize(part.translated).length > 0));
+}
+
 export function hasTranslationOnlySourceChanged(host: HTMLElement): boolean {
     const record = translationOnlyRecords.get(host);
     return Boolean(record?.texts.some(part => part.node.data !== part.translated || !isTextInOriginalPosition(host, part)));

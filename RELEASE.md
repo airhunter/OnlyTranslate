@@ -51,13 +51,9 @@ pnpm verify
 pnpm test:content
 ```
 
-5. 打包并校验发布产物。
+5. 了解产物校验。
 
-```bash
-pnpm zip:all
-```
-
-`pnpm zip:all` 依次生成 Chrome、Edge 和 Firefox 的扩展 ZIP。正式发布时，`release-it` 提升版本号后会重新打包，并运行 `pnpm release:check <version> --check-zip`；该检查要求目标版本的三个包都存在，并分别检查发布产物的体积预算：
+正式发布会生成 Chrome、Edge 和 Firefox 三个扩展 ZIP。该检查要求目标版本三个包齐全，并检查发布产物的体积预算：
 
 - 任一发布 ZIP 超过 `1.5 MB`（`1,500,000` 字节）时告警。
 - 任一 `content-scripts/*.js` 超过 `800 KiB`（`819,200` 字节）时提示审查内容脚本拆分。
@@ -65,11 +61,13 @@ pnpm zip:all
 
 体积预算告警不会直接阻断发布。出现告警后，需要确认增长来自预期功能或资源，并在继续发布前检查是否存在重复依赖、误打包资源或可延迟加载的内容脚本代码。单版本增长检查依赖 `.output` 中保留上一版本对应浏览器的 ZIP；缺少上一版本产物时，校验会明确提示无法比较。
 
-注意：正式发布前如果 `package.json` 版本号尚未提升，`pnpm zip:all` 生成的 ZIP 文件名仍会使用当前版本号。目标版本的 ZIP 存在性校验由 `before:github:release` 钩子在版本号提升后执行，校验通过才会上传三个浏览器包。
+本地预打包会按当前 `package.json` 版本命名。若已有同版本发布 ZIP，在独立检出中预打包，以保留原产物及摘要。
 
 ## 正式发布
 
-确认校验、测试和打包都通过后，执行：
+`release-it` 在提升版本前执行 `pnpm verify`。版本更新后，先运行 `pnpm zip:all` 和目标版本的 `pnpm release:check <version> --check-zip`，再创建版本提交、tag 并推送。正式发布的检查和打包在扩展仓库独立完成。
+
+确认发布前校验和测试通过后，执行：
 
 ```bash
 pnpm release

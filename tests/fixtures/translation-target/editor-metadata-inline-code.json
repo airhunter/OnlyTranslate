@@ -1,0 +1,10 @@
+{
+  "name": "Smart reading distinguishes editor chrome and article metadata while preserving inline-code list prose",
+  "url": "https://reading-regression.example/interactive-examples",
+  "scope": "smart",
+  "html": "editor-metadata-inline-code.html",
+  "include": ["article-title", "article-intro", "ordinary-playground", "section-title", "section-copy", "inline-code-copy", "discussion-heading", "discussion-copy", "standalone-calendar"],
+  "exclude": ["editor-label", "category-code", "code-only", "source-code", "protected-copy", "updated-label", "updated-value", "hits-label", "promo-label", "promo-copy"],
+  "textIncludes": ["Sets the", "data attribute to"],
+  "textExcludes": ["join my newsletter", "Last updated onSeptember", "# of hits"]
+}

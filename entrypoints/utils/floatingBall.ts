@@ -5,29 +5,21 @@ import { config } from '@/entrypoints/utils/config';
 import browser from 'webextension-polyfill';
 import { storage } from '@wxt-dev/storage';
 import { resolvePdfDocumentSource } from '@/entrypoints/pdf/url';
+import { readPageTranslationStatus, type PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus';
 
 type FloatingBallInstance = ComponentPublicInstance & {
-  isTranslating?: boolean;
-  syncTranslationState?: (isTranslated: boolean) => void;
-  toggleTranslationFromExternal?: () => void;
-  element?: HTMLElement;
-  $el: HTMLElement;
+  syncTranslationState?: (status: PageTranslationStatus, showWarning?: boolean) => void;
 }
 
 let floatingBallInstance: FloatingBallInstance | null = null;
 let app: App<Element> | null = null;
-let isTranslated = false; // 添加状态变量跟踪翻译状态
 
 export interface FloatingBallTranslationActions {
-  autoTranslateEnglishPage: (scope?: string) => void;
-  restoreOriginalContent: () => void;
+  togglePageTranslation: (manual: boolean) => void;
 }
 
 let translationActions: FloatingBallTranslationActions = {
-  autoTranslateEnglishPage: () => {
-    console.error('Floating ball translation actions are not configured');
-  },
-  restoreOriginalContent: () => {
+  togglePageTranslation: () => {
     console.error('Floating ball translation actions are not configured');
   }
 };
@@ -94,156 +86,18 @@ export function mountFloatingBall(position?: 'left' | 'right') {
       config.service = service;
       saveConfig();
     },
-    // 添加翻译状态变化事件监听
-    onTranslationToggle: (isTranslating: boolean) => {
-      if (isTranslating && !isTranslated) {
-        // 触发翻译开始事件
-        document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
-
-        // 触发即时翻译
-        translationActions.autoTranslateEnglishPage();
-        isTranslated = true;
-      } else if (!isTranslating && isTranslated) {
-        // 触发翻译结束事件
-        document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
-        
-        // 恢复原文
-        translationActions.restoreOriginalContent();
-        isTranslated = false;
-        
-        // 恢复后确保状态同步
-        floatingBallInstance?.$el.classList.remove('is-translating');
-      }
-    },
+    onTranslationToggle: (manual: boolean) => translationActions.togglePageTranslation(manual),
     offsetY: config.floatingBallOffsetY ?? null
   });
 
   // 挂载应用
   floatingBallInstance = app.mount(container);
-  if (isTranslated) {
-    floatingBallInstance.syncTranslationState?.(true);
-  }
-  
-  // 监听自定义事件，用于通过快捷键触发悬浮球
-  document.addEventListener('onlytranslate-toggle-translation', toggleFloatingBallTranslation);
-
+  floatingBallInstance.syncTranslationState?.(readPageTranslationStatus(), false);
   return floatingBallInstance;
 }
 
-export function setFloatingBallTranslationState(nextState: boolean) {
-  isTranslated = nextState;
-  floatingBallInstance?.syncTranslationState?.(nextState);
-}
-
-/**
- * 切换悬浮球翻译状态
- * 通过键盘快捷键触发时使用
- */
-export function toggleFloatingBallTranslation() {
-  if (!floatingBallInstance) return;
-
-  if (floatingBallInstance.toggleTranslationFromExternal) {
-    floatingBallInstance.toggleTranslationFromExternal();
-    return;
-  }
-
-  const currentState = Boolean(floatingBallInstance.isTranslating);
-  const newState = !currentState;
-  
-  // 触发对应的自定义事件
-  if (newState) {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
-  } else {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
-  }
-  
-  // 更新悬浮球状态
-  floatingBallInstance.isTranslating = newState;
-  
-  // 更新UI状态 - 使用Vue实例的$el属性
-  if (floatingBallInstance.$el) {
-    if (newState) {
-      floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
-      // 开始翻译
-      translationActions.autoTranslateEnglishPage();
-    } else {
-      floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
-      // 恢复原文
-      translationActions.restoreOriginalContent();
-    }
-  }
-}
-
-/**
- * 处理悬浮球点击事件
- */
-function handleFloatingBallClick() {
-  if (!floatingBallInstance) return;
-  
-  // 切换悬浮球翻译状态
-  const newState = !floatingBallInstance.isTranslating;
-  floatingBallInstance.isTranslating = newState;
-  
-  // 触发对应的自定义事件
-  if (newState) {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-started'));
-  } else {
-    document.dispatchEvent(new CustomEvent('onlytranslate-translation-ended'));
-  }
-  
-  // 更新UI状态 - 使用Vue实例的$el属性
-  if (floatingBallInstance.$el) {
-    if (newState) {
-      floatingBallInstance.$el.classList.add('only-translate-floating-ball-active');
-      // 开始翻译
-      translationActions.autoTranslateEnglishPage();
-    } else {
-      floatingBallInstance.$el.classList.remove('only-translate-floating-ball-active');
-      // 恢复原文
-      translationActions.restoreOriginalContent();
-    }
-  }
-}
-
-// 悬浮球动画效果
-function addFloatingBallAnimation(type: 'translate' | 'restore') {
-  if (!floatingBallInstance) return;
-  
-  const ball = floatingBallInstance.element;
-  if (!ball) return;
-  const originalBackground = ball.style.background;
-  const originalTransition = ball.style.transition;
-  
-  // 设置过渡效果
-  ball.style.transition = 'all 0.3s ease';
-  
-  // 根据类型设置不同动画
-  if (type === 'translate') {
-    // 翻译激活动画
-    ball.style.transform = 'scale(1.2)';
-    ball.style.boxShadow = '0 0 15px rgba(0, 128, 255, 0.8)';
-    ball.style.background = '#4285f4';
-  } else {
-    // 恢复原文动画
-    ball.style.transform = 'scale(1.2)';
-    ball.style.boxShadow = '0 0 15px rgba(76, 175, 80, 0.8)';
-    ball.style.background = '#4caf50';
-  }
-  
-  // 恢复原状
-  setTimeout(() => {
-    if (!floatingBallInstance) return;
-    ball.style.transform = '';
-    ball.style.boxShadow = '';
-    ball.style.background = originalBackground;
-    
-    // 恢复原来的过渡设置
-    setTimeout(() => {
-      if (floatingBallInstance) {
-        ball.style.transition = originalTransition;
-      }
-    }, 300);
-  }, 300);
+export function setFloatingBallTranslationState(status: PageTranslationStatus) {
+  floatingBallInstance?.syncTranslationState?.(status);
 }
 
 /**
@@ -261,9 +115,6 @@ function saveConfig() {
  */
 export function unmountFloatingBall() {
   if (floatingBallInstance && app) {
-    // 移除事件监听
-    document.removeEventListener('onlytranslate-toggle-translation', toggleFloatingBallTranslation);
-    
     // 获取容器
     const container = document.getElementById('only-translate-floating-ball-container');
     

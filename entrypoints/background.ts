@@ -16,6 +16,7 @@ import {
 } from '@/entrypoints/video/cache'
 import { VideoSubtitleCacheMaintenance } from '@/entrypoints/video/cacheMaintenance'
 import { isXSubtitleRequest, isXVideoSubtitleHost, loadXSubtitle } from '@/entrypoints/video/xSubtitle'
+import { isRedditSubtitleRequest, isRedditVideoSubtitleHost, loadRedditSubtitle } from '@/entrypoints/video/redditSubtitle'
 import { YOUTUBE_PLAYER_PAGE } from '@/entrypoints/video/youtubeEmbed'
 import { prepareYouTubeEmbedRequest, PREPARE_YOUTUBE_EMBED_REQUEST } from '@/entrypoints/video/youtubeEmbedRequest'
 import { translateInputWithCurrentService } from '@/entrypoints/service/inputTranslation'
@@ -29,6 +30,7 @@ import {
     type TranslationDiagnosticMetadata,
 } from '@/entrypoints/utils/translationDiagnostics'
 import { handleTtsBackgroundMessage } from '@/entrypoints/utils/ttsBackground'
+import { PAGE_TRANSLATION_STATUS_MESSAGE } from '@/entrypoints/utils/pageTranslationStatus'
 import { getPdfReaderUrl, getRequestedPdfSource } from '@/entrypoints/pdf/url'
 import { getEbookPageUrl } from '@/entrypoints/ebook/url'
 import {
@@ -37,7 +39,7 @@ import {
 } from '@/entrypoints/utils/contentFeatureLoader'
 
 // 翻译状态管理
-let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
+const translationStateMap = new Map<number, 'pending' | 'translated'>();
 
 function isTranslationMessage(message: any): boolean {
     if (typeof message?.origin === 'string' && message.origin.trim().length > 0) return true;
@@ -200,10 +202,6 @@ export default defineBackground({
                         browser.tabs.sendMessage(tab.id, {
                             type: 'contextMenuTranslate',
                             action: 'fullPage'
-                        }).then(() => {
-                            // 更新翻译状态
-                            translationStateMap.set(tab.id!, true);
-                            updateContextMenus(tab.id!);
                         }).catch((error: any) => {
                             console.error('Failed to send message to content script:', error);
                         });
@@ -212,10 +210,6 @@ export default defineBackground({
                         browser.tabs.sendMessage(tab.id, {
                             type: 'contextMenuTranslate',
                             action: 'restore'
-                        }).then(() => {
-                            // 更新翻译状态
-                            translationStateMap.set(tab.id!, false);
-                            updateContextMenus(tab.id!);
                         }).catch((error: any) => {
                             console.error('Failed to send message to content script:', error);
                         });
@@ -231,20 +225,21 @@ export default defineBackground({
 
         // 更新右键菜单状态
         const updateContextMenus = (tabId: number) => {
-            const isTranslated = translationStateMap.get(tabId) || false;
+            const phase = translationStateMap.get(tabId);
+            const isTranslated = phase === 'translated';
 
             try {
                 // 更新全文翻译菜单项
                 browser.contextMenus.update(CONTEXT_MENU_IDS.TRANSLATE_FULL_PAGE, {
-                    enabled: !isTranslated,
+                    enabled: !phase,
                     title: isTranslated
                         ? `${t('contextMenu.translateFullPage')} (${t('contextMenu.translated')})`
                         : t('contextMenu.translateFullPage')
                 });
                 // 更新撤销翻译菜单项
                 browser.contextMenus.update(CONTEXT_MENU_IDS.RESTORE_ORIGINAL, {
-                    enabled: isTranslated,
-                    title: isTranslated
+                    enabled: Boolean(phase),
+                    title: phase
                         ? t('contextMenu.restoreOriginal')
                         : `${t('contextMenu.restoreOriginal')} (${t('contextMenu.notTranslated')})`
                 });
@@ -259,14 +254,11 @@ export default defineBackground({
         });
 
         // 监听标签页更新事件（页面刷新等）
-        browser.tabs.onUpdated.addListener((tabId: any, changeInfo: any) => {
+        browser.tabs.onUpdated.addListener((tabId: any, changeInfo: any, tab: any) => {
             if (changeInfo.status === 'loading') {
                 forgetLoadedContentFeatures(loadedContentFeatures, tabId)
-            }
-            if (changeInfo.status === 'complete') {
-                // 页面加载完成，重置翻译状态
-                translationStateMap.set(tabId, false);
-                if (isContextMenuSupported) updateContextMenus(tabId);
+                translationStateMap.delete(tabId);
+                if (isContextMenuSupported && tab?.active) updateContextMenus(tabId);
             }
         });
 
@@ -278,6 +270,15 @@ export default defineBackground({
 
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any, sender: any) => {
+            if (message?.type === PAGE_TRANSLATION_STATUS_MESSAGE) {
+                const tabId = sender.tab?.id;
+                if (isContextMenuSupported && typeof tabId === 'number' && sender.frameId === 0) {
+                    if (message.phase === 'pending' || message.phase === 'translated') translationStateMap.set(tabId, message.phase);
+                    else translationStateMap.delete(tabId);
+                    if (sender.tab.active) updateContextMenus(tabId);
+                }
+                return Promise.resolve({ success: true });
+            }
             if (message?.type === PREPARE_YOUTUBE_EMBED_REQUEST) {
                 if (sender.url?.split('#')[0] !== browser.runtime.getURL(YOUTUBE_PLAYER_PAGE)) return Promise.resolve(false)
                 return prepareYouTubeEmbedRequest().then(() => true, () => false)
@@ -295,6 +296,12 @@ export default defineBackground({
             if (isXSubtitleRequest(message)) {
                 const senderUrl = URL.canParse(sender.url) ? new URL(sender.url) : undefined
                 if (senderUrl && isXVideoSubtitleHost(senderUrl.hostname)) return loadXSubtitle(message)
+                return Promise.resolve({ status: 'failed' })
+            }
+
+            if (isRedditSubtitleRequest(message)) {
+                const senderUrl = URL.canParse(sender.url) ? new URL(sender.url) : undefined
+                if (senderUrl && isRedditVideoSubtitleHost(senderUrl.hostname)) return loadRedditSubtitle(message)
                 return Promise.resolve({ status: 'failed' })
             }
 

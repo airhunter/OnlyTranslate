@@ -4,9 +4,17 @@ import { nextTick } from 'vue'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import FloatingBall from '@/components/FloatingBall.vue'
+import type { PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
 import { setLocale } from '@/entrypoints/utils/i18n'
 
 const floatingBallSource = readFileSync(resolve(process.cwd(), 'components/FloatingBall.vue'), 'utf8')
+
+async function trustedClick(target: Element) {
+  const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'isTrusted', { value: true })
+  target.dispatchEvent(event)
+  await nextTick()
+}
 
 const mockConfig = vi.hoisted(() => ({
   animations: false,
@@ -65,6 +73,8 @@ describe('FloatingBall', () => {
     document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
     await nextTick()
     await trigger.trigger('click')
+    expect(onTranslationToggle).not.toHaveBeenCalled()
+    await trustedClick(trigger.element)
 
     expect(onTranslationToggle).toHaveBeenCalledWith(true)
     expect(onPositionChanged).not.toHaveBeenCalled()
@@ -127,7 +137,7 @@ describe('FloatingBall', () => {
     expect(wrapper.find('[data-testid="floating-toolbar-scope"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="floating-toolbar-open-pdf"]').text()).toBe('用只译阅读此 PDF')
 
-    await trigger.trigger('click')
+    await trustedClick(trigger.element)
     expect(onOpenPdf).toHaveBeenCalledWith(source)
     expect(onTranslationToggle).not.toHaveBeenCalled()
 
@@ -145,7 +155,7 @@ describe('FloatingBall', () => {
     await trigger.trigger('mousedown', { button: 0, clientX: 100, clientY: 100 })
     document.dispatchEvent(new MouseEvent('mouseup', { clientX: 100, clientY: 100, bubbles: true }))
     await nextTick()
-    await trigger.trigger('click')
+    await trustedClick(trigger.element)
 
     const toolbar = wrapper.get('[data-testid="floating-toolbar"]')
     expect(toolbar.classes()).toContain('floating-toolbar--detached')
@@ -153,7 +163,7 @@ describe('FloatingBall', () => {
     const moreButton = wrapper.get('[data-testid="floating-toolbar-more"]')
 
     expect(wrapper.find('[data-testid="floating-toolbar-translate"]').exists()).toBe(false)
-    expect(wrapper.get('.fr-floating-ball').classes()).toContain('is-translating')
+    expect(wrapper.find('.check-mark').exists()).toBe(false)
     expect(moreButton.classes()).toContain('toolbar-button--secondary')
     expect(moreButton.classes()).not.toContain('toolbar-button--restore')
 
@@ -171,14 +181,25 @@ describe('FloatingBall', () => {
 
     await wrapper.get('[data-testid="floating-ball-more-trigger"]').trigger('click')
 
-    ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(true)
+    const sync = (wrapper.vm as unknown as { syncTranslationState: (state: PageTranslationStatus) => void }).syncTranslationState
+    sync({ phase: 'pending', source: 'manual' })
+    await nextTick()
+    expect(wrapper.find('.translation-progress').exists()).toBe(true)
+    expect(wrapper.find('.check-mark').exists()).toBe(false)
+
+    sync({ phase: 'empty', source: 'manual', reason: 'no-targets' })
+    await nextTick()
+    expect(wrapper.get('[role="status"]').text()).toContain('没有找到可翻译的内容')
+    expect(wrapper.find('.check-mark').exists()).toBe(false)
+
+    sync({ phase: 'translated' })
     await nextTick()
 
     expect(onTranslationToggle).not.toHaveBeenCalled()
     expect(wrapper.get('.fr-floating-ball').classes()).toContain('is-translating')
     expect(wrapper.find('.check-mark').exists()).toBe(true)
 
-    ;(wrapper.vm as unknown as { syncTranslationState: (state: boolean) => void }).syncTranslationState(false)
+    sync({ phase: 'idle' })
     await nextTick()
 
     expect(onTranslationToggle).not.toHaveBeenCalled()
@@ -186,6 +207,107 @@ describe('FloatingBall', () => {
     expect(wrapper.find('.check-mark').exists()).toBe(false)
 
     wrapper.unmount()
+  })
+
+  it('keeps automatic outcomes and previously recorded manual warnings quiet', async () => {
+    const wrapper = mount(FloatingBall)
+    try {
+      const { syncTranslationState: sync } = wrapper.vm
+      sync({ phase: 'empty', source: 'auto', reason: 'page-opt-out' })
+      await nextTick()
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+
+      sync({ phase: 'failed', source: 'auto' })
+      await nextTick()
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+      expect(wrapper.find('.check-mark').exists()).toBe(false)
+
+      sync({ phase: 'failed', source: 'manual' }, false)
+      await nextTick()
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('dismisses manual warnings and gives each repeated failure a full timeout', async () => {
+    vi.useFakeTimers()
+    const onTranslationToggle = vi.fn()
+    const wrapper = mount(FloatingBall, { props: { onTranslationToggle } })
+    try {
+      const { syncTranslationState: sync } = wrapper.vm
+      const failure = { phase: 'failed', source: 'manual' } as const
+      sync(failure)
+      await nextTick()
+      expect(wrapper.get('[role="status"]').text()).toContain('翻译失败')
+      await wrapper.get('button[aria-label="关闭"]').trigger('click')
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+      expect(onTranslationToggle).not.toHaveBeenCalled()
+      expect(vi.getTimerCount()).toBe(0)
+
+      sync({ ...failure })
+      await vi.advanceTimersByTimeAsync(3000)
+      sync({ ...failure })
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(wrapper.get('[role="status"]').text()).toContain('翻译失败')
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+
+      sync({ ...failure })
+      await nextTick()
+      expect(wrapper.find('[role="status"]').exists()).toBe(true)
+      sync({ phase: 'pending', source: 'manual' })
+      await nextTick()
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+      expect(vi.getTimerCount()).toBe(0)
+
+      sync({ ...failure })
+      expect(vi.getTimerCount()).toBe(1)
+    } finally {
+      wrapper.unmount()
+      const remainingTimers = vi.getTimerCount()
+      vi.useRealTimers()
+      expect(remainingTimers).toBe(0)
+    }
+  })
+
+  it('flips the warning using available viewport space on resize and after dragging', async () => {
+    const height = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(458)
+    const wrapper = mount(FloatingBall, { attachTo: document.body })
+    try {
+      const ball = wrapper.get<HTMLElement>('.fr-floating-ball').element
+      const rect = vi.spyOn(ball, 'getBoundingClientRect').mockReturnValue(new DOMRect(700, 406, 42, 42))
+      wrapper.vm.syncTranslationState({ phase: 'failed', source: 'manual' })
+      await nextTick()
+      const hint = wrapper.get<HTMLElement>('.page-translation-message')
+      Object.defineProperty(hint.element, 'scrollHeight', { value: 72 })
+
+      window.dispatchEvent(new Event('resize'))
+      await nextTick()
+      await nextTick()
+      expect(hint.classes()).toContain('page-translation-message--above')
+      expect(hint.element.style.maxHeight).toBe('390px')
+
+      height.mockReturnValue(700)
+      window.dispatchEvent(new Event('resize'))
+      await nextTick()
+      await nextTick()
+      expect(hint.classes()).not.toContain('page-translation-message--above')
+
+      await wrapper.get('[data-testid="floating-ball-trigger"]').trigger('mousedown', {
+        button: 0, clientX: 700, clientY: 406
+      })
+      rect.mockReturnValue(new DOMRect(700, 645, 42, 42))
+      document.dispatchEvent(new MouseEvent('mouseup', { clientX: 700, clientY: 645, bubbles: true }))
+      await nextTick()
+      await nextTick()
+      await nextTick()
+      expect(hint.classes()).toContain('page-translation-message--above')
+      expect(hint.element.style.maxHeight).toBe('629px')
+    } finally {
+      wrapper.unmount()
+      height.mockRestore()
+    }
   })
 
   it('closes the toolbar when the expansion entry is clicked again', async () => {

@@ -1,6 +1,8 @@
 import type { SiteProfile } from './types';
 
 const POST_CONTENT_SELECTOR = '.post-content';
+const BYLINE_NAME_SELECTOR = 'a[href^="/author/"]';
+const COVER_CREDIT = 'Image created by Decrypt using AI';
 const ARTICLE_HEADING_SELECTOR = 'main h1, main h2, article h1, article h2';
 const POST_CONTENT_TARGET_SELECTOR = [
     '.post-content > h2',
@@ -15,6 +17,7 @@ export const decryptProfile: SiteProfile = {
     domains: ['decrypt.co'],
     select: (node, context) => {
         if (isDecryptReadingRail(node)) return { skip: true };
+        if (context.scope === 'smart' && isBylineName(node)) return node;
 
         const target = getDecryptArticleTarget(node);
         return target ?? false;
@@ -22,14 +25,19 @@ export const decryptProfile: SiteProfile = {
     supplemental: (root, context) => {
         if (context.mode !== 'smart') return [];
 
-        return [
+        const articleTargets = [
             ...Array.from(root.querySelectorAll<Element>(ARTICLE_HEADING_SELECTOR)),
             ...Array.from(root.querySelectorAll<Element>(POST_CONTENT_TARGET_SELECTOR))
         ]
             .filter(isReadableDecryptArticleTarget)
             .filter((node, index, list) => list.indexOf(node) === index);
+        return [...articleTargets, ...collectBylineNames(root)];
     },
+    expandTarget: (node, context) => context.scope === 'smart' && getMetadataHeader(node) ? collectBylineNames(node) : [],
     allowTarget: (node, context) => {
+        if (context.scope === 'smart' && isBylineName(node)) {
+            return { role: 'paragraph', reason: 'decrypt-byline-name' };
+        }
         const target = getDecryptArticleTarget(node);
         if (!target) return false;
 
@@ -39,7 +47,17 @@ export const decryptProfile: SiteProfile = {
             reason: 'decrypt-article-target'
         };
     },
-    skipTarget: (node) => {
+    skipTarget: (node, context) => {
+        if (context.scope === 'smart') {
+            const header = getMetadataHeader(node);
+            if (header && isBylineWrapper(node)) {
+                // Skip the wrapper as a target, but let incremental scans reach its name link.
+                return { policy: 'hard-skip', role: 'layout', reason: 'decrypt-byline-wrapper' };
+            }
+            if (header && (isReadingTime(node) || isCoverCredit(node, header))) {
+                return { policy: 'hard-skip', role: 'metadata', reason: 'decrypt-article-header-metadata' };
+            }
+        }
         if (!shouldSkipDecryptTarget(node)) return false;
 
         return {
@@ -49,6 +67,67 @@ export const decryptProfile: SiteProfile = {
         };
     }
 };
+
+function getMetadataHeader(node: Element): Element | null {
+    const header = node.closest('header');
+    return header?.nextElementSibling?.matches(POST_CONTENT_SELECTOR) && header.querySelector('h1')
+        ? header
+        : null;
+}
+
+function isInlineWrapper(node: Element): boolean {
+    return node.matches('div, span') && node.childElementCount === 1 && !hasOwnText(node);
+}
+
+function hasOwnText(node: Element): boolean {
+    return Array.from(node.childNodes).some(child => child instanceof Text && child.data.trim());
+}
+
+function getBylineName(row: Element): Element | null {
+    if (!row.matches('span') || row.childElementCount !== 1) return null;
+    // Framework comments and indentation do not change the visible byline.
+    const label = Array.from(row.childNodes).find(child => child instanceof Element
+        || (child instanceof Text && child.data.trim()));
+    if (!(label instanceof Text) || !/^(?:By|Edited by)$/.test(label.data.trim())
+        || Array.from(row.childNodes).some(child => child !== label && child instanceof Text && child.data.trim())) return null;
+
+    let name = row.firstElementChild!;
+    while (name.matches('span') && isInlineWrapper(name)) name = name.firstElementChild!;
+    const href = name.getAttribute('href') ?? '';
+    return name.matches('a') && /^\/author\/[\w-]+\/?$/.test(href) && getNormalizedText(name) ? name : null;
+}
+
+function isBylineName(node: Element): boolean {
+    if (!node.matches(BYLINE_NAME_SELECTOR) || !getMetadataHeader(node)) return false;
+    let parent = node.parentElement;
+    while (parent?.matches('span') && isInlineWrapper(parent)) parent = parent.parentElement;
+    return parent !== null && getBylineName(parent) === node;
+}
+
+function collectBylineNames(root: ParentNode): Element[] {
+    const names = [...root.querySelectorAll(BYLINE_NAME_SELECTOR)].filter(isBylineName);
+    if (root instanceof Element && isBylineName(root)) names.unshift(root);
+    return names;
+}
+
+function isBylineWrapper(node: Element): boolean {
+    if (getBylineName(node)) return true;
+    return node.matches('div, span') && node.childElementCount > 0 && !hasOwnText(node)
+        && Array.from(node.children).every(isBylineWrapper);
+}
+
+function isReadingTime(node: Element): boolean {
+    const field = node.closest('div');
+    return Boolean(field?.matches(':has(> svg[data-icon="clock"][aria-hidden="true"])')
+        && /^\d+ min read$/.test(getNormalizedText(field)));
+}
+
+function isCoverCredit(node: Element, header: Element): boolean {
+    const figure = node.closest('figure');
+    if (!figure || figure !== header.querySelector('figure') || !figure.querySelector('img')
+        || getNormalizedText(figure) !== COVER_CREDIT) return false;
+    return Boolean(figure.querySelector(':scope > figcaption')?.textContent?.trim() === COVER_CREDIT);
+}
 
 function getDecryptArticleTarget(node: Element): Element | null {
     const target = findClosestDecryptTarget(node);

@@ -1,6 +1,6 @@
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 import { getTranslatableText } from '@/entrypoints/main/dom';
 import { siteProfiles } from '@/entrypoints/main/siteProfiles';
-import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { classifyContentUnit } from '@/entrypoints/utils/contentUnitClassifier';
 import { getMainDomain } from '@/entrypoints/utils/domain';
 import {
@@ -14,7 +14,6 @@ import {
     TRANSLATED_ATTR
 } from './constants';
 import {
-    getCachedContentFilterDecision,
     getCachedContentUnitDecision,
     getCachedNormalizedText,
     getCachedVisibility,
@@ -31,8 +30,10 @@ import type {
 import { composedClosest, getComposedParentElement, isUnassignedLightDomSubtree } from './composedTree';
 import { FULL_PAGE_PROTECTED_SELECTOR, hasFullPageText, isFullPageVisible } from './fullPage';
 import { isProductReadingTarget } from './productReading';
+import { getReadingBlockTargets, isCommentReadingRegion, isRecommendationBlock, isReadingBlockLeaf } from './readingBlocks';
+import { getReadingPurposeDecision } from './readingEvidence';
 
-const HARD_SKIP_SELECTOR = [
+const PROTECTED_TARGET_SELECTOR = [
     'script',
     'style',
     'noscript',
@@ -47,9 +48,9 @@ const HARD_SKIP_SELECTOR = [
     'table.diff-table',
     '.notranslate',
     '[translate="no"]',
-    `.${BILINGUAL_CONTENT_CLASS}`,
-    `[${TRANSLATED_ATTR}="true"]`
+    `.${BILINGUAL_CONTENT_CLASS}`
 ].join(', ');
+const HARD_SKIP_SELECTOR = `${PROTECTED_TARGET_SELECTOR}, [${TRANSLATED_ATTR}="true"]`;
 
 const HARD_SKIP_ROLES = new Set([
     'navigation',
@@ -63,7 +64,8 @@ const HARD_SKIP_ROLES = new Set([
 
 export function decideTranslationTarget(
     candidate: TranslationTargetCandidate,
-    context: TranslationTargetContext
+    context: TranslationTargetContext,
+    options: { ignoreOwnTranslationMarker?: boolean } = {}
 ): TranslationTargetDecision {
     const node = candidate.node;
     const profile = getCurrentSiteProfile();
@@ -73,7 +75,7 @@ export function decideTranslationTarget(
         return skipDecision(node, profileSkip, candidate, context);
     }
 
-    const hardSkipReason = getGenericHardSkipReason(node, context);
+    const hardSkipReason = getGenericHardSkipReason(node, context, options.ignoreOwnTranslationMarker);
     if (hardSkipReason) {
         return {
             node,
@@ -96,16 +98,42 @@ export function decideTranslationTarget(
         };
     }
 
-    if (context.scope === 'smart' && context.mode === 'smart' && isProductReadingTarget(node)) {
+    if (context.mode === 'smart' && candidate.source !== 'site-profile') {
+        if (isRecommendationBlock(node)) {
+            return skipDecision(node, { policy: 'hard-skip', role: 'ui', reason: 'linked-recommendation' }, candidate, context);
+        }
+        if (candidate.source !== 'reading-block' && isCommentReadingRegion(node) && isReadingBlockLeaf(node)
+            && !getReadingBlockTargets(node, context.grabOptions?.scanContext, context.contentRoot, context.grabOptions?.scanBudget ?? 'supplemental').length) {
+            return skipDecision(node, { policy: 'hard-skip', role: 'ui', reason: 'comment-without-reading-evidence' }, candidate, context);
+        }
+    }
+
+    if (context.scope === 'smart' && context.mode === 'smart' && isProductReadingTarget(node, context.grabOptions?.scanContext?.allowedPageTranslateRoot)) {
         return allowDecision(node, { role: node.matches('h1') ? 'title' : 'paragraph', reason: 'semantic-product-reading-copy' }, candidate, context);
     }
-    const filterSkip = context.mode === 'smart' ? getContentFilterSkip(node, context) : undefined;
-    if (filterSkip?.policy === 'hard-skip') {
-        return skipDecision(node, filterSkip, candidate, context);
+    if (context.mode === 'smart') {
+        const purpose = getReadingPurposeDecision(node, context.grabOptions?.scanContext,
+            candidate.source === 'reading-block' && candidate.readingRole === 'title', context.grabOptions?.scanBudget ?? 'supplemental');
+        const explicitProfileSelection = candidate.source === 'site-profile' && purpose.policy === 'skip-self'
+            && purpose.allowsProfileOverride;
+        if (purpose.policy !== 'keep' && !explicitProfileSelection) return skipDecision(node, { policy: 'hard-skip', role: 'ui', reason: purpose.reason! }, candidate, context);
+        if (purpose.requiresReadingContext && candidate.source !== 'site-profile') {
+            const scanContext = context.grabOptions?.scanContext;
+            const origin = scanContext?.readingOrigins.get(node);
+            const source = origin && origin.contains(node) ? origin : node;
+            const unit = getCachedContentUnitDecision(scanContext, source, classifyContentUnit);
+            const independentlyClassified = unit.action === 'allow' && unit.confidence >= 0.72
+                && getReadingPurposeDecision(source, scanContext, false, context.grabOptions?.scanBudget ?? 'supplemental').policy === 'keep';
+            if (!independentlyClassified && !getReadingBlockTargets(source, scanContext, context.contentRoot, context.grabOptions?.scanBudget ?? 'supplemental').includes(source)) {
+                return skipDecision(node, { policy: 'hard-skip', role: 'metadata', reason: 'reading-context-required' }, candidate, context);
+            }
+        }
     }
 
     const contentUnitDecision = getCachedContentUnitDecision(context.grabOptions?.scanContext, node, classifyContentUnit);
-    if (context.scope !== 'full' && contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85) {
+    const contextualLabel = candidate.source === 'reading-block' && candidate.readingRole === 'title'
+        && contentUnitDecision.requiresReadingContext;
+    if (context.scope !== 'full' && contentUnitDecision.action === 'skip' && contentUnitDecision.confidence >= 0.85 && !contextualLabel) {
         return {
             node,
             target: node,
@@ -114,6 +142,13 @@ export function decideTranslationTarget(
             source: 'content-unit',
             reasons: [...(candidate.reasons ?? []), ...contentUnitDecision.reasons]
         };
+    }
+    if (candidate.source === 'reading-block') {
+        return allowDecision(node, {
+            role: candidate.readingRole,
+            source: candidate.source,
+            reason: 'reading-block-evidence'
+        }, candidate, context);
     }
     if (contentUnitDecision.action === 'allow' && contentUnitDecision.confidence >= 0.7) {
         return {
@@ -140,9 +175,6 @@ export function decideTranslationTarget(
         return skipDecision(node, profileSkip, candidate, context);
     }
 
-    if (filterSkip) {
-        return skipDecision(node, filterSkip, candidate, context);
-    }
 
     return {
         node,
@@ -177,6 +209,12 @@ export function getBilingualAppendTarget(node: HTMLElement, context: Translation
 export function isVisibleForTranslation(element: Element, context?: TranslationTargetContext): boolean {
     if (isUnassignedLightDomSubtree(element)) return false;
     if (context?.scope === 'full' && !isFullPageVisible(element)) return false;
+    if (context?.scope === 'smart' && element.parentElement?.getAttribute('aria-hidden') === 'true') {
+        const exception = getCurrentSiteProfile()?.ariaHiddenAncestor?.(element);
+        // The exception is valid only for this direct parent. Do not cache the
+        // result as ordinary visibility or apply it to the parent as a target.
+        if (exception && exception === element.parentElement) return isElementVisible(element, exception);
+    }
     return getCachedVisibility(context?.grabOptions?.scanContext, element, isElementVisible);
 }
 
@@ -227,32 +265,19 @@ function skipDecision(
     };
 }
 
-function getContentFilterSkip(element: Element, context: TranslationTargetContext): TranslationTargetSkip | undefined {
-    let current: Element | null = element;
-
-    while (current) {
-        const decision = getCachedContentFilterDecision(context.grabOptions?.scanContext, current, getContentFilterDecision);
-        if (decision === 'skip-subtree') {
-            const tag = current.tagName.toLowerCase();
-            const role = current.getAttribute('role')?.toLowerCase();
-            if (tag === 'aside' || role === 'complementary') {
-                return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${tag}:soft-subtree` };
-            }
-            return { policy: 'hard-skip', role: 'ui', reason: `content-filter:${current.tagName.toLowerCase()}:skip-subtree` };
-        }
-        if (decision === 'skip-self') {
-            return { policy: 'soft-skip', role: 'metadata', reason: `content-filter:${current.tagName.toLowerCase()}:skip-self` };
-        }
-        current = getComposedParentElement(current);
-    }
-
-    return undefined;
-}
-
-function getGenericHardSkipReason(element: Element, context: TranslationTargetContext): string | undefined {
+function getGenericHardSkipReason(element: Element, context: TranslationTargetContext, ignoreOwnTranslationMarker = false): string | undefined {
     const full = context.scope === 'full';
-    if (full && composedClosest(element, FULL_PAGE_PROTECTED_SELECTOR)) return 'full-page-protected-content';
-    if (composedClosest(element, HARD_SKIP_SELECTOR)) return 'generic-hard-skip-selector';
+    const root = context.grabOptions?.scanContext?.allowedPageTranslateRoot;
+    if (full && composedClosest(element, withPageTranslateOverride(FULL_PAGE_PROTECTED_SELECTOR, element, root))) return 'full-page-protected-content';
+    if (ignoreOwnTranslationMarker) {
+        // A pending attempt owns its marker, but cannot bypass any protection
+        // on the element itself or any marker on an ancestor.
+        const parent = getComposedParentElement(element);
+        if (composedClosest(element, withPageTranslateOverride(PROTECTED_TARGET_SELECTOR, element, root))
+            || (parent && composedClosest(parent, withPageTranslateOverride(HARD_SKIP_SELECTOR, parent, root)))) {
+            return 'generic-hard-skip-selector';
+        }
+    } else if (composedClosest(element, withPageTranslateOverride(HARD_SKIP_SELECTOR, element, root))) return 'generic-hard-skip-selector';
     if (!isVisibleForTranslation(element, context)) return 'not-visible';
     if (element instanceof HTMLElement && element.isContentEditable) return 'contenteditable';
     if (!full && isFormOnlyContainer(element)) return 'form-only-container';

@@ -1,0 +1,8 @@
+{
+  "name": "Ziggit keeps the current topic heading and skips its sticky copy",
+  "url": "https://ziggit.dev/t/a-compiler-question/12345/6?source=test#post_6",
+  "scope": "smart",
+  "html": "ziggit-topic-heading.html",
+  "include": ["main-topic", "post-text"],
+  "exclude": ["sticky-topic"]
+}

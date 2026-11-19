@@ -1,11 +1,74 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { classifyContentUnit, collectHighConfidenceReadingUnits } from '@/entrypoints/utils/contentUnitClassifier'
-import { createScanContext, isObviousUiSubtree } from '@/entrypoints/main/translationTarget/scanContext'
+import { createScanContext, getCachedContentUnitDecision, invalidateScanCache, isObviousUiSubtree } from '@/entrypoints/main/translationTarget/scanContext'
 
 describe('contentUnitClassifier', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
+    document.title = ''
+  })
+
+  it('rechecks page-level heading evidence after metadata and other primary headings change', () => {
+    document.title = 'Loading'
+    document.body.innerHTML = '<div><h1 id="primary">Building shared tools</h1></div><main><p>A short article.</p></main>'
+    const heading = document.querySelector('#primary')!
+    const context = createScanContext()
+    const decision = () => getCachedContentUnitDecision(context, heading, classifyContentUnit).documentTitle
+    expect(decision()).not.toBe(true)
+    document.title = 'Building shared tools • Workshop notes'
+    expect(decision()).toBe(true)
+    const other = document.createElement('h1')
+    other.textContent = 'Another primary heading'
+    document.body.append(other)
+    invalidateScanCache(context, other)
+    // Additional headings are ambiguity evidence, not a veto of matching metadata.
+    expect(decision()).toBe(true)
+    other.remove()
+    expect(decision()).toBe(true)
+    document.title = 'Other page'
+    expect(decision()).not.toBe(true)
+  })
+
+  it.each(['h1', 'span role="heading" aria-level="1"'])('recognizes a unique %s that agrees with page title metadata', heading => {
+    const tag = heading.split(' ')[0]
+    document.title = 'Building shared tools • Workshop notes'
+    document.body.innerHTML = `<div><${heading} id="primary">Building shared tools</${tag}></div><main><p>The article describes how people can share their equipment.</p></main>`
+    const decision = classifyContentUnit(document.querySelector('#primary')!)
+    expect(decision).toMatchObject({ action: 'allow', kind: 'title' })
+    expect(decision.confidence).toBeGreaterThanOrEqual(0.72)
+  })
+
+  it.each([
+    ['another heading', '<div><h1>Building shared tools</h1></div>'],
+    ['navigation header', '<nav><a href="/home">Home</a></nav>'],
+  ])('retains document-title evidence despite an unrelated %s', (_name, extra) => {
+    document.title = 'Building shared tools • Workshop notes'
+    document.body.innerHTML = `<header><h1 id="primary">Building shared tools</h1>${extra}</header><main><p>A short article.</p></main>`
+    expect(classifyContentUnit(document.querySelector('#primary')!).documentTitle).toBe(true)
+  })
+
+  it('does not infer a page heading from a partial word match', () => {
+    document.title = 'Building shared toolshed'
+    document.body.innerHTML = '<div><h1 id="primary">Building shared tools</h1></div><main><p>A short article.</p></main>'
+    expect(classifyContentUnit(document.querySelector('#primary')!).reasons).not.toContain('document-title-heading')
+  })
+
+  it('does not let a hidden duplicate cancel metadata evidence for a visible heading', () => {
+    document.title = 'Building shared tools • Workshop notes'
+    document.body.innerHTML = '<header><div><h1 id="frame"><a href="/guide">Building shared tools</a></h1></div></header><main><h1 id="source" aria-hidden="true">Building shared tools</h1></main>'
+    const context = createScanContext(), frame = document.getElementById('frame')!
+    expect(getCachedContentUnitDecision(context, frame, classifyContentUnit).documentTitle).toBe(true)
+    expect(classifyContentUnit(document.getElementById('source')!).action).toBe('skip')
+    document.getElementById('source')!.textContent = 'A different reading topic'
+    expect(getCachedContentUnitDecision(context, frame, classifyContentUnit).documentTitle).toBe(true)
+  })
+
+  it.each(['main', 'article', 'div role="main"'])('uses the same page-title evidence inside %s', container => {
+    const tag = container.split(' ')[0]
+    document.title = 'Building shared tools • Workshop notes'
+    document.body.innerHTML = `<${container}><h1 id="primary">Building shared tools</h1><p>The article explains how a team shares equipment.</p></${tag}>`
+    expect(classifyContentUnit(document.querySelector('#primary')!).documentTitle).toBe(true)
   })
 
   it('allows article titles and subtitles near readable content', () => {

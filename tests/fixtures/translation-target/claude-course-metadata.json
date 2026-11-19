@@ -1,0 +1,9 @@
+{
+  "name": "Approved Claude course adaptation excludes the header metadata while keeping course copy and comparison cards",
+  "url": "https://claude.nagdy.me/learn/shared-workspace/",
+  "scope": "smart",
+  "html": "claude-course-metadata.html",
+  "include": ["course-title", "course-intro", "duration-prose", "comparison-title", "comparison-body"],
+  "exclude": ["level-line", "level-label", "duration-label"],
+  "textExcludes": ["Intermediate"]
+}

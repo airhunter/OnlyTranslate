@@ -1,3 +1,5 @@
+import { pageTranslationMessages } from './pageTranslationMessages'
+
 export const contentMessages = {
   'zh-CN': {
     popup: { smartScope: '识文', fullScope: '全页', service: '翻译服务', ebooksTab: '阅读' },
@@ -39,6 +41,7 @@ export const contentMessages = {
       modelNotConfigured: '当前服务尚未配置模型，请前往设置页选择模型后再试。',
       translationOnlyUnsupported: '当前翻译服务不支持安全的仅译文模式，请切换到双语对照模式后再试。',
       translationOnlyApplyFailed: '无法将译文安全对应到页面结构，已保留原文，请重试', shortcutTip: '快捷键: {shortcut}',
+      pageTranslation: pageTranslationMessages['zh-CN'],
       floatingToolbar: { open: '打开页面翻译工具', translate: '翻译', restore: '还原', more: '更多' },
       inputTranslationTranslating: '正在生成译文候选…', inputTranslationCandidate: '译文候选',
       inputTranslationAccept: '接受', inputTranslationCancel: '取消', inputTranslationUnchanged: '当前内容无需翻译',
@@ -98,6 +101,7 @@ export const contentMessages = {
       translationOnlyUnsupported: 'The current translation service does not safely support translation-only mode. Switch to bilingual mode and try again.',
       translationOnlyApplyFailed: 'The translation could not be safely matched to the page structure. The original text was kept. Please retry.',
       shortcutTip: 'Shortcut: {shortcut}',
+      pageTranslation: pageTranslationMessages['en-US'],
       floatingToolbar: { open: 'Open page translation tools', translate: 'Translate', restore: 'Restore', more: 'More' },
       inputTranslationTranslating: 'Generating a translation suggestion…', inputTranslationCandidate: 'Translation suggestion',
       inputTranslationAccept: 'Accept', inputTranslationCancel: 'Cancel', inputTranslationUnchanged: 'This text does not need translation',
@@ -150,6 +154,7 @@ export const contentMessages = {
       modelNotConfigured: '目前服務尚未設定模型，請前往設定頁選擇模型後再試。',
       translationOnlyUnsupported: '目前翻譯服務不支援安全的僅譯文模式，請切換到雙語對照模式後再試。',
       translationOnlyApplyFailed: '無法將譯文安全對應至頁面結構，已保留原文，請重試', shortcutTip: '快捷鍵: {shortcut}',
+      pageTranslation: pageTranslationMessages['zh-TW'],
       floatingToolbar: { open: '開啟頁面翻譯工具', translate: '翻譯', restore: '還原', more: '更多' },
       inputTranslationTranslating: '正在產生譯文候選…', inputTranslationCandidate: '譯文候選',
       inputTranslationAccept: '接受', inputTranslationCancel: '取消', inputTranslationUnchanged: '目前內容不需要翻譯',
@@ -205,6 +210,7 @@ export const contentMessages = {
       modelNotConfigured: '現在のサービスはモデルが未設定です。設定ページでモデルを選択してからお試しください。',
       translationOnlyUnsupported: '現在の翻訳サービスは安全な翻訳のみモードに対応していません。対訳表示に切り替えてください。',
       translationOnlyApplyFailed: '翻訳をページ構造に安全に対応付けられないため、原文を保持しました。再試行してください。', shortcutTip: 'ショートカット: {shortcut}',
+      pageTranslation: pageTranslationMessages['ja-JP'],
       floatingToolbar: { open: 'ページ翻訳ツールを開く', translate: '翻訳', restore: '復元', more: 'その他' },
       inputTranslationTranslating: '翻訳候補を作成しています…', inputTranslationCandidate: '翻訳候補',
       inputTranslationAccept: '適用', inputTranslationCancel: 'キャンセル', inputTranslationUnchanged: 'この内容は翻訳不要です',

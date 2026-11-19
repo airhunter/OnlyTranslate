@@ -74,3 +74,12 @@ Before changing these rules:
 - Add focused code tests when the behavior involves dynamic DOM updates, MutationObserver scans, append targets, or actual translation insertion.
 - Run `pnpm test:content` after content detection or site profile changes.
 - For complex dynamic pages such as live news pages, treat them as a separate design topic before implementing.
+
+## Recognition Evaluation
+
+- Use the independent evaluation workspace for generic recognition research and product coverage checks. Compare the released source and candidate on the same snapshots and settings against unchanged, user-confirmed expectations. Measure generic recognition with site profiles disabled and report profile-enabled coverage separately.
+- Preserve the release baseline and the pre-change candidate before a recognition change. Review confirmed gains and losses, unreviewed differences and comparable scanning budgets. Shared recognition changes need the complete available corpus comparison where the private evaluation workspace is available, alongside `pnpm test:content`.
+- Favor shared structural evidence and counterexamples when changing a generic rule. If a defect depends on a particular site template, discuss a scoped site profile or a known limitation with the user.
+- Keep snapshots, private test data, human decisions and evaluation reports in the private evaluation workspace. Use synthetic or minimized regression fixtures in the public repository. Only users confirm annotations and accept known limitations.
+- Use the published artifact and matching source commit when establishing a release baseline. Keep source-only target measurements and actual translated output distinguishable.
+- Running the independent evaluation is optional for public builds and releases. See `RELEASE.md` for the extension release checks.

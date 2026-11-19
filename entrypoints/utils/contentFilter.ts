@@ -1,3 +1,4 @@
+import { isElementVisible, isElementSelfHidden } from '@/entrypoints/utils/domVisibility';
 import {
     getProseEvidence,
     getStructuralHint,
@@ -16,6 +17,8 @@ const TAG_PATTERN = /\b(tag|tags|topic|topics|category|categories|taxonomy|pill|
 const PROMO_PATTERN = /\b(subscribe|newsletter|promo|promotion|sponsor|sponsored|ad|ads|advert|advertisement|advertising|write for|submit|author program|payment program|membership|sign up|join|contribute)\b/i;
 const RELATED_PATTERN = /\b(related|recommend|recommended|more from|read next)\b/i;
 const WEAK_RELATED_PATTERN = /\b(popular|trending)\b/i;
+const PROMOTIONAL_ACTION_PATTERN = /\b(?:buy now|shop now|order now|start (?:your |a )?free trial|claim (?:your |the )?(?:offer|discount)|subscribe|sponsor|sign up|sign in|log in|join (?:our |the )?(?:newsletter|mailing list))\b/i;
+export const NEWSLETTER_INVITATION_PATTERN = /\b(?:subscribe|sign up|join)\b[^.!?]{0,45}\b(?:newsletter|mailing list)\b/i;
 const AUTHOR_PATTERN = /\b(written by|see all from|byline|author-card|author card|author)\b/i;
 export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 
@@ -24,9 +27,11 @@ export type ContentFilterDecision = 'keep' | 'skip-self' | 'skip-subtree';
 // 一路回溯到根，逐个祖先触发 getContentFilterDecision，等于把整棵树的 block metrics 反复重算。
 // 在 docs.devin.ai/changelog 这类长文档（数千节点）上这会退化成超线性，直接把主线程冻死数分钟。
 // 这些信号都是元素结构的纯函数，在一次扫描内 DOM 基本稳定，因此按元素做记忆化即可把总开销压回线性。
-const blockMetricsCache = new WeakMap<Element, BlockMetrics>();
-const proseEvidenceCache = new WeakMap<Element, ProseEvidence>();
-const normalizedTextCache = new WeakMap<Element, string>();
+let blockMetricsCache = new WeakMap<Element, BlockMetrics>();
+let proseEvidenceCache = new WeakMap<Element, ProseEvidence>();
+let normalizedTextCache = new WeakMap<Element, string>();
+let visibleControlTextCache = new WeakMap<Element, string>();
+let controlVisibilityCache = new WeakMap<Element, boolean>();
 
 function getCachedProseEvidence(element: Element): ProseEvidence {
     const cached = proseEvidenceCache.get(element);
@@ -38,10 +43,20 @@ function getCachedProseEvidence(element: Element): ProseEvidence {
 
 // 与 scanContext.invalidateScanCache 对齐：当某个元素子树发生变化、需要重新扫描时，
 // 必须同步清掉这里的按元素缓存，否则动态重扫会读到过期的 block metrics。
-export function invalidateContentFilterCache(element: Element): void {
+export function invalidateContentFilterCache(element?: Element): void {
+    if (!element) {
+        blockMetricsCache = new WeakMap();
+        proseEvidenceCache = new WeakMap();
+        normalizedTextCache = new WeakMap();
+        visibleControlTextCache = new WeakMap();
+        controlVisibilityCache = new WeakMap();
+        return;
+    }
     blockMetricsCache.delete(element);
     proseEvidenceCache.delete(element);
     normalizedTextCache.delete(element);
+    visibleControlTextCache.delete(element);
+    controlVisibilityCache.delete(element);
 }
 
 interface BlockMetrics {
@@ -50,8 +65,10 @@ interface BlockMetrics {
     linkDensity: number;
     linkCount: number;
     buttonCount: number;
+    visibleButtonCount: number;
     shortInteractiveCount: number;
     interactiveSignalText: string;
+    hasPromotionalAction: boolean;
     longParagraphCount: number;
     hasCodeOrTable: boolean;
     hasSocialLinks: boolean;
@@ -82,6 +99,13 @@ export function getContentFilterDecision(element: Element): ContentFilterDecisio
 
 export function shouldSkipContentBlock(element: Element): boolean {
     return getContentFilterDecision(element) !== 'keep';
+}
+
+export function hasPromotionalCallToAction(element: Element): boolean {
+    const metrics = getBlockMetrics(element);
+    return metrics.hasPromotionalAction
+        || (metrics.visibleButtonCount > 0 && /\b(?:newsletter|mailing list)\b/i.test(getVisibleControlText(element)))
+        || Array.from(element.querySelectorAll('input[type="email"]')).some(isControlVisible);
 }
 
 function isShareBlock(element: Element, hint: string, metrics: BlockMetrics): boolean {
@@ -236,8 +260,13 @@ function computeBlockMetrics(element: Element): BlockMetrics {
         linkDensity: textLength > 0 ? linkTextLength / textLength : 0,
         linkCount: links.length,
         buttonCount: buttons.length,
+        visibleButtonCount: buttons.filter(isControlVisible).length,
         shortInteractiveCount,
         interactiveSignalText,
+        // Complete donation action labels are control evidence; ordinary prose
+        // and informational links such as "How to donate" are not.
+        hasPromotionalAction: interactive.some(item => PROMOTIONAL_ACTION_PATTERN.test(getVisibleControlText(item))
+            || NEWSLETTER_INVITATION_PATTERN.test(getVisibleControlText(item)) || /^(?:donate|donate now)$/i.test(getVisibleControlText(item))),
         longParagraphCount,
         hasCodeOrTable: element.querySelector('pre, code, table') !== null,
         hasSocialLinks: links.some(link => SOCIAL_LINK_PATTERN.test(link.getAttribute('href') ?? '')),
@@ -255,4 +284,31 @@ function getNormalizedText(element: Element): string {
     const text = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     normalizedTextCache.set(element, text);
     return text;
+}
+
+// Preserve one control's rendered label across formatting, exclude hidden content,
+// and never join text from separate controls into an invented action.
+function getVisibleControlText(element: Element): string {
+    const cached = visibleControlTextCache.get(element);
+    if (cached !== undefined) return cached;
+    if (!isControlVisible(element)) { visibleControlTextCache.set(element, ''); return ''; }
+    const parts: string[] = [];
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+        acceptNode: node => node instanceof Element
+            ? isElementSelfHidden(node) || node.matches('script, style, noscript, template, iframe') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP
+            : NodeFilter.FILTER_ACCEPT
+    });
+    let child: Node | null;
+    while (child = walker.nextNode()) parts.push(child.textContent ?? '');
+    const text = parts.join('').replace(/\s+/g, ' ').trim();
+    visibleControlTextCache.set(element, text);
+    return text;
+}
+
+function isControlVisible(element: Element): boolean {
+    const cached = controlVisibilityCache.get(element);
+    if (cached !== undefined) return cached;
+    const visible = isElementVisible(element);
+    controlVisibilityCache.set(element, visible);
+    return visible;
 }

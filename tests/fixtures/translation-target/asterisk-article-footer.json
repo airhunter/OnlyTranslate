@@ -1,0 +1,8 @@
+{
+  "name": "Asterisk article footer navigation and recommendation heading are excluded without suppressing prose or footnotes",
+  "url": "https://asteriskmag.com/issues/15/a-different-article",
+  "scope": "smart",
+  "html": "asterisk-article-footer.html",
+  "include": ["article-title", "body-copy", "body-heading", "body-example", "footnote-copy"],
+  "exclude": ["previous-title", "previous-label", "next-title", "next-label", "related-heading"]
+}

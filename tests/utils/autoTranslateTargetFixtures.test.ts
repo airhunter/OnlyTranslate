@@ -33,6 +33,7 @@ interface TranslationTargetFixture {
   name: string
   url: string
   scope: 'smart' | 'full'
+  documentTitle?: string
   html: string
   contentRoot?: string
   contentRootContains?: string[]
@@ -69,6 +70,7 @@ describe('translation target fixtures', () => {
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    document.title = ''
     // Each fixture represents a new page; body/html survive innerHTML replacement.
     invalidateContentFilterCache(document.body)
     invalidateContentFilterCache(document.documentElement)
@@ -85,6 +87,7 @@ describe('translation target fixtures', () => {
         configurable: true
       })
       document.body.innerHTML = fs.readFileSync(path.join(fixtureDir, fixture.html), 'utf8')
+      if (fixture.documentTitle !== undefined) document.title = fixture.documentTitle
 
       const target = resolveAutoTranslationTarget(fixture.scope)
       const ids = target.nodes.map(node => node.id).filter(Boolean)

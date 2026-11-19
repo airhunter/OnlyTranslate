@@ -4,7 +4,6 @@ import { options } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner, showExtensionReloadedTip } from "../utils/icon";
 import { styles } from "@/entrypoints/utils/constant";
 import {
-    getTranslatableText,
     getTranslatableTextWithProtectedInline,
     hasExcludedTranslatableTextBoundary,
     removeExcludedTranslatableTextContent,
@@ -18,6 +17,7 @@ import {
 import { throttle } from "@/entrypoints/utils/common";
 import { afterBilingualAppendCompatFn } from "@/entrypoints/main/compat";
 import { getMainDomain } from "@/entrypoints/utils/domain";
+import { siteProfiles } from '@/entrypoints/main/siteProfiles';
 import { config } from "@/entrypoints/utils/config";
 import { getBackgroundTranslationSlotLimit } from "@/entrypoints/utils/translateQueue";
 import {
@@ -33,6 +33,7 @@ import { t } from '@/entrypoints/utils/i18n/page';
 import { type TranslationPromptContext } from '@/entrypoints/utils/translationPrompt';
 import {
     hasTranslationOnlyRecord,
+    hasVisibleTranslationOnlyChange,
     hasTranslationOnlySourceChanged,
     isPreparedTranslationOnlyCurrent,
     applyTranslationOnly,
@@ -46,15 +47,17 @@ import {
     restoreAllBilingualLayouts, restoreBilingualLayout, isOriginalWrappingMutation, BILINGUAL_ORIGINAL_CLASS,
     BILINGUAL_LABEL_ATTR, prepareBilingualTextFlow, normalizeBilingualSourceStyles,
 } from '@/entrypoints/main/translationLayout';
-import { resolveAutoTranslationTarget, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget/collect';
+import { getTranslatableText, resolveAutoTranslationTarget, resolveAutoTranslationTargetAsync } from '@/entrypoints/main/translationTarget';
 import { invalidateScanCache } from '@/entrypoints/main/translationTarget/scanContext';
-import { isFullPageExcludedText } from '@/entrypoints/main/translationTarget/fullPage';
+import { isFullPageExcludedText, isFullPageTargetProtected } from '@/entrypoints/main/translationTarget/fullPage';
+import { isElementSelfHidden } from '@/entrypoints/utils/domVisibility';
+import { isPageTranslationOptedOut } from '@/entrypoints/utils/pageTranslateOptOut';
 import {
     collectDynamicTranslationNodes as collectDynamicTargetNodes,
     getDynamicTranslationScanRoot,
     isInTranslationScope as isDynamicInTranslationScope
 } from '@/entrypoints/main/translationTarget/dynamic';
-import { getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
+import { decideTranslationTarget, isVisibleForTranslation, getBilingualAppendTarget as getTranslationTargetAppendTarget } from '@/entrypoints/main/translationTarget/decision';
 import {
     BILINGUAL_CONTENT_CLASS,
     BILINGUAL_TEXT_CLASS,
@@ -71,11 +74,13 @@ import {
 } from '@/entrypoints/main/translationTarget/composedTree';
 import { discoverScanShadowRoots, isElementVisible } from '@/entrypoints/main/translationTarget/scanContext';
 import shadowTranslationStyles from '@/entrypoints/style.css?inline';
+import { canRestorePage, publishPageTranslationStatus, type PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus';
 import { encodeInlineLinkRequest, getSmartInlineLinkPolicy, getSmartInlineLinkResolver, prepareInlineLinkTranslation, preserveInlineLink, renderInlineLinkTranslation } from './inlineLinks';
 
 // style 只进入合并后的动态队列，用于捕获组件直接通过内联样式切换正文显隐的情况；
 // 回调本身不读取布局，避免把动画 mutation 的成本放在 Observer 回调中。
-const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded', 'open', 'translate', 'contenteditable', 'role'];
+const DYNAMIC_MUTATION_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden', 'aria-expanded', 'open', 'translate', 'contenteditable', 'role', 'aria-level'];
+const PRIMARY_HEADING_SELECTOR = 'h1, [role="heading"][aria-level="1"]';
 const ACTIVE_TRANSLATION_STATUS_SELECTOR = '.only-translate-loading, .only-translate-failure, .only-translate-retry-wrapper';
 const BACKGROUND_TRANSLATION_START_DELAY = 1000;
 const BACKGROUND_TRANSLATION_INTERVAL = 250;
@@ -90,6 +95,7 @@ const translationState = {
     observer: null as IntersectionObserver | null,
     mutationObserver: null as MutationObserver | null,
     rootMutationObserver: null as MutationObserver | null,
+    titleMutationObserver: null as MutationObserver | null,
     navigationTimer: null as ReturnType<typeof setTimeout> | null,
     dynamicScanTimer: null as number | null,
     nodeIdCounter: 0,
@@ -107,6 +113,15 @@ let sharedShadowStyleSheet: CSSStyleSheet | null = null;
 const translationDisplayModes = new Map<string, 'bilingual' | 'single'>();
 
 let hasReportedInvalidatedExtensionContext = false;
+let pageTranslationStatus: PageTranslationStatus = { phase: 'idle' };
+
+function reportPageTranslation(status: PageTranslationStatus): void {
+    if (status.phase === pageTranslationStatus.phase
+        && (!('source' in status) || ('source' in pageTranslationStatus && status.source === pageTranslationStatus.source))
+        && (status.phase !== 'empty' || (pageTranslationStatus.phase === 'empty' && status.reason === pageTranslationStatus.reason))) return;
+    pageTranslationStatus = status;
+    publishPageTranslationStatus(status);
+}
 
 function getWebpagePromptContext(_node: HTMLElement | null = null): TranslationPromptContext {
     return {
@@ -210,6 +225,9 @@ function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElem
         element.remove();
     });
     setAutoTranslating(false);
+    if (pageTranslationStatus.phase === 'pending') {
+        reportPageTranslation({ phase: 'failed', source: pageTranslationStatus.source });
+    }
     translationState.targetCollectionController?.abort();
     translationState.targetCollectionController = null;
     clearHoverTimer();
@@ -221,6 +239,8 @@ function stopForInvalidatedExtensionContext(error: unknown, failedNode: HTMLElem
     translationState.mutationObserver = null;
     translationState.rootMutationObserver?.disconnect();
     translationState.rootMutationObserver = null;
+    translationState.titleMutationObserver?.disconnect();
+    translationState.titleMutationObserver = null;
     removeShadowRootListeners();
     clearNavigationRestartTimer();
     cancelAllTranslations();
@@ -238,7 +258,12 @@ interface AutoTranslateTarget {
     grabOptions?: GrabAllNodeOptions;
 }
 
-type TranslationRequestOptions = Pick<TranslateOptions, 'allowBatch' | 'priority' | 'diagnostics'>;
+type TranslationRequestOptions = Pick<TranslateOptions, 'allowBatch' | 'priority' | 'diagnostics'> & {
+    validateTarget?: () => boolean;
+    onPageResult?: (result: 'visible' | 'failed') => void;
+    allowedPageTranslateRoot?: Element;
+    retryPageTarget?: (retry: () => Promise<void>) => void;
+};
 
 interface BilingualTranslationOptions extends TranslationRequestOptions {
     removeExisting?: boolean;
@@ -309,13 +334,14 @@ interface TranslationAttemptSnapshot {
     sourceHTML: string;
     nodeId: string | null;
     sessionVersion: number;
+    validateTarget?: () => boolean;
 }
 
 function normalizeTranslationSource(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
 }
 
-function captureTranslationAttempt(node: HTMLElement, sourceText: string): TranslationAttemptSnapshot {
+function captureTranslationAttempt(node: HTMLElement, sourceText: string, validateTarget?: () => boolean): TranslationAttemptSnapshot {
     const sourceClone = node.cloneNode(true) as HTMLElement;
     normalizeBilingualSourceStyles(node, sourceClone);
     sourceClone.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`).forEach(element => element.remove());
@@ -327,6 +353,7 @@ function captureTranslationAttempt(node: HTMLElement, sourceText: string): Trans
         sourceHTML: sourceClone.innerHTML,
         nodeId: node.getAttribute(TRANSLATED_ID_ATTR),
         sessionVersion: translationState.sessionVersion,
+        validateTarget,
     };
 }
 
@@ -334,6 +361,7 @@ function isTranslationAttemptCurrent(node: HTMLElement, attempt: TranslationAtte
     if (!node.isConnected) return false;
     if (attempt.sessionVersion !== translationState.sessionVersion) return false;
     if (attempt.nodeId && node.getAttribute(TRANSLATED_ID_ATTR) !== attempt.nodeId) return false;
+    if (attempt.validateTarget && !attempt.validateTarget()) return false;
     const currentAttempt = captureTranslationAttempt(node, getTranslatableText(node));
     return currentAttempt.sourceText === attempt.sourceText && currentAttempt.sourceHTML === attempt.sourceHTML;
 }
@@ -343,6 +371,7 @@ function discardStaleTranslationAttempt(
     nodeOuterHTML: string,
     attempt: TranslationAttemptSnapshot,
 ): void {
+    if (attempt.sessionVersion !== translationState.sessionVersion) return;
     translationState.htmlSet.delete(nodeOuterHTML);
     // 同一宿主可能已经因动态更新启动了下一轮翻译；旧请求不能清掉新一轮的标记和状态。
     if (!attempt.nodeId || node.getAttribute(TRANSLATED_ID_ATTR) !== attempt.nodeId) return;
@@ -385,6 +414,7 @@ export function restoreOriginalContent() {
     setAutoTranslating(false);
     translationState.activeScope = null;
     translationState.sessionVersion += 1;
+    reportPageTranslation({ phase: 'idle' });
     restoreAllBilingualLayouts();
 
     restoreAllTranslationOnly().forEach(node => {
@@ -440,6 +470,8 @@ export function restoreOriginalContent() {
         translationState.rootMutationObserver.disconnect();
         translationState.rootMutationObserver = null;
     }
+    translationState.titleMutationObserver?.disconnect();
+    translationState.titleMutationObserver = null;
     removeShadowRootListeners();
     clearDynamicScanTimer();
     clearBackgroundTranslationTimer();
@@ -457,23 +489,34 @@ export function restoreOriginalContent() {
 }
 
 // 自动翻译整个页面的功能
-export function autoTranslateEnglishPage(scopeOverride?: string) {
+export function autoTranslateEnglishPage(scopeOverride?: string, manual = false) {
     // 如果已经在翻译中，则返回
-    if (translationState.isAutoTranslating) return;
+    if (translationState.isAutoTranslating) {
+        if (canRestorePage(pageTranslationStatus)) return;
+        restoreOriginalContent();
+    }
 
     translationState.sessionVersion += 1;
     setAutoTranslating(true);
     const sessionVersion = translationState.sessionVersion;
     const controller = new AbortController();
     translationState.targetCollectionController = controller;
-    void startAutoTranslation(scopeOverride, sessionVersion, controller);
+    reportPageTranslation({ phase: 'pending', source: manual ? 'manual' : 'auto' });
+    void startAutoTranslation(scopeOverride, sessionVersion, controller, manual);
+}
+
+export function togglePageTranslation(manual: boolean) {
+    if (canRestorePage(pageTranslationStatus)) restoreOriginalContent();
+    else autoTranslateEnglishPage(undefined, manual);
 }
 
 async function startAutoTranslation(
     scopeOverride: string | undefined,
     sessionVersion: number,
-    controller: AbortController
+    controller: AbortController,
+    manual: boolean
 ): Promise<void> {
+    const source = manual ? 'manual' : 'auto';
 
     // 获取当前页面的语言（暂时注释，存在识别问题）
     // const text = document.documentElement.innerText || '';
@@ -490,10 +533,16 @@ async function startAutoTranslation(
     // scope 优先取 popup 显式传入的值，再 fallback 到 config 单例（悬浮球等其他入口）
     const scope = scopeOverride ?? config.translationScope;
     translationState.activeScope = scope;
+    const pageRoot = document.documentElement;
+    const observedBody = document.body;
+    const initialPageUrl = document.location.href;
+    const allowedPageTranslateRoot = manual && isPageTranslationOptedOut(pageRoot) ? pageRoot : undefined;
+    const pageChanged = () => document.documentElement !== pageRoot || document.body !== observedBody || document.location.href !== initialPageUrl;
     let target: AutoTranslateTarget;
     try {
         target = await resolveAutoTranslationTargetAsync(scope, {
             signal: controller.signal,
+            allowedPageTranslateRoot,
             beforeCollect: roots => {
                 clearStaleBilingualTranslationMarkers();
                 roots.forEach(root => clearStaleBilingualTranslationMarkers(root));
@@ -501,13 +550,44 @@ async function startAutoTranslation(
         });
     } catch (error) {
         if (controller.signal.aborted) return;
-        if (translationState.sessionVersion === sessionVersion) setAutoTranslating(false);
+        if (translationState.sessionVersion === sessionVersion) {
+            setAutoTranslating(false);
+            translationState.targetCollectionController = null;
+            reportPageTranslation({ phase: 'failed', source });
+        }
         console.error('自动翻译目标收集失败:', error);
         return;
     }
     if (controller.signal.aborted || translationState.sessionVersion !== sessionVersion) return;
+    if (allowedPageTranslateRoot && pageChanged()) {
+        restoreOriginalContent();
+        autoTranslateEnglishPage(scope);
+        return;
+    }
     translationState.targetCollectionController = null;
     const { contentRoot, nodes, grabOptions } = target;
+    const outstanding = new Map(nodes.map(node => [node, Symbol()] as const));
+    const visibleTargets = new Set<Element>();
+    const failedTargets = new Set<Element>();
+    const isCurrentSession = () => translationState.isAutoTranslating && sessionVersion === translationState.sessionVersion;
+    const updatePageStatus = () => {
+        if (!isCurrentSession()) return;
+        if (visibleTargets.size) reportPageTranslation({ phase: 'translated' });
+        else if (outstanding.size) reportPageTranslation({ phase: 'pending', source });
+        else if (failedTargets.size) reportPageTranslation({ phase: 'failed', source });
+        else reportPageTranslation({
+            phase: 'empty',
+            source,
+            reason: nodes.length ? 'no-output'
+                : !allowedPageTranslateRoot && isPageTranslationOptedOut(pageRoot) ? 'page-opt-out' : 'no-targets'
+        });
+    };
+    updatePageStatus();
+    const settleTarget = (node: Element, ticket = outstanding.get(node)) => {
+        if (outstanding.get(node) !== ticket) return;
+        outstanding.delete(node);
+        updatePageStatus();
+    };
     const activeGrabOptions = grabOptions ?? {};
     translationState.shadowRoots = activeGrabOptions.scanContext?.openShadowRoots ?? new Set<ShadowRoot>();
 
@@ -518,14 +598,18 @@ async function startAutoTranslation(
         pageUrl: document.location.href,
     };
 
-    const initialPageUrl = document.location.href;
-    const observedBody = document.body;
+    const smartProfile = scope === 'smart'
+        ? siteProfiles.find(profile => profile.domains.includes(getMainDomain(location.href)))
+        : undefined;
+    const ariaHiddenAncestor = smartProfile?.ariaHiddenAncestor;
+    const checkedVisibilityTargets = new WeakSet<Element>();
+    const observedTranslationNodes = new Set<Element>(nodes);
 
     const scheduleNavigationRestart = (): void => {
-        if (!translationState.isAutoTranslating || translationState.navigationTimer !== null) return;
+        if (!isCurrentSession() || translationState.navigationTimer !== null) return;
         translationState.navigationTimer = setTimeout(() => {
             translationState.navigationTimer = null;
-            if (!translationState.isAutoTranslating) return;
+            if (!isCurrentSession()) return;
             restoreOriginalContent();
             autoTranslateEnglishPage(scope);
         }, 150);
@@ -535,16 +619,59 @@ async function startAutoTranslation(
         activeObserver?: IntersectionObserver,
         requestOptions: TranslationRequestOptions = { allowBatch: true, priority: 'high' }
     ): Promise<void> => {
-        if (!(node instanceof HTMLElement)) return Promise.resolve();
+        if (!isCurrentSession()) return Promise.resolve();
+        if (!(node instanceof HTMLElement)) {
+            settleTarget(node);
+            return Promise.resolve();
+        }
         if (config.display !== styles.bilingualTranslation
             && hasExcludedTranslatableTextBoundary(document.body, node)) {
             activeObserver?.unobserve(node);
+            settleTarget(node);
             return Promise.resolve();
         }
 
         // 去重
         if (node.hasAttribute(TRANSLATED_ATTR)) return Promise.resolve();
 
+        const targetContext = {
+            scope, contentRoot, mode: activeGrabOptions.siteCompatMode ?? 'smart', grabOptions: activeGrabOptions
+        };
+        const validatePagePermission = () => {
+            if (!allowedPageTranslateRoot) return !isPageTranslationOptedOut(document.documentElement);
+            if (pageChanged()) {
+                scheduleNavigationRestart();
+                return false;
+            }
+            const parent = getComposedParentElement(node);
+            return node.isConnected && !node.isContentEditable
+                && !isFullPageTargetProtected(node, allowedPageTranslateRoot, true)
+                && !(parent && composedClosest(parent, `[${TRANSLATED_ATTR}="true"]`))
+                && isVisibleForTranslation(node, { ...targetContext, grabOptions: undefined });
+        };
+        let validateTarget = validatePagePermission;
+        // A queued site exception can become stale before an off-screen target
+        // is translated. Recheck identity and protections on the live DOM.
+        if (checkedVisibilityTargets.has(node)) {
+            validateTarget = () => {
+                const parent = ariaHiddenAncestor?.(node);
+                if (!parent || parent !== node.parentElement || !node.isConnected || !validatePagePermission()) return false;
+                const decision = decideTranslationTarget({ node, source: 'site-profile' }, {
+                    ...targetContext, grabOptions: allowedPageTranslateRoot ? activeGrabOptions : undefined
+                }, { ignoreOwnTranslationMarker: true });
+                return decision.policy === 'allow' && decision.target === node;
+            };
+        }
+        if (!validateTarget()) {
+            activeObserver?.unobserve(node);
+            observedTranslationNodes.delete(node);
+            settleTarget(node);
+            return Promise.resolve();
+        }
+
+        const initialTicket = Symbol();
+        let currentTicket = initialTicket;
+        outstanding.set(node, initialTicket);
         // 为节点分配唯一ID
         const nodeId = `fr-node-${translationState.nodeIdCounter++}`;
         node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
@@ -561,19 +688,40 @@ async function startAutoTranslation(
         // 标记为已翻译
         node.setAttribute(TRANSLATED_ATTR, 'true');
 
+        const translationOptions: TranslationRequestOptions = {
+            ...requestOptions, validateTarget, allowedPageTranslateRoot, diagnostics: diagnosticContext,
+            onPageResult(result) {
+                if (!isCurrentSession() || outstanding.get(node) !== currentTicket) return;
+                if (result === 'failed') failedTargets.add(node);
+                else {
+                    failedTargets.delete(node);
+                    visibleTargets.add(node);
+                    updatePageStatus();
+                }
+            },
+            retryPageTarget(retry) {
+                if (!isCurrentSession()) return;
+                failedTargets.delete(node);
+                const ticket = Symbol();
+                currentTicket = ticket;
+                outstanding.set(node, ticket);
+                updatePageStatus();
+                void retry().finally(() => settleTarget(node, ticket));
+            }
+        };
         const translation = config.display === styles.bilingualTranslation
-            ? handleBilingualTranslation(node, false, { removeExisting: false, ...requestOptions, diagnostics: diagnosticContext })
-            : handleSingleTranslation(node, false, { ...requestOptions, diagnostics: diagnosticContext });
+            ? handleBilingualTranslation(node, false, { ...translationOptions, removeExisting: false })
+            : handleSingleTranslation(node, false, translationOptions);
 
         // 停止观察该节点
         activeObserver?.unobserve(node);
-        return translation;
+        return translation.finally(() => settleTarget(node, initialTicket));
     };
 
     // 创建观察器
     translationState.observer = new IntersectionObserver((entries, activeObserver) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting && translationState.isAutoTranslating) {
+            if (entry.isIntersecting && isCurrentSession()) {
                 void translateAutoTarget(entry.target, activeObserver, { allowBatch: true, priority: 'high' });
             }
         });
@@ -584,9 +732,12 @@ async function startAutoTranslation(
     });
 
     // 开始观察所有节点，让首屏内容优先进入翻译队列；支持 batch 的服务仍可合并同一批可视节点。
-    nodes.forEach(node => {
+    const observeAutoNode = (node: Element): void => {
+        const parent = ariaHiddenAncestor?.(node);
+        if (parent && parent === node.parentElement) checkedVisibilityTargets.add(node);
         translationState.observer?.observe(node);
-    });
+    };
+    nodes.forEach(observeAutoNode);
 
     let backgroundCursor = 0;
     let activeBackgroundAutoTranslations = 0;
@@ -596,18 +747,19 @@ async function startAutoTranslation(
             if (node instanceof HTMLElement && node.isConnected && !node.hasAttribute(TRANSLATED_ATTR)) {
                 return node;
             }
+            if (!node.isConnected || !(node instanceof HTMLElement)) settleTarget(node);
         }
         return null;
     };
 
     const scheduleBackgroundTranslation = (delay = BACKGROUND_TRANSLATION_INTERVAL): void => {
-        if (translationState.backgroundTimer !== null) return;
+        if (!isCurrentSession() || translationState.backgroundTimer !== null) return;
         translationState.backgroundTimer = setTimeout(runBackgroundTranslation, delay);
     };
 
     const runBackgroundTranslation = (): void => {
+        if (!isCurrentSession()) return;
         translationState.backgroundTimer = null;
-        if (!translationState.isAutoTranslating) return;
 
         while (activeBackgroundAutoTranslations < getBackgroundTranslationSlotLimit()) {
             const node = takeNextBackgroundNode();
@@ -619,7 +771,7 @@ async function startAutoTranslation(
                 priority: 'background'
             }).finally(() => {
                 activeBackgroundAutoTranslations--;
-                if (translationState.isAutoTranslating) {
+                if (isCurrentSession()) {
                     scheduleBackgroundTranslation();
                 }
             });
@@ -628,16 +780,18 @@ async function startAutoTranslation(
 
     scheduleBackgroundTranslation(BACKGROUND_TRANSLATION_START_DELAY);
 
-    const observedTranslationNodes = new Set<Element>(nodes);
     const smartInlineLinks = getSmartInlineLinkPolicy(scope);
     const inlineLinkAttributes = ['href', 'target', 'rel'];
     const observeTranslationNodes = (newNodes: Element[]) => {
+        if (!isCurrentSession()) return;
         newNodes.forEach(node => {
             if (!observedTranslationNodes.has(node)) {
                 observedTranslationNodes.add(node);
                 nodes.push(node);
+                outstanding.set(node, Symbol());
+                updatePageStatus();
             }
-            translationState.observer?.observe(node);
+            observeAutoNode(node);
         });
         if (newNodes.length > 0) scheduleBackgroundTranslation();
     };
@@ -650,9 +804,13 @@ async function startAutoTranslation(
         queryOwnedElements(host, `.${BILINGUAL_CONTENT_CLASS}`).forEach(element => element.remove());
         queryOwnedElements(host, ACTIVE_TRANSLATION_STATUS_SELECTOR).forEach(element => element.remove());
         clearTranslationHostMarkers(host);
-        if (translationState.isAutoTranslating && host.isConnected) {
+        visibleTargets.delete(host);
+        failedTargets.delete(host);
+        if (isCurrentSession() && host.isConnected) {
+            outstanding.set(host, Symbol());
             translationState.observer?.observe(host);
-        }
+        } else outstanding.delete(host);
+        updatePageStatus();
     };
 
     const getOwnedHosts = (root: Element): HTMLElement[] => [root, ...Array.from(root.querySelectorAll(`[${TRANSLATED_ID_ATTR}]`))]
@@ -747,12 +905,18 @@ async function startAutoTranslation(
     const pendingMutationRoots = new Set<Element>();
     const styleVisibilityState = new WeakMap<Element, boolean>();
     let dynamicScanRunning = false;
+    let primaryHeadingCheckPending = false;
+    let primaryHeadingCount = scope === 'smart' ? document.querySelectorAll(PRIMARY_HEADING_SELECTOR).length : 0;
 
     const mutationOptions: MutationObserverInit = {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: smartInlineLinks ? [...DYNAMIC_MUTATION_ATTRIBUTES, ...inlineLinkAttributes] : DYNAMIC_MUTATION_ATTRIBUTES,
+        attributeFilter: [
+            ...DYNAMIC_MUTATION_ATTRIBUTES,
+            ...(smartInlineLinks ? inlineLinkAttributes : []),
+            ...(smartProfile?.smartMutationAttributes ?? [])
+        ],
         characterData: true
     };
 
@@ -779,13 +943,7 @@ async function startAutoTranslation(
             root.removeEventListener('slotchange', translationState.slotChangeHandler!, true);
             Array.from(translationState.translatedHosts)
                 .filter(host => !host.isConnected && host.getRootNode() === root)
-                .forEach(host => {
-                    restoreTranslationOnly(host);
-                    restoreBilingualLayout(host);
-                    host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}, ${ACTIVE_TRANSLATION_STATUS_SELECTOR}`)
-                        .forEach(element => element.remove());
-                    clearTranslationHostMarkers(host);
-                });
+                .forEach(refreshTranslatedHost);
             removeShadowTranslationStyle(root);
             translationState.shadowRoots.delete(root);
             translationState.observedShadowRoots.delete(root);
@@ -800,9 +958,17 @@ async function startAutoTranslation(
     // flush 中执行，并对处理数量封顶。否则会在 MutationObserver 回调里逐条同步执行 querySelectorAll('*') 与
     // closest() 选择器链——在高频 DOM 变更的页面上这会让主线程持续 100% 卡死。
     async function flushDynamicScans(): Promise<void> {
+        if (!isCurrentSession()) return;
         translationState.dynamicScanTimer = null;
-        if (!translationState.isAutoTranslating) return;
         dynamicScanRunning = true;
+        if (primaryHeadingCheckPending) {
+            primaryHeadingCheckPending = false;
+            const count = document.querySelectorAll(PRIMARY_HEADING_SELECTOR).length;
+            if (count !== primaryHeadingCount) {
+                primaryHeadingCount = count;
+                enqueueUntranslatedPrimaryHeadings();
+            }
+        }
         const roots = Array.from(pendingMutationRoots).slice(0, MAX_MUTATION_ROOTS_PER_FLUSH);
         roots.forEach(root => pendingMutationRoots.delete(root));
 
@@ -817,7 +983,7 @@ async function startAutoTranslation(
             scanRoots.add(scanRoot);
             if (performance.now() - sliceStarted >= 4) {
                 await new Promise<void>(resolve => setTimeout(resolve, 0));
-                if (!translationState.isAutoTranslating) {
+                if (!isCurrentSession()) {
                     dynamicScanRunning = false;
                     return;
                 }
@@ -831,7 +997,7 @@ async function startAutoTranslation(
             );
             if (performance.now() - sliceStarted >= 4) {
                 await new Promise<void>(resolve => setTimeout(resolve, 0));
-                if (!translationState.isAutoTranslating) {
+                if (!isCurrentSession()) {
                     dynamicScanRunning = false;
                     return;
                 }
@@ -856,10 +1022,18 @@ async function startAutoTranslation(
         scheduleDynamicScan();
     };
 
+    const enqueueUntranslatedPrimaryHeadings = (): void => {
+        if (scope !== 'smart') return;
+        document.querySelectorAll(PRIMARY_HEADING_SELECTOR).forEach(heading => {
+            if (composedClosest(heading, `[${TRANSLATED_ATTR}="true"]`) || (heading instanceof HTMLElement && hasTranslationOnlyRecord(heading))) return;
+            enqueueMutationRoot(heading);
+        });
+    };
+
     // 创建 MutationObserver 监听 DOM 变化
     translationState.mutationObserver = new MutationObserver((mutations) => {
-        if (!translationState.isAutoTranslating) return;
-        if (document.body !== observedBody || document.location.href !== initialPageUrl || !contentRoot.isConnected) {
+        if (!isCurrentSession()) return;
+        if (pageChanged() || !contentRoot.isConnected) {
             scheduleNavigationRestart();
             return;
         }
@@ -870,6 +1044,11 @@ async function startAutoTranslation(
                 mutation.addedNodes?.forEach(node => { if (node instanceof Element) refreshReusedHosts(node); });
             }
             if (handleTranslatedHostMutation(mutation)) continue;
+
+            if (scope === 'smart' && (mutation.type === 'childList'
+                || mutation.type === 'attributes' && ['role', 'aria-level'].includes(mutation.attributeName ?? ''))) {
+                primaryHeadingCheckPending = true;
+            }
 
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
@@ -891,7 +1070,7 @@ async function startAutoTranslation(
 
             if (mutation.type === 'attributes' && mutation.target instanceof Element) {
                 if (mutation.attributeName === 'style') {
-                    const visible = isElementVisible(mutation.target);
+                    const visible = isElementVisible(mutation.target, ariaHiddenAncestor?.(mutation.target));
                     const previous = styleVisibilityState.get(mutation.target);
                     styleVisibilityState.set(mutation.target, visible);
                     if (previous !== undefined && previous === visible) continue;
@@ -917,15 +1096,46 @@ async function startAutoTranslation(
     };
     observeRegisteredShadowRoots();
 
-    // body 自身被 SPA 替换后，绑定在旧 body 上的高频观察器不会再收到事件；
-    // 单独用一个低成本根观察器只负责发现这类结构边界，不扫描 html/head 子树。
+    // Only title text is observed recursively. Other head changes cannot trigger a reading scan.
+    let observedHead = document.head;
+    let observedTitleElement: Element | null = null;
+    let observedTitleText = document.title;
+    const checkTitleText = (): void => {
+        if (!isCurrentSession() || document.title === observedTitleText) return;
+        observedTitleText = document.title;
+        enqueueUntranslatedPrimaryHeadings();
+    };
+    translationState.titleMutationObserver = new MutationObserver(checkTitleText);
+    const bindTitleElement = (): void => {
+        const title = document.head?.querySelector('title') ?? null;
+        if (title === observedTitleElement) return;
+        translationState.titleMutationObserver?.disconnect();
+        observedTitleElement = title;
+        if (title && scope === 'smart') translationState.titleMutationObserver?.observe(title, { childList: true, subtree: true, characterData: true });
+    };
+    // Root/head direct children detect body/head/title replacements without watching other head subtrees.
+    const rootObserverOptions = { childList: true, ...(allowedPageTranslateRoot ? {} : { attributeFilter: ['translate'] }) };
+    const rootOptedOutAtScan = isPageTranslationOptedOut(pageRoot);
     translationState.rootMutationObserver = new MutationObserver(() => {
-        if (!translationState.isAutoTranslating) return;
-        if (document.body !== observedBody || document.location.href !== initialPageUrl || !contentRoot.isConnected) {
+        if (!isCurrentSession()) return;
+        if (pageChanged() || !contentRoot.isConnected
+            || (!allowedPageTranslateRoot && rootOptedOutAtScan !== isPageTranslationOptedOut(pageRoot))) {
             scheduleNavigationRestart();
+            return;
         }
+        if (scope !== 'smart') return;
+        if (observedHead !== document.head) {
+            translationState.rootMutationObserver?.disconnect();
+            translationState.rootMutationObserver?.observe(document.documentElement, rootObserverOptions);
+            observedHead = document.head;
+            if (observedHead) translationState.rootMutationObserver?.observe(observedHead, { childList: true });
+        }
+        bindTitleElement();
+        checkTitleText();
     });
-    translationState.rootMutationObserver.observe(document.documentElement, { childList: true });
+    translationState.rootMutationObserver.observe(document.documentElement, rootObserverOptions);
+    if (scope === 'smart' && observedHead) translationState.rootMutationObserver.observe(observedHead, { childList: true });
+    bindTitleElement();
 }
 
 // 处理鼠标悬停翻译的主函数
@@ -987,7 +1197,7 @@ export function handleBilingualTranslation(
 ): Promise<void> {
     let nodeOuterHTML = node.outerHTML;
     const originText = getTranslatableText(node);
-    const attempt = captureTranslationAttempt(node, originText);
+    const attempt = captureTranslationAttempt(node, originText, options.validateTarget);
     // 如果已经翻译过，250ms 后删除翻译结果
     let bilingualNode = findOwnedClassName(node, BILINGUAL_WRAPPER_CLASS);
     if (bilingualNode) {
@@ -1015,7 +1225,7 @@ export function handleBilingualTranslation(
     // Smart social links require structural rendering even when a legacy plain
     // translation exists. translateText handles the structured request cache.
     const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
-    let cached = inlineLinks ? null : cache.localGet(originText, config.to, getWebpagePromptContext(node));
+    const cached = inlineLinks || options.allowedPageTranslateRoot ? null : cache.localGet(originText, config.to, getWebpagePromptContext(node));
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -1026,7 +1236,7 @@ export function handleBilingualTranslation(
                 resolve();
                 return;
             }
-            bilingualAppendChild(node, cached);
+            if (bilingualAppendChild(node, cached)) options.onPageResult?.('visible');
             resolve();
         }, 250));
     }
@@ -1061,15 +1271,36 @@ export function handleSingleTranslation(node: HTMLElement, slide: boolean, optio
 }
 
 
+function isManualPageExcludedText(element: Element): boolean {
+    return isFullPageExcludedText(element) || isElementSelfHidden(element);
+}
+
+function getPageTargetRetry(
+    node: HTMLElement,
+    attempt: TranslationAttemptSnapshot,
+    options: TranslationRequestOptions,
+    translate: () => Promise<void>,
+): (() => void) | undefined {
+    const retry = options.retryPageTarget;
+    if (!retry) return undefined;
+    return () => {
+        if (isTranslationAttemptCurrent(node, attempt)) retry(translate);
+    };
+}
+
 function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: TranslationRequestOptions = {}): Promise<void> {
-    const plainOrigin = getTranslatableText(node);
-    const attempt = captureTranslationAttempt(node, plainOrigin);
+    const { validateTarget, onPageResult, allowedPageTranslateRoot, retryPageTarget: _retryPageTarget, ...translateOptions } = options;
+    const excludeElement = allowedPageTranslateRoot ? isManualPageExcludedText : undefined;
     const full = isFullPageTranslation();
+    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node, excludeElement ?? (full ? isFullPageExcludedText : undefined));
+    const plainOrigin = excludeElement
+        ? protectedInlineOrigin.text.replace(/__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g, '')
+        : getTranslatableText(node);
+    const attempt = captureTranslationAttempt(node, getTranslatableText(node), validateTarget);
     const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
-    const linkedPrepared = inlineLinks ? prepareInlineLinkTranslation(node, inlineLinks) : undefined;
+    const linkedPrepared = inlineLinks ? prepareInlineLinkTranslation(node, inlineLinks, excludeElement) : undefined;
     const linkedRequest = linkedPrepared ? encodeInlineLinkRequest(linkedPrepared) : undefined;
-    const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node, full ? isFullPageExcludedText : undefined);
-    const origin = linkedRequest?.text ?? (full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin);
+    const origin = linkedRequest?.text ?? (excludeElement || full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin);
     const direction = getWebpageTranslationDirection(plainOrigin);
     if (!direction.shouldTranslate) {
         clearUnfinishedAutoTranslation(node);
@@ -1085,8 +1316,8 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     // 使用队列管理的翻译API
     const promptContext = getWebpagePromptContext(node);
     const requestOptions = full || linkedPrepared
-        ? { ...options, sourceLangHint: direction.sourceLang, targetLangHint: direction.targetLang }
-        : options;
+        ? { ...translateOptions, sourceLangHint: direction.sourceLang, targetLangHint: direction.targetLang }
+        : translateOptions;
     return translateText(origin, promptContext, requestOptions)
         .then(async (text: string) => {
             spinner.remove();
@@ -1095,6 +1326,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
                 discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                 return;
             }
+            if (normalizeTranslationSource(text) === normalizeTranslationSource(origin)) return;
             if (linkedPrepared && linkedRequest) {
                 let decoded = linkedRequest.decode(text);
                 let content = decoded === null ? null : renderInlineLinkTranslation(linkedPrepared, decoded);
@@ -1107,29 +1339,32 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
                         discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                         return;
                     }
+                    if (normalizeTranslationSource(text) === normalizeTranslationSource(retryRequest.text)) return;
                     decoded = retryRequest.decode(text);
                     content = decoded === null ? null : renderInlineLinkTranslation(retryPrepared, decoded);
                     if (!content) cache.localRemove(retryRequest.text, direction.targetLang, promptContext);
                 }
                 if (!content) throw new Error(t('runtime.translationOnlyApplyFailed'));
-                if (bilingualAppendChild(node, content)) notifyDiagnosticVisible(options);
+                if (bilingualAppendChild(node, content, allowedPageTranslateRoot)) notifyDiagnosticVisible(options);
                 return;
             }
             const content = renderTextWithProtectedInline(text, protectedInlineOrigin.protectedInlines);
             if (content) {
-                if (bilingualAppendChild(node, content)) notifyDiagnosticVisible(options);
+                if (bilingualAppendChild(node, content, allowedPageTranslateRoot)) notifyDiagnosticVisible(options);
                 return;
             }
 
             if (protectedInlineOrigin.protectedInlines.length) {
                 const fallbackOrigin = full ? protectedInlineOrigin.text.replace(/__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/g, '') : plainOrigin;
+                if (!fallbackOrigin.trim()) return;
                 text = await translateText(fallbackOrigin, promptContext, requestOptions);
                 if (!isTranslationAttemptCurrent(node, attempt)) {
                     discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);
                     return;
                 }
+                if (normalizeTranslationSource(text) === normalizeTranslationSource(fallbackOrigin)) return;
             }
-            if (bilingualAppendChild(node, text)) notifyDiagnosticVisible(options);
+            if (bilingualAppendChild(node, text, allowedPageTranslateRoot)) notifyDiagnosticVisible(options);
         })
         .catch((error: Error) => {
             spinner.remove();
@@ -1143,26 +1378,29 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
                 clearUnfinishedAutoTranslation(node);
                 return;
             }
-            insertFailedTip(node, error.toString() || "翻译失败", spinner);
+            insertFailedTip(node, error.toString() || "翻译失败", spinner,
+                getPageTargetRetry(node, attempt, options, () => handleBilingualTranslation(node, false, options)));
+            onPageResult?.('failed');
         });
 }
 
 export function singleTranslate(node: HTMLElement, options: TranslationRequestOptions = {}): Promise<void> {
     const nodeOuterHTML = node.outerHTML;
     const plainOrigin = getTranslatableText(node);
-    const direction = getWebpageTranslationDirection(plainOrigin);
-    if (!direction.shouldTranslate) {
-        translationState.htmlSet.delete(nodeOuterHTML);
-        clearUnfinishedAutoTranslation(node);
-        return Promise.resolve();
-    }
-
-    const attempt = captureTranslationAttempt(node, plainOrigin);
+    const { validateTarget, onPageResult, allowedPageTranslateRoot, retryPageTarget: _retryPageTarget, ...translateOptions } = options;
+    const attempt = captureTranslationAttempt(node, plainOrigin, validateTarget);
     const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
-    const prepared = prepareTranslationOnly(node, inlineLinks ? element => preserveInlineLink(element, inlineLinks) : undefined);
+    const prepared = prepareTranslationOnly(node, inlineLinks || allowedPageTranslateRoot
+        ? element => (Boolean(allowedPageTranslateRoot) && isManualPageExcludedText(element))
+            || Boolean(inlineLinks && preserveInlineLink(element, inlineLinks))
+        : undefined);
     const linkedRequest = inlineLinks ? encodeInlineLinkRequest(prepared) : undefined;
     const requestText = linkedRequest?.text ?? prepared.text;
-    if (!requestText.trim()) {
+    const eligibleText = allowedPageTranslateRoot
+        ? prepared.parts.map(part => 'original' in part ? part.original : '').join('')
+        : plainOrigin;
+    const direction = getWebpageTranslationDirection(eligibleText);
+    if (!requestText.trim() || !direction.shouldTranslate) {
         translationState.htmlSet.delete(nodeOuterHTML);
         clearUnfinishedAutoTranslation(node);
         return Promise.resolve();
@@ -1171,7 +1409,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
     const spinner = insertLoadingSpinner(node);
     const promptContext = getWebpagePromptContext(node);
     const requestOptions = {
-        ...options,
+        ...translateOptions,
         sourceLangHint: direction.sourceLang,
         targetLangHint: direction.targetLang,
     };
@@ -1211,7 +1449,7 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
                 if (!applied) throw new Error(t('runtime.translationOnlyApplyFailed'));
             }
             node.setAttribute(TRANSLATED_ATTR, 'true');
-            notifyDiagnosticVisible(options);
+            if (hasVisibleTranslationOnlyChange(node)) notifyDiagnosticVisible(options);
         })
         .catch((error: Error) => {
             spinner.remove();
@@ -1225,7 +1463,9 @@ export function singleTranslate(node: HTMLElement, options: TranslationRequestOp
                 clearUnfinishedAutoTranslation(node);
                 return;
             }
-            insertFailedTip(node, error.toString() || "翻译失败", spinner);
+            insertFailedTip(node, error.toString() || "翻译失败", spinner,
+                getPageTargetRetry(node, attempt, options, () => handleSingleTranslation(node, false, options)));
+            onPageResult?.('failed');
         });
 }
 
@@ -1277,23 +1517,27 @@ export const handleBtnTranslation = throttle((node: HTMLElement) => {
 }, 250)
 
 
-function bilingualAppendChild(node: HTMLElement, text: string | Node): boolean {
+function bilingualAppendChild(node: HTMLElement, text: string | Node, allowedPageTranslateRoot?: Element): boolean {
     // 只折叠空白用于比较，保留大小写和标点差异；行内占位符已在调用前还原。
     const source = getTranslatableText(node).replace(/\s+/g, ' ').trim();
     const translation = (typeof text === 'string' ? text : getTranslatableText(text)).replace(/\s+/g, ' ').trim();
     // 自动目标保留本轮已处理标记，避免没有插入译文时被动态扫描反复请求。
-    if (translation === source) return false;
-    return appendTranslationContent(node, text);
+    if (!translation || translation === source) return false;
+    return appendTranslationContent(node, text, allowedPageTranslateRoot);
 }
 
 function appendTranslationContent(
     node: HTMLElement,
     text: string | Node,
+    allowedPageTranslateRoot?: Element,
 ): boolean {
     if (findOwnedClassName(node, BILINGUAL_CONTENT_CLASS)) return false;
 
     node.classList.add(BILINGUAL_WRAPPER_CLASS);
-    const initialTarget = resolveBilingualControlTarget(getBilingualAppendTarget(node));
+    const preferredTarget = resolveBilingualControlTarget(getBilingualAppendTarget(node));
+    const initialTarget = allowedPageTranslateRoot
+        && (isFullPageTargetProtected(preferredTarget, allowedPageTranslateRoot, true) || !isElementVisible(preferredTarget))
+        ? node : preferredTarget;
     const compact = isCompactTranslationTarget(initialTarget);
     const appendTarget = compact ? prepareCompactBilingualTarget(node, initialTarget) : initialTarget;
     const insertionNode = document.createElement('span');
@@ -1329,6 +1573,7 @@ function appendTranslationContent(
 }
 
 function notifyDiagnosticVisible(options: TranslationRequestOptions): void {
+    options.onPageResult?.('visible');
     const sessionId = options.diagnostics?.sessionId;
     if (!sessionId) return;
     const extensionBrowser = (globalThis as typeof globalThis & {

@@ -1,0 +1,10 @@
+{
+  "name": "ACL Anthology smart mode excludes paper authors and bibliographic details, not the abstract",
+  "url": "https://aclanthology.org/2023.wmt-1.41/",
+  "scope": "smart",
+  "html": "acl-paper-metadata.html",
+  "include": ["title", "paper-intro", "abstract-heading", "abstract-body"],
+  "exclude": ["paper-authors", "paper-metadata", "citation-title", "paper-doi"],
+  "textIncludes": ["evaluation dataset", "set of sentences", "This glossary explains"],
+  "textExcludes": ["Alex Morgan", "Kai Rivera", "Anthology ID:", "10.18653/v1/2023.wmt-1.41"]
+}

@@ -1,3 +1,4 @@
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 import {
     getTranslatableText, grabAllNode, inlineSet, isExcludedFromTranslatableText,
     isNumericContent, isProtectedInlineElement, wrapDirectTextRun,
@@ -18,6 +19,11 @@ const FULL_PAGE_SOURCE_PROTECTED_SELECTOR = [
     '.only-translate-loading', '.only-translate-retry-wrapper', '[data-only-translate-shadow-style]',
 ].join(', ');
 export const FULL_PAGE_PROTECTED_SELECTOR = `${FULL_PAGE_SOURCE_PROTECTED_SELECTOR}, [${TRANSLATED_ATTR}="true"]`;
+
+export function isFullPageTargetProtected(element: Element, allowedRoot?: Element, ownsMarker = false): boolean {
+    const selector = ownsMarker ? FULL_PAGE_SOURCE_PROTECTED_SELECTOR : FULL_PAGE_PROTECTED_SELECTOR;
+    return Boolean(composedClosest(element, withPageTranslateOverride(selector, element, allowedRoot)));
+}
 const CONTROL_SELECTOR = 'a, button, summary, [role="button"], [role="link"], [role^="menuitem"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"]';
 const LABEL_SELECTOR = 'th, td, caption, dt, dd, legend, label';
 const LAYOUT_TAGS = new Set(['html', 'body', 'main', 'article', 'section', 'nav', 'header', 'footer', 'aside', 'form', 'ul', 'ol', 'table', 'thead', 'tbody', 'tr', 'details']);
@@ -68,10 +74,11 @@ export function collectFullPageTargets(root: ParentNode, options: GrabAllNodeOpt
         }
         return false;
     };
-    const isProtected = (element: Element): boolean => element.matches(FULL_PAGE_PROTECTED_SELECTOR)
+    const allowedRoot = options.scanContext?.allowedPageTranslateRoot;
+    const isProtected = (element: Element): boolean => element.matches(withPageTranslateOverride(FULL_PAGE_PROTECTED_SELECTOR, element, allowedRoot))
         || isExcludedFromTranslatableText(element) || isProtectedInlineElement(element)
         || Boolean(options.shouldSkipSubtree?.(element)) || !isFullPageVisible(element);
-    if (root instanceof Element && (composedClosest(root, FULL_PAGE_PROTECTED_SELECTOR) || isProtected(root))) return targets;
+    if (root instanceof Element && (composedClosest(root, withPageTranslateOverride(FULL_PAGE_PROTECTED_SELECTOR, root, allowedRoot)) || isProtected(root))) return targets;
 
     const texts: Text[] = [];
     const walker = document.createTreeWalker(root as Node, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
@@ -91,7 +98,7 @@ export function collectFullPageTargets(root: ParentNode, options: GrabAllNodeOpt
 
     for (const text of texts) {
         const parent = text.parentElement;
-        if (!parent || isCovered(parent) || composedClosest(parent, FULL_PAGE_PROTECTED_SELECTOR)) continue;
+        if (!parent || isCovered(parent) || composedClosest(parent, withPageTranslateOverride(FULL_PAGE_PROTECTED_SELECTOR, parent, allowedRoot))) continue;
         const target = findLabelTarget(parent, root);
         if (target) {
             targets.push(target);

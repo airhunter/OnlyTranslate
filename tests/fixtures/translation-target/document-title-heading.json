@@ -1,0 +1,8 @@
+{
+  "name": "A unique semantic heading matching document metadata is collected outside main without a site profile",
+  "url": "https://unadapted.example/shared-tools",
+  "documentTitle": "Building shared tools • Workshop notes",
+  "scope": "smart",
+  "html": "document-title-heading.html",
+  "include": ["page-heading", "main-body"]
+}

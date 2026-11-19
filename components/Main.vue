@@ -106,6 +106,7 @@
     <div v-show="config.on" :inert="servicePanelVisible">
 
       <!-- 翻译当前页面按钮 -->
+      <p v-if="pageStatusMessage" class="page-status-message" role="status">{{ t(pageStatusMessage) }}</p>
       <button class="translate-page-btn" :class="{ 'restore-btn': isTranslated }" :disabled="translating" @click="handleTranslateClick">
         <svg class="translate-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
@@ -362,6 +363,7 @@
 
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { canRestorePage, pageTranslationMessage, type PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
 import { defaultOption, options, services, isServiceConfigured, supportsTranslationOnlyMode } from "../entrypoints/utils/option";
 import { useConfig } from '@/composables/useConfig'
 import { useReleaseNotes } from '@/composables/useReleaseNotes'
@@ -416,7 +418,11 @@ const optionLabel = (item: OptionLike) => item.labelKey ? t(item.labelKey) : ite
 
 // 翻译状态相关变量
 const translating = ref(false);
-const isTranslated = ref(false);
+const pageTranslation = ref<PageTranslationStatus>({ phase: 'idle' });
+const isTranslated = computed(() => pageTranslation.value.phase === 'translated');
+const pageStatusMessage = computed(() => pageTranslationMessage(pageTranslation.value));
+let pageStatusTimer: ReturnType<typeof setInterval> | undefined;
+let queryingPageStatus = false;
 const activePdfSource = ref('');
 const popupBody = ref<HTMLElement>();
 const serviceTrigger = ref<HTMLButtonElement>();
@@ -497,6 +503,7 @@ watch([activePopupView, () => config.value.on], () => {
 
 const translateButtonLabel = computed(() => {
   if (translating.value) return t('common.processing')
+  if (pageTranslation.value.phase === 'pending') return t('runtime.pageTranslation.pending')
   if (activePdfSource.value) return t('pdf.openCurrent')
   return isTranslated.value ? t('common.restoreOriginal') : t('common.translatePage')
 })
@@ -519,19 +526,22 @@ async function toggleReleaseNotes() {
 
 // 查询当前页面的翻译状态
 async function checkTranslationStatus() {
-  if (activePdfSource.value) return;
+  if (activePdfSource.value || queryingPageStatus) return;
+  queryingPageStatus = true;
   try {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) return;
     const response = await browser.tabs.sendMessage(tabs[0].id, {
       type: 'contextMenuTranslate',
       action: 'getStatus'
-    }) as { status?: string; isTranslated?: boolean };
-    if (response?.status === 'success') {
-      isTranslated.value = response.isTranslated || false;
+    }) as { status?: string; pageTranslation?: PageTranslationStatus };
+    if (response?.status === 'success' && response.pageTranslation) {
+      pageTranslation.value = response.pageTranslation;
     }
-  } catch (error) {
-    console.error('查询翻译状态失败:', error);
+  } catch {
+    // Browser-internal pages do not have a content runtime.
+  } finally {
+    queryingPageStatus = false;
   }
 }
 
@@ -542,8 +552,8 @@ async function handleTranslateClick() {
     window.close();
     return;
   }
-  if (isTranslated.value) {
-    // 已翻译，还原原文
+  if (canRestorePage(pageTranslation.value)) {
+    // 已翻译或正在翻译，还原原文
     await restoreCurrentPage();
   } else {
     // 未翻译，执行翻译
@@ -567,7 +577,7 @@ async function translateCurrentPage() {
     if (response?.status !== 'success') {
       throw new Error(response?.error || t('popup.translateFailed'));
     }
-    isTranslated.value = true;
+    await checkTranslationStatus();
   } catch (error) {
     console.error('翻译失败:', error);
     ElMessage.error(error instanceof Error ? error.message : t('popup.translateFailed'));
@@ -588,7 +598,7 @@ async function restoreCurrentPage() {
       type: 'contextMenuTranslate',
       action: 'restore'
     });
-    isTranslated.value = false;
+    pageTranslation.value = { phase: 'idle' };
     ElMessage.success(t('popup.restored'));
   } catch (error) {
     console.error('还原失败:', error);
@@ -891,12 +901,14 @@ function handlePopupFocus() {
 }
 
 onMounted(() => {
+  pageStatusTimer = setInterval(() => { void checkTranslationStatus(); }, 350);
   window.addEventListener('focus', handlePopupFocus);
   window.addEventListener('resize', updateServicePanelHeight);
   document.addEventListener('pointerdown', handleServicePanelOutsideClick);
 });
 
 onBeforeUnmount(() => {
+  clearInterval(pageStatusTimer);
   servicePanelVisible.value = false;
   window.removeEventListener('resize', updateServicePanelHeight);
   document.removeEventListener('pointerdown', handleServicePanelOutsideClick);
@@ -908,6 +920,16 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+
+.page-status-message {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--fr-hover-color);
+  color: var(--fr-text-color-regular);
+  font-size: 12px;
+  line-height: 1.5;
+}
 
 /* ===== Header - Minimalist Enterprise Style ===== */
 .popup-header {

@@ -1,3 +1,4 @@
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 import { DIRECT_TEXT_TARGET_ATTR, grabAllNode, inlineSet, wrapDirectTextRun } from '@/entrypoints/main/dom';
 import { getContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import { isElementVisible } from './scanContext';
@@ -10,9 +11,10 @@ const MANAGED_SELECTOR = `[${DIRECT_TEXT_TARGET_ATTR}], .${BILINGUAL_CONTENT_CLA
 
 // Recover explicit Product microdata only. A form's length or prose density is
 // not enough evidence to turn its labels and controls into reading content.
-export function getProductReadingRegion(node: Element): Element | null {
+export function getProductReadingRegion(node: Element, allowedPageTranslateRoot?: Element): Element | null {
     const form = node.closest('form');
-    if (!form || node.closest(PROTECTED_SELECTOR)) return null;
+    const protectedSelector = withPageTranslateOverride(PROTECTED_SELECTOR, node, allowedPageTranslateRoot);
+    if (!form || node.closest(protectedSelector)) return null;
     if (form.querySelector('input[type="password"], [autocomplete*="cc-"], [autocomplete~="shipping"], [autocomplete~="billing"]')) return null;
     const region = node.closest(COPY_SELECTOR);
     if (!region) return null;
@@ -23,14 +25,14 @@ export function getProductReadingRegion(node: Element): Element | null {
     // Do not exempt navigation, recommendations, modals or metadata just
     // because a descendant carries product microdata. Only ignore form itself.
     for (let current: Element | null = node; current; current = current.parentElement) {
-        if (current.matches(PROTECTED_SELECTOR)) return null;
+        if (current.matches(protectedSelector)) return null;
         if (current.tagName !== 'FORM' && getContentFilterDecision(current) !== 'keep') return null;
     }
     return region;
 }
 
-export function isProductReadingTarget(node: Element): boolean {
-    return getProductReadingRegion(node) !== null && !node.querySelector(`${PROTECTED_SELECTOR}, [itemscope]`);
+export function isProductReadingTarget(node: Element, allowedPageTranslateRoot?: Element): boolean {
+    return getProductReadingRegion(node, allowedPageTranslateRoot) !== null && !node.querySelector(`${PROTECTED_SELECTOR}, [itemscope]`);
 }
 
 export function collectProductReadingTargets(root: ParentNode, context: TranslationTargetContext): Element[] {
@@ -40,14 +42,15 @@ export function collectProductReadingTargets(root: ParentNode, context: Translat
         ...Array.from(root.querySelectorAll(COPY_SELECTOR))
     ];
     const targets: Element[] = [];
+    const allowedPageTranslateRoot = context.grabOptions?.scanContext?.allowedPageTranslateRoot;
     for (const region of regions) {
-        if (!getProductReadingRegion(region) || !isElementVisible(region) || region.closest(MANAGED_SELECTOR)) continue;
+        if (!getProductReadingRegion(region, allowedPageTranslateRoot) || !isElementVisible(region) || region.closest(MANAGED_SELECTOR)) continue;
         const options = {
             ...context.grabOptions,
             contentFilter: getContentFilterDecision,
             contentUnitClassifier: undefined,
             shouldSkipSubtree: (node: Element) => Boolean(context.grabOptions?.shouldSkipSubtree?.(node))
-                || node.matches(PROTECTED_SELECTOR) || !getProductReadingRegion(node)
+                || node.matches(PROTECTED_SELECTOR) || !getProductReadingRegion(node, allowedPageTranslateRoot)
         };
         // A colored sentence may consist of several inline spans before a
         // paragraph/list. Reuse reversible wrappers rather than translating
@@ -67,7 +70,7 @@ export function collectProductReadingTargets(root: ParentNode, context: Translat
             }
             flush();
         }
-        targets.push(...grabAllNode(region, options).filter(isProductReadingTarget));
+        targets.push(...grabAllNode(region, options).filter(node => isProductReadingTarget(node, allowedPageTranslateRoot)));
     }
     return targets;
 }

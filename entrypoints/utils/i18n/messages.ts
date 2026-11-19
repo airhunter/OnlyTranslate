@@ -1,5 +1,6 @@
 import { helpMessages } from './helpMessages'
 import { privateFeedbackMessages } from './privateFeedbackMessages'
+import { pageTranslationMessages } from './pageTranslationMessages'
 
 export const messages = {
   'zh-CN': {
@@ -308,6 +309,7 @@ export const messages = {
       apiKeyRequired: '请先填写 API Key',
       providerUrlRequired: '请先填写接口地址',
       shortcutTip: '快捷键: {shortcut}',
+      pageTranslation: pageTranslationMessages['zh-CN'],
       floatingToolbar: {
         open: '打开页面翻译工具',
         translate: '翻译',
@@ -993,6 +995,7 @@ export const messages = {
       apiKeyRequired: 'Enter API Key first',
       providerUrlRequired: 'Enter the provider URL first',
       shortcutTip: 'Shortcut: {shortcut}',
+      pageTranslation: pageTranslationMessages['en-US'],
       floatingToolbar: {
         open: 'Open page translation tools',
         translate: 'Translate',
@@ -1678,6 +1681,7 @@ export const messages = {
       apiKeyRequired: '請先填寫 API Key',
       providerUrlRequired: '請先填寫介面地址',
       shortcutTip: '快捷鍵: {shortcut}',
+      pageTranslation: pageTranslationMessages['zh-TW'],
       floatingToolbar: {
         open: '開啟頁面翻譯工具',
         translate: '翻譯',
@@ -2363,6 +2367,7 @@ export const messages = {
       apiKeyRequired: '先に API Key を入力してください',
       providerUrlRequired: '先にプロバイダー URL を入力してください',
       shortcutTip: 'ショートカット: {shortcut}',
+      pageTranslation: pageTranslationMessages['ja-JP'],
       floatingToolbar: {
         open: 'ページ翻訳ツールを開く',
         translate: '翻訳',

@@ -9,7 +9,8 @@ export interface FloatingBallHotkeyOptions {
   document: Document
   window: Window
   navigator: Pick<Navigator, 'platform'>
-  dispatchToggleEvent?: () => void
+  dispatchToggleEvent?: (event: KeyboardEvent) => void
+  isTrustedEvent?: (event: KeyboardEvent) => boolean
   isDev?: boolean
   log?: (message: string) => void
 }
@@ -60,6 +61,7 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
     window,
     navigator,
     dispatchToggleEvent = () => document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation')),
+    isTrustedEvent = event => event.isTrusted,
     isDev = false,
     log = console.log
   } = options
@@ -76,6 +78,7 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
   }
 
   const keydownHandler = (event: KeyboardEvent) => {
+    if (!isTrustedEvent(event)) return
     if (isMac && event.metaKey) {
       return
     }
@@ -115,7 +118,7 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
     event.stopPropagation()
     if (event.repeat || hotkeysPressed.size === previousPressedCount) return
 
-    dispatchToggleEvent()
+    dispatchToggleEvent(event)
 
     if (isDev) {
       const activeHotkey = config.floatingBallHotkey === 'custom'
@@ -126,6 +129,7 @@ export function setupFloatingBallHotkey(options: FloatingBallHotkeyOptions): Flo
   }
 
   const keyupHandler = (event: KeyboardEvent) => {
+    if (!isTrustedEvent(event)) return
     const releasedKey = event.key.toLowerCase()
     const releasedCode = event.code?.toLowerCase()
 

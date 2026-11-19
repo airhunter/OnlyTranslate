@@ -42,6 +42,7 @@ describe('floating ball hotkey', () => {
       document,
       window,
       navigator: { platform: 'Win32' },
+      isTrustedEvent: () => true,
       dispatchToggleEvent
     })
 
@@ -64,6 +65,7 @@ describe('floating ball hotkey', () => {
       document,
       window,
       navigator: { platform },
+      isTrustedEvent: () => true,
       dispatchToggleEvent
     })
 
@@ -87,6 +89,7 @@ describe('floating ball hotkey', () => {
       document,
       window,
       navigator: { platform: 'Win32' },
+      isTrustedEvent: () => true,
       dispatchToggleEvent
     })
 
@@ -118,6 +121,7 @@ describe('floating ball hotkey', () => {
       document,
       window,
       navigator: { platform: 'Win32' },
+      isTrustedEvent: () => true,
       dispatchToggleEvent
     })
 
@@ -128,6 +132,21 @@ describe('floating ball hotkey', () => {
       shiftKey: true
     })
 
+    expect(dispatchToggleEvent).not.toHaveBeenCalled()
+  })
+
+  it('does not let a simulated modifier complete a trusted shortcut', () => {
+    const dispatchToggleEvent = vi.fn()
+    lifecycle = setupFloatingBallHotkey({
+      config: { floatingBallHotkey: 'Alt+T', on: true },
+      document,
+      window,
+      navigator: { platform: 'Win32' },
+      isTrustedEvent: event => event.key !== 'Alt',
+      dispatchToggleEvent
+    })
+    dispatchKey('keydown', { key: 'Alt', altKey: true })
+    dispatchKey('keydown', { key: 't' })
     expect(dispatchToggleEvent).not.toHaveBeenCalled()
   })
 })

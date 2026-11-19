@@ -127,12 +127,14 @@ corepack pnpm dev
 # Type checking and the full test suite
 corepack pnpm verify
 
-# Build and package all three browser versions
+# Build for Chrome, then package Chrome, Edge and Firefox
 corepack pnpm build
 corepack pnpm zip:all
 ```
 
 The project declares its pnpm version in `package.json`. Prefer `corepack pnpm ...` so scripts use the package manager version and local dependencies expected by the project.
+
+See [the release workflow](RELEASE.md) for publishing.
 
 For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode. For production builds, load `.output/chrome-mv3`. Avoid mixing the two output directories.
 

@@ -96,8 +96,12 @@ if (packageJson.scripts?.['zip:all'] !== 'pnpm zip && pnpm zip:edge && pnpm zip:
   fail('package.json 需要通过 zip:all 打包 Chrome、Edge 和 Firefox');
 }
 
-if (releaseIt.hooks?.['before:github:release'] !== 'pnpm zip:all && pnpm release:check ${version} --check-zip') {
-  fail('.release-it.json 需要在 before:github:release 打包并校验三个浏览器 ZIP');
+if (releaseIt.hooks?.['before:bump'] !== 'pnpm verify') {
+  fail('.release-it.json 需要在 before:bump 运行类型检查和测试');
+}
+
+if (releaseIt.hooks?.['before:git:release'] !== 'pnpm zip:all && pnpm release:check ${version} --check-zip') {
+  fail('.release-it.json 需要在 before:git:release 打包并校验三个浏览器 ZIP');
 }
 
 const wxtConfig = readText('wxt.config.ts');

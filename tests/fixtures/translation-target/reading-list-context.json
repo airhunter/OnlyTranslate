@@ -1,0 +1,8 @@
+{
+  "name": "Reading list items provide context for their introduction without matching a site or fixed wording",
+  "url": "https://unadapted.example/workshop",
+  "scope": "smart",
+  "html": "reading-list-context.html",
+  "include": ["list-lead", "first-item", "second-item"],
+  "exclude": ["control-lead"]
+}

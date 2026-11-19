@@ -1,3 +1,5 @@
+import { isElementVisible, isElementSelfHidden } from '@/entrypoints/utils/domVisibility';
+export { isElementVisible } from '@/entrypoints/utils/domVisibility';
 import { invalidateContentFilterCache, type ContentFilterDecision } from '@/entrypoints/utils/contentFilter';
 import type { ContentUnitDecision } from '@/entrypoints/utils/contentUnitClassifier';
 import {
@@ -10,11 +12,14 @@ import {
     TRANSLATED_ATTR
 } from './constants';
 import { composedClosest, composedContains, discoverOpenShadowRoots, getComposedParentElement } from './composedTree';
+import { withPageTranslateOverride } from '@/entrypoints/utils/pageTranslateOptOut';
 
 export type ScanBudgetKind = 'supplemental' | 'dynamic';
 
 export interface TranslationTargetStats {
     scannedElements: number;
+    unselectedStrongOutsideBlocks: number;
+    budgetDeferredReadingSubtrees: number;
     classifiedElements: number;
     skippedSubtrees: number;
     budgetExceeded: boolean;
@@ -23,6 +28,7 @@ export interface TranslationTargetStats {
 }
 
 export interface ScanContext {
+    readonly allowedPageTranslateRoot?: Element;
     stats: TranslationTargetStats;
     budgets: Record<ScanBudgetKind, number>;
     budgetUsage: Record<ScanBudgetKind, number>;
@@ -31,12 +37,17 @@ export interface ScanContext {
     contentFilter: WeakMap<Element, ContentFilterDecision>;
     contentUnit: WeakMap<Element, ContentUnitDecision>;
     proseEvidence: WeakMap<Element, ProseEvidence>;
+    readingEvidence: WeakMap<Element, ProseEvidence>;
+    readingCompounds: WeakMap<Element, boolean>;
+    readingOrigins: WeakMap<Element, Element>;
+    readingSections: WeakMap<Element, { next: Element | null; heading: Element | null; byChild: WeakMap<Element, Element | null> }>;
     visibility: WeakMap<Element, boolean>;
     uiSubtree: WeakMap<Element, boolean>;
     openShadowRoots: Set<ShadowRoot>;
 }
 
 export interface ScanContextOptions {
+    allowedPageTranslateRoot?: Element;
     supplementalBudget?: number;
     dynamicBudget?: number;
 }
@@ -67,6 +78,7 @@ const READING_CANDIDATE_SELECTOR = [
     '[role="article"]',
     '[role="main"]',
     'h1',
+    '[role="heading"][aria-level="1"]',
     'h2',
     'h3',
     'h4',
@@ -84,8 +96,11 @@ const READING_CANDIDATE_SELECTOR = [
 
 export function createScanContext(options: ScanContextOptions = {}): ScanContext {
     return {
+        allowedPageTranslateRoot: options.allowedPageTranslateRoot,
         stats: {
             scannedElements: 0,
+            unselectedStrongOutsideBlocks: 0,
+            budgetDeferredReadingSubtrees: 0,
             classifiedElements: 0,
             skippedSubtrees: 0,
             budgetExceeded: false,
@@ -105,6 +120,10 @@ export function createScanContext(options: ScanContextOptions = {}): ScanContext
         contentFilter: new WeakMap(),
         contentUnit: new WeakMap(),
         proseEvidence: new WeakMap(),
+        readingEvidence: new WeakMap(),
+        readingCompounds: new WeakMap(),
+        readingOrigins: new WeakMap(),
+        readingSections: new WeakMap(),
         visibility: new WeakMap(),
         uiSubtree: new WeakMap(),
         openShadowRoots: new Set()
@@ -148,6 +167,10 @@ function deleteScanCacheEntry(context: ScanContext, element: Element): void {
     context.contentFilter.delete(element);
     context.contentUnit.delete(element);
     context.proseEvidence.delete(element);
+    context.readingEvidence.delete(element);
+    context.readingCompounds.delete(element);
+    context.readingOrigins.delete(element);
+    context.readingSections.delete(element);
     context.visibility.delete(element);
     context.uiSubtree.delete(element);
     // contentFilter 模块内的按元素记忆化与 scanContext 缓存生命周期一致，需一并失效。
@@ -163,7 +186,24 @@ export function invalidateScanCache(context: ScanContext | undefined, root: Elem
     let processed = 0;
     while (walker.nextNode()) {
         deleteScanCacheEntry(context, walker.currentNode as Element);
-        if (++processed >= MAX_INVALIDATION_DESCENDANTS) break;
+        if (++processed >= MAX_INVALIDATION_DESCENDANTS) {
+            // A bounded walk cannot invalidate every descendant individually.
+            // Drop derived facts in constant time instead of retaining stale
+            // visibility/purpose beyond the cutoff; keep budgets and root registry.
+            context.normalizedText = new WeakMap();
+            context.visibleNormalizedText = new WeakMap();
+            context.contentFilter = new WeakMap();
+            context.contentUnit = new WeakMap();
+            context.proseEvidence = new WeakMap();
+            context.readingEvidence = new WeakMap();
+            context.readingOrigins = new WeakMap();
+            context.readingCompounds = new WeakMap();
+            context.readingSections = new WeakMap();
+            context.visibility = new WeakMap();
+            context.uiSubtree = new WeakMap();
+            invalidateContentFilterCache();
+            return;
+        }
     }
 
     for (const shadowRoot of context.openShadowRoots) {
@@ -210,17 +250,6 @@ export function getCachedVisibleNormalizedText(context: ScanContext | undefined,
     return text;
 }
 
-export function isElementVisible(element: Element): boolean {
-    let current: Element | null = element;
-
-    while (current) {
-        if (isElementSelfHidden(current)) return false;
-        current = getComposedParentElement(current);
-    }
-
-    return true;
-}
-
 function collectVisibleText(context: ScanContext | undefined, element: Element): string {
     if (!getCachedVisibility(context, element, isElementVisible)) return '';
 
@@ -257,19 +286,6 @@ function isNonRenderedTextElement(element: Element): boolean {
     return ['script', 'style', 'noscript', 'template', 'iframe'].includes(element.tagName.toLowerCase());
 }
 
-function isElementSelfHidden(element: Element): boolean {
-    if (element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') return true;
-
-    try {
-        const style = window.getComputedStyle(element);
-        return style.display === 'none'
-            || style.visibility === 'hidden'
-            || style.visibility === 'collapse';
-    } catch (_) {
-        return false;
-    }
-}
-
 export function getCachedProseEvidence(context: ScanContext | undefined, element: Element): ProseEvidence {
     const cached = context?.proseEvidence.get(element);
     if (cached) return cached;
@@ -297,15 +313,18 @@ export function getCachedContentFilterDecision(
 export function getCachedContentUnitDecision(
     context: ScanContext | undefined,
     element: Element,
-    compute: (element: Element) => ContentUnitDecision
+    compute: (element: Element, allowedPageTranslateRoot?: Element) => ContentUnitDecision
 ): ContentUnitDecision {
-    const cached = context?.contentUnit.get(element);
+    // Primary headings depend on document metadata and headings in other branches.
+    // A local mutation cannot invalidate all those dependencies; these few nodes are rechecked.
+    const primaryHeading = element.matches('h1, [role="heading"][aria-level="1"]');
+    const cached = primaryHeading ? undefined : context?.contentUnit.get(element);
     if (cached) return cached;
 
-    const decision = compute(element);
+    const decision = compute(element, context?.allowedPageTranslateRoot);
     if (context) {
         context.stats.classifiedElements += 1;
-        context.contentUnit.set(element, decision);
+        if (!primaryHeading) context.contentUnit.set(element, decision);
     }
     return decision;
 }
@@ -348,7 +367,8 @@ export function hasEnoughProfileTargets(targets: Element[], context?: ScanContex
 function computeObviousUiSubtree(context: ScanContext | undefined, element: Element): boolean {
     if (element.matches(OBVIOUS_UI_SELECTOR)) return true;
     if (composedClosest(element, 'nav, footer, form, dialog, [role="navigation"], [role="toolbar"], [role="menu"], [role="menubar"], [role="tablist"]')) return true;
-    if (composedClosest(element, `.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`)) return true;
+    const protectedSelector = `.${BILINGUAL_CONTENT_CLASS}, [${TRANSLATED_ATTR}="true"], .notranslate, [translate="no"], [hidden], [aria-hidden="true"]`;
+    if (composedClosest(element, withPageTranslateOverride(protectedSelector, element, context?.allowedPageTranslateRoot))) return true;
 
     const hint = getStructuralHint(element);
     if (!NOISE_HINT_PATTERN.test(hint)) return false;

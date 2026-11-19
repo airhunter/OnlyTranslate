@@ -1,4 +1,5 @@
 import type { SiteProfile } from './types';
+import { getProseEvidence } from '@/entrypoints/utils/proseSignals';
 
 const LEARNING_ASIDE_SELECTOR = 'main#main-content aside';
 const LEARNING_ASIDE_TARGET_SELECTOR = [
@@ -30,7 +31,14 @@ export const claudeNagdyProfile: SiteProfile = {
             reason: 'claude-nagdy-learning-aside'
         };
     },
-    skipTarget: (node) => {
+    skipTarget: (node, context) => {
+        const metadata = context.scope === 'smart' ? getCourseHeaderMetadata(node.ownerDocument) : null;
+        if (metadata && (node === metadata || metadata.contains(node))) {
+            return { policy: 'hard-skip', role: 'metadata', reason: 'claude-course-header-metadata' };
+        }
+        if (metadata && node.contains(metadata)) {
+            return { policy: 'hard-skip', role: 'layout', reason: 'claude-course-header-layout' };
+        }
         if (isLearningPageLayoutContainer(node)) {
             return {
                 policy: 'hard-skip',
@@ -49,6 +57,23 @@ export const claudeNagdyProfile: SiteProfile = {
         };
     }
 };
+
+// Explicit course-template adaptation; do not extend this to the entire nagdy.me domain.
+function getCourseHeaderMetadata(document: Document): Element | null {
+    if (location.hostname !== 'claude.nagdy.me' || !location.pathname.startsWith('/learn/')) return null;
+    const heading = document.querySelector('main#main-content h1');
+    const intro = heading?.nextElementSibling;
+    const row = intro?.nextElementSibling;
+    if (!intro?.matches('p') || !row?.matches('div') || row.parentElement !== heading?.parentElement) return null;
+    const labels = Array.from(row.children);
+    if (labels.length < 2 || labels.length > 3
+        || labels.some(label => !label.matches('span') || (label.textContent?.trim().length ?? 0) > 40)) return null;
+    if (row.querySelector('p, div, ul, ol, a, button, input, textarea, select')) return null;
+    if (getProseEvidence(row).strength === 'strong') return null;
+    if (!labels.some(label => label.classList.contains('rounded-full'))) return null;
+    const duration = /^\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\.\d+)?)?\s*(?:min(?:ute)?s?|h(?:our)?s?)$/i;
+    return labels.some(label => duration.test(label.textContent?.trim() ?? '')) ? row : null;
+}
 
 function isLearningPageLayoutContainer(node: Element): boolean {
     if (!node.matches('main#main-content, main#main-content *')) return false;

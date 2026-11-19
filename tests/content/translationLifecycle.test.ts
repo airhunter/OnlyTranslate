@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setupPageTranslationLifecycle } from '@/entrypoints/content/translationLifecycle'
+import type { PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
+import { captureManualPageTranslationRequest, consumeManualPageTranslationRequest } from '@/entrypoints/utils/pageTranslateOptOut'
 
 function createRuntime() {
   let listener: ((message: unknown, sender: unknown, sendResponse: (response?: unknown) => void) => boolean) | undefined
@@ -34,8 +36,8 @@ describe('page translation lifecycle', () => {
 
     setupPageTranslationLifecycle({
       config: { autoTranslate: true, disableFloatingBall: false, on: true },
-      document,
       runtime: runtime.runtime,
+      getPageTranslationStatus: () => ({ phase: 'idle' }),
       autoTranslateEnglishPage,
       restoreOriginalContent: vi.fn()
     })
@@ -43,24 +45,37 @@ describe('page translation lifecycle', () => {
     expect(autoTranslateEnglishPage).toHaveBeenCalledWith()
   })
 
-  it('toggles full page translation from the floating-ball hotkey only when the ball is disabled', () => {
+  it('binds delayed manual requests to one use and the same page', () => {
+    const token = captureManualPageTranslationRequest()
+    expect(consumeManualPageTranslationRequest(token + '-forged')).toBe(false)
+    expect(consumeManualPageTranslationRequest(token)).toBe(true)
+    expect(consumeManualPageTranslationRequest(token)).toBe(false)
+    const url = window.location.href
+    const oldPageToken = captureManualPageTranslationRequest()
+    try {
+      window.history.pushState(null, '', '#new-route')
+      expect(consumeManualPageTranslationRequest(oldPageToken)).toBe(false)
+    } finally {
+      window.history.replaceState(null, '', url)
+    }
+  })
+
+  it('does not start a privileged translation from a page-generated toggle event', () => {
     const runtime = createRuntime()
     const autoTranslateEnglishPage = vi.fn()
     const restoreOriginalContent = vi.fn()
 
     const lifecycle = setupPageTranslationLifecycle({
       config: { autoTranslate: false, disableFloatingBall: true, on: true },
-      document,
       runtime: runtime.runtime,
+      getPageTranslationStatus: () => ({ phase: 'idle' }),
       autoTranslateEnglishPage,
       restoreOriginalContent
     })
 
     document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation'))
-    document.dispatchEvent(new CustomEvent('onlytranslate-toggle-translation'))
-
-    expect(autoTranslateEnglishPage).toHaveBeenCalledTimes(1)
-    expect(restoreOriginalContent).toHaveBeenCalledTimes(1)
+    expect(autoTranslateEnglishPage).not.toHaveBeenCalled()
+    expect(restoreOriginalContent).not.toHaveBeenCalled()
 
     lifecycle.dispose()
   })
@@ -69,37 +84,42 @@ describe('page translation lifecycle', () => {
     const runtime = createRuntime()
     const autoTranslateEnglishPage = vi.fn()
     const restoreOriginalContent = vi.fn()
-    const onPageTranslationStateChange = vi.fn()
+    let status: PageTranslationStatus = { phase: 'pending', source: 'manual' }
 
     setupPageTranslationLifecycle({
       config: { autoTranslate: false, disableFloatingBall: false, on: true },
-      document,
       runtime: runtime.runtime,
       autoTranslateEnglishPage,
       restoreOriginalContent,
-      onPageTranslationStateChange
+      getPageTranslationStatus: () => status
     })
 
     expect(runtime.send({ type: 'contextMenuTranslate', action: 'fullPage', scope: 'smart' })).toEqual({
       handled: true,
-      response: { status: 'success', action: 'translated' }
+      response: { status: 'success', action: 'started' }
     })
-    expect(autoTranslateEnglishPage).toHaveBeenCalledWith('smart')
-    expect(onPageTranslationStateChange).toHaveBeenLastCalledWith(true)
+    expect(autoTranslateEnglishPage).toHaveBeenCalledWith('smart', true)
 
     expect(runtime.send({ type: 'contextMenuTranslate', action: 'restore' })).toEqual({
       handled: true,
       response: { status: 'success', action: 'restored' }
     })
     expect(restoreOriginalContent).toHaveBeenCalledTimes(1)
-    expect(onPageTranslationStateChange).toHaveBeenLastCalledWith(false)
 
     const translated = document.createElement('p')
     translated.setAttribute('data-fr-translated', 'true')
     document.body.append(translated)
     expect(runtime.send({ type: 'contextMenuTranslate', action: 'getStatus' })).toEqual({
       handled: true,
-      response: { status: 'success', isTranslated: true }
+      response: { status: 'success', isTranslated: false, pageTranslation: { phase: 'pending', source: 'manual' } }
+    })
+    status = { phase: 'failed', source: 'auto' }
+    expect(runtime.send({ type: 'contextMenuTranslate', action: 'getStatus' }).response).toEqual({
+      status: 'success', isTranslated: false, pageTranslation: { phase: 'failed', source: 'auto' }
+    })
+    status = { phase: 'translated' }
+    expect(runtime.send({ type: 'contextMenuTranslate', action: 'getStatus' }).response).toEqual({
+      status: 'success', isTranslated: true, pageTranslation: { phase: 'translated' }
     })
   })
 
@@ -108,8 +128,8 @@ describe('page translation lifecycle', () => {
 
     setupPageTranslationLifecycle({
       config: { autoTranslate: false, disableFloatingBall: false, on: false },
-      document,
       runtime: runtime.runtime,
+      getPageTranslationStatus: () => ({ phase: 'idle' }),
       autoTranslateEnglishPage: vi.fn(),
       restoreOriginalContent: vi.fn()
     })
@@ -125,8 +145,8 @@ describe('page translation lifecycle', () => {
 
     setupPageTranslationLifecycle({
       config: { autoTranslate: false, disableFloatingBall: false, on: true },
-      document,
       runtime: runtime.runtime,
+      getPageTranslationStatus: () => ({ phase: 'idle' }),
       autoTranslateEnglishPage: vi.fn(() => {
         throw new Error('content root failed')
       }),

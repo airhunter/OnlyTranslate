@@ -10,13 +10,15 @@ import { setupSelectionTranslatorActivation } from './selectionTranslatorActivat
 import { isSupportedVideoSubtitleHost } from './videoSubtitleSetup'
 import { cleanPageTranslationCache, cleanPageTranslationCacheIfNeeded } from './contentCacheMaintenance'
 import { createContentFeatureRequester } from './contentFeatureRequester'
+import { publishPageTranslationStatus, readPageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
+import { resolvePdfDocumentSource } from '@/entrypoints/pdf/url'
+import { captureManualPageTranslationRequest } from '@/entrypoints/utils/pageTranslateOptOut'
 
 export interface ContentRuntimeLifecycle { dispose(): void }
 
 export function startContentRuntime(_ctx: ContentScriptContext): ContentRuntimeLifecycle {
   const { request } = createContentFeatureRequester(browser.runtime)
   let disposed = false
-  let floatingBallTranslated = false
 
   const requestFeature = (feature: Parameters<typeof request>[0], action?: unknown) => {
     return request(feature, action).catch(error => {
@@ -24,17 +26,19 @@ export function startContentRuntime(_ctx: ContentScriptContext): ContentRuntimeL
       throw error
     })
   }
-  const autoTranslateEnglishPage = (scope?: string) => {
-    void requestFeature('page', { type: 'translate-page', scope })
+  const requestPageTranslation = (action: unknown, manual: boolean) => {
+    void requestFeature('page', action).catch(() =>
+      publishPageTranslationStatus({ phase: 'failed', source: manual ? 'manual' : 'auto' }))
+  }
+  const autoTranslateEnglishPage = (scope?: string, manual = false) => {
+    const manualToken = manual ? captureManualPageTranslationRequest() : undefined
+    requestPageTranslation({ type: 'translate-page', scope, manualToken }, manual)
   }
   const restoreOriginalContent = () => { void requestFeature('page', { type: 'restore' }) }
   const handleTranslation = (x: number, y: number, delay?: number) => {
     void requestFeature('page', { type: 'translate-at', x, y, delay })
   }
-  const mountFloatingBall = () => {
-    void requestFeature('floating', { type: 'mount' })
-      .then(() => requestFeature('floating', { type: 'set-state', translated: floatingBallTranslated }))
-  }
+  const mountFloatingBall = () => { void requestFeature('floating', { type: 'mount' }) }
   const unmountFloatingBall = () => { void requestFeature('floating', { type: 'unmount' }) }
   const mountSelectionTranslator = async () => {
     await requestFeature('selection', { type: 'mount' })
@@ -51,10 +55,6 @@ export function startContentRuntime(_ctx: ContentScriptContext): ContentRuntimeL
     }, { once: true })
   }
 
-  const pageStateHandler = (event: Event) => {
-    floatingBallTranslated = (event as CustomEvent<string>).detail === 'translated'
-  }
-  document.addEventListener('onlytranslate-page-state-changed', pageStateHandler)
 
   const selectionActivation = setupSelectionTranslatorActivation({
     document,
@@ -65,18 +65,20 @@ export function startContentRuntime(_ctx: ContentScriptContext): ContentRuntimeL
     config, document, window, navigator, handleTranslation, hasActiveTextSelection
   })
   const floatingBallHotkey = setupFloatingBallHotkey({
-    config, document, window, navigator, isDev: process.env.NODE_ENV === 'development'
+    config, document, window, navigator, isDev: process.env.NODE_ENV === 'development',
+    dispatchToggleEvent: () => {
+      const pdf = config.disableFloatingBall !== true
+        && resolvePdfDocumentSource(window.location.href, document.contentType)
+      if (pdf) void browser.runtime.sendMessage({ type: 'openPdfReader', sourceUrl: pdf })
+      else requestPageTranslation({ type: 'toggle-page', manualToken: captureManualPageTranslationRequest() }, true)
+    }
   })
   const pageTranslationLifecycle = setupPageTranslationLifecycle({
     config,
-    document,
     runtime: browser.runtime,
     autoTranslateEnglishPage,
     restoreOriginalContent,
-    onPageTranslationStateChange: isTranslated => {
-      floatingBallTranslated = isTranslated
-      void requestFeature('floating', { type: 'set-state', translated: isTranslated })
-    }
+    getPageTranslationStatus: readPageTranslationStatus
   })
   const contentUiMounting = setupContentUiMounting({
     document,
@@ -115,7 +117,6 @@ export function startContentRuntime(_ctx: ContentScriptContext): ContentRuntimeL
     floatingBallHotkey.dispose()
     manualTranslationTriggers.dispose()
     selectionActivation.dispose()
-    document.removeEventListener('onlytranslate-page-state-changed', pageStateHandler)
   }
   window.addEventListener('beforeunload', dispose, { once: true })
   return { dispose }

@@ -1,0 +1,8 @@
+{
+  "name": "Shared reading evidence covers sections, inline prose, single-item introductions and notes without naming a site",
+  "url": "https://independent-reading.invalid/workshop",
+  "scope": "smart",
+  "html": "unified-reading-context.html",
+  "include": ["main-copy", "section-label", "wrapped-copy", "continuation", "inline-label", "inline-copy", "single-item-lead", "single-item", "aside-label", "aside-copy"],
+  "exclude": ["navigation-copy", "offer-copy", "editor-lead"]
+}

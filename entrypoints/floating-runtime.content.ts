@@ -3,7 +3,10 @@ import { configureFloatingBallTranslationActions, mountFloatingBall, setFloating
 import { createContentFeatureRequester } from '@/entrypoints/content/contentFeatureRequester'
 import type { ContentFeatureActionMessage } from '@/entrypoints/utils/contentFeatureProtocol'
 
-type FloatingAction = { type: 'mount' | 'unmount' | 'set-state'; translated?: boolean }
+import { PAGE_TRANSLATION_STATUS_EVENT, publishPageTranslationStatus, readPageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus'
+import { captureManualPageTranslationRequest } from '@/entrypoints/utils/pageTranslateOptOut'
+
+type FloatingAction = { type: 'mount' | 'unmount' }
 type RuntimeWindow = Window & { __onlyTranslateFloatingRuntime?: boolean }
 
 export default defineContentScript({
@@ -16,8 +19,11 @@ export default defineContentScript({
 
     const { request } = createContentFeatureRequester(browser.runtime)
     configureFloatingBallTranslationActions({
-      autoTranslateEnglishPage: scope => { void request('page', { type: 'translate-page', scope }) },
-      restoreOriginalContent: () => { void request('page', { type: 'restore' }) }
+      togglePageTranslation: () => {
+        const manualToken = captureManualPageTranslationRequest()
+        void request('page', { type: 'toggle-page', manualToken }).catch(() =>
+          publishPageTranslationStatus({ phase: 'failed', source: 'manual' }))
+      }
     })
 
     const listener = (message: unknown) => {
@@ -26,20 +32,17 @@ export default defineContentScript({
       const action = envelope.action as FloatingAction
       if (action?.type === 'mount') mountFloatingBall()
       if (action?.type === 'unmount') unmountFloatingBall()
-      if (action?.type === 'set-state') setFloatingBallTranslationState(Boolean(action.translated))
       return { success: true }
     }
-    const pageStateHandler = (event: Event) => {
-      setFloatingBallTranslationState((event as CustomEvent<string>).detail === 'translated')
-    }
+    const pageStateHandler = () => setFloatingBallTranslationState(readPageTranslationStatus())
 
     browser.runtime.onMessage.addListener(listener)
-    document.addEventListener('onlytranslate-page-state-changed', pageStateHandler)
+    document.addEventListener(PAGE_TRANSLATION_STATUS_EVENT, pageStateHandler)
     if (config.disableFloatingBall !== true) mountFloatingBall()
     window.addEventListener('beforeunload', () => {
       unmountFloatingBall()
       browser.runtime.onMessage.removeListener(listener)
-      document.removeEventListener('onlytranslate-page-state-changed', pageStateHandler)
+      document.removeEventListener(PAGE_TRANSLATION_STATUS_EVENT, pageStateHandler)
       runtimeWindow.__onlyTranslateFloatingRuntime = false
     }, { once: true })
   }

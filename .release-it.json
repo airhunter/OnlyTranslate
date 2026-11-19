@@ -17,7 +17,8 @@
     "publish": false
   },
   "hooks": {
-    "before:github:release": "pnpm zip:all && pnpm release:check ${version} --check-zip"
+    "before:bump": "pnpm verify",
+    "before:git:release": "pnpm zip:all && pnpm release:check ${version} --check-zip"
   },
   "plugins": {
     "@release-it/conventional-changelog": {

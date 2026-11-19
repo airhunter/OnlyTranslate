@@ -1,6 +1,8 @@
+import { aclAnthologyProfile } from './aclAnthology';
 import { asteriskProfile } from './asterisk';
 import { appleProfile } from './apple';
 import { arsTechnicaProfile } from './arsTechnica';
+import { bloggerProfile } from './blogger';
 import { claudeNagdyProfile } from './claudeNagdy';
 import { claytonRamseyProfile } from './claytonRamsey';
 import { cnnProfile } from './cnn';
@@ -13,6 +15,7 @@ import { googleAiModeProfile } from './googleAiMode';
 import { hackerNewsProfile } from './hackerNews';
 import { huggingFaceProfile } from './huggingFace';
 import { jacobGoldProfile } from './jacobGold';
+import { joshComeauProfile } from './joshComeau';
 import { liepinProfile } from './liepin';
 import { mediumProfile } from './medium';
 import { maxwellForbesProfile } from './maxwellForbes';
@@ -77,6 +80,9 @@ export type {
 
 export const siteProfiles: SiteProfile[] = [
     ...simpleProfiles,
+    aclAnthologyProfile,
+    bloggerProfile,
+    joshComeauProfile,
     claytonRamseyProfile,
     cnnProfile,
     youtubeProfile,

@@ -28,6 +28,9 @@ export default defineConfig({
         },
     } : {}),
     modules: ['@wxt-dev/webextension-polyfill'],
+    watchOptions: {
+        ignored: /[\\/]output(?:[\\/]|$)/,
+    },
     imports: {
         addons: {
             vueTemplate: true,
@@ -35,6 +38,10 @@ export default defineConfig({
     },
     vite: () => ({
         plugins: [vue() as any],
+        optimizeDeps: {
+            // Scan extension entry points for dependency optimization.
+            entries: ['entrypoints/**/*.html'],
+        },
         define: {
             'process.env.VUE_APP_VERSION': JSON.stringify(packageJson.version),
         }

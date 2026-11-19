@@ -1,5 +1,6 @@
 # Dependencies
 node_modules
+.pnpm-store/
 .pnp
 .pnp.js
 
@@ -7,6 +8,8 @@ node_modules
 coverage
 temp
 benchmark-results
+output/
+.playwright-cli/
 
 # Production
 build

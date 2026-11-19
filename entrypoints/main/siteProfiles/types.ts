@@ -8,6 +8,7 @@ export type SiteProfileMode = 'smart' | 'full';
 
 export interface SiteProfileContext {
     mode: SiteProfileMode;
+    scope?: string;
 }
 
 export type SiteProfileResult = Element | { skip: true } | false | undefined;
@@ -51,6 +52,10 @@ export interface SiteProfile {
     // Complete smart-mode target set. When it has enough readable text, the generic DOM scan is skipped.
     collectFastPathTargets?: SiteProfileFastPathTargetCollector;
     shouldKeepNestedTarget?: SiteProfileShouldKeepNestedTarget;
+    // An exact ARIA-hidden parent for a verified target. Style mutation checks
+    // may also ask about its parent or descendants. CSS/hidden still apply.
+    ariaHiddenAncestor?: (node: Element) => Element | null;
+    smartMutationAttributes?: readonly string[];
     // Exclude duplicated or derived descendants from a parent target's bilingual source text.
     excludeFromText?: SiteProfileTextExclude;
     // Opt-in policy for links inside recognized smart-mode reading targets only.
