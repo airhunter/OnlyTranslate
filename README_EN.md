@@ -134,6 +134,8 @@ corepack pnpm zip:all
 
 The project declares its pnpm version in `package.json`. Prefer `corepack pnpm ...` so scripts use the package manager version and local dependencies expected by the project.
 
+Save local screenshots and diagnostic reports in `output/`, and translation benchmark results in `benchmark-results/`. Development mode skips file watching in these directories as well as `.playwright-cli/`, `coverage/`, and `.pnpm-store/`.
+
 See [the release workflow](RELEASE.md) for publishing.
 
 For development mode, load `.output/chrome-mv3-dev` in Chrome developer mode. For production builds, load `.output/chrome-mv3`. Avoid mixing the two output directories.

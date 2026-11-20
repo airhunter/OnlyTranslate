@@ -1,11 +1,18 @@
 import { defineConfig } from 'wxt';
 import vue from '@vitejs/plugin-vue';
-import { resolve } from 'path';
+import { relative, resolve, sep } from 'path';
 import fs from 'fs';
 import { YOUTUBE_EMBED_MATCH } from './entrypoints/video/youtubeEmbed';
 
 
 const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
+const generatedDevDirectories = new Set([
+    '.pnpm-store',
+    'output',
+    '.playwright-cli',
+    'coverage',
+    'benchmark-results',
+]);
 const edgeBinary = process.platform === 'win32'
     ? [
         process.env['ProgramFiles(x86)'],
@@ -29,7 +36,8 @@ export default defineConfig({
     } : {}),
     modules: ['@wxt-dev/webextension-polyfill'],
     watchOptions: {
-        ignored: /[\\/]output(?:[\\/]|$)/,
+        // 仅忽略项目根目录下的缓存和测试产物，保留源码目录中的同名子目录。
+        ignored: (filePath) => generatedDevDirectories.has(relative(__dirname, filePath).split(sep, 1)[0]),
     },
     imports: {
         addons: {
