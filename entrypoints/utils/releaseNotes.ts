@@ -25,6 +25,51 @@ const releaseNoteFallbackLocale: ReleaseNoteLocale = 'zh-CN';
 
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: '1.16.0',
+    notes: {
+      'zh-CN': {
+        title: '只译 1.16：Reddit 视频字幕与网页翻译改进',
+        items: [
+          '支持翻译 Reddit 原生视频的可用字幕，可在原帖查看双语字幕。',
+          '改进文章和讨论页的正文识别，补齐 MDN 方法说明、Teapaw 公告等漏译内容。',
+          '优化 Hacker News 评论的双语排版，保留段落、引用、编号和行内代码。',
+          '悬浮球会显示翻译进度、未找到可翻译内容或翻译失败等状态，并修复了设置按钮在部分网页上变形的问题。',
+          '网页关闭整页自动翻译时，仍可在当前页面手动发起翻译。'
+        ]
+      },
+      'en-US': {
+        title: 'OnlyTranslate 1.16: Reddit Captions and Better Page Translation',
+        items: [
+          'Translate available captions on native Reddit videos and view bilingual subtitles within the original post.',
+          'Improved text detection on articles and discussion pages, covering previously missed content such as MDN method descriptions and Teapaw announcements.',
+          'Improved bilingual formatting for Hacker News comments, preserving paragraphs, quotes, numbering, and inline code.',
+          'The floating button now shows when translation is in progress, finds no content, or fails. Its settings button also keeps its shape on affected sites.',
+          'You can manually translate the current page when it opts out of automatic translation.'
+        ]
+      },
+      'zh-TW': {
+        title: '只譯 1.16：Reddit 影片字幕與網頁翻譯改善',
+        items: [
+          '支援翻譯 Reddit 原生影片的可用字幕，可在原貼文查看雙語字幕。',
+          '改善文章與討論頁的正文辨識，補上 MDN 方法說明、Teapaw 公告等漏譯內容。',
+          '改善 Hacker News 留言的雙語排版，保留段落、引用、編號與行內程式碼。',
+          '懸浮球會顯示翻譯進度、找不到可翻譯內容或翻譯失敗等狀態，並修正設定按鈕在部分網頁上變形的問題。',
+          '網頁停用整頁自動翻譯時，仍可在目前頁面手動啟動翻譯。'
+        ]
+      },
+      'ja-JP': {
+        title: 'OnlyTranslate 1.16：Reddit 動画の字幕翻訳とウェブページ翻訳の改善',
+        items: [
+          'Reddit に直接投稿された動画の字幕を翻訳し、元の投稿内で対訳字幕を表示できるようになりました。',
+          '記事やディスカッションページの本文検出を改善し、MDN のメソッド説明や Teapaw のお知らせなど、翻訳から漏れていた内容に対応しました。',
+          'Hacker News のコメントの対訳表示を改善し、段落、引用、番号、インラインコードを保持します。',
+          'フローティングボタンに翻訳中、翻訳対象なし、翻訳失敗などの状態を表示します。一部のサイトで設定ボタンの形が崩れる問題も修正しました。',
+          'ページが自動翻訳を無効にしていても、そのページの翻訳を手動で開始できます。'
+        ]
+      }
+    }
+  },
+  {
     version: '1.15.0',
     notes: {
       'zh-CN': {
