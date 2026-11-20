@@ -1,5 +1,23 @@
 # Changelog
 
+# [1.16.0](https://github.com/airhunter/OnlyTranslate/compare/v1.15.0...v1.16.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **content:** 修复 MDN 漏译与 Hacker News 评论排版 ([84714cb](https://github.com/airhunter/OnlyTranslate/commit/84714cbe78685aac0645b5736ecfb0bc62f949cf))
+* **content:** 修复 Teapaw 首页公告漏译和悬浮按钮变形 ([91cbe76](https://github.com/airhunter/OnlyTranslate/commit/91cbe76c062668d8655b1fdeacab845205a7bdae))
+
+
+### Features
+
+* **translation:** 接入 Reddit 原生视频字幕翻译并改进网页翻译 ([0816ed3](https://github.com/airhunter/OnlyTranslate/commit/0816ed345aeca345860188760e495e93d15ccbbc))
+
+
+### Performance Improvements
+
+* **dev:** 缩小开发模式文件监听范围 ([e62f5c4](https://github.com/airhunter/OnlyTranslate/commit/e62f5c48667bb6fede839405ad7ee16ccc107a40))
+
 # [1.15.0](https://github.com/airhunter/OnlyTranslate/compare/v1.14.0...v1.15.0) (2026-11-09)
 
 
