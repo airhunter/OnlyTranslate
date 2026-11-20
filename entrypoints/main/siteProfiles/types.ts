@@ -58,6 +58,7 @@ export interface SiteProfile {
     smartMutationAttributes?: readonly string[];
     // Exclude duplicated or derived descendants from a parent target's bilingual source text.
     excludeFromText?: SiteProfileTextExclude;
+    preserveBilingualParagraphs?: (node: Element) => boolean;
     // Opt-in policy for links inside recognized smart-mode reading targets only.
     inlineLink?: (node: Element) => InlineLinkPolicy | false;
 }

@@ -23,7 +23,9 @@ vi.mock('element-plus', () => ({
   }
 }))
 
-import { resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect'
+import { collectTranslationTargets, resolveAutoTranslationTarget } from '@/entrypoints/main/translationTarget/collect'
+import { textExcludeCompatFn } from '@/entrypoints/main/compat'
+import * as dom from '@/entrypoints/main/dom'
 import { collectDomTextUnits } from '@/entrypoints/main/translationTarget/unitizer'
 import { getReadingBlockTargets } from '@/entrypoints/main/translationTarget/readingBlocks'
 import { createScanContext } from '@/entrypoints/main/translationTarget/scanContext'
@@ -40,6 +42,52 @@ describe('translationTarget', () => {
       value: originalLocation,
       configurable: true
     })
+  })
+
+  it.each([
+    { name: 'keeps deep prose when its section yields to the heading', candidates: ['section', 'heading', 'copy'], expected: ['heading', 'copy'] },
+    { name: 'deduplicates prose covered by a surviving intermediate target', candidates: ['section', 'heading', 'definition', 'copy'], expected: ['heading', 'definition'] }
+  ])('$name', ({ candidates, expected }) => {
+    document.body.innerHTML = `
+      <section id="section">
+        <h2 id="heading">Starting the workers</h2>
+        <dl><dt>Startup</dt><dd id="definition">
+          <p id="copy">The controller calls <code>start()</code> after checking the configuration for each worker.</p>
+        </dd></dl>
+      </section>`
+    const select = vi.spyOn(dom, 'grabAllNode').mockReturnValueOnce(candidates.map(id => document.getElementById(id)!))
+    try {
+      const targets = collectTranslationTargets(document.body, { scope: 'smart', mode: 'smart', contentRoot: document.body })
+      expect(targets.map(({ target }) => target.id)).toEqual(expected)
+      const source = dom.getTranslatableTextWithProtectedInline(targets[1].target)
+      expect(source.protectedInlines.map(({ node }) => node.textContent)).toEqual(['start()'])
+    } finally {
+      select.mockRestore()
+    }
+  })
+
+  it('keeps a nested target across an excluded text boundary', () => {
+    const domain = 'manual.example'
+    Object.defineProperty(window, 'location', { value: new URL(`https://${domain}/workers`), configurable: true })
+    document.body.innerHTML = `
+      <div id="container">
+        The following instructions explain how the controller starts the workers.
+        <div data-excluded-from-parent>
+          <p id="copy">The controller checks the configuration for each worker before starting the service.</p>
+        </div>
+      </div>`
+    const container = document.getElementById('container')!
+    const copy = document.getElementById('copy')!
+    const select = vi.spyOn(dom, 'grabAllNode').mockReturnValueOnce([container, copy])
+    textExcludeCompatFn[domain] = node => node.hasAttribute('data-excluded-from-parent')
+    try {
+      const targets = collectTranslationTargets(document.body, { scope: 'smart', mode: 'smart', contentRoot: document.body })
+      expect(targets.map(({ target }) => target)).toEqual([container, copy])
+      expect(dom.getTranslatableText(container)).not.toContain(copy.textContent)
+    } finally {
+      delete textExcludeCompatFn[domain]
+      select.mockRestore()
+    }
   })
 
   it('lets the Medium profile allow related article content without allowing metadata', () => {

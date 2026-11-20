@@ -111,6 +111,96 @@ describe('resolveAutoTranslateTarget behavior', () => {
     })
   })
 
+  it.each(['smart', 'full'])('preserves the Hacker News comment layout in %s bilingual mode', async scope => {
+    const url = new URL('https://news.ycombinator.com/item?id=50572503')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    mockConfig.translationScope = scope
+    document.body.innerHTML = '<div class="comment"><div class="commtext">&gt; <i>Quoted words</i><p>See <a href="/details">example.com</a> for details.</p><p>1. Run <code>start()</code> first.</p><pre><code>blockOnly();\n  indentation();</code></pre><p>2. Check the result.</p><p translate="no">Protected text.</p></div><div class="reply"><a href="/reply">reply</a></div></div>'
+    const host = document.querySelector<HTMLElement>('.commtext')!
+    const reply = document.querySelector('.reply a')
+    const originalChildren = [...host.childNodes]
+    const staleCache = vi.spyOn(cache, 'localGet').mockReturnValue('没有段落的旧译文')
+    vi.mocked(translateText).mockImplementation(async source => source
+      .replace('Quoted words', '原文引用')
+      .replace('See example.com for details.', '详见 example.com。')
+      .replace('Run ', '先运行 ')
+      .replace(' first.', '。')
+      .replace('Check the result.', '检查结果。'))
+
+    try {
+      await handleBilingualTranslation(host, false)
+      expect(translateText).toHaveBeenCalledOnce()
+      const [request] = vi.mocked(translateText).mock.calls[0]
+      expect(request).toBe('⟦0⟧Quoted words⟦1⟧See example.com for details.⟦2⟧Run ⟦3⟧ first.⟦4⟧Check the result.')
+      expect(staleCache).not.toHaveBeenCalled()
+      const translation = host.querySelector(`.${BILINGUAL_TEXT_CLASS}`)!
+      expect(translation.querySelector('i')?.textContent).toBe('原文引用')
+      expect(translation.textContent?.startsWith('> ')).toBe(true)
+      expect([...translation.querySelectorAll('.only-translate-bilingual-paragraph')].map(p => p.textContent)).toEqual([
+        '详见 example.com。', '1. 先运行 start()。', '2. 检查结果。'
+      ])
+      expect([...translation.querySelectorAll('code')].map(code => code.textContent)).toEqual(['start()'])
+      expect(host.querySelector('pre')?.textContent).toBe('blockOnly();\n  indentation();')
+      expect(host.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      expect(host.lastElementChild?.classList.contains(BILINGUAL_CONTENT_CLASS)).toBe(true)
+      expect(host.nextElementSibling?.querySelector('a')).toBe(reply)
+    } finally {
+      staleCache.mockRestore()
+      restoreOriginalContent()
+    }
+    expect([...host.childNodes]).toEqual(originalChildren)
+  })
+
+  it.each([true, false])('retries missing Hacker News paragraph boundaries with line breaks (recovers: %s)', async recovers => {
+    const url = new URL('https://news.ycombinator.com/item?id=50572503')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = '<div class="comment"><div class="commtext">First paragraph.<p>1. Call <code>start()</code> later.</p></div></div>'
+    const host = document.querySelector<HTMLElement>('.commtext')!
+    vi.mocked(translateText).mockResolvedValueOnce('被拼接的译文。').mockImplementationOnce(async source => recovers
+      ? source.replace('First paragraph.', '第一段。').replace('Call ', '然后调用 ').replace(' later.', '。')
+      : '仍然缺少边界。')
+
+    try {
+      await handleBilingualTranslation(host, false)
+      expect(translateText).toHaveBeenCalledTimes(2)
+      const [retry, , options] = vi.mocked(translateText).mock.calls[1]
+      expect(retry).toBe('First paragraph.\n⟦0⟧\nCall \n⟦1⟧\n later.')
+      expect(options?.useCache).toBe(false)
+      if (recovers) {
+        expect(host.querySelector('.only-translate-bilingual-paragraph')?.textContent).toBe('1. 然后调用 start()。')
+        expect(mockInsertFailedTip).not.toHaveBeenCalled()
+      } else {
+        expect(host.querySelector(`.${BILINGUAL_CONTENT_CLASS}`)).toBeNull()
+        expect(mockInsertFailedTip).toHaveBeenCalledOnce()
+      }
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
+  it('translates Hacker News comments containing a literal numbered boundary', async () => {
+    const url = new URL('https://news.ycombinator.com/item?id=50572503')
+    Object.defineProperty(window, 'location', { value: url, configurable: true })
+    Object.defineProperty(document, 'location', { value: url, configurable: true })
+    document.body.innerHTML = '<div class="comment"><div class="commtext">The symbol ⟦0⟧ marks a boundary.<pre>sample code</pre><p>It is part of the example.</p></div></div>'
+    const host = document.querySelector<HTMLElement>('.commtext')!
+    vi.mocked(translateText).mockResolvedValue('符号 ⟦0⟧ 标记边界。它是示例的一部分。')
+
+    try {
+      await handleBilingualTranslation(host, false)
+      expect(translateText).toHaveBeenCalledOnce()
+      const [request] = vi.mocked(translateText).mock.calls[0]
+      expect(request).toContain('The symbol ⟦0⟧ marks a boundary.')
+      expect(request).toContain('It is part of the example.')
+      expect(request).not.toContain('sample code')
+      expect(host.querySelector(`.${BILINGUAL_TEXT_CLASS}`)?.textContent).toBe('符号 ⟦0⟧ 标记边界。它是示例的一部分。')
+    } finally {
+      restoreOriginalContent()
+    }
+  })
+
   it.each([1, 0])('translates PoTown product prose without changing cart controls and restores its structure (display %s)', async display => {
     const url = new URL('https://www.potownstore.com/prismatic-evolutions-super-premium-collection-ptcgl-code')
     Object.defineProperty(window, 'location', { value: url, configurable: true })
@@ -2340,6 +2430,32 @@ describe('resolveAutoTranslateTarget behavior', () => {
     expect(texts).toContain('Log Event: Comparing repair estimate to BlueBook value.')
     expect(texts).toContain("Filter Verdict: Show. (High Stakes, impacts user's payout).")
     expect(texts).not.toContain('Log Event: Pinging Server West-2 for redundancy check. Filter Verdict: Hide. (Low Stakes, High Technicality).')
+  })
+
+  it('inserts one bilingual translation per nested list paragraph and preserves inline code', async () => {
+    document.body.innerHTML = fs.readFileSync('tests/fixtures/translation-target/section-with-nested-lists.html', 'utf8')
+    const paragraphs = Array.from(document.querySelectorAll<HTMLElement>('section p'))
+    const code = paragraphs[0].querySelector('code')
+    vi.mocked(translateText).mockImplementation(async source => {
+      const codePlaceholder = source.match(/__ONLY_TRANSLATE_INLINE_\d+_[a-z0-9]+__/)?.[0]
+      return `测试译文。${codePlaceholder ?? ''}`
+    })
+
+    try {
+      for (const node of resolveAutoTranslateTarget('smart').nodes) {
+        await handleBilingualTranslation(node as HTMLElement, false)
+      }
+
+      for (const paragraph of paragraphs) {
+        expect(paragraph.querySelectorAll(`.${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(1)
+      }
+      const translatedCode = paragraphs[0].querySelector(`.${BILINGUAL_CONTENT_CLASS} code`)
+      expect(translatedCode?.textContent).toBe('start()')
+      expect(paragraphs[0].querySelector('code')).toBe(code)
+      expect(document.querySelectorAll(`section .${BILINGUAL_CONTENT_CLASS}`)).toHaveLength(paragraphs.length + 2)
+    } finally {
+      restoreOriginalContent()
+    }
   })
 
   it('recovers readable article segments without treating section names as purpose declarations', () => {

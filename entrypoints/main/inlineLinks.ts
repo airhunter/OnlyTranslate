@@ -39,22 +39,43 @@ export function getSmartInlineLinkPolicy(scope: string | null | undefined): Inli
     return siteProfiles.find(profile => profile.domains.includes(getMainDomain(location.href)))?.inlineLink;
 }
 
+export function shouldPreserveBilingualParagraphs(host: Element): boolean {
+    const domain = getMainDomain(location.href);
+    return siteProfiles.some(profile => profile.preserveBilingualParagraphs && profile.domains.includes(domain)
+        && profile.preserveBilingualParagraphs(host));
+}
+
 export function preserveInlineLink(node: Element, resolve: InlineLinkResolver): boolean {
     return node.matches(UI_SELECTOR) || resolve(node) === 'preserve';
 }
 
-// Build only local, minimal inline markup; service output is always treated as text.
-// Classes keep the site's theme/hover colors, while our class constrains layout/font.
-export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineLinkResolver, excludeElement?: (node: Element) => boolean): PreparedTranslationOnly {
+// Build only local markup; service output is always treated as text.
+export function prepareInlineLinkTranslation(
+    host: HTMLElement,
+    resolve: InlineLinkResolver | undefined,
+    excludeElement?: (node: Element) => boolean,
+    preserveParagraphs = false,
+): PreparedTranslationOnly {
     const draft = document.createElement('span');
     const preserved = new Set<Element>();
     const collect = (node: Node, parent: Node): void => {
         if (node instanceof Text) {
-            parent.appendChild(document.createTextNode(node.data));
+            const paragraphStart = node === node.parentNode?.firstChild && (node.parentNode === host || node.parentElement?.matches('p'));
+            const prefix = preserveParagraphs && paragraphStart ? node.data.match(/^\s*(?:>\s*|\d+[.)][\t ]+)/)?.[0] : undefined;
+            if (prefix) {
+                const marker = document.createElement('span');
+                marker.textContent = prefix;
+                parent.appendChild(marker);
+                preserved.add(marker);
+            }
+            const text = prefix ? node.data.slice(prefix.length) : node.data;
+            if (text) parent.appendChild(document.createTextNode(text));
             return;
         }
-        if (!(node instanceof Element) || node.matches(`${EXCLUDED_SELECTOR}, ${UI_SELECTOR}`) || isExcludedFromTranslatableText(node) || excludeElement?.(node)) return;
-        const policy = resolve(node);
+        if (!(node instanceof Element) || node.matches(`${EXCLUDED_SELECTOR}, ${UI_SELECTOR}`)
+            || isExcludedFromTranslatableText(node) || excludeElement?.(node)
+            || (preserveParagraphs && node.matches('pre, [translate="no"], .notranslate'))) return;
+        const policy = resolve?.(node);
         if (policy) {
             const link = document.createElement('a');
             link.href = new URL(node.getAttribute('href')!, location.href).href;
@@ -86,13 +107,21 @@ export function prepareInlineLinkTranslation(host: HTMLElement, resolve: InlineL
             parent.appendChild(clone);
             return;
         }
+        if (preserveParagraphs && node.matches('p, i, em, b, strong')) {
+            const copy = document.createElement(node.matches('p') ? 'span' : node.localName);
+            if (node.matches('p')) copy.className = 'only-translate-bilingual-paragraph';
+            node.childNodes.forEach(child => collect(child, copy));
+            if (copy.hasChildNodes()) parent.appendChild(copy);
+            return;
+        }
         if (node.matches('br')) {
-            parent.appendChild(document.createTextNode('\n'));
+            parent.appendChild(preserveParagraphs ? document.createElement('br') : document.createTextNode('\n'));
             return;
         }
         node.childNodes.forEach(child => collect(child, parent));
     };
     host.childNodes.forEach(child => collect(child, draft));
+    if (preserveParagraphs) draft.normalize();
     return prepareTranslationOnly(draft, node => preserved.has(node));
 }
 
@@ -108,12 +137,15 @@ export function renderInlineLinkTranslation(prepared: PreparedTranslationOnly, t
 // English protocol names can dominate automatic language detection on short
 // multilingual posts. Transport numbered boundaries; restore the existing local
 // protocol only after validating every boundary exactly once and in order.
-export function encodeInlineLinkRequest(prepared: PreparedTranslationOnly) {
+export function encodeInlineLinkRequest(prepared: PreparedTranslationOnly, compact = false) {
     const markers: string[] = [];
     const collision = /⟦\d+⟧/.test(prepared.text);
     const source = prepared.separatorPadding === ' '
         ? prepared.text.replace(/ (__ONLY_TRANSLATE_SLOT_\d+__) /g, '$1') : prepared.text;
-    const text = collision ? '' : source.replace(/__ONLY_TRANSLATE_(?:SLOT_\d+|INLINE_\d+_[a-z0-9]+)__/g, marker => {
+    const markerPattern = /__ONLY_TRANSLATE_(?:SLOT_\d+|INLINE_\d+_[a-z0-9]+)__/g;
+    // There is nothing for a translation service to reorder within a run of markers.
+    const boundaryPattern = compact ? new RegExp(`${markerPattern.source}(?:\\s*${markerPattern.source})*`, 'g') : markerPattern;
+    const text = collision ? '' : source.replace(boundaryPattern, marker => {
         markers.push(marker);
         return `⟦${markers.length - 1}⟧`;
     });

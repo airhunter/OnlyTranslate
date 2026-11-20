@@ -1,0 +1,9 @@
+{
+  "name": "keeps nested list prose when a section yields to its heading",
+  "url": "https://manual.example/worker-handbook",
+  "scope": "smart",
+  "html": "section-with-nested-lists.html",
+  "contentRoot": "#handbook",
+  "include": ["startup", "startup-copy", "restart-copy", "monitoring", "status-copy", "alert-copy"],
+  "exclude": ["definitions", "steps", "start-command"]
+}

@@ -26,6 +26,7 @@ export const hackerNewsProfile: SiteProfile = {
     supplemental: (root) => Array.from(root.querySelectorAll<Element>(HN_READING_SELECTOR))
         .filter(node => !shouldSkipHNElement(node) && hasReadableText(node)),
     preserveSupplementalTargets: true,
+    preserveBilingualParagraphs: node => node.matches(HN_COMMENT_SELECTOR) && node.querySelector(':scope > p') !== null,
     allowTarget: (node) => {
         if (!node.matches(HN_READING_SELECTOR)) return false;
 

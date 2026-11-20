@@ -799,29 +799,19 @@ function mergeTranslationDecisions(
 ): TranslationTargetDecision[] {
     const unique = Array.from(new Map(decisions.map(decision => [decision.target, decision])).values());
     const segmentedBlockquotes = collectSegmentedBlockquotes(unique);
-    const shouldKeepNested = (parent: Element, child: Element): boolean => {
-        if (segmentedBlockquotes.has(parent) && child.parentElement === parent) return true;
-        return shouldKeepNestedTarget(parent, child, context);
-    };
+    const retained = unique.filter(decision => !segmentedBlockquotes.has(decision.target) && !unique.some(other =>
+        decision !== other
+        && decision.target.contains(other.target)
+        && !hasExcludedTranslatableTextBoundary(decision.target, other.target)
+        && shouldKeepNestedTarget(decision.target, other.target, context)
+    ));
 
-    return unique.filter(decision => {
-        if (segmentedBlockquotes.has(decision.target)) return false;
-
-        if (unique.some(other =>
-            decision !== other
-            && decision.target.contains(other.target)
-            && !hasExcludedTranslatableTextBoundary(decision.target, other.target)
-            && shouldKeepNested(decision.target, other.target)
-        )) {
-            return false;
-        }
-
-        return !unique.some(other => {
-            if (decision === other || !other.target.contains(decision.target)) return false;
-            if (hasExcludedTranslatableTextBoundary(other.target, decision.target)) return false;
-            return !shouldKeepNested(other.target, decision.target);
-        });
-    });
+    // Only containers that survived the first pass can cover another target.
+    return retained.filter(decision => !retained.some(other =>
+        decision !== other
+        && other.target.contains(decision.target)
+        && !hasExcludedTranslatableTextBoundary(other.target, decision.target)
+    ));
 }
 
 function collectSegmentedBlockquotes(decisions: TranslationTargetDecision[]): Set<Element> {

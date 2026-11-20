@@ -75,7 +75,7 @@ import {
 import { discoverScanShadowRoots, isElementVisible } from '@/entrypoints/main/translationTarget/scanContext';
 import shadowTranslationStyles from '@/entrypoints/style.css?inline';
 import { canRestorePage, publishPageTranslationStatus, type PageTranslationStatus } from '@/entrypoints/utils/pageTranslationStatus';
-import { encodeInlineLinkRequest, getSmartInlineLinkPolicy, getSmartInlineLinkResolver, prepareInlineLinkTranslation, preserveInlineLink, renderInlineLinkTranslation } from './inlineLinks';
+import { encodeInlineLinkRequest, getSmartInlineLinkPolicy, getSmartInlineLinkResolver, prepareInlineLinkTranslation, preserveInlineLink, renderInlineLinkTranslation, shouldPreserveBilingualParagraphs } from './inlineLinks';
 
 // style 只进入合并后的动态队列，用于捕获组件直接通过内联样式切换正文显隐的情况；
 // 回调本身不读取布局，避免把动画 mutation 的成本放在 Observer 回调中。
@@ -1222,10 +1222,10 @@ export function handleBilingualTranslation(
     }
 
     // 检查是否有缓存
-    // Smart social links require structural rendering even when a legacy plain
-    // translation exists. translateText handles the structured request cache.
+    // Structured translations use their own cache through translateText.
     const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
-    const cached = inlineLinks || options.allowedPageTranslateRoot ? null : cache.localGet(originText, config.to, getWebpagePromptContext(node));
+    const cached = inlineLinks || shouldPreserveBilingualParagraphs(node) || options.allowedPageTranslateRoot
+        ? null : cache.localGet(originText, config.to, getWebpagePromptContext(node));
     if (cached) {
         let spinner = insertLoadingSpinner(node, true);
         return new Promise(resolve => setTimeout(() => {
@@ -1290,7 +1290,8 @@ function getPageTargetRetry(
 
 function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: TranslationRequestOptions = {}): Promise<void> {
     const { validateTarget, onPageResult, allowedPageTranslateRoot, retryPageTarget: _retryPageTarget, ...translateOptions } = options;
-    const excludeElement = allowedPageTranslateRoot ? isManualPageExcludedText : undefined;
+    const preserveParagraphs = shouldPreserveBilingualParagraphs(node);
+    const excludeElement = allowedPageTranslateRoot || preserveParagraphs ? isManualPageExcludedText : undefined;
     const full = isFullPageTranslation();
     const protectedInlineOrigin = getTranslatableTextWithProtectedInline(node, excludeElement ?? (full ? isFullPageExcludedText : undefined));
     const plainOrigin = excludeElement
@@ -1298,9 +1299,13 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
         : getTranslatableText(node);
     const attempt = captureTranslationAttempt(node, getTranslatableText(node), validateTarget);
     const inlineLinks = getSmartInlineLinkResolver(node, getCurrentTranslationScope());
-    const linkedPrepared = inlineLinks ? prepareInlineLinkTranslation(node, inlineLinks, excludeElement) : undefined;
-    const linkedRequest = linkedPrepared ? encodeInlineLinkRequest(linkedPrepared) : undefined;
-    const origin = linkedRequest?.text ?? (excludeElement || full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin);
+    const structured = inlineLinks || preserveParagraphs
+        ? prepareInlineLinkTranslation(node, inlineLinks, excludeElement, preserveParagraphs)
+        : undefined;
+    const request = structured ? encodeInlineLinkRequest(structured, preserveParagraphs) : undefined;
+    // HN source text can contain a literal numbered marker. Use the plain request in that case.
+    const structuredRequest = preserveParagraphs && !request?.text ? undefined : request;
+    const origin = structuredRequest?.text ?? (excludeElement || full || protectedInlineOrigin.protectedInlines.length ? protectedInlineOrigin.text : plainOrigin);
     const direction = getWebpageTranslationDirection(plainOrigin);
     if (!direction.shouldTranslate) {
         clearUnfinishedAutoTranslation(node);
@@ -1315,7 +1320,7 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
     
     // 使用队列管理的翻译API
     const promptContext = getWebpagePromptContext(node);
-    const requestOptions = full || linkedPrepared
+    const requestOptions = full || structuredRequest
         ? { ...translateOptions, sourceLangHint: direction.sourceLang, targetLangHint: direction.targetLang }
         : translateOptions;
     return translateText(origin, promptContext, requestOptions)
@@ -1327,13 +1332,13 @@ function bilingualTranslate(node: HTMLElement, nodeOuterHTML: string, options: T
                 return;
             }
             if (normalizeTranslationSource(text) === normalizeTranslationSource(origin)) return;
-            if (linkedPrepared && linkedRequest) {
-                let decoded = linkedRequest.decode(text);
-                let content = decoded === null ? null : renderInlineLinkTranslation(linkedPrepared, decoded);
+            if (structured && structuredRequest) {
+                let decoded = structuredRequest.decode(text);
+                let content = decoded === null ? null : renderInlineLinkTranslation(structured, decoded);
                 if (!content) {
                     cache.localRemove(origin, direction.targetLang, promptContext);
-                    const retryPrepared = withTranslationOnlyLineSeparators(linkedPrepared);
-                    const retryRequest = encodeInlineLinkRequest(retryPrepared);
+                    const retryPrepared = withTranslationOnlyLineSeparators(structured);
+                    const retryRequest = encodeInlineLinkRequest(retryPrepared, preserveParagraphs);
                     text = await translateText(retryRequest.text, promptContext, { ...requestOptions, useCache: false });
                     if (!isTranslationAttemptCurrent(node, attempt)) {
                         discardStaleTranslationAttempt(node, nodeOuterHTML, attempt);

@@ -1,0 +1,23 @@
+<main id="handbook">
+  <h1>Service controller handbook</h1>
+  <p>A controller assigns incoming work to individual workers based on the configured routing policy.</p>
+  <section id="definitions">
+    <h2 id="startup"><a href="#startup">Starting the workers</a></h2>
+    <dl>
+      <dt id="start-command"><code>start()</code></dt>
+      <dd>
+        <p id="startup-copy">The controller calls <code>start()</code> after checking the current configuration for every registered worker.</p>
+        <p id="restart-copy">The operator can restart individual jobs without affecting the remaining work.</p>
+      </dd>
+    </dl>
+  </section>
+  <section id="steps">
+    <h2 id="monitoring"><a href="#monitoring">Monitoring the workers</a></h2>
+    <ul>
+      <li>
+        <p id="status-copy">Read the latest activity on the status page to see how each worker is handling incoming jobs.</p>
+        <p id="alert-copy">Review the worker alerts before making changes to the current routing policy.</p>
+      </li>
+    </ul>
+  </section>
+</main>

@@ -392,6 +392,11 @@
     cursor: pointer;
 }
 
+.only-translate-bilingual-paragraph {
+    display: block;
+    margin-block-start: 0.5em;
+}
+
 .only-translate-bilingual-text a.only-translate-inline-link:hover,
 .only-translate-bilingual-text a.only-translate-inline-link:focus-visible {
     text-decoration: underline;
